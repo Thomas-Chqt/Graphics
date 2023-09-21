@@ -42,42 +42,11 @@
 			},
 		},
 		{
-			"label": "Clean release",
-			"type": "shell",
-			"command": "make",
-			"args": [
-				"TARGET_TYPE=release",
-				"clean"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "silent",
-				"close": true
-			},
-			"hide": true
-		},
-		{
-			"label": "Clean debug",
-			"type": "shell",
-			"command": "make",
-			"args": [
-				"TARGET_TYPE=debug",
-				"clean"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "silent",
-				"close": true
-			},
-			"hide": true
-		},
-		{
 			"label": "Clean",
 			"type": "shell",
-			"command": "rm",
+			"command": "make",
 			"args": [
-				"-rf",
-				".build"
+				"clean",
 			],
 			"dependsOn": [
 				"Clean debug",
@@ -90,46 +59,11 @@
 			}
 		},
 		{
-			"label": "FClean release",
-			"type": "shell",
-			"command": "make",
-			"args": [
-				"TARGET_TYPE=release",
-				"fclean"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "silent",
-				"close": true
-			},
-			"hide": true
-		},
-		{
-			"label": "FClean debug",
-			"type": "shell",
-			"command": "make",
-			"args": [
-				"TARGET_TYPE=debug",
-				"fclean"
-			],
-			"problemMatcher": [],
-			"presentation": {
-				"reveal": "silent",
-				"close": true
-			},
-			"hide": true
-		},
-		{
 			"label": "FClean",
 			"type": "shell",
-			"command": "rm",
+			"command": "make",
 			"args": [
-				"-rf",
-				".build"
-			],
-			"dependsOn": [
-				"FClean debug",
-				"FClean release"
+				"fclean",
 			],
 			"problemMatcher": [],
 			"presentation": {

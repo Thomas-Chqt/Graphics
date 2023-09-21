@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/21 19:21:50 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/21 23:37:18 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,9 @@
 
 # include "simpleWindow.h"
 
-# ifdef MEMCHECK
+# ifdef DEBUG
 #  include <memory_leak_detector.h>
-# endif
+# endif // DEBUG
 
 # define MALLOC_ERROR 10
 # define MLX_INIT_ERROR 11
