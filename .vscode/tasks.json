@@ -20,7 +20,7 @@
 				"reveal": "silent",
 				"close": true,
 				"revealProblems": "onProblem"
-			}
+			},
 		},
 		{
 			"label": "Build Debug",
@@ -39,12 +39,50 @@
 				"reveal": "silent",
 				"close": true,
 				"revealProblems": "onProblem"
-			}
+			},
+		},
+		{
+			"label": "Clean release",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"TARGET_TYPE=release",
+				"clean"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"close": true
+			},
+			"hide": true
+		},
+		{
+			"label": "Clean debug",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"TARGET_TYPE=debug",
+				"clean"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"close": true
+			},
+			"hide": true
 		},
 		{
 			"label": "Clean",
 			"type": "shell",
-			"command": "make TARGET_TYPE=release clean && make TARGET_TYPE=debug clean && rm -rf .build/",
+			"command": "rm",
+			"args": [
+				"-rf",
+				".build"
+			],
+			"dependsOn": [
+				"Clean debug",
+				"Clean release"
+			],
 			"problemMatcher": [],
 			"presentation": {
 				"reveal": "silent",
@@ -52,9 +90,47 @@
 			}
 		},
 		{
+			"label": "FClean release",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"TARGET_TYPE=release",
+				"fclean"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"close": true
+			},
+			"hide": true
+		},
+		{
+			"label": "FClean debug",
+			"type": "shell",
+			"command": "make",
+			"args": [
+				"TARGET_TYPE=debug",
+				"fclean"
+			],
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "silent",
+				"close": true
+			},
+			"hide": true
+		},
+		{
 			"label": "FClean",
 			"type": "shell",
-			"command": "make TARGET_TYPE=release fclean && make TARGET_TYPE=debug fclean && rm -rf .build/",
+			"command": "rm",
+			"args": [
+				"-rf",
+				".build"
+			],
+			"dependsOn": [
+				"FClean debug",
+				"FClean release"
+			],
 			"problemMatcher": [],
 			"presentation": {
 				"reveal": "silent",
@@ -109,15 +185,14 @@
 							"message": 2,
 							"line": 3,
 							"column": 4,
-							"code": 5
+							"code": 5,
 						}
 					]
 				}
 			],
 			"presentation": {
 				"reveal": "silent",
-				"close": true,
-				"revealProblems": "onProblem"
+				"close": true
 			}
 		}
 	]
