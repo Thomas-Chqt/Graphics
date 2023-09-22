@@ -1,5 +1,6 @@
 {
 	"C_Cpp.default.includePath": [
-		"includes"
+		"includes",
+		"/Users/tchoquet/Documents/Libraries/include"
 	],
 }
