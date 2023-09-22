@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:00 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 19:57:37 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 23:46:25 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ t_window	*new_window(const char *title, unsigned int width,
 		return (set_last_err_ptr(WINDOW_CREATION_ERROR, NULL));
 	}
 	add_event(new_win, (t_eveact){.triggers = ON_DESTROY},
-		(void (*)(void *))&delete_window, new_win);
+		(void (*)(void *)) & delete_window, new_win);
 	return (add_to_window_list(new_win));
 }
 

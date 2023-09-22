@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/22 19:44:45 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 19:57:12 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 23:45:28 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,5 +34,3 @@ static void	free_window(void *win)
 	ft_lstclear(&(((t_window *)win)->event_lists), &free_wrap);
 	free(win);
 }
-
-

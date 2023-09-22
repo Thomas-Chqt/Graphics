@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/22 13:34:57 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 18:45:00 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 23:46:01 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,10 @@ int	add_event(t_window *window, t_eveact activation, void (*func)(void *),
 	t_list		*new_node;
 
 	if (window == NULL || func == NULL)
-		return ((int)set_last_err_ptr(INPUT_ERROR, NULL));
+	{
+		(void)set_last_err(INPUT_ERROR);
+		return (0);
+	}
 	init_events(window);
 	new_node = ft_lstnew(NULL);
 	if (new_node != NULL)
@@ -29,10 +32,9 @@ int	add_event(t_window *window, t_eveact activation, void (*func)(void *),
 		new_node->data = malloc(sizeof(t_event));
 		if (new_node->data != NULL)
 		{
-			((t_event *)new_node->data)->id = event_id++;
-			((t_event *)new_node->data)->act = activation;
-			((t_event *)new_node->data)->func = func;
-			((t_event *)new_node->data)->data = data;
+			*((t_event *)new_node->data) = (t_event){.id = event_id++,
+				.act = activation, .func = func, . data = data
+			};
 			ft_lstadd_front(&window->event_lists, new_node);
 			return (((t_event *)new_node->data)->id);
 		}
