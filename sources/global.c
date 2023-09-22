@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 16:51:10 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/21 18:38:40 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 19:45:10 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,4 @@ int	init_g_data(void)
 	if (global_data()->mlx_ptr == NULL)
 		return (set_last_err(MLX_INIT_ERROR));
 	return (0);
-}
-
-void	clean_g_data(void)
-{
 }

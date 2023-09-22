@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 18:43:02 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 19:45:14 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,8 @@ struct s_window
 	void		*pixels;
 	t_list		*event_lists;
 	t_bool		is_envent_init;
+	void		(*destructor)(void*);
+	void		*destructor_data;
 };
 
 struct s_event
@@ -61,7 +63,6 @@ struct s_event
 
 t_g_data	*global_data(void);
 int			init_g_data(void);
-void		clean_g_data(void);
 
 void		*set_last_err_ptr(int nbr, void *ret);
 int			set_last_err(int nbr);

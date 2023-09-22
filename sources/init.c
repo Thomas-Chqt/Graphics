@@ -6,14 +6,13 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:00 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 18:46:21 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 19:57:37 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "simpleWindow_intenal.h"
 
 static t_window	*add_to_window_list(t_window *win);
-static void		free_window(void *win);
 
 t_window	*new_window(const char *title, unsigned int width,
 				unsigned int height)
@@ -35,6 +34,8 @@ t_window	*new_window(const char *title, unsigned int width,
 		delete_window(new_win);
 		return (set_last_err_ptr(WINDOW_CREATION_ERROR, NULL));
 	}
+	add_event(new_win, (t_eveact){.triggers = ON_DESTROY},
+		(void (*)(void *))&delete_window, new_win);
 	return (add_to_window_list(new_win));
 }
 
@@ -72,24 +73,10 @@ void	*get_pixel_buffer(t_window *window)
 	return (window->pixels);
 }
 
-void	delete_window(void *window)
+void	add_destructor(t_window *window, void (*func)(void*), void *data)
 {
 	if (window == NULL)
 		return ((void)set_last_err(INPUT_ERROR));
-	lst_delif(&(global_data()->window_list), &free_window, &is_same, window);
-	if (global_data()->window_list == NULL)
-	{
-		clean_g_data();
-		exit(0);
-	}
-}
-
-static void	free_window(void *win)
-{
-	if (((t_window *)win)->mlx_win != NULL)
-		mlx_destroy_window(global_data()->mlx_ptr, ((t_window *)win)->mlx_win);
-	if (((t_window *)win)->mlx_image != NULL)
-		mlx_destroy_image(global_data()->mlx_ptr, ((t_window *)win)->mlx_image);
-	ft_lstclear(&(((t_window *)win)->event_lists), &free_wrap);
-	free(win);
+	window->destructor = func;
+	window->destructor_data = data;
 }

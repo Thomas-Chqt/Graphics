@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 18:44:29 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 19:57:10 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,8 +58,10 @@ struct s_eveact
 
 t_window	*new_window(const char *title, unsigned int width,
 				unsigned int height);
+void		add_destructor(t_window *window,
+				void (*func)(void*), void *data);
 void		*get_pixel_buffer(t_window *window);
-void		delete_window(void *window);
+void		delete_window(t_window *window);
 void		start_main_loop(void (*func)(void *), void *data);
 
 int			add_event(t_window *window, t_eveact activation,
