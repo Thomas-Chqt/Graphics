@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/21 23:37:18 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/22 18:43:02 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@
 # define IMAGE_CREATION_ERROR 13
 
 typedef struct s_g_datas	t_g_data;
+typedef struct s_event		t_event;
 
 struct s_g_datas
 {
@@ -46,6 +47,16 @@ struct s_window
 	t_uint32	image_h;
 	t_uint32	image_w;
 	void		*pixels;
+	t_list		*event_lists;
+	t_bool		is_envent_init;
+};
+
+struct s_event
+{
+	int			id;
+	t_eveact	act;
+	void		(*func)(void *);
+	void		*data;
 };
 
 t_g_data	*global_data(void);
@@ -54,6 +65,5 @@ void		clean_g_data(void);
 
 void		*set_last_err_ptr(int nbr, void *ret);
 int			set_last_err(int nbr);
-
 
 #endif // SIMPLEWINDOW_INTENAL_H
