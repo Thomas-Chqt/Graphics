@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/22 00:37:37 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/27 22:20:20 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 18:49:57 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_intenal.h"
+#include "simpleWindow_internal.h"
 
 t_pos	get_mouse_pos(t_win *win)
 {

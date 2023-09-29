@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 14:21:36 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 18:48:21 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ typedef struct s_width_height
 # ifndef FUNC_TYPE
 #  define FUNC_TYPE
 
-typedef struct s_function_on_arg
+typedef struct s_function_one_arg
 {
 	void	(*ptr)(void*);
 	void	*data;

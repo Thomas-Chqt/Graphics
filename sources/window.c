@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/27 21:15:16 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 14:54:25 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 18:50:00 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_intenal.h"
+#include "simpleWindow_internal.h"
 
 static void	free_win(t_win *win);
 

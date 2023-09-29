@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/29 13:30:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 15:17:14 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 18:49:53 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_intenal.h"
+#include "simpleWindow_internal.h"
 
 int	kdo_hook(int keycode, t_win *win)
 {

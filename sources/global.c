@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 16:51:10 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 15:22:51 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 18:49:48 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_intenal.h"
+#include "simpleWindow_internal.h"
 
 t_swglob	*swglob(void)
 {

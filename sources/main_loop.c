@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/27 21:19:19 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 14:27:12 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 18:49:49 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_intenal.h"
+#include "simpleWindow_internal.h"
 
 static int	loop_hook(void **params);
 static void	win_clear(t_win *win);
