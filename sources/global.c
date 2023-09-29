@@ -6,25 +6,25 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 16:51:10 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 19:45:10 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 15:22:51 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "simpleWindow_intenal.h"
 
-t_g_data	*global_data(void)
+t_swglob	*swglob(void)
 {
-	static t_g_data	global_data = {};
+	static t_swglob	simple_window_global = {};
 
-	return (&global_data);
+	return (&simple_window_global);
 }
 
-int	init_g_data(void)
+int	init_swglob(void)
 {
-	if (global_data()->mlx_ptr != NULL)
+	if (swglob()->mlx_ptr != NULL)
 		return (0);
-	global_data()->mlx_ptr = mlx_init();
-	if (global_data()->mlx_ptr == NULL)
-		return (set_last_err(MLX_INIT_ERROR));
+	swglob()->mlx_ptr = mlx_init();
+	if (swglob()->mlx_ptr == NULL)
+		return (1);
 	return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 19:45:14 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 15:22:13 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,9 @@
 # define SIMPLEWINDOW_INTENAL_H
 
 # include <stdlib.h>
-# include <limits.h>
 
-# include <mlx.h>
 # include <libft.h>
+# include <mlx.h>
 
 # include "simpleWindow.h"
 
@@ -25,46 +24,52 @@
 #  include <memory_leak_detector.h>
 # endif // DEBUG
 
-# define MALLOC_ERROR 10
-# define MLX_INIT_ERROR 11
-# define INPUT_ERROR 12
-# define WINDOW_CREATION_ERROR 12
-# define IMAGE_CREATION_ERROR 13
-
-typedef struct s_g_datas	t_g_data;
-typedef struct s_event		t_event;
-
-struct s_g_datas
+typedef struct s_simple_window_global
 {
 	void	*mlx_ptr;
-	t_list	*window_list;
-};
+	t_list	*win_lst;
+
+}	t_swglob;
+
+typedef struct s_event
+{
+	int			key;
+	int			trig;
+	t_func		func;
+
+}	t_event;
 
 struct s_window
 {
-	void		*mlx_win;
-	void		*mlx_image;
-	t_uint32	image_h;
-	t_uint32	image_w;
-	void		*pixels;
-	t_list		*event_lists;
-	t_bool		is_envent_init;
-	void		(*destructor)(void*);
-	void		*destructor_data;
+	void	*mlx_win;
+	void	*mlx_image;
+	t_wh	img_size;
+	void	*pixels;
+	t_func	destr;
+
+	t_list	*pressed;
+	t_list	*pres_curr;
+
+	t_list	*kdo_lst;
+	t_list	*kup_lst;
+	t_list	*mdo_lst;
+	t_list	*mup_lst;
+	t_list	*mov_lst;
+	t_list	*exp_lst;	
+	t_list	*des_lst;
+
+	t_bool	is_hook_init;
 };
 
-struct s_event
-{
-	int			id;
-	t_eveact	act;
-	void		(*func)(void *);
-	void		*data;
-};
+t_swglob	*swglob(void);
+int			init_swglob(void);
 
-t_g_data	*global_data(void);
-int			init_g_data(void);
-
-void		*set_last_err_ptr(int nbr, void *ret);
-int			set_last_err(int nbr);
+int			kdo_hook(int keycode, t_win *win);
+int			kup_hook(int keycode, t_win *win);
+int			mdo_hook(int button, int x, int y, t_win *win);
+int			mup_hook(int button, int x, int y, t_win *win);
+int			mov_hook(int x, int y, t_win *win);
+int			exp_hook(t_win *win);
+int			des_hook(t_win *win);
 
 #endif // SIMPLEWINDOW_INTENAL_H

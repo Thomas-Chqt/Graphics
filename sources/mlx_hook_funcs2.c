@@ -5,59 +5,56 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/22 14:01:43 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 18:47:24 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/09/29 13:30:46 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/09/29 15:22:43 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "events.h"
+#include "simpleWindow_intenal.h"
 
-int	mlx_on_mousemove_hook_func(int x, int y, void *param)
+int	mov_hook(int x, int y, t_win *win)
 {
-	t_list	*watched;
+	t_list	*curr;
 	t_event	*tmp;
 
 	(void)x;
 	(void)y;
-	watched = ((t_window *)param)->event_lists;
-	while (((t_window *)param)->event_lists != NULL && watched != NULL)
+	curr = win->mov_lst;
+	while (curr != NULL)
 	{
-		tmp = (t_event *)watched->data;
-		if ((tmp->act.triggers & ON_MOUSEMOVE) == ON_MOUSEMOVE)
-			tmp->func(tmp->data);
-		watched = watched->next;
+		tmp = (t_event *)curr->data;
+		tmp->func.ptr(tmp->func.data);
+		curr = curr->next;
 	}
 	return (0);
 }
 
-int	mlx_on_expose_hook_func(void *param)
+int	exp_hook(t_win *win)
 {
-	t_list	*watched;
+	t_list	*curr;
 	t_event	*tmp;
 
-	watched = ((t_window *)param)->event_lists;
-	while (((t_window *)param)->event_lists != NULL && watched != NULL)
+	curr = win->exp_lst;
+	while (curr != NULL)
 	{
-		tmp = (t_event *)watched->data;
-		if ((tmp->act.triggers & ON_EXPOSE) == ON_EXPOSE)
-			tmp->func(tmp->data);
-		watched = watched->next;
+		tmp = (t_event *)curr->data;
+		tmp->func.ptr(tmp->func.data);
+		curr = curr->next;
 	}
 	return (0);
 }
 
-int	mlx_on_destroy_hook_func(void *param)
+int	des_hook(t_win *win)
 {
-	t_list	*watched;
+	t_list	*curr;
 	t_event	*tmp;
 
-	watched = ((t_window *)param)->event_lists;
-	while (((t_window *)param)->event_lists != NULL && watched != NULL)
+	curr = win->des_lst;
+	while (curr != NULL)
 	{
-		tmp = (t_event *)watched->data;
-		if ((tmp->act.triggers & ON_DESTROY) == ON_DESTROY)
-			tmp->func(tmp->data);
-		watched = watched->next;
+		tmp = (t_event *)curr->data;
+		tmp->func.ptr(tmp->func.data);
+		curr = curr->next;
 	}
 	return (0);
 }

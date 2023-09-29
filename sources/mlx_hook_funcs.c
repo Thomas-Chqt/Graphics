@@ -5,81 +5,87 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/22 13:56:58 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/22 18:47:07 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/09/29 13:30:21 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/09/29 15:17:14 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "events.h"
+#include "simpleWindow_intenal.h"
 
-int	mlx_on_keydown_hook_func(int keycode, void *param)
+int	kdo_hook(int keycode, t_win *win)
 {
-	t_list	*watched;
+	t_list	*curr;
 	t_event	*tmp;
 
-	watched = ((t_window *)param)->event_lists;
-	while (((t_window *)param)->event_lists != NULL && watched != NULL)
+	curr = win->kdo_lst;
+	while (curr != NULL)
 	{
-		tmp = (t_event *)watched->data;
-		if ((tmp->act.triggers & ON_KEYDOWN) == ON_KEYDOWN
-			&& tmp->act.key_code == keycode)
-			tmp->func(tmp->data);
-		watched = watched->next;
+		tmp = (t_event *)curr->data;
+		if (tmp->key == keycode)
+			tmp->func.ptr(tmp->func.data);
+		curr = curr->next;
 	}
+	if (lstint_chreq(win->pressed, keycode) != NULL)
+		return (0);
+	ft_lstadd_front(&win->pressed, lstint_new(keycode));
 	return (0);
 }
 
-int	mlx_on_keydup_hook_func(int keycode, void *param)
+int	kup_hook(int keycode, t_win *win)
 {
-	t_list	*watched;
+	t_list	*curr;
 	t_event	*tmp;
 
-	watched = ((t_window *)param)->event_lists;
-	while (((t_window *)param)->event_lists != NULL && watched != NULL)
+	curr = win->kup_lst;
+	while (curr != NULL)
 	{
-		tmp = (t_event *)watched->data;
-		if ((tmp->act.triggers & ON_KEYUP) == ON_KEYUP
-			&& tmp->act.key_code == keycode)
-			tmp->func(tmp->data);
-		watched = watched->next;
+		tmp = (t_event *)curr->data;
+		if (tmp->key == keycode)
+			tmp->func.ptr(tmp->func.data);
+		curr = curr->next;
 	}
+	lstint_delifeq(&win->pressed, keycode);
 	return (0);
 }
 
-int	mlx_on_mousedown_hook_func(int button, int x, int y, void *param)
+int	mdo_hook(int button, int x, int y, t_win *win)
 {
-	t_list	*watched;
+	t_list	*curr;
 	t_event	*tmp;
 
 	(void)x;
 	(void)y;
-	watched = ((t_window *)param)->event_lists;
-	while (((t_window *)param)->event_lists != NULL && watched != NULL)
+	curr = win->mdo_lst;
+	while (curr != NULL)
 	{
-		tmp = (t_event *)watched->data;
-		if ((tmp->act.triggers & ON_KEYDOWN) == ON_KEYDOWN
-			&& tmp->act.key_code == button)
-			tmp->func(tmp->data);
-		watched = watched->next;
+		tmp = (t_event *)curr->data;
+		if (tmp->key == button)
+			tmp->func.ptr(tmp->func.data);
+		curr = curr->next;
 	}
+	if (button == W_UP || button == W_DOWN)
+		return (0);
+	if (lstint_chreq(win->pressed, button) != NULL)
+		return (0);
+	ft_lstadd_front(&win->pressed, lstint_new(button));
 	return (0);
 }
 
-int	mlx_on_mouseup_hook_func(int button, int x, int y, void *param)
+int	mup_hook(int button, int x, int y, t_win *win)
 {
-	t_list	*watched;
+	t_list	*curr;
 	t_event	*tmp;
 
 	(void)x;
 	(void)y;
-	watched = ((t_window *)param)->event_lists;
-	while (((t_window *)param)->event_lists != NULL && watched != NULL)
+	curr = win->mup_lst;
+	while (curr != NULL)
 	{
-		tmp = (t_event *)watched->data;
-		if ((tmp->act.triggers & ON_KEYUP) == ON_KEYUP
-			&& tmp->act.key_code == button)
-			tmp->func(tmp->data);
-		watched = watched->next;
+		tmp = (t_event *)curr->data;
+		if (tmp->key == button)
+			tmp->func.ptr(tmp->func.data);
+		curr = curr->next;
 	}
+	lstint_delifeq(&win->pressed, button);
 	return (0);
 }
