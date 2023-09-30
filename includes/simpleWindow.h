@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 18:48:21 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/09/29 22:12:02 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,5 +110,7 @@ void	start_main_loop(t_func func);
 
 t_pos	get_mouse_pos(t_win *window);
 void	set_mouse_pos(t_win *window, t_pos pos);
+
+void	*load_xpm(char *file, t_wh *size);
 
 #endif // SIMPLEWINDOW_H
