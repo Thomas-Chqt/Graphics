@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/28 00:30:02 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 18:49:44 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/05 19:04:14 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,15 @@ int	add_event(t_win *win, int key, int trig, t_func func)
 	if (trig == ON_DESTROY)
 		ft_lstadd_front(&win->des_lst, new_node);
 	return (0);
+}
+
+int	poll_key(t_win *win, int *key)
+{
+	if (win->pres_curr == NULL)
+		return (0);
+	*key = *((int *)win->pres_curr->data);
+	win->pres_curr = win->pres_curr->next;
+	return (1);
 }
 
 static void	init_hook(t_win *win)
@@ -72,13 +81,4 @@ static t_list	*lstev_new(int key, int trig, t_func func)
 		free(new_node);
 	}
 	return (NULL);
-}
-
-int	poll_key(t_win *win, int *key)
-{
-	if (win->pres_curr == NULL)
-		return (0);
-	*key = *((int *)win->pres_curr->data);
-	win->pres_curr = win->pres_curr->next;
-	return (1);
 }

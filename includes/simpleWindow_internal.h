@@ -6,14 +6,15 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 18:50:01 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/05 19:05:36 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef SIMPLEWINDOW_INTENAL_H
-# define SIMPLEWINDOW_INTENAL_H
+#ifndef SIMPLEWINDOW_INTERNAL_H
+# define SIMPLEWINDOW_INTERNAL_H
 
 # include <stdlib.h>
+# include <math.h>
 
 # include <libft.h>
 # include <mlx.h>
@@ -39,13 +40,18 @@ typedef struct s_event
 
 }	t_event;
 
+struct s_context
+{
+	void	*mlx_image;
+	void	*pixels;
+	t_wh	size;
+};
+
 struct s_window
 {
 	void	*mlx_win;
-	void	*mlx_image;
-	t_wh	img_size;
-	void	*pixels;
 	t_func	destr;
+	t_ctx	*back_ctx;
 
 	t_list	*pressed;
 	t_list	*pres_curr;
@@ -61,8 +67,30 @@ struct s_window
 	t_bool	is_hook_init;
 };
 
+typedef union u_color
+{
+	t_uint32	raw;
+	struct
+	{
+		t_uint8	blue;
+		t_uint8	green;
+		t_uint8	red;
+		t_uint8	alpha;
+	};
+}	t_color;
+
+typedef struct s_fcolor
+{
+	float	a;
+	float	r;
+	float	g;
+	float	b;
+}	t_fcolor;
+
 t_swglob	*swglob(void);
 int			init_swglob(void);
+
+void		free_win(t_win *win);
 
 int			kdo_hook(int keycode, t_win *win);
 int			kup_hook(int keycode, t_win *win);
@@ -72,4 +100,7 @@ int			mov_hook(int x, int y, t_win *win);
 int			exp_hook(t_win *win);
 int			des_hook(t_win *win);
 
-#endif // SIMPLEWINDOW_INTENAL_H
+t_uint32	*px(t_ctx *context, t_pos pos);
+t_color		apha_compos(t_color back, t_color front);
+
+#endif // SIMPLEWINDOW_INTERNAL_H

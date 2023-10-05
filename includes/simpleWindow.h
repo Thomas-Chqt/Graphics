@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 22:12:02 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/05 18:54:05 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,12 @@
 # define ON_EXPOSE		0b00100000
 # define ON_DESTROY		0b01000000
 
-typedef struct s_window		t_win;
+# define RED	0x00FF0000
+# define GREEN	0x0000FF00
+# define BLUE	0x000000FF
+# define BLACK	0x00000000
+# define WHITE	0x00FFFFFF
+# define NONE	0xFF000000
 
 # ifndef UINT32_TYPE
 #  define UINT32_TYPE
@@ -55,27 +60,12 @@ typedef unsigned int		t_uint32;
 
 # endif // UINT32_TYPE
 
-# ifndef UINTPX_TYPE
-#  define UINTPX_TYPE
-
-typedef t_uint32			t_uintpx;
-
-# endif // UINTPX_TYPE
-
-# ifndef WH_TYPE
-#  define WH_TYPE
-
 typedef struct s_width_height
 {
-	t_uint32	w;
-	t_uint32	h;
+	int	w;
+	int	h;
 
 }	t_wh;
-
-# endif // WH_TYPE
-
-# ifndef FUNC_TYPE
-#  define FUNC_TYPE
 
 typedef struct s_function_one_arg
 {
@@ -84,11 +74,6 @@ typedef struct s_function_one_arg
 
 }	t_func;
 
-# endif // FUNC_TYPE
-
-# ifndef POS_TYPE
-#  define POS_TYPE
-
 typedef struct s_position
 {
 	int	x;
@@ -96,11 +81,12 @@ typedef struct s_position
 
 }	t_pos;
 
-# endif // POS_TYPE
+typedef struct s_window		t_win;
+typedef struct s_context	t_ctx;		
 
 t_win	*new_window(char *title, t_wh size);
-void	add_destructor(t_win *window, t_func func);
-void	*get_pixel_buffer(t_win *window);
+void	set_destructor(t_win *window, t_func func);
+void	set_backcolor(t_win *window, t_uint32 color);
 void	delete_window(t_win *window);
 
 int		add_event(t_win *window, int key, int trig, t_func func);
@@ -111,6 +97,11 @@ void	start_main_loop(t_func func);
 t_pos	get_mouse_pos(t_win *window);
 void	set_mouse_pos(t_win *window, t_pos pos);
 
-void	*load_xpm(char *file, t_wh *size);
+t_ctx	*new_context(t_wh size);
+void	fill_ctx(t_ctx *ctx, t_uint32 color);
+void	put_ctx_to_win(t_win *window, t_ctx *ctx, t_pos pos);
+void	delete_ctx(t_ctx *context);
+
+void	put_pixel(t_ctx *ctx, t_pos pos, t_uint32 color);
 
 #endif // SIMPLEWINDOW_H
