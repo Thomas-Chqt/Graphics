@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/05 18:42:18 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 19:06:05 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/05 21:00:30 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ void	free_win(t_win *win)
 {
 	if (win->mlx_win != NULL)
 		mlx_destroy_window(swglob()->mlx_ptr, win->mlx_win);
+	delete_ctx(win->back_ctx);
 	ft_lstclear(&win->kdo_lst, &free_wrap);
 	ft_lstclear(&win->kup_lst, &free_wrap);
 	ft_lstclear(&win->mdo_lst, &free_wrap);
