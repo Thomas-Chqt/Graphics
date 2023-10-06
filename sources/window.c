@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/27 21:15:16 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 19:06:10 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/06 14:45:11 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,8 +32,9 @@ t_win	*new_window(char *title, t_wh sz)
 	if (new_node == NULL)
 		return (delete_window(new_win), NULL);
 	ft_lstadd_front(&(swglob()->win_lst), new_node);
-	add_event(new_win, 0, ON_DESTROY, (t_func){
-		(void (*)(void *)) & delete_window, new_win});
+	if (add_event(new_win, 0, ON_DESTROY, (t_func){
+			(void (*)(void *)) & delete_window, new_win}))
+		return (delete_window(new_win), NULL);
 	return (new_win);
 }
 

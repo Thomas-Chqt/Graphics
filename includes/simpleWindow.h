@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/06 13:53:41 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/06 20:15:41 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,33 +81,51 @@ typedef struct s_position
 
 }	t_pos;
 
+typedef struct s_vect2d
+{
+	float	x;
+	float	y;
+
+}	t_vect2d;
+
 typedef struct s_window		t_win;
 typedef struct s_context	t_ctx;	
 
-t_pos	addpos(t_pos a, t_pos b);
-t_wh	addhwi(t_wh a, int i);
-t_pos	mulposwh(t_pos a, t_wh b);
+t_pos		addpos(t_pos a, t_pos b);
+t_wh		addhwi(t_wh a, int i);
+t_pos		mulposwh(t_pos a, t_wh b);
+t_wh		divwhi(t_wh a, int i);
+t_vect2d	addvect2df(t_vect2d vect2d, float f);
+t_vect2d	addvect2dpos(t_vect2d vect2d, t_pos pos);
+t_vect2d	mulvect2dwh(t_vect2d a, t_wh b);
+t_vect2d	tovect2d(t_pos pos);
+t_pos		topos(t_vect2d vect2d);
+t_vect2d	addvect2d(t_vect2d a, t_vect2d b);
+t_vect2d	rotvect2d(t_vect2d a, float rad);
+t_vect2d	multvect2df(t_vect2d vect, float f);
 
-t_win	*new_window(char *title, t_wh size);
-void	set_destructor(t_win *window, t_func func);
-void	set_backcolor(t_win *window, t_uint32 color);
-void	delete_window(t_win *window);
+t_win		*new_window(char *title, t_wh size);
+void		set_destructor(t_win *window, t_func func);
+void		set_backcolor(t_win *window, t_uint32 color);
+void		delete_window(t_win *window);
 
-int		add_event(t_win *window, int key, int trig, t_func func);
-int		poll_key(t_win *window, int *key);
+int			add_event(t_win *window, int key, int trig, t_func func);
+int			poll_key(t_win *window, int *key);
 
-void	start_main_loop(t_func func);
+void		start_main_loop(t_func func);
 
-t_pos	get_mouse_pos(t_win *window);
-void	set_mouse_pos(t_win *window, t_pos pos);
+t_pos		get_mouse_pos(t_win *window);
+void		set_mouse_pos(t_win *window, t_pos pos);
 
-t_ctx	*new_context(t_wh size);
-void	fill_ctx(t_ctx *ctx, t_uint32 color);
-void	clear_ctx(t_ctx *context);
-void	put_ctx_to_win(t_win *window, t_ctx *ctx, t_pos pos);
-void	delete_ctx(t_ctx *context);
+t_ctx		*new_context(t_wh size);
+void		fill_ctx(t_ctx *ctx, t_uint32 color);
+void		clear_ctx(t_ctx *context);
+void		put_ctx_to_win(t_win *window, t_ctx *ctx, t_pos pos);
+void		delete_ctx(t_ctx *context);
+t_wh		ctx_size(t_ctx *context);
 
-void	put_pixel(t_ctx *ctx, t_pos pos, t_uint32 color);
-void	put_rect(t_ctx *ctx, t_wh size, t_pos pos, t_uint32 color);
+void		put_pixel(t_ctx *ctx, t_pos pos, t_uint32 color);
+void		put_rect(t_ctx *ctx, t_wh size, t_pos pos, t_uint32 color);
+void		put_line(t_ctx *ctx, t_pos a, t_pos b, t_uint32 color);
 
 #endif // SIMPLEWINDOW_H
