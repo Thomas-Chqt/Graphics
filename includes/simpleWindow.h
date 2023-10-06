@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 18:54:05 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/06 13:53:41 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@
 # define BLUE	0x000000FF
 # define BLACK	0x00000000
 # define WHITE	0x00FFFFFF
-# define NONE	0xFF000000
+# define TRANSP	0xFF000000
 
 # ifndef UINT32_TYPE
 #  define UINT32_TYPE
@@ -82,7 +82,11 @@ typedef struct s_position
 }	t_pos;
 
 typedef struct s_window		t_win;
-typedef struct s_context	t_ctx;		
+typedef struct s_context	t_ctx;	
+
+t_pos	addpos(t_pos a, t_pos b);
+t_wh	addhwi(t_wh a, int i);
+t_pos	mulposwh(t_pos a, t_wh b);
 
 t_win	*new_window(char *title, t_wh size);
 void	set_destructor(t_win *window, t_func func);
@@ -99,9 +103,11 @@ void	set_mouse_pos(t_win *window, t_pos pos);
 
 t_ctx	*new_context(t_wh size);
 void	fill_ctx(t_ctx *ctx, t_uint32 color);
+void	clear_ctx(t_ctx *context);
 void	put_ctx_to_win(t_win *window, t_ctx *ctx, t_pos pos);
 void	delete_ctx(t_ctx *context);
 
 void	put_pixel(t_ctx *ctx, t_pos pos, t_uint32 color);
+void	put_rect(t_ctx *ctx, t_wh size, t_pos pos, t_uint32 color);
 
 #endif // SIMPLEWINDOW_H

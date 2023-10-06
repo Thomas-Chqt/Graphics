@@ -20,7 +20,7 @@
 				"reveal": "silent",
 				"close": true,
 				"revealProblems": "onProblem"
-			},
+			}
 		},
 		{
 			"label": "Build Debug",
@@ -39,14 +39,14 @@
 				"reveal": "silent",
 				"close": true,
 				"revealProblems": "onProblem"
-			},
+			}
 		},
 		{
 			"label": "Clean",
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"clean",
+				"clean"
 			],
 			"dependsOn": [
 				"Clean debug",
@@ -63,7 +63,7 @@
 			"type": "shell",
 			"command": "make",
 			"args": [
-				"fclean",
+				"fclean"
 			],
 			"problemMatcher": [],
 			"presentation": {
@@ -74,7 +74,7 @@
 		{
 			"label": "Norminette",
 			"type": "shell",
-			"command": "norminette",
+			"command": "norminette sources/ includes/",
 			"options": {
 				"cwd": "${workspaceFolder}"
 			},
@@ -119,7 +119,7 @@
 							"message": 2,
 							"line": 3,
 							"column": 4,
-							"code": 5,
+							"code": 5
 						}
 					]
 				}

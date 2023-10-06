@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   draw.c                                             :+:      :+:    :+:   */
+/*   put.c                                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/05 17:44:25 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 19:05:52 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/06 13:09:26 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,4 +31,21 @@ void	put_pixel(t_ctx *ctx, t_pos pos, t_uint32 color)
 		prev_res = apha_compos(prev_b, prev_f);
 	}
 	*(px(ctx, pos)) = prev_res.raw;
+}
+
+void	put_rect(t_ctx *ctx, t_wh size, t_pos pos, t_uint32 color)
+{
+	t_pos	curr;
+
+	curr.x = 0;
+	while (curr.x < size.w)
+	{
+		curr.y = 0;
+		while (curr.y < size.h)
+		{
+			put_pixel(ctx, addpos(curr, pos), color);
+			curr.y++;
+		}
+		curr.x++;
+	}
 }

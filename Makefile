@@ -6,7 +6,7 @@
 #    By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/09/16 11:20:21 by tchoquet          #+#    #+#              #
-#    Updated: 2023/10/05 20:13:34 by tchoquet         ###   ########.fr        #
+#    Updated: 2023/10/06 11:19:03 by tchoquet         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -38,9 +38,9 @@ endif
 
 
     CC			= cc
-    CPPFLAGS	= $(foreach dir, ${INCLUDES_DIR}, -I${dir}) -I${MY_C_INCLUDE_PATH} -I${MINILIBX_DIR}
+    CPPFLAGS	= $(foreach dir, ${INCLUDES_DIR}, -I${dir}) -I${MINILIBX_DIR}
     CFLAGS		=
-    LDFLAGS		= -L${MY_LIBRARY_PATH} -L${MINILIBX_DIR}
+    LDFLAGS		= -L${MINILIBX_DIR}
     LDLIBS		= -l mlx -framework OpenGL -framework AppKit
 ifeq (${TARGET_TYPE}, release)
     CFLAGS		+= -Wall -Wextra -Werror

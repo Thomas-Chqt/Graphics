@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/05 16:59:30 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 18:50:53 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/06 14:10:44 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@ t_ctx	*new_context(t_wh size)
 		free(new_ctx);
 		return (NULL);
 	}
+	clear_ctx(new_ctx);
 	return (new_ctx);
 }
 
@@ -51,6 +52,23 @@ void	fill_ctx(t_ctx *ctx, t_uint32 color)
 			y++;
 		}
 		x++;
+	}
+}
+
+void	clear_ctx(t_ctx *context)
+{
+	t_pos	pos;
+
+	pos.x = 0;
+	while (pos.x < context->size.w)
+	{
+		pos.y = 0;
+		while (pos.y < context->size.h)
+		{
+			*(px(context, pos)) = TRANSP;
+			pos.y++;
+		}
+		pos.x++;
 	}
 }
 
