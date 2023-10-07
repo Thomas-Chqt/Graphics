@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/29 13:30:46 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/09/29 18:49:55 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_internal.h"
+#include "Graphics_internal.h"
 
 int	mov_hook(int x, int y, t_win *win)
 {

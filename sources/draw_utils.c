@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/05 17:46:55 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 19:05:45 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_internal.h"
+#include "Graphics_internal.h"
 
 t_uint32	*px(t_ctx *context, t_pos pos)
 {

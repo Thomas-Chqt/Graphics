@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/28 00:30:02 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 19:04:14 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_internal.h"
+#include "Graphics_internal.h"
 
 static void		init_hook(t_win *win);
 static t_list	*lstev_new(int key, int trig, t_func func);

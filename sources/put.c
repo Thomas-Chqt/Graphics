@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/05 17:44:25 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/06 19:53:22 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_internal.h"
+#include "Graphics_internal.h"
 
 void	put_pixel(t_ctx *ctx, t_pos pos, t_uint32 color)
 {

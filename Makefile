@@ -6,7 +6,7 @@
 #    By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/09/16 11:20:21 by tchoquet          #+#    #+#              #
-#    Updated: 2023/10/06 11:19:03 by tchoquet         ###   ########.fr        #
+#    Updated: 2023/10/07 19:11:07 by tchoquet         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,8 +22,8 @@ INCLUDES_DIR	= $(shell find ${ROOT}/includes -type d)
 BUILD_DIR		= ${ROOT}/.build
 MINILIBX_DIR	= ${ROOT}/MiniLibX
 
-EXPORT_INCLUDE	= ${EXPORT_INCLUDE_DIR}/simpleWindow.h
-NAME_BASE 		= ${EXPORT_LIB_DIR}/libsimpleWindow
+EXPORT_INCLUDE	= ${EXPORT_INCLUDE_DIR}/Graphics.h
+NAME_BASE 		= ${EXPORT_LIB_DIR}/libGraphics
 
 
 

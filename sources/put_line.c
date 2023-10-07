@@ -6,11 +6,11 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/06 19:52:59 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/06 19:53:26 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "simpleWindow_internal.h"
+#include "Graphics_internal.h"
 
 static void	put_line_more(t_ctx *ctx, t_pos curr, t_pos b, t_uint32 color);
 static void	put_line_less(t_ctx *ctx, t_pos curr, t_pos b, t_uint32 color);

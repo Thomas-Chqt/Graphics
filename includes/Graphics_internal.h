@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   simpleWindow_internal.h                            :+:      :+:    :+:   */
+/*   Graphics_internal.h                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/05 19:05:36 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/07 19:07:26 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,7 +19,7 @@
 # include <libft.h>
 # include <mlx.h>
 
-# include "simpleWindow.h"
+# include "Graphics.h"
 
 # ifdef DEBUG
 #  include <memory_leak_detector.h>
