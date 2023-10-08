@@ -5,87 +5,62 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/29 13:30:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/10/07 21:56:21 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/10/07 23:45:40 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
+#include "event.h"
 
-int	kdo_hook(int keycode, t_win *win)
+int	kdo_hook(int keycode, void *data)
 {
-	t_list	*curr;
-	t_event	*tmp;
-
-	curr = win->kdo_lst;
-	while (curr != NULL)
-	{
-		tmp = (t_event *)curr->data;
-		if (tmp->key == keycode)
-			tmp->func.ptr(tmp->func.data);
-		curr = curr->next;
-	}
-	if (lstint_chreq(win->pressed, keycode) != NULL)
-		return (0);
-	ft_lstadd_front(&win->pressed, lstint_new(keycode));
+	(void)data;
+	lst_iterdata(
+		graph()->kdo_lst,
+		(void (*)(void *, void *)) & exec_event,
+		&(t_event){.key = keycode});
+	if (lstint_chreq(graph()->pressed, keycode) == NULL)
+		ft_lstadd_front(&graph()->pressed, lstint_new(keycode));
 	return (0);
 }
 
-int	kup_hook(int keycode, t_win *win)
+int	kup_hook(int keycode, void *data)
 {
-	t_list	*curr;
-	t_event	*tmp;
-
-	curr = win->kup_lst;
-	while (curr != NULL)
-	{
-		tmp = (t_event *)curr->data;
-		if (tmp->key == keycode)
-			tmp->func.ptr(tmp->func.data);
-		curr = curr->next;
-	}
-	lstint_delifeq(&win->pressed, keycode);
+	(void)data;
+	lst_iterdata(
+		graph()->kup_lst,
+		(void (*)(void *, void *)) & exec_event,
+		&(t_event){.key = keycode});
+	lstint_delifeq(&graph()->pressed, keycode);
 	return (0);
 }
 
-int	mdo_hook(int button, int x, int y, t_win *win)
+int	mdo_hook(int button, int x, int y, void *data)
 {
-	t_list	*curr;
-	t_event	*tmp;
-
 	(void)x;
 	(void)y;
-	curr = win->mdo_lst;
-	while (curr != NULL)
-	{
-		tmp = (t_event *)curr->data;
-		if (tmp->key == button)
-			tmp->func.ptr(tmp->func.data);
-		curr = curr->next;
-	}
-	if (button == W_UP || button == W_DOWN)
+	(void)data;
+	lst_iterdata(
+		graph()->mdo_lst,
+		(void (*)(void *, void *)) & exec_event,
+		&(t_event){.key = button});
+	if (button == W_UP || button == W_DOWN || button == 6 || button == 7)
 		return (0);
-	if (lstint_chreq(win->pressed, button) != NULL)
-		return (0);
-	ft_lstadd_front(&win->pressed, lstint_new(button));
+	if (lstint_chreq(graph()->pressed, button) == NULL)
+		ft_lstadd_front(&graph()->pressed, lstint_new(button));
 	return (0);
 }
 
-int	mup_hook(int button, int x, int y, t_win *win)
+int	mup_hook(int button, int x, int y, void *data)
 {
-	t_list	*curr;
-	t_event	*tmp;
-
 	(void)x;
 	(void)y;
-	curr = win->mup_lst;
-	while (curr != NULL)
-	{
-		tmp = (t_event *)curr->data;
-		if (tmp->key == button)
-			tmp->func.ptr(tmp->func.data);
-		curr = curr->next;
-	}
-	lstint_delifeq(&win->pressed, button);
+	(void)data;
+	lst_iterdata(
+		graph()->mup_lst,
+		(void (*)(void *, void *)) & exec_event,
+		&(t_event){.key = button});
+	lstint_delifeq(&graph()->pressed, button);
 	return (0);
 }

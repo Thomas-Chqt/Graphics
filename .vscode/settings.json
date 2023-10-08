@@ -1,6 +1,7 @@
 {
 	"C_Cpp.default.includePath": [
-		"includes"
+		"includes",
+		"MiniLibX"
 	],
 	"files.exclude": {
 		"MiniLibX/": true

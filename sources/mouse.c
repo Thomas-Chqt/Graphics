@@ -5,22 +5,22 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/22 00:37:37 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/10/08 10:43:43 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/10/08 10:45:37 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
 
-t_pos	get_mouse_pos(t_win *win)
+t_vi2d	mouse_pos(void)
 {
-	t_pos	mouse_pos;
+	t_vi2d	mouse_pos;
 
-	mlx_mouse_get_pos(win->mlx_win, &mouse_pos.x, &mouse_pos.y);
-	return (mouse_pos);
+	mlx_mouse_get_pos(graph()->mlx_win, &mouse_pos.x, &mouse_pos.y);
+		return (mouse_pos);
 }
 
-void	set_mouse_pos(t_win *win, t_pos pos)
+void	set_mouse_pos(t_vi2d pos)
 {
-	mlx_mouse_move(win->mlx_win, pos.x, pos.y);
+	mlx_mouse_move(graph()->mlx_win, pos.x, pos.y);
 }

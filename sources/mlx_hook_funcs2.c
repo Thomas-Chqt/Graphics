@@ -5,56 +5,43 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/29 13:30:46 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/07 19:07:44 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/10/07 22:03:21 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/10/07 23:34:47 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
+#include "event.h"
 
-int	mov_hook(int x, int y, t_win *win)
+int	mov_hook(int x, int y, void *data)
 {
-	t_list	*curr;
-	t_event	*tmp;
-
 	(void)x;
 	(void)y;
-	curr = win->mov_lst;
-	while (curr != NULL)
-	{
-		tmp = (t_event *)curr->data;
-		tmp->func.ptr(tmp->func.data);
-		curr = curr->next;
-	}
+	(void)data;
+	lst_iterdata(
+		graph()->mov_lst,
+		(void (*)(void *, void *)) & exec_event,
+		&(t_event){});
 	return (0);
 }
 
-int	exp_hook(t_win *win)
+int	exp_hook(void *data)
 {
-	t_list	*curr;
-	t_event	*tmp;
-
-	curr = win->exp_lst;
-	while (curr != NULL)
-	{
-		tmp = (t_event *)curr->data;
-		tmp->func.ptr(tmp->func.data);
-		curr = curr->next;
-	}
+	(void)data;
+	lst_iterdata(
+		graph()->exp_lst,
+		(void (*)(void *, void *)) & exec_event,
+		&(t_event){});
 	return (0);
 }
 
-int	des_hook(t_win *win)
+int	des_hook(void *data)
 {
-	t_list	*curr;
-	t_event	*tmp;
-
-	curr = win->des_lst;
-	while (curr != NULL)
-	{
-		tmp = (t_event *)curr->data;
-		tmp->func.ptr(tmp->func.data);
-		curr = curr->next;
-	}
+	ft_printf("1\n");
+	(void)data;
+	lst_iterdata(
+		graph()->des_lst,
+		(void (*)(void *, void *)) & exec_event,
+		&(t_event){});
 	return (0);
 }
