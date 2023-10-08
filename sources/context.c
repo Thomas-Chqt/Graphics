@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 11:52:05 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 13:52:16 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/08 14:59:08 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,11 @@ t_ctx	*new_context(t_vec2i size)
 		return (free_context(new_ctx), NULL);
 	new_ctx->size = size;
 	return (new_ctx);
+}
+
+t_vec2i	ctx_size(t_ctx *ctx)
+{
+	return (ctx->size);
 }
 
 void	fill_ctx(t_ctx *ctx, t_uint32 color)

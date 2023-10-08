@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 13:44:39 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/08 17:33:33 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,7 +76,24 @@ typedef struct s_vec2f
 
 typedef struct s_context	t_ctx;
 
+t_vec2f	vi2tovf2(t_vec2i veci);
 t_vec2i	add_vi2vi2(t_vec2i a, t_vec2i b);
+t_vec2i	sub_vi2vi2(t_vec2i a, t_vec2i b);
+t_vec2i	mul_vi2vi2(t_vec2i a, t_vec2i b);
+t_vec2i	div_vi2vi2(t_vec2i a, t_vec2i b);
+
+t_vec2i	vf2tovi2(t_vec2f vecf);
+t_vec2f	add_vf2vi2(t_vec2f vecf, t_vec2i veci);
+t_vec2f	mul_vf2vi2(t_vec2f vecf, t_vec2i veci);
+
+t_vec2f	add_vf2vf2(t_vec2f a, t_vec2f b);
+t_vec2f	sub_vf2vf2(t_vec2f a, t_vec2f b);
+t_vec2f	mul_vf2vf2(t_vec2f a, t_vec2f b);
+t_vec2f	div_vf2vf2(t_vec2f a, t_vec2f b);
+
+t_vec2f	mul_vf2f(t_vec2f vec, float f);
+
+t_vec2f	rot_vf2d(t_vec2f vec, float rad);
 
 int		create_window(char *title, t_vec2i size);
 void	set_destructor(void (*func)(void *), void *data);
@@ -92,6 +109,7 @@ t_vec2i	mouse_pos(void);
 void	set_mouse_pos(t_vec2i pos);
 
 t_ctx	*new_context(t_vec2i size);
+t_vec2i	ctx_size(t_ctx *ctx);
 void	fill_ctx(t_ctx *ctx, t_uint32 color);
 void	clear_ctx(t_ctx *context);
 void	free_context(t_ctx *context);

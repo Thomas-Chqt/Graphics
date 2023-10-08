@@ -1,53 +1,45 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   type_vec2i.c                                       :+:      :+:    :+:   */
+/*   type_vec2f_2.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/08 12:27:40 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 16:40:06 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/10/08 16:47:49 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/10/08 17:19:37 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
 
-t_vec2f	vi2tovf2(t_vec2i veci)
+t_vec2f	add_vf2vf2(t_vec2f a, t_vec2f b)
 {
 	return ((t_vec2f){
-		.x = (float)veci.x,
-		.y = (float)veci.y
-	});
-}
-
-t_vec2i	add_vi2vi2(t_vec2i a, t_vec2i b)
-{
-	return ((t_vec2i){
 		.x = a.x + b.x,
 		.y = a.y + b.y
 	});
 }
 
-t_vec2i	sub_vi2vi2(t_vec2i a, t_vec2i b)
+t_vec2f	sub_vf2vf2(t_vec2f a, t_vec2f b)
 {
-	return ((t_vec2i){
+	return ((t_vec2f){
 		.x = a.x - b.x,
 		.y = a.y - b.y
 	});
 }
 
-t_vec2i	mul_vi2vi2(t_vec2i a, t_vec2i b)
+t_vec2f	mul_vf2vf2(t_vec2f a, t_vec2f b)
 {
-	return ((t_vec2i){
+	return ((t_vec2f){
 		.x = a.x * b.x,
 		.y = a.y * b.y
 	});
 }
 
-t_vec2i	div_vi2vi2(t_vec2i a, t_vec2i b)
+t_vec2f	div_vf2vf2(t_vec2f a, t_vec2f b)
 {
-	return ((t_vec2i){
-		.x = (int)((float)a.x / (float)b.x),
-		.y = (int)((float)a.y / (float)b.y)
-	});	
+	return ((t_vec2f){
+		.x = a.x / b.x,
+		.y = a.y / b.y
+	});
 }
