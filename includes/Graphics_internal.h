@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/07 21:17:36 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/08 12:42:35 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,22 @@
 #  include <memory_leak_detector.h>
 # endif // DEBUG
 
+struct s_context
+{
+	void	*mlx_image;
+	void	*pixels;
+	t_vec2i	size;
+};
+
 typedef struct s_graphics_global
 {
 	void		*mlx_ptr;
 	void		*mlx_win;
-	t_vi2d		win_size;
+	t_ctx		*back_ctx;
+	t_ctx		*draw_ctx;
+
+	void		(*destr)(void *);
+	void		*destr_data;
 
 	t_list		*pressed;
 	t_list		*pres_curr;
@@ -44,9 +55,12 @@ typedef struct s_graphics_global
 
 }	t_graph;
 
-t_graph	*graph(void);
-int		graph_init_mlx(void);
-int		graph_init_window(char *title, t_vi2d size);
-void	clean_graph(void);
+t_graph		*graph(void);
+int			graph_init_mlx(void);
+int			graph_init_window(char *title, t_vec2i size);
+int			graph_init_ctxs(t_vec2i win_size);
+void		clean_graph(void);
+
+t_uint32	*px(t_ctx *context, t_vec2i pos);
 
 #endif // GRAPHICS_INTERNAL_H

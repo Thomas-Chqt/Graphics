@@ -1,26 +1,40 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   mouse.c                                            :+:      :+:    :+:   */
+/*   color.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/08 10:43:43 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 11:33:07 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/10/08 12:15:08 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/10/08 12:19:35 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "Graphics_internal.h"
+#ifndef COLOR_H
+# define COLOR_H
 
-t_vec2i	mouse_pos(void)
+# include "Graphics_internal.h"
+
+typedef union u_color
 {
-	t_vec2i	mouse_pos;
+	t_uint32	raw;
+	struct
+	{
+		t_uint8	blue;
+		t_uint8	green;
+		t_uint8	red;
+		t_uint8	alpha;
+	};
+}	t_color;
 
-	mlx_mouse_get_pos(graph()->mlx_win, &mouse_pos.x, &mouse_pos.y);
-	return (mouse_pos);
-}
-
-void	set_mouse_pos(t_vec2i pos)
+typedef struct s_fcolor
 {
-	mlx_mouse_move(graph()->mlx_win, pos.x, pos.y);
-}
+	float	a;
+	float	r;
+	float	g;
+	float	b;
+}	t_fcolor;
+
+t_color	apha_compos(t_color back, t_color front);
+
+#endif // COLOR_H

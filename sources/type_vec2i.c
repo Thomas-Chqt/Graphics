@@ -1,26 +1,21 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   mouse.c                                            :+:      :+:    :+:   */
+/*   type_vec2i.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/08 10:43:43 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 11:33:07 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/10/08 12:27:40 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/10/08 12:28:50 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
 
-t_vec2i	mouse_pos(void)
+t_vec2i	add_vi2vi2(t_vec2i a, t_vec2i b)
 {
-	t_vec2i	mouse_pos;
-
-	mlx_mouse_get_pos(graph()->mlx_win, &mouse_pos.x, &mouse_pos.y);
-	return (mouse_pos);
-}
-
-void	set_mouse_pos(t_vec2i pos)
-{
-	mlx_mouse_move(graph()->mlx_win, pos.x, pos.y);
+	return ((t_vec2i){
+		.x = a.x + b.x,
+		.y = a.y + b.y
+	});
 }

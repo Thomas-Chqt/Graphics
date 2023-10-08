@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 10:43:39 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/08 13:44:39 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,30 +60,49 @@ typedef unsigned int		t_uint32;
 
 # endif // UINT32_TYPE
 
-typedef struct s_vect2di
+typedef struct s_vec2i
 {
 	int	x;
 	int	y;
 
-}	t_vi2d;
+}	t_vec2i;
 
-typedef struct s_vect2df
+typedef struct s_vec2f
 {
 	float	x;
 	float	y;
 
-}	t_vf2d;
+}	t_vec2f;
 
 typedef struct s_context	t_ctx;
 
-int		create_window(char *title, t_vi2d size);
-void	start_main_loop(void (*func)(void *), void *data);
+t_vec2i	add_vi2vi2(t_vec2i a, t_vec2i b);
+
+int		create_window(char *title, t_vec2i size);
+void	set_destructor(void (*func)(void *), void *data);
+void	set_back_color(t_uint32 color);
 void	delete_window(int return_code);
+
+void	start_main_loop(void (*func)(void *), void *data);
 
 int		add_event(int key, int trig, void (*func)(void *), void *data);
 int		poll_key(int *key);
 
-t_vi2d	mouse_pos(void);
-void	set_mouse_pos(t_vi2d pos);
+t_vec2i	mouse_pos(void);
+void	set_mouse_pos(t_vec2i pos);
+
+t_ctx	*new_context(t_vec2i size);
+void	fill_ctx(t_ctx *ctx, t_uint32 color);
+void	clear_ctx(t_ctx *context);
+void	free_context(t_ctx *context);
+
+void	draw_pixel(t_ctx *ctx, t_vec2i pos, t_uint32 color);
+void	draw_rect(t_ctx *ctx, t_vec2i pos, t_vec2i size, t_uint32 color);
+void	draw_line(t_ctx *ctx, t_vec2i a, t_vec2i b, t_uint32 color);
+
+void	put_context(t_ctx *ctx, t_vec2i pos);
+void	put_pixel(t_vec2i pos, t_uint32 color);
+void	put_rect(t_vec2i pos, t_vec2i size, t_uint32 color);
+void	put_line(t_vec2i a, t_vec2i b, t_uint32 color);
 
 #endif // GRAPHICS_H

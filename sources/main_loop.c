@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/27 21:19:19 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/07 23:39:16 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/08 13:47:24 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,9 @@ void	start_main_loop(void (*func)(void *), void *data)
 static int	loop_hook(void *params)
 {
 	graph()->pres_curr = graph()->pressed;
+	put_context(graph()->back_ctx, (t_vec2i){0, 0});
+	clear_ctx(graph()->draw_ctx);
 	((void (*)(void *))((void **)params)[0])(((void **)params)[1]);
+	put_context(graph()->draw_ctx, (t_vec2i){0, 0});
 	return (0);
 }

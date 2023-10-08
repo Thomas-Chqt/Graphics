@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 22:03:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/07 23:34:47 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/08 11:32:26 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,6 @@ int	exp_hook(void *data)
 
 int	des_hook(void *data)
 {
-	ft_printf("1\n");
 	(void)data;
 	lst_iterdata(
 		graph()->des_lst,
