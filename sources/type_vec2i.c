@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 12:27:40 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 16:40:06 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/09 22:09:26 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,5 +49,5 @@ t_vec2i	div_vi2vi2(t_vec2i a, t_vec2i b)
 	return ((t_vec2i){
 		.x = (int)((float)a.x / (float)b.x),
 		.y = (int)((float)a.y / (float)b.y)
-	});	
+	});
 }
