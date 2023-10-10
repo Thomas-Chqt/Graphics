@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   event.h                                            :+:      :+:    :+:   */
+/*   events.h                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
@@ -10,8 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef EVENT_H
-# define EVENT_H
+#ifndef EVENTS_H
+# define EVENTS_H
 
 # include "Graphics_internal.h"
 
@@ -34,4 +34,4 @@ int		mov_hook(int x, int y, void *data);
 int		exp_hook(void *data);
 int		des_hook(void *data);
 
-#endif // EVENT_H
+#endif // EVENTS_H

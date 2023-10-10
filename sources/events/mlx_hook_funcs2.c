@@ -6,12 +6,12 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 22:03:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 11:32:26 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 17:28:13 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
-#include "event.h"
+#include "events.h"
 
 int	mov_hook(int x, int y, void *data)
 {

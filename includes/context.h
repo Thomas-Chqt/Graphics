@@ -1,40 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   color.h                                            :+:      :+:    :+:   */
+/*   context.h                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/10/08 12:15:08 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 12:19:35 by tchoquet         ###   ########.fr       */
+/*   Created: 2023/10/10 17:14:45 by tchoquet          #+#    #+#             */
+/*   Updated: 2023/10/10 17:19:56 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef COLOR_H
-# define COLOR_H
+#ifndef CONTEXT_H
+# define CONTEXT_H
 
 # include "Graphics_internal.h"
 
-typedef union u_color
+struct s_context
 {
-	t_uint32	raw;
-	struct
-	{
-		t_uint8	blue;
-		t_uint8	green;
-		t_uint8	red;
-		t_uint8	alpha;
-	};
-}	t_color;
+	void	*mlx_image;
+	void	*pixels;
+	t_vec2i	size;
+};
 
-typedef struct s_fcolor
-{
-	float	a;
-	float	r;
-	float	g;
-	float	b;
-}	t_fcolor;
+t_uint32	*px(t_ctx *context, t_vec2i pos);
+t_ctx		*ctx_from_mlx_img(void *mlx_img, t_vec2i size);
 
-t_color	apha_compos(t_color back, t_color front);
-
-#endif // COLOR_H
+#endif // CONTEXT_H

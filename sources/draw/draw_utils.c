@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   color.c                                            :+:      :+:    :+:   */
+/*   draw_utils.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 12:18:57 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 12:22:53 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 17:30:55 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
-#include "color.h"
+#include "draw.h"
 
 t_color	apha_compos(t_color back, t_color front)
 {

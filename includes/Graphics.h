@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 14:22:44 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 17:35:20 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,6 +80,32 @@ typedef struct s_vec2f
 
 typedef struct s_context	t_ctx;
 
+int			create_window(char *title, t_vec2i size);
+t_ctx		*back_ctx(void);
+void		set_destructor(void (*func)(void *), void *data);
+void		delete_window(int return_code);
+
+void		start_main_loop(void (*func)(void *), void *data);
+
+t_vec2i		mouse_pos(void);
+void		set_mouse_pos(t_vec2i pos);
+
+t_ctx		*new_context(t_vec2i size);
+t_vec2i		ctx_size(t_ctx *ctx);
+t_uint32	ctx_px(t_ctx *context, t_vec2i pos);
+void		fill_ctx(t_ctx *ctx, t_uint32 color);
+void		clear_ctx(t_ctx *context);
+void		free_context(t_ctx *context);
+t_ctx		*ctx_from_img(char *path);
+
+void		put_context(t_ctx *ctx, t_vec2i pos);
+void		draw_pixel(t_ctx *ctx, t_vec2i pos, t_uint32 color);
+void		draw_rect(t_ctx *ctx, t_vec2i pos, t_vec2i size, t_uint32 color);
+void		draw_line(t_ctx *ctx, t_vec2i a, t_vec2i b, t_uint32 color);
+
+int			add_event(int key, int trig, void (*func)(void *), void *data);
+int			poll_key(int *key);
+
 t_vec2f		vi2tovf2(t_vec2i veci);
 t_vec2i		add_vi2vi2(t_vec2i a, t_vec2i b);
 t_vec2i		sub_vi2vi2(t_vec2i a, t_vec2i b);
@@ -97,36 +123,6 @@ t_vec2f		div_vf2vf2(t_vec2f a, t_vec2f b);
 
 t_vec2f		mul_vf2f(t_vec2f vec, float f);
 
-t_vec2f		rot_vf2d(t_vec2f vec, float rad);
-
-int			create_window(char *title, t_vec2i size);
-void		set_destructor(void (*func)(void *), void *data);
-void		set_back_color(t_uint32 color);
-void		delete_window(int return_code);
-
-void		start_main_loop(void (*func)(void *), void *data);
-
-int			add_event(int key, int trig, void (*func)(void *), void *data);
-int			poll_key(int *key);
-
-t_vec2i		mouse_pos(void);
-void		set_mouse_pos(t_vec2i pos);
-
-t_ctx		*new_context(t_vec2i size);
-t_vec2i		ctx_size(t_ctx *ctx);
-void		fill_ctx(t_ctx *ctx, t_uint32 color);
-void		clear_ctx(t_ctx *context);
-void		free_context(t_ctx *context);
-t_ctx		*ctx_from_img(char *path);
-t_uint32	ctx_px(t_ctx *context, t_vec2i pos);
-
-void		draw_pixel(t_ctx *ctx, t_vec2i pos, t_uint32 color);
-void		draw_rect(t_ctx *ctx, t_vec2i pos, t_vec2i size, t_uint32 color);
-void		draw_line(t_ctx *ctx, t_vec2i a, t_vec2i b, t_uint32 color);
-
-void		put_context(t_ctx *ctx, t_vec2i pos);
-void		put_pixel(t_vec2i pos, t_uint32 color);
-void		put_rect(t_vec2i pos, t_vec2i size, t_uint32 color);
-void		put_line(t_vec2i a, t_vec2i b, t_uint32 color);
+t_vec2f		rot_vf2(t_vec2f vec, float rad);
 
 #endif // GRAPHICS_H

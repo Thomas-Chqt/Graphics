@@ -6,12 +6,12 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:24:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 12:26:08 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 17:28:08 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
-#include "event.h"
+#include "events.h"
 
 static void		init_hooks(void);
 static t_list	*lstev_new(int key, int trig, void (*func)(void *), void *data);

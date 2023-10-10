@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:18:18 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 13:49:53 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 16:59:53 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,16 +29,15 @@ int	create_window(char *title, t_vec2i size)
 	return (0);
 }
 
+t_ctx	*back_ctx(void)
+{
+	return (graph()->back_ctx);
+}
+
 void	set_destructor(void (*func)(void *), void *data)
 {
 	graph()->destr = func;
 	graph()->destr_data = data;
-}
-
-void	set_back_color(t_uint32 color)
-{
-	clear_ctx(graph()->back_ctx);
-	fill_ctx(graph()->back_ctx, color);
 }
 
 void	delete_window(int return_code)

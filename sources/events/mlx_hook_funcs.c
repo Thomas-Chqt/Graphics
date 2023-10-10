@@ -6,12 +6,12 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:56:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 12:21:16 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 17:28:10 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
-#include "event.h"
+#include "events.h"
 
 int	kdo_hook(int keycode, void *data)
 {
