@@ -6,7 +6,7 @@
 #    By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/09/16 11:20:21 by tchoquet          #+#    #+#              #
-#    Updated: 2023/10/07 19:11:07 by tchoquet         ###   ########.fr        #
+#    Updated: 2023/10/10 13:01:41 by tchoquet         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -41,7 +41,7 @@ endif
     CPPFLAGS	= $(foreach dir, ${INCLUDES_DIR}, -I${dir}) -I${MINILIBX_DIR}
     CFLAGS		=
     LDFLAGS		= -L${MINILIBX_DIR}
-    LDLIBS		= -l mlx -framework OpenGL -framework AppKit
+    LDLIBS		= -l mlx -framework OpenGL -framework AppKit -lz
 ifeq (${TARGET_TYPE}, release)
     CFLAGS		+= -Wall -Wextra -Werror
     LDLIBS		+= -l ft 

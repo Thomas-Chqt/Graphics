@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:56:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/07 23:45:40 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 12:21:16 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,7 @@ int	mdo_hook(int button, int x, int y, void *data)
 	(void)x;
 	(void)y;
 	(void)data;
+	button *= 1000;
 	lst_iterdata(
 		graph()->mdo_lst,
 		(void (*)(void *, void *)) & exec_event,
@@ -57,6 +58,7 @@ int	mup_hook(int button, int x, int y, void *data)
 	(void)x;
 	(void)y;
 	(void)data;
+	button *= 1000;
 	lst_iterdata(
 		graph()->mup_lst,
 		(void (*)(void *, void *)) & exec_event,

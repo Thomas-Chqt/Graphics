@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/08 12:42:35 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/10 12:53:36 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,5 +62,7 @@ int			graph_init_ctxs(t_vec2i win_size);
 void		clean_graph(void);
 
 t_uint32	*px(t_ctx *context, t_vec2i pos);
+
+t_ctx		*ctx_from_mlx_img(void *mlx_img, t_vec2i size);
 
 #endif // GRAPHICS_INTERNAL_H
