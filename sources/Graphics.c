@@ -6,13 +6,13 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:18:18 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/11 21:51:19 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/12 13:40:49 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
 
-static void	delete_window_exit(void *data);
+static void	destructor_exit(void *data);
 
 int	create_window(char *title, t_vec2i size)
 {
@@ -22,9 +22,9 @@ int	create_window(char *title, t_vec2i size)
 		return (-1);
 	if (graph_init_ctxs(size) != 0)
 		return (clean_graph(), -1);
-	if (add_event(0, ON_DESTROY, &delete_window_exit, NULL) != 0)
+	if (add_event(0, ON_DESTROY, &destructor_exit, NULL) != 0)
 		return (clean_graph(), -1);
-	if (add_event(ESC_KEY, ON_KEYDOWN, &delete_window_exit, NULL) != 0)
+	if (add_event(ESC_KEY, ON_KEYDOWN, &destructor_exit, NULL) != 0)
 		return (clean_graph(), -1);
 	return (0);
 }
@@ -53,7 +53,7 @@ void	delete_window(void)
 	clean_graph();
 }
 
-static void	delete_window_exit(void *data)
+static void	destructor_exit(void *data)
 {
 	(void)data;
 	if (graph()->destr != NULL)

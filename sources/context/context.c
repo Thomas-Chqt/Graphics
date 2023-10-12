@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 11:52:05 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 17:21:57 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/12 13:32:30 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ t_ctx	*ctx_from_img(char *path)
 	t_vec2i	size;
 
 	if (ft_strrchr(path, '.') == NULL)
-		return (NULL);
+		return (errno = ENOENT, NULL);
 	if (str_cmp(ft_strrchr(path, '.'), ".xpm") == 0)
 		mlx_img = mlx_xpm_file_to_image(
 				graph()->mlx_ptr, path, &size.x, &size.y);
@@ -46,12 +46,13 @@ t_ctx	*ctx_from_img(char *path)
 		mlx_img = mlx_png_file_to_image(
 				graph()->mlx_ptr, path, &size.x, &size.y);
 	else
-		return (NULL);
+		return (errno = ENOENT, NULL);
 	if (mlx_img == NULL)
 		return (NULL);
 	new_ctx = ctx_from_mlx_img(mlx_img, size);
 	if (new_ctx == NULL)
-		return (mlx_destroy_image(graph()->mlx_ptr, mlx_img), NULL);
+		return (mlx_destroy_image(graph()->mlx_ptr, mlx_img),
+			errno = ENOMEM, NULL);
 	return (new_ctx);
 }
 
