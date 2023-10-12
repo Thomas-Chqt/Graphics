@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 17:35:20 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/11 20:33:14 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,7 +83,7 @@ typedef struct s_context	t_ctx;
 int			create_window(char *title, t_vec2i size);
 t_ctx		*back_ctx(void);
 void		set_destructor(void (*func)(void *), void *data);
-void		delete_window(int return_code);
+void		delete_window(void);
 
 void		start_main_loop(void (*func)(void *), void *data);
 

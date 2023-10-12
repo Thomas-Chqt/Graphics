@@ -6,13 +6,13 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:18:18 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 16:59:53 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/11 21:51:19 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Graphics_internal.h"
 
-static void	close_win_zero(void *data);
+static void	delete_window_exit(void *data);
 
 int	create_window(char *title, t_vec2i size)
 {
@@ -22,9 +22,9 @@ int	create_window(char *title, t_vec2i size)
 		return (-1);
 	if (graph_init_ctxs(size) != 0)
 		return (clean_graph(), -1);
-	if (add_event(0, ON_DESTROY, &close_win_zero, NULL) != 0)
+	if (add_event(0, ON_DESTROY, &delete_window_exit, NULL) != 0)
 		return (clean_graph(), -1);
-	if (add_event(ESC_KEY, ON_KEYDOWN, &close_win_zero, NULL) != 0)
+	if (add_event(ESC_KEY, ON_KEYDOWN, &delete_window_exit, NULL) != 0)
 		return (clean_graph(), -1);
 	return (0);
 }
@@ -40,10 +40,8 @@ void	set_destructor(void (*func)(void *), void *data)
 	graph()->destr_data = data;
 }
 
-void	delete_window(int return_code)
+void	delete_window(void)
 {
-	if (graph()->destr != NULL)
-		graph()->destr(graph()->destr_data);
 	ft_lstclear(&graph()->kdo_lst, &free_wrap);
 	ft_lstclear(&graph()->kup_lst, &free_wrap);
 	ft_lstclear(&graph()->mdo_lst, &free_wrap);
@@ -53,11 +51,12 @@ void	delete_window(int return_code)
 	ft_lstclear(&graph()->des_lst, &free_wrap);
 	ft_lstclear(&graph()->pressed, &free_wrap);
 	clean_graph();
-	exit(return_code);
 }
 
-static void	close_win_zero(void *data)
+static void	delete_window_exit(void *data)
 {
 	(void)data;
-	delete_window(0);
+	if (graph()->destr != NULL)
+		graph()->destr(graph()->destr_data);
+	exit(0);
 }
