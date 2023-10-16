@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/16 16:00:25 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/16 18:48:20 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,6 +108,7 @@ t_stripe	ctx_vstripe(t_ctx *context, int x);
 
 void		fill_ctx(t_ctx *ctx, t_uint32 color);
 void		clear_ctx(t_ctx *context);
+void		clear_pixels(t_ctx *context, t_uint32 px);
 
 void		put_context(t_ctx *ctx, t_vec2i pos);
 void		draw_pixel(t_ctx *ctx, t_vec2i pos, t_uint32 color);
