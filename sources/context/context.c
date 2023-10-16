@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 11:52:05 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/12 13:32:30 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/16 17:08:45 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,12 @@ t_ctx	*new_context(t_vec2i size)
 	new_ctx = malloc(sizeof(t_ctx));
 	if (new_ctx == NULL)
 		return (NULL);
+	*new_ctx = (t_ctx){};
 	new_ctx->mlx_image = mlx_new_image(graph()->mlx_ptr, size.x, size.y);
 	if (new_ctx->mlx_image == NULL)
 		return (free_context(new_ctx), NULL);
-	new_ctx->pixels = mlx_get_data_addr(new_ctx->mlx_image, &u, &u, &u);
+	new_ctx->pixels = (t_uint32 *)mlx_get_data_addr(new_ctx->mlx_image,
+			&u, &u, &u);
 	if (new_ctx->pixels == NULL)
 		return (free_context(new_ctx), NULL);
 	new_ctx->size = size;
@@ -56,21 +58,20 @@ t_ctx	*ctx_from_img(char *path)
 	return (new_ctx);
 }
 
-t_vec2i	ctx_size(t_ctx *ctx)
-{
-	return (ctx->size);
-}
-
-t_uint32	ctx_px(t_ctx *context, t_vec2i pos)
-{
-	return (*px(context, pos));
-}
-
 void	free_context(t_ctx *context)
 {
+	int	i;
+
 	if (context == NULL)
 		return ;
 	if (context->mlx_image != NULL)
 		mlx_destroy_image(graph()->mlx_ptr, context->mlx_image);
+	if (context->vstripes != NULL)
+	{
+		i = 0;
+		while (i < context->size.x)
+			free(context->vstripes[i++]);
+		free(context->vstripes);
+	}
 	free(context);
 }

@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 12:13:53 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 17:30:41 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/16 17:26:23 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,5 +63,30 @@ void	draw_rect(t_ctx *ctx, t_vec2i pos, t_vec2i size, t_uint32 color)
 			curr.y++;
 		}
 		curr.x++;
+	}
+}
+
+void	draw_vstripe(t_ctx *ctx, t_stripe stripe, t_vec2i start, t_vec2i end)
+{
+	float	stripe_step;
+	t_vec2i	screen_curr;
+	float	stripe_curr;
+
+	stripe_step = (float)stripe.size / (float)(end.y - start.y);
+	if (start.y < 0)
+	{
+		screen_curr = (t_vec2i){.x = start.x, .y = 0};
+		stripe_curr = (float)start.y * -stripe_step;
+	}
+	else
+	{
+		screen_curr = start;
+		stripe_curr = 0.0f;
+	}
+	while (screen_curr.y < ctx->size.y && screen_curr.y <= end.y)
+	{
+		draw_pixel(ctx, screen_curr, stripe.px[(int)stripe_curr]);
+		screen_curr.y++;
+		stripe_curr += stripe_step;
 	}
 }

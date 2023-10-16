@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/11 20:33:14 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/16 16:00:25 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,14 @@ typedef struct s_vec2f
 
 }	t_vec2f;
 
+typedef struct s_stripe
+{
+	t_uint32	*px;
+	int			size;
+
+}	t_stripe;
+
+
 typedef struct s_context	t_ctx;
 
 int			create_window(char *title, t_vec2i size);
@@ -91,17 +99,22 @@ t_vec2i		mouse_pos(void);
 void		set_mouse_pos(t_vec2i pos);
 
 t_ctx		*new_context(t_vec2i size);
+t_ctx		*ctx_from_img(char *path);
+void		free_context(t_ctx *context);
+
 t_vec2i		ctx_size(t_ctx *ctx);
 t_uint32	ctx_px(t_ctx *context, t_vec2i pos);
+t_stripe	ctx_vstripe(t_ctx *context, int x);
+
 void		fill_ctx(t_ctx *ctx, t_uint32 color);
 void		clear_ctx(t_ctx *context);
-void		free_context(t_ctx *context);
-t_ctx		*ctx_from_img(char *path);
 
 void		put_context(t_ctx *ctx, t_vec2i pos);
 void		draw_pixel(t_ctx *ctx, t_vec2i pos, t_uint32 color);
 void		draw_rect(t_ctx *ctx, t_vec2i pos, t_vec2i size, t_uint32 color);
 void		draw_line(t_ctx *ctx, t_vec2i a, t_vec2i b, t_uint32 color);
+void		draw_vstripe(t_ctx *ctx, t_stripe stripe,
+				t_vec2i start, t_vec2i end);
 
 int			add_event(int key, int trig, void (*func)(void *), void *data);
 int			poll_key(int *key);
