@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/16 18:48:20 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/16 19:38:30 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,7 +85,6 @@ typedef struct s_stripe
 
 }	t_stripe;
 
-
 typedef struct s_context	t_ctx;
 
 int			create_window(char *title, t_vec2i size);
@@ -97,6 +96,7 @@ void		start_main_loop(void (*func)(void *), void *data);
 
 t_vec2i		mouse_pos(void);
 void		set_mouse_pos(t_vec2i pos);
+void		set_mouse_blocking(t_bool new_state);
 
 t_ctx		*new_context(t_vec2i size);
 t_ctx		*ctx_from_img(char *path);

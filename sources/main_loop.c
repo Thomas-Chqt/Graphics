@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/27 21:19:19 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 16:58:35 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/16 19:10:26 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,10 @@ void	start_main_loop(void (*func)(void *), void *data)
 
 static int	loop_hook(void *params)
 {
+	if (graph()->m_is_block)
+		set_mouse_pos((t_vec2i){
+			ctx_size(graph()->back_ctx).x / 2,
+			ctx_size(graph()->back_ctx).y / 2});
 	graph()->pres_curr = graph()->pressed;
 	put_context(graph()->back_ctx, (t_vec2i){0, 0});
 	((void (*)(void *))((void **)params)[0])(((void **)params)[1]);

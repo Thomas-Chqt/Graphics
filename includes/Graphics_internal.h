@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 15:18:33 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/12 13:20:33 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/16 19:08:21 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,8 @@ typedef struct s_graphics_global
 	t_list		*mov_lst;
 	t_list		*exp_lst;
 	t_list		*des_lst;
+
+	t_bool		m_is_block;
 
 }	t_graph;
 
