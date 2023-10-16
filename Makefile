@@ -6,7 +6,7 @@
 #    By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/09/16 11:20:21 by tchoquet          #+#    #+#              #
-#    Updated: 2023/10/10 13:01:41 by tchoquet         ###   ########.fr        #
+#    Updated: 2023/10/16 15:04:15 by tchoquet         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -43,11 +43,11 @@ endif
     LDFLAGS		= -L${MINILIBX_DIR}
     LDLIBS		= -l mlx -framework OpenGL -framework AppKit -lz
 ifeq (${TARGET_TYPE}, release)
-    CFLAGS		+= -Wall -Wextra -Werror
+    CFLAGS		+= -O3 -Wall -Wextra -Werror
     LDLIBS		+= -l ft 
 else ifeq (${TARGET_TYPE}, debug)
-    CFLAGS		+= -g -D DEBUG
-    LDLIBS		+= -l ft_debug -l memory_leak_detector
+    CFLAGS		+= -O0 -g -D DEBUG
+    LDLIBS		+= -l memory_leak_detector -l ft_debug
 else
     $(error Bad TARGET_TYPE)
 endif
