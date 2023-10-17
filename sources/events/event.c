@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:24:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/17 13:33:47 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/17 18:17:01 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,13 +21,13 @@ int	add_event(int key, int trig, void (*func)(void *), void *data)
 	new_node = lstev_new(key, trig, func, data);
 	if (new_node == NULL)
 		return (1);
-	if (key < W_UP && trig == ON_KEYDOWN)
+	if (key < L_CLICK && trig == ON_KEYDOWN)
 		ft_lstadd_front(&graph()->kdo_lst, new_node);
-	if (key < W_UP && trig == ON_KEYUP)
+	if (key < L_CLICK && trig == ON_KEYUP)
 		ft_lstadd_front(&graph()->kup_lst, new_node);
-	if (key >= W_UP && trig == ON_KEYDOWN)
+	if (key >= L_CLICK && trig == ON_KEYDOWN)
 		ft_lstadd_front(&graph()->mdo_lst, new_node);
-	if (key >= W_UP && trig == ON_KEYUP)
+	if (key >= L_CLICK && trig == ON_KEYUP)
 		ft_lstadd_front(&graph()->mup_lst, new_node);
 	if (trig == ON_MOUSEMOVE)
 		ft_lstadd_front(&graph()->mov_lst, new_node);
