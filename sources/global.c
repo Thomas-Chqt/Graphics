@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 16:51:10 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/10 16:51:17 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/17 13:33:06 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,9 @@
 
 t_graph	*graph(void)
 {
-	static t_graph	graphics_global = {};
+	static t_graph	graphics_global = {
+		.is_poll_key_active = true
+	};
 
 	return (&graphics_global);
 }

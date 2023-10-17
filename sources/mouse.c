@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 10:43:43 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/16 19:12:17 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/17 13:09:05 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,11 +25,12 @@ void	set_mouse_pos(t_vec2i pos)
 	mlx_mouse_move(graph()->mlx_win, pos.x, pos.y);
 }
 
-void	set_mouse_blocking(t_bool new_state)
+void	hide_mouse(void)
 {
-	graph()->m_is_block = new_state;
-	if (new_state == true)
-		mlx_mouse_hide();
-	if (new_state == false)
-		mlx_mouse_show();
+	mlx_mouse_hide();
+}
+
+void	show_mouse(void)
+{
+	mlx_mouse_show();
 }

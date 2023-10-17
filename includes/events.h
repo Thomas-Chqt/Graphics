@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:24:49 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/13 22:48:13 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/17 13:24:05 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,8 @@ typedef struct s_event
 }	t_event;
 
 void	exec_event(t_event *el, t_event *data);
+void	init_hooks(void);
+t_list	*lstev_new(int key, int trig, void (*func)(void *), void *data);
 
 int		kdo_hook(int keycode, void *data);
 int		kup_hook(int keycode, void *data);

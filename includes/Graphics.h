@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/16 19:38:30 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/17 13:32:21 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,8 @@
 # define RIGHT_KEY		124
 # define UP_KEY			126
 # define DOWN_KEY		125
+
+# define CMD_L_KEY		259
 
 # define ON_KEYDOWN		0b00000001
 # define ON_KEYUP		0b00000010
@@ -96,7 +98,8 @@ void		start_main_loop(void (*func)(void *), void *data);
 
 t_vec2i		mouse_pos(void);
 void		set_mouse_pos(t_vec2i pos);
-void		set_mouse_blocking(t_bool new_state);
+void		hide_mouse(void);
+void		show_mouse(void);
 
 t_ctx		*new_context(t_vec2i size);
 t_ctx		*ctx_from_img(char *path);
@@ -119,6 +122,8 @@ void		draw_vstripe(t_ctx *ctx, t_stripe stripe,
 
 int			add_event(int key, int trig, void (*func)(void *), void *data);
 int			poll_key(int *key);
+void		desac_poll_key(void);
+void		react_poll_key(void);
 
 t_vec2f		vi2tovf2(t_vec2i veci);
 t_vec2i		add_vi2vi2(t_vec2i a, t_vec2i b);
