@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/17 13:32:21 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/18 14:18:04 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,7 +89,7 @@ typedef struct s_stripe
 
 typedef struct s_context	t_ctx;
 
-int			create_window(char *title, t_vec2i size);
+int			create_window(char *title, int width, int height);
 t_ctx		*back_ctx(void);
 void		set_destructor(void (*func)(void *), void *data);
 void		delete_window(void);

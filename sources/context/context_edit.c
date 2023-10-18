@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/10 12:45:39 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/16 18:51:31 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/18 20:24:55 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,10 @@ void	clear_pixels(t_ctx *context, t_uint32 _px)
 		while (pos.y < context->size.y)
 		{
 			if (*(px(context, pos)) == _px)
+			{
 				*(px(context, pos)) = TRANSP;
+				context->vstripes[pos.x][pos.y] = TRANSP;
+			}
 			pos.y++;
 		}
 		pos.x++;

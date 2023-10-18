@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:18:18 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/12 13:40:49 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/18 14:19:08 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,13 @@
 
 static void	destructor_exit(void *data);
 
-int	create_window(char *title, t_vec2i size)
+int	create_window(char *title, int width, int height)
 {
 	if (graph_init_mlx() != 0)
 		return (-1);
-	if (graph_init_window(title, size) != 0)
+	if (graph_init_window(title, (t_vec2i){width, height}) != 0)
 		return (-1);
-	if (graph_init_ctxs(size) != 0)
+	if (graph_init_ctxs((t_vec2i){width, height}) != 0)
 		return (clean_graph(), -1);
 	if (add_event(0, ON_DESTROY, &destructor_exit, NULL) != 0)
 		return (clean_graph(), -1);

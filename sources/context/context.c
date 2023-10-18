@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/08 11:52:05 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/16 17:08:45 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/18 16:46:57 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,8 @@ t_ctx	*new_context(t_vec2i size)
 		return (free_context(new_ctx), NULL);
 	new_ctx->size = size;
 	clear_ctx(new_ctx);
+	if (compute_vstripes(new_ctx) != 0)
+		return (free_context(new_ctx), NULL);
 	return (new_ctx);
 }
 
@@ -55,6 +57,8 @@ t_ctx	*ctx_from_img(char *path)
 	if (new_ctx == NULL)
 		return (mlx_destroy_image(graph()->mlx_ptr, mlx_img),
 			errno = ENOMEM, NULL);
+	if (compute_vstripes(new_ctx) != 0)
+		return (free_context(new_ctx), NULL);
 	return (new_ctx);
 }
 
