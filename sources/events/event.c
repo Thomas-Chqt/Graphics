@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/10/07 21:24:21 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/17 18:17:01 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/24 14:47:34 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,14 +47,14 @@ int	poll_key(int *key)
 	return (1);
 }
 
-void		desac_poll_key(void)
+void	desac_poll_key(void)
 {
 	graph()->is_poll_key_active = false;
 	ft_lstclear(&graph()->pressed, &free_wrap);
 	graph()->pres_curr = NULL;
 }
 
-void		react_poll_key(void)
+void	react_poll_key(void)
 {
 	graph()->is_poll_key_active = true;
 }
