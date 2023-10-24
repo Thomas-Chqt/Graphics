@@ -6,7 +6,7 @@
 /*   By: tchoquet <tchoquet@student.42tokyo.jp>     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/09/21 14:32:15 by tchoquet          #+#    #+#             */
-/*   Updated: 2023/10/18 14:18:04 by tchoquet         ###   ########.fr       */
+/*   Updated: 2023/10/24 19:59:40 by tchoquet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 # define A_KEY			0
 # define S_KEY			1
 # define D_KEY			2
+# define F_KEY			3
 # define W_KEY			13
 # define R_KEY			15
 
