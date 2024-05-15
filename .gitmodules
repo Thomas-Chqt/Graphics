@@ -1,0 +1,6 @@
+[submodule "dependencies/UtilsCPP"]
+	path = dependencies/UtilsCPP
+	url = https://github.com/Thomas-Chqt/UtilsCPP.git
+[submodule "dependencies/Logger"]
+	path = dependencies/Logger
+	url = https://github.com/Thomas-Chqt/Logger.git
