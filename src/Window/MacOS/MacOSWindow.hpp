@@ -19,6 +19,7 @@
 
 #ifdef OBJCPP
     #import <AppKit/AppKit.h>
+    #import <QuartzCore/CAMetalLayer.h>
     #include "Window/MacOS/WindowDelegate.h"
     #include "Window/MacOS/Views/MacOSWindowView.h"
 #else
@@ -27,6 +28,7 @@
     class NSWindow;
     class WindowDelegate;
     class MacOSWindowView;
+    class CAMetalLayer;
 #endif
 
 namespace gfx
@@ -44,9 +46,20 @@ public:
 
     inline void setEventCallBack(const utils::Func<void(Event&)>& fn) override { m_nextEventCallback = fn; }
     
+#ifdef USING_OPENGL
+    void useOpenGL() override;
+    void makeOpenGlContextCurrent() override;
+    void openGLSwapBuffer() override;
+#endif
+#ifdef USING_METAL
+    void useMetal() override;
+    CAMetalLayer* getMetalLayer() override;
+#endif
+
+    ~MacOSWindow() override;
+
 private:
     MacOSWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback);
-    ~MacOSWindow() override;
 
     inline void eventCallBack(Event& e) { m_nextEventCallback(e); }
 

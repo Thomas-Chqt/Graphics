@@ -13,6 +13,12 @@
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
 
+#ifdef OBJCPP
+    #import <QuartzCore/CAMetalLayer.h>
+#else
+    class CAMetalLayer;
+#endif // OBJCPP
+
 namespace gfx
 {
 
@@ -23,6 +29,16 @@ public:
     Window(Window&&)      = delete;
 
     virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
+
+#ifdef USING_OPENGL
+    virtual void useOpenGL() = 0;
+    virtual void makeOpenGlContextCurrent() = 0;
+    virtual void openGLSwapBuffer() = 0;
+#endif
+#ifdef USING_METAL
+    virtual void useMetal() = 0;
+    virtual CAMetalLayer* getMetalLayer() = 0;
+#endif
 
     virtual ~Window() = default;
 

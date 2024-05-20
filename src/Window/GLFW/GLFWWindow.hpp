@@ -31,9 +31,16 @@ public:
 
     inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_nextEventCallback = cb; }
 
+#ifdef USING_OPENGL
+    inline void useOpenGL() override { makeOpenGlContextCurrent(); };
+    inline void makeOpenGlContextCurrent() override { ::glfwMakeContextCurrent(m_glfwWindow); };
+    inline void openGLSwapBuffer() override { ::glfwSwapBuffers(m_glfwWindow); };
+#endif
+
+    ~GLFWWindow() override;
+
 private:
     GLFWWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback);
-    ~GLFWWindow() override;
 
     inline void eventCallBack(Event& e) { m_nextEventCallback(e); }
 
