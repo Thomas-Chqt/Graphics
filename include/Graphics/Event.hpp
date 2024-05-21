@@ -43,8 +43,8 @@ private:
     virtual std::ostream& print(std::ostream&) const = 0;
 
 public:
-    Event operator = (const Event&) = delete;
-    Event operator = (Event&&)      = delete;
+    Event& operator = (const Event&) = delete;
+    Event& operator = (Event&&)      = delete;
 
     inline friend std::ostream& operator << (std::ostream& os, const Event& e) { return e.print(os); }
 };

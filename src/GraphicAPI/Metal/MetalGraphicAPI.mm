@@ -9,6 +9,13 @@
 
 #define OBJCPP
 
+#include "Graphics/GraphicPipeline.hpp"
+#include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
+#include "Graphics/ShaderLibrary.hpp"
+#include "UtilsCPP/String.hpp"
+#include <Foundation/Foundation.h>
+#include "GraphicAPI/Metal/MetalVertexBuffer.hpp"
+#include "Graphics/VertexBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -17,6 +24,7 @@
 #include <QuartzCore/CAMetalLayer.h>
 
 using utils::SharedPtr;
+using utils::String;
 
 namespace gfx
 {
@@ -24,6 +32,25 @@ namespace gfx
 SharedPtr<GraphicAPI> GraphicAPI::newMetalGraphicAPI(const SharedPtr<Window>& renderTarget)
 {
     return SharedPtr<GraphicAPI>(new MetalGraphicAPI(renderTarget));
+}
+
+utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout)
+{
+    (void)layout;
+    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, size));
+}
+
+SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName)
+{
+    if (m_shaderLibrary == nil)
+    {
+        NSError *error;
+        NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderLibPath() encoding:NSUTF8StringEncoding] autorelease];
+        m_shaderLibrary = [m_mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:&error];
+        assert(m_shaderLibrary);
+    }
+
+    return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, m_shaderLibrary, m_renderTarget->getMetalLayer(), vertexShaderName, fragmentShaderName));
 }
 
 void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarget) { @autoreleasepool
@@ -54,10 +81,6 @@ void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarg
         m_renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     }
     
-    // NSError *error;
-    // m_shaderLibrary = [m_mtlDevice newLibraryWithURL:[NSURL URLWithString: @"MTL_SHADER_LIB"] error:&error];
-    // assert(m_shaderLibrary);
-
     logDebug << "MetalGraphicAPI render target set to window " << renderTarget << std::endl;
 }}
 
@@ -86,6 +109,29 @@ void MetalGraphicAPI::beginFrame()
     [m_commandEncoder setViewport:(MTLViewport){0.0, 0.0, m_renderTarget->getMetalLayer().drawableSize.width, m_renderTarget->getMetalLayer().drawableSize.height, 0.0, 1.0 }];
 }
 
+void MetalGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> graphicsPipeline)
+{
+    if (utils::SharedPtr<MetalGraphicPipeline> mtlGraphicsPipeline = graphicsPipeline.dynamicCast<MetalGraphicPipeline>())
+        [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
+    else
+        logFatal << "GraphicPipeline is not MetalGraphicPipeline" << std::endl;
+
+}
+
+void MetalGraphicAPI::useVertexBuffer(utils::SharedPtr<VertexBuffer> vertexBuffer)
+{
+    if (utils::SharedPtr<MetalVertexBuffer> mtlVertexBuffer = vertexBuffer.dynamicCast<MetalVertexBuffer>())
+        [m_commandEncoder setVertexBuffer:mtlVertexBuffer->mtlBuffer() offset:0 atIndex:0];
+    else
+        logFatal << "VertexBuffer is not MetalVertexBuffer" << std::endl;
+
+}
+
+void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count)
+{
+    [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
+}
+
 void MetalGraphicAPI::endFrame()
 {
     assert(m_frameAutoreleasePool != nullptr);
@@ -97,7 +143,6 @@ void MetalGraphicAPI::endFrame()
 
     [m_frameAutoreleasePool drain];
     m_frameAutoreleasePool = nullptr;
-
 }
 
 MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
@@ -105,7 +150,8 @@ MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
     if (m_frameAutoreleasePool != nullptr)
         [m_frameAutoreleasePool drain];
 
-    // [m_shaderLibrary release];
+    if (m_shaderLibrary != nil)
+        [m_shaderLibrary release];
     [m_renderPassDescriptor release];
     [m_commandQueue release];
     [m_mtlDevice release];

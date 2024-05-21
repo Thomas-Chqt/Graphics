@@ -42,11 +42,20 @@ public:
     MetalGraphicAPI(const MetalGraphicAPI&) = delete;
     MetalGraphicAPI(MetalGraphicAPI&&)      = delete;
 
+    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) override;
+    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) override;
+
     void setRenderTarget(const utils::SharedPtr<Window>&) override;
 
     void setClearColor(float r, float g, float b, float a) override;
 
     void beginFrame() override;
+
+    void useGraphicsPipeline(utils::SharedPtr<GraphicPipeline>) override;
+    void useVertexBuffer(utils::SharedPtr<VertexBuffer>) override;
+    
+    void drawVertices(utils::uint32 start, utils::uint32 count) override;
+    
     void endFrame() override;
 
     ~MetalGraphicAPI() override;
@@ -58,15 +67,15 @@ private:
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
     MTLRenderPassDescriptor* m_renderPassDescriptor = nullptr;
-    id<MTLLibrary> m_shaderLibrary = nullptr;
     NSAutoreleasePool* m_frameAutoreleasePool = nullptr;
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
     id<CAMetalDrawable> m_currentDrawable = nullptr;
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
+    id<MTLLibrary> m_shaderLibrary = nullptr;
 
 public:
-    MetalGraphicAPI operator = (const MetalGraphicAPI&) = delete;
-    MetalGraphicAPI operator = (MetalGraphicAPI&&)      = delete;
+    MetalGraphicAPI& operator = (const MetalGraphicAPI&) = delete;
+    MetalGraphicAPI& operator = (MetalGraphicAPI&&)      = delete;
 };
 
 }

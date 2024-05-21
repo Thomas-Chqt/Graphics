@@ -46,8 +46,8 @@ protected:
     Window() = default;
 
 public:
-    Window operator = (const Window&) = delete;
-    Window operator = (Window&&)      = delete;
+    Window& operator = (const Window&) = delete;
+    Window& operator = (Window&&)      = delete;
 };
 
 }

@@ -48,8 +48,8 @@ private:
     utils::Func<void(Event&)> m_nextEventCallback;
 
 public:
-    GLFWWindow operator = (const GLFWWindow&) = delete;
-    GLFWWindow operator = (GLFWWindow&&)      = delete;
+    GLFWWindow& operator = (const GLFWWindow&) = delete;
+    GLFWWindow& operator = (GLFWWindow&&)      = delete;
 };
 
 }

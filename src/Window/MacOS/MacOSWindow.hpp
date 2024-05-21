@@ -69,8 +69,8 @@ private:
     utils::Func<void(Event&)> m_nextEventCallback;
 
 public:
-    MacOSWindow operator = (const MacOSWindow&) = delete;
-    MacOSWindow operator = (MacOSWindow&&)      = delete;
+    MacOSWindow& operator = (const MacOSWindow&) = delete;
+    MacOSWindow& operator = (MacOSWindow&&)      = delete;
 
 };
 

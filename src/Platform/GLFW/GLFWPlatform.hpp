@@ -39,8 +39,8 @@ private:
     utils::Func<void(Event&)> m_nextEventCallback;
 
 public:
-    GLFWPlatform operator = (const GLFWPlatform&) = delete;
-    GLFWPlatform operator = (GLFWPlatform&&)      = delete;
+    GLFWPlatform& operator = (const GLFWPlatform&) = delete;
+    GLFWPlatform& operator = (GLFWPlatform&&)      = delete;
 
 };
 

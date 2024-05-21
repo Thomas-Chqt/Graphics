@@ -8,13 +8,21 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
+#include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
+#include "GraphicAPI/OpenGL/OpenGLVertexBuffer.hpp"
+#include "Graphics/GraphicPipeline.hpp"
+#include "Graphics/VertexBuffer.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include <GL/glew.h>
 #include <cassert>
 #include "Logger/Logger.hpp"
+#include "UtilsCPP/String.hpp"
+#include "UtilsCPP/Types.hpp"
 
 using utils::SharedPtr;
+using utils::String;
+using utils::uint32;
 
 namespace gfx
 {
@@ -24,10 +32,21 @@ SharedPtr<GraphicAPI> GraphicAPI::newOpenGLGraphicAPI(const SharedPtr<Window>& r
     return SharedPtr<GraphicAPI>(new OpenGLGraphicAPI(renderTarget));
 }
 
+SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout)
+{
+    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, size, layout));
+}
+
+SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName)
+{
+    return SharedPtr<GraphicPipeline>(new OpenGLGraphicPipeline(vertexShaderName, fragmentShaderName));
+}
+
 void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarget)
 {
     m_renderTarget = renderTarget;
     m_renderTarget->useOpenGL();
+    glewExperimental = GL_TRUE;
     GLenum err = glewInit();
     assert(err == GLEW_OK);
 
@@ -49,9 +68,35 @@ void OpenGLGraphicAPI::beginFrame()
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
+void OpenGLGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> graphicsPipeline)
+{
+    if (utils::SharedPtr<OpenGLGraphicPipeline> glGraphicsPipeline = graphicsPipeline.dynamicCast<OpenGLGraphicPipeline>())
+        glUseProgram(glGraphicsPipeline->shaderProgramID());
+    else
+        logFatal << "GraphicPipeline is not OpenGLGraphicPipeline" << std::endl;
+}
+
+void OpenGLGraphicAPI::useVertexBuffer(utils::SharedPtr<VertexBuffer> vertexBuffer)
+{
+    if (utils::SharedPtr<OpenGLVertexBuffer> glVertexBuffer = vertexBuffer.dynamicCast<OpenGLVertexBuffer>())
+        glBindVertexArray(glVertexBuffer->vertexArrayID());
+    else
+        logFatal << "VertexBuffer is not OpenGLVertexBuffer" << std::endl;
+}
+
+void OpenGLGraphicAPI::drawVertices(uint32 start, uint32 count)
+{
+    glDrawArrays(GL_TRIANGLES, start, count);
+}
+
 void OpenGLGraphicAPI::endFrame()
 {
     m_renderTarget->openGLSwapBuffer();
+}
+
+OpenGLGraphicAPI::~OpenGLGraphicAPI()
+{
+    logDebug << "OpenGLGraphicAPI destructed" << std::endl;
 }
 
 OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget)

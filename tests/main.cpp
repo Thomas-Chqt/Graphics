@@ -9,8 +9,11 @@
 
 #include <gtest/gtest.h>
 
+#include "Graphics/ShaderLibrary.hpp"
 #include "Logger/Logger.hpp"
 #include "Graphics/Platform.hpp"
+#include "UtilsCPP/String.hpp"
+#include <fstream>
 
 using namespace tlog;
 using namespace gfx;
@@ -24,10 +27,40 @@ public:
     {
         Logger::init();
         Platform::init();
+        ShaderLibrary::init();
+
+        #ifdef USING_METAL
+            ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
+        #endif
+        {
+            std::ifstream f(OPENGL_SHADER_DIR"/vtx1.glsl");
+            ShaderLibrary::shared().registerShader(
+                "vtx1"
+                #ifdef USING_METAL
+                , "vtx1"
+                #endif
+                #ifdef USING_OPENGL
+                , utils::String::contentOf(f)
+                #endif
+            );
+        }
+        {
+            std::ifstream f(OPENGL_SHADER_DIR"/fra1.glsl");
+            ShaderLibrary::shared().registerShader(
+                "fra1"
+                #ifdef USING_METAL
+                , "fra1"
+                #endif
+                #ifdef USING_OPENGL
+                , utils::String::contentOf(f)
+                #endif
+            );
+        }
     }
 
     void TearDown() override
     {
+        ShaderLibrary::terminated();
         Platform::terminate();
         Logger::terminate();
     }

@@ -19,6 +19,11 @@ namespace gfx
 
 GLFWWindow::GLFWWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback) : m_nextEventCallback(defaultCallback)
 {
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+
     m_glfwWindow = ::glfwCreateWindow(w, h, "", nullptr, nullptr);
     assert(m_glfwWindow);
 
