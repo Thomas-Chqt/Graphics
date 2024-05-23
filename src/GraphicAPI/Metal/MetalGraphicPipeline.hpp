@@ -15,7 +15,7 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 
-#ifdef OBJCPP
+#ifdef __OBJC__
     #import <Metal/Metal.h>
     #import <QuartzCore/CAMetalLayer.h>
 #else

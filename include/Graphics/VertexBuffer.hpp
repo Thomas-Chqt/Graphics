@@ -61,6 +61,4 @@ public:
 
 }
 
-
-
 #endif // VERTEXBUFFER_HPP

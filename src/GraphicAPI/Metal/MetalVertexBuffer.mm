@@ -7,7 +7,7 @@
  * ---------------------------------------------------
  */
 
-#define OBJCPP
+
 
 #include "GraphicAPI/Metal/MetalVertexBuffer.hpp"
 

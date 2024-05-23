@@ -10,7 +10,7 @@
 #ifndef METALVERTEXBUFFER_HPP
 # define METALVERTEXBUFFER_HPP
 
-#ifdef OBJCPP
+#ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
     class MTLBuffer;

@@ -11,6 +11,7 @@
 
 #include "Graphics/Event.hpp"
 #include "Graphics/GraphicPipeline.hpp"
+#include "Graphics/IndexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
 #include "Logger/Logger.hpp"
@@ -20,7 +21,11 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/KeyCodes.hpp"
+#include "UtilsCPP/Types.hpp"
 #include "Vertex.hpp"
+#ifdef IMGUI_ENABLED
+    #include "imgui/imgui.h"
+#endif
 
 namespace gfx
 {
@@ -43,8 +48,10 @@ namespace gfx
         #endif
         inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex); };
 
+    #ifdef USING_OPENGL
     private:
         utils::Array<Element> m_elements;
+    #endif
     };
 }
 
@@ -55,368 +62,431 @@ using namespace gfx;
 using namespace tlog;
 using namespace utils;
 
-class GraphicsWindowedTest : public ::testing::Test
-{
-public:
-    GraphicsWindowedTest() : m_window(Platform::shared().newWindow(800, 600))
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    class GraphicsTestWindowMetal : public ::testing::Test
     {
-    }
-    
-    ~GraphicsWindowedTest()
-    {
-    }
-
-protected:
-    SharedPtr<Window> m_window;
-};
-
-class GraphicsAPIedTest : public GraphicsWindowedTest
-{
-public:
-    GraphicsAPIedTest() : GraphicsWindowedTest(), m_graphicAPI(GraphicAPI::newDefaultGraphicAPI(m_window))
-    {
-    }
-
-    ~GraphicsAPIedTest()
-    {
-
-    }
-protected:
-    SharedPtr<GraphicAPI> m_graphicAPI;
-};
-
-TEST(GraphicsTest, window)
-{
-    SharedPtr<Window> window = Platform::shared().newWindow(800, 600);
-}
-
-TEST_F(GraphicsWindowedTest, event)
-{
-    bool running = true;
-
-    Platform::shared().setEventCallBack([&](Event& ev)
-    {
-        logDebug << ev << std::endl;
-
-        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
-        {
-            if (e.keyCode() == ESC_KEY)
-                running = false;
-        });
-    });
-
-    while (running)
-        Platform::shared().pollEvents();
-}
-
-#ifdef USING_OPENGL
-TEST_F(GraphicsWindowedTest, openglAPI)
-{
-    SharedPtr<GraphicAPI> graphicAPI = GraphicAPI::newOpenGLGraphicAPI(m_window);
-
-    graphicAPI->beginFrame();
-    graphicAPI->endFrame();
-}
-#endif
-
-#ifdef USING_METAL
-TEST_F(GraphicsWindowedTest, metalAPI)
-{
-    SharedPtr<GraphicAPI> graphicAPI = GraphicAPI::newMetalGraphicAPI(m_window);
-
-    graphicAPI->beginFrame();
-    graphicAPI->endFrame();
-}
-#endif
-
-#ifdef USING_OPENGL
-TEST_F(GraphicsWindowedTest, setClearColorOpenGL)
-{
-    bool running = true;
-    SharedPtr<GraphicAPI> graphicAPI = GraphicAPI::newOpenGLGraphicAPI(m_window);
-
-    Func<void(Event& ev)> callback = [&](Event& ev)
-    {
-        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
-        {
-            if (e.keyCode() == ESC_KEY)
-                running = false;
-        });
-
-        ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
-        {
-            if (e.mouseCode() == MOUSE_L)
-                graphicAPI->setClearColor(1, 0, 0, 1);
-            if (e.mouseCode() == MOUSE_R)
-                graphicAPI->setClearColor(0, 1, 0, 1);
-        });
-
-        ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
-        {
-            graphicAPI->setClearColor(0, 0, 0, 0);
-        });
+        public: GraphicsTestWindowMetal() : m_window(Platform::shared().newMetalWindow(800, 600)) {}
+        protected: SharedPtr<Window> m_window;
     };
 
-    m_window->setEventCallBack(callback);
-
-    while (running)
+    class GraphicsTestWindowOpenGL : public ::testing::Test
     {
-        Platform::shared().pollEvents();
-        graphicAPI->beginFrame();
-        graphicAPI->endFrame();
-    }
-}
+        public: GraphicsTestWindowOpenGL() : m_window(Platform::shared().newOpenGLWindow(800, 600)) {}
+        protected: SharedPtr<Window> m_window;
+    };
+#else
+    class GraphicsTestWindow : public ::testing::Test
+    {
+        public: GraphicsTestWindow() : m_window(Platform::shared().newDefaultWindow(800, 600)) {}
+        protected: SharedPtr<Window> m_window;
+    };
 #endif
 
-#ifdef USING_METAL
-TEST_F(GraphicsWindowedTest, setClearColorMetal)
-{
-    bool running = true;
-    SharedPtr<GraphicAPI> graphicAPI = GraphicAPI::newMetalGraphicAPI(m_window);
-
-    Func<void(Event& ev)> callback = [&](Event& ev)
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    class GraphicsTestAPIMetal : public GraphicsTestWindowMetal
     {
-        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
-        {
-            if (e.keyCode() == ESC_KEY)
-                running = false;
-        });
-
-        ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
-        {
-            if (e.mouseCode() == MOUSE_L)
-                graphicAPI->setClearColor(1, 0, 0, 1);
-            if (e.mouseCode() == MOUSE_R)
-                graphicAPI->setClearColor(0, 1, 0, 1);
-        });
-
-        ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
-        {
-            graphicAPI->setClearColor(0, 0, 0, 0);
-        });
+        public: GraphicsTestAPIMetal() : GraphicsTestWindowMetal(), m_graphicAPI(Platform::shared().newMetalGraphicAPI(m_window)) {}
+        protected: SharedPtr<GraphicAPI> m_graphicAPI;
     };
 
-    m_window->setEventCallBack(callback);
-
-    while (running)
+    class GraphicsTestAPIOpenGL : public GraphicsTestWindowOpenGL
     {
-        Platform::shared().pollEvents();
+        public: GraphicsTestAPIOpenGL() : GraphicsTestWindowOpenGL(), m_graphicAPI(Platform::shared().newOpenGLGraphicAPI(m_window)) {}
+        protected: SharedPtr<GraphicAPI> m_graphicAPI;
+    };
+#else
+    class GraphicsTestAPI : public GraphicsTestWindow
+    {
+        public: GraphicsTestAPI() : GraphicsTestWindow(), m_graphicAPI(Platform::shared().newDefaultGraphicAPI(m_window)) {}
+        protected: SharedPtr<GraphicAPI> m_graphicAPI;
+    };
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST(GraphicsTest, windowMetal)
+    {
+        SharedPtr<Window> window = Platform::shared().newMetalWindow(800, 600);
+    }
+
+    TEST(GraphicsTest, windowOpenGL)
+    {
+        SharedPtr<Window> window = Platform::shared().newOpenGLWindow(800, 600);
+    }
+#else
+    TEST(GraphicsTest, window)
+    {
+        SharedPtr<Window> window = Platform::shared().newDefaultWindow(800, 600);
+    }
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST_F(GraphicsTestWindowMetal, event)
+    {
+        bool running = true;
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            logDebug << ev << std::endl;
+
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+        });
+
+        while (running)
+            Platform::shared().pollEvents();
+    }
+
+    TEST_F(GraphicsTestWindowOpenGL, event)
+    {
+        bool running = true;
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            logDebug << ev << std::endl;
+
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+        });
+
+        while (running)
+            Platform::shared().pollEvents();
+    }
+#else
+    TEST_F(GraphicsTestWindow, event)
+    {
+        bool running = true;
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            logDebug << ev << std::endl;
+
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+        });
+
+        while (running)
+            Platform::shared().pollEvents();
+    }
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST_F(GraphicsTestWindowMetal, graphicAPI)
+    {
+        SharedPtr<GraphicAPI> graphicAPI = Platform::shared().newMetalGraphicAPI(m_window);
+
         graphicAPI->beginFrame();
         graphicAPI->endFrame();
     }
-}
-#endif
 
-TEST_F(GraphicsWindowedTest, windowRecreation)
-{
-    bool running = true;
-    SharedPtr<GraphicAPI> graphicAPI = GraphicAPI::newDefaultGraphicAPI(m_window);
-
-    Platform::shared().setEventCallBack([&](Event& ev)
+    TEST_F(GraphicsTestWindowOpenGL, graphicAPI)
     {
-        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
-        {
-            if (e.keyCode() == ESC_KEY)
-                running = false;
-            if (e.keyCode() == SPACE_KEY)
-            {
-               m_window = Platform::shared().newWindow(800, 600);
-               graphicAPI->setRenderTarget(m_window);
-            }
-        });
+        SharedPtr<GraphicAPI> graphicAPI = Platform::shared().newOpenGLGraphicAPI(m_window);
 
-        ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
-        {
-            if (e.mouseCode() == MOUSE_L)
-                graphicAPI->setClearColor(1, 0, 0, 1);
-            if (e.mouseCode() == MOUSE_R)
-                graphicAPI->setClearColor(0, 1, 0, 1);
-        });
-
-        ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
-        {
-            graphicAPI->setClearColor(0, 0, 0, 0);
-        });
-    });
-
-    while (running)
-    {
-        Platform::shared().pollEvents();
         graphicAPI->beginFrame();
         graphicAPI->endFrame();
     }
-}
-
-TEST(GraphicsTests, doubleWindowSameAPI)
-{
-    bool running = true;
-
-    SharedPtr<GraphicAPI> graphicAPI1 = GraphicAPI::newDefaultGraphicAPI(Platform::shared().newWindow(800, 600));
-    SharedPtr<GraphicAPI> graphicAPI2 = GraphicAPI::newDefaultGraphicAPI(Platform::shared().newWindow(800, 600));
-
-    Platform::shared().setEventCallBack([&](Event& ev)
+#else
+    TEST_F(GraphicsTestWindow, graphicAPI)
     {
-        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
-        {
-            if (e.keyCode() == ESC_KEY)
-                running = false;
-        });
+        SharedPtr<GraphicAPI> graphicAPI = Platform::shared().newDefaultGraphicAPI(m_window);
 
-        ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
-        {
-            if (e.mouseCode() == MOUSE_L)
-            {
-                graphicAPI1->setClearColor(1, 0, 0, 1);
-                graphicAPI2->setClearColor(1, 0, 0, 1);
-            }
-            if (e.mouseCode() == MOUSE_R)
-            {
-                graphicAPI1->setClearColor(0, 1, 0, 1);
-                graphicAPI2->setClearColor(0, 1, 0, 1);
-            }
-        });
-
-        ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
-        {
-            graphicAPI1->setClearColor(0, 0, 0, 0);
-            graphicAPI2->setClearColor(0, 0, 0, 0);
-        });
-    });
-
-    while (running)
-    {
-        Platform::shared().pollEvents();
-        
-        graphicAPI1->beginFrame();
-        graphicAPI1->endFrame();
-
-        graphicAPI2->beginFrame();
-        graphicAPI2->endFrame();
+        graphicAPI->beginFrame();
+        graphicAPI->endFrame();
     }
-}
-
-#if defined (USING_OPENGL) && defined (USING_METAL)
-TEST(GraphicsTests, doubleWindowDifferentAPI)
-{
-    bool running = true;
-
-    SharedPtr<GraphicAPI> graphicAPI1 = GraphicAPI::newOpenGLGraphicAPI(Platform::shared().newWindow(800, 600));
-    SharedPtr<GraphicAPI> graphicAPI2 = GraphicAPI::newMetalGraphicAPI(Platform::shared().newWindow(800, 600));
-
-    Platform::shared().setEventCallBack([&](Event& ev)
-    {
-        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
-        {
-            if (e.keyCode() == ESC_KEY)
-                running = false;
-        });
-
-        ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
-        {
-            if (e.mouseCode() == MOUSE_L)
-            {
-                graphicAPI1->setClearColor(1, 0, 0, 1);
-                graphicAPI2->setClearColor(1, 0, 0, 1);
-            }
-            if (e.mouseCode() == MOUSE_R)
-            {
-                graphicAPI1->setClearColor(0, 1, 0, 1);
-                graphicAPI2->setClearColor(0, 1, 0, 1);
-            }
-        });
-
-        ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
-        {
-            graphicAPI1->setClearColor(0, 0, 0, 0);
-            graphicAPI2->setClearColor(0, 0, 0, 0);
-        });
-    });
-
-    while (running)
-    {
-        Platform::shared().pollEvents();
-        
-        graphicAPI1->beginFrame();
-        graphicAPI1->endFrame();
-
-        graphicAPI2->beginFrame();
-        graphicAPI2->endFrame();
-    }
-}
 #endif
 
-TEST_F(GraphicsAPIedTest, vertexBuffer)
-{
-    Array<Vertex> vertices;
-
-    vertices.append({-1, -1});
-    vertices.append({ 1,  1});
-    vertices.append({ 1,  0});
-
-    SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
-}
-
-TEST_F(GraphicsAPIedTest, graphicPipeline)
-{
-    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
-}
-
-TEST_F(GraphicsAPIedTest, triangle)
-{
-    bool running = true;
-
-    Array<Vertex> vertices;
-
-    vertices.append({-1, -1});
-    vertices.append({ 0,  1});
-    vertices.append({ 1, -1});
-
-    SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
-    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
-
-    Platform::shared().setEventCallBack([&](Event& ev)
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST_F(GraphicsTestAPIMetal, setClearColor)
     {
-        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+        bool running = true;
+
+        Platform::shared().setEventCallBack([&](Event& ev)
         {
-            if (e.keyCode() == ESC_KEY)
-                running = false;
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+
+            ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
+            {
+                if (e.mouseCode() == MOUSE_L)
+                    m_graphicAPI->setClearColor(1, 0, 0, 1);
+                if (e.mouseCode() == MOUSE_R)
+                    m_graphicAPI->setClearColor(0, 1, 0, 1);
+            });
+
+            ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
+            {
+                m_graphicAPI->setClearColor(0, 0, 0, 0);
+            });
         });
-    });
 
-
-    while (running)
-    {
-        Platform::shared().pollEvents();
-        
-        m_graphicAPI->beginFrame();
-        
-        m_graphicAPI->useVertexBuffer(vertexBuffer);
-        m_graphicAPI->useGraphicsPipeline(graphicPipeline);
-        m_graphicAPI->drawVertices(0, 3);
-
-        m_graphicAPI->endFrame();
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            m_graphicAPI->beginFrame();
+            m_graphicAPI->endFrame();
+        }
     }
-}
 
-TEST_F(GraphicsWindowedTest, triangleAPISwichable)
-{
-    bool running = true;
-    bool usingMetal = true;
-
-    Array<Vertex> vertices;
-
-    vertices.append({-1, -1});
-    vertices.append({ 0,  1});
-    vertices.append({ 1, -1});
-
-    while (running)
+    TEST_F(GraphicsTestAPIOpenGL, setClearColor)
     {
-        bool looping = true;
+        bool running = true;
 
-        SharedPtr<GraphicAPI> graphicAPI = usingMetal ? GraphicAPI::newMetalGraphicAPI(m_window) : GraphicAPI::newOpenGLGraphicAPI(m_window);
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
 
-        SharedPtr<VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(vertices);
-        SharedPtr<GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+            ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
+            {
+                if (e.mouseCode() == MOUSE_L)
+                    m_graphicAPI->setClearColor(1, 0, 0, 1);
+                if (e.mouseCode() == MOUSE_R)
+                    m_graphicAPI->setClearColor(0, 1, 0, 1);
+            });
+
+            ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
+            {
+                m_graphicAPI->setClearColor(0, 0, 0, 0);
+            });
+        });
+
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            m_graphicAPI->beginFrame();
+            m_graphicAPI->endFrame();
+        }
+    }
+#else
+    TEST_F(GraphicsTestAPI, setClearColor)
+    {
+        bool running = true;
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+
+            ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
+            {
+                if (e.mouseCode() == MOUSE_L)
+                    m_graphicAPI->setClearColor(1, 0, 0, 1);
+                if (e.mouseCode() == MOUSE_R)
+                    m_graphicAPI->setClearColor(0, 1, 0, 1);
+            });
+
+            ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
+            {
+                m_graphicAPI->setClearColor(0, 0, 0, 0);
+            });
+        });
+
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            m_graphicAPI->beginFrame();
+            m_graphicAPI->endFrame();
+        }
+    }
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+TEST_F(GraphicsTestAPIMetal, vertexBuffer)
+    {
+        Array<Vertex> vertices;
+
+        vertices.append({-1, -1});
+        vertices.append({ 1,  1});
+        vertices.append({ 1,  0});
+
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+    }
+
+    TEST_F(GraphicsTestAPIOpenGL, vertexBuffer)
+    {
+        Array<Vertex> vertices;
+
+        vertices.append({-1, -1});
+        vertices.append({ 1,  1});
+        vertices.append({ 1,  0});
+
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+    }
+#else
+    TEST_F(GraphicsTestAPI, vertexBuffer)
+    {
+        Array<Vertex> vertices;
+
+        vertices.append({-1, -1});
+        vertices.append({ 1,  1});
+        vertices.append({ 1,  0});
+
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+    }
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST_F(GraphicsTestAPIMetal, graphicPipeline)
+    {
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+    }
+
+    TEST_F(GraphicsTestAPIOpenGL, graphicPipeline)
+    {
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+    }
+#else
+    TEST_F(GraphicsTestAPI, graphicPipeline)
+    {
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+    }
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST_F(GraphicsTestAPIMetal, triangle)
+    {
+        bool running = true;
+
+        Array<Vertex> vertices;
+
+        vertices.append({-1, -1});
+        vertices.append({ 0,  1});
+        vertices.append({ 1, -1});
+
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+        });
+
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            
+            m_graphicAPI->beginFrame();
+            
+            m_graphicAPI->useVertexBuffer(vertexBuffer);
+            m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+            m_graphicAPI->drawVertices(0, 3);
+
+            m_graphicAPI->endFrame();
+        }
+    }
+    TEST_F(GraphicsTestAPIOpenGL, triangle)
+    {
+        bool running = true;
+
+        Array<Vertex> vertices;
+
+        vertices.append({-1, -1});
+        vertices.append({ 0,  1});
+        vertices.append({ 1, -1});
+
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+        });
+
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            
+            m_graphicAPI->beginFrame();
+            
+            m_graphicAPI->useVertexBuffer(vertexBuffer);
+            m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+            m_graphicAPI->drawVertices(0, 3);
+
+            m_graphicAPI->endFrame();
+        }
+    }
+#else
+    TEST_F(GraphicsTestAPI, triangle)
+    {
+        bool running = true;
+
+        Array<Vertex> vertices;
+
+        vertices.append({-1, -1});
+        vertices.append({ 0,  1});
+        vertices.append({ 1, -1});
+
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                if (e.keyCode() == ESC_KEY)
+                    running = false;
+            });
+        });
+
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            
+            m_graphicAPI->beginFrame();
+            
+            m_graphicAPI->useVertexBuffer(vertexBuffer);
+            m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+            m_graphicAPI->drawVertices(0, 3);
+
+            m_graphicAPI->endFrame();
+        }
+    }
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST_F(GraphicsTestAPIMetal, indexedShape)
+    {
+        bool running = true;
+
+        Array<Vertex> vertices = {
+            {-0.5, -0.5},
+            {-0.5,  0.5},
+            { 0.5,  0.5},
+            { 0.5, -0.5}
+        };
+
+        Array<uint32> indices = { 0, 1, 2, 0, 2, 3 };
+
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+        SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
 
         Platform::shared().setEventCallBack([&](Event& ev)
         {
@@ -425,36 +495,213 @@ TEST_F(GraphicsWindowedTest, triangleAPISwichable)
                 switch (e.keyCode())
                 {
                 case ESC_KEY:
-                    looping = false;
                     running = false;
-                    break;
-                case ONE_KEY:
-                    usingMetal = true;
-                    looping = false;
-                    logDebug << "Swiching to Metal" << std::endl;
-                    break;
-                case TWO_KEY:
-                    usingMetal = false;
-                    looping = false;
-                    logDebug << "Swiching to OpenGL" << std::endl;
                     break;
                 }
             });
         });
 
-        while (looping)
+        while (running)
         {
             Platform::shared().pollEvents();
             
-            graphicAPI->beginFrame();
+            m_graphicAPI->beginFrame();
             
-            graphicAPI->useVertexBuffer(vertexBuffer);
-            graphicAPI->useGraphicsPipeline(graphicPipeline);
-            graphicAPI->drawVertices(0, 3);
+            m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+            m_graphicAPI->useVertexBuffer(vertexBuffer);
+            m_graphicAPI->drawIndexedVertices(indexBuffer);
 
-            graphicAPI->endFrame();
+            m_graphicAPI->endFrame();
         }
     }
-}
+    TEST_F(GraphicsTestAPIOpenGL, indexedShape)
+    {
+        bool running = true;
+
+        Array<Vertex> vertices = {
+            {-0.5, -0.5},
+            {-0.5,  0.5},
+            { 0.5,  0.5},
+            { 0.5, -0.5}
+        };
+
+        Array<uint32> indices = { 0, 1, 2, 0, 2, 3 };
+
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+        SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                switch (e.keyCode())
+                {
+                case ESC_KEY:
+                    running = false;
+                    break;
+                }
+            });
+        });
+
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            
+            m_graphicAPI->beginFrame();
+            
+            m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+            m_graphicAPI->useVertexBuffer(vertexBuffer);
+            m_graphicAPI->drawIndexedVertices(indexBuffer);
+
+            m_graphicAPI->endFrame();
+        }
+    }
+#else
+    TEST_F(GraphicsTestAPI, indexedShape)
+    {
+        bool running = true;
+
+        Array<Vertex> vertices = {
+            {-0.5, -0.5},
+            {-0.5,  0.5},
+            { 0.5,  0.5},
+            { 0.5, -0.5}
+        };
+
+        Array<uint32> indices = { 0, 1, 2, 0, 2, 3 };
+
+        SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+        SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+        SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
+
+        Platform::shared().setEventCallBack([&](Event& ev)
+        {
+            ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+            {
+                switch (e.keyCode())
+                {
+                case ESC_KEY:
+                    running = false;
+                    break;
+                }
+            });
+        });
+
+        while (running)
+        {
+            Platform::shared().pollEvents();
+            
+            m_graphicAPI->beginFrame();
+            
+            m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+            m_graphicAPI->useVertexBuffer(vertexBuffer);
+            m_graphicAPI->drawIndexedVertices(indexBuffer);
+
+            m_graphicAPI->endFrame();
+        }
+    }
+#endif
+
+
+
+#ifdef IMGUI_ENABLED
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        TEST_F(GraphicsTestAPIMetal, imguiDemoWindow)
+        {
+            bool running = true;
+
+            m_graphicAPI->useForImGui();
+
+            Platform::shared().setEventCallBack([&](Event& ev)
+            {
+                ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+                {
+                    if (e.keyCode() == ESC_KEY)
+                        running = false;
+                });
+            });
+
+            while (running)
+            {
+                Platform::shared().pollEvents();
+                
+                m_graphicAPI->beginFrame();
+                ImGui::NewFrame();
+
+                ImGui::ShowDemoWindow();
+
+                ImGui::Render();
+                m_graphicAPI->endFrame();
+
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+            }
+        }
+        TEST_F(GraphicsTestAPIOpenGL, imguiDemoWindow)
+        {
+            bool running = true;
+
+            m_graphicAPI->useForImGui();
+
+            Platform::shared().setEventCallBack([&](Event& ev)
+            {
+                ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+                {
+                    if (e.keyCode() == ESC_KEY)
+                        running = false;
+                });
+            });
+
+            while (running)
+            {
+                Platform::shared().pollEvents();
+                
+                m_graphicAPI->beginFrame();
+                ImGui::NewFrame();
+
+                ImGui::ShowDemoWindow();
+
+                ImGui::Render();
+                m_graphicAPI->endFrame();
+
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+            }
+        }
+    #else
+        TEST_F(GraphicsTestAPI, imguiDemoWindow)
+        {
+            bool running = true;
+
+            m_graphicAPI->useForImGui();
+
+            Platform::shared().setEventCallBack([&](Event& ev)
+            {
+                ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+                {
+                    if (e.keyCode() == ESC_KEY)
+                        running = false;
+                });
+            });
+
+            while (running)
+            {
+                Platform::shared().pollEvents();
+                
+                m_graphicAPI->beginFrame();
+                ImGui::NewFrame();
+
+                ImGui::ShowDemoWindow();
+
+                ImGui::Render();
+                m_graphicAPI->endFrame();
+
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+            }
+        }
+    #endif
+#endif
 
 }

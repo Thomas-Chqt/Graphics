@@ -11,7 +11,9 @@
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
 #include "GraphicAPI/OpenGL/OpenGLVertexBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
+#include "Graphics/IndexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include <GL/glew.h>
@@ -19,39 +21,60 @@
 #include "Logger/Logger.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
+
+#ifdef IMGUI_ENABLED
+    class ImDrawData;
+    namespace ImGui { ImDrawData* GetDrawData(); }
+
+    bool ImGui_ImplOpenGL3_Init(const char* glsl_version = nullptr);
+    void ImGui_ImplOpenGL3_Shutdown();
+    void ImGui_ImplOpenGL3_NewFrame();
+    void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data);
+#endif
 
 using utils::SharedPtr;
 using utils::String;
 using utils::uint32;
+using utils::uint64;
+using utils::Array;
 
 namespace gfx
 {
 
-SharedPtr<GraphicAPI> GraphicAPI::newOpenGLGraphicAPI(const SharedPtr<Window>& renderTarget)
+SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const SharedPtr<Window>& renderTarget)
 {
     return SharedPtr<GraphicAPI>(new OpenGLGraphicAPI(renderTarget));
 }
 
-SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout)
-{
-    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, size, layout));
-}
-
-SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName)
-{
-    return SharedPtr<GraphicPipeline>(new OpenGLGraphicPipeline(vertexShaderName, fragmentShaderName));
-}
-
 void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarget)
 {
-    m_renderTarget = renderTarget;
-    m_renderTarget->useOpenGL();
-    glewExperimental = GL_TRUE;
+    if (SharedPtr<OpenGLWindow> glWindow = renderTarget.dynamicCast<OpenGLWindow>())
+        m_renderTarget = glWindow;
+    else
+        logFatal << "Window is not OpenGLWindow" << std::endl;
+    
+    m_renderTarget->makeContextCurrent();
     GLenum err = glewInit();
     assert(err == GLEW_OK);
 
     logDebug << "OpenGLGraphicAPI render target set to window " << renderTarget << std::endl;
 }
+
+#ifdef IMGUI_ENABLED
+void OpenGLGraphicAPI::useForImGui()
+{
+    assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
+    assert(m_renderTarget && "Render target need to be set before initializing imgui");
+    m_renderTarget->imGuiInit();
+    #ifdef __APPLE__
+        ImGui_ImplOpenGL3_Init("#version 150");
+    #else
+        ImGui_ImplOpenGL3_Init("#version 130");
+    #endif
+    s_imguiEnabledAPI = this;
+}
+#endif
 
 void OpenGLGraphicAPI::setClearColor(float r, float g, float b, float a)
 {
@@ -61,11 +84,35 @@ void OpenGLGraphicAPI::setClearColor(float r, float g, float b, float a)
     m_clearColor[3] = a;
 }
 
+SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, uint64 size, const VertexBuffer::LayoutBase& layout)
+{
+    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, size, layout));
+}
+
+SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName)
+{
+    return SharedPtr<GraphicPipeline>(new OpenGLGraphicPipeline(vertexShaderName, fragmentShaderName));
+}
+
+SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& indices)
+{
+    return SharedPtr<IndexBuffer>(new OpenGLIndexBuffer(indices));
+}
+
 void OpenGLGraphicAPI::beginFrame()
 {
-    m_renderTarget->makeOpenGlContextCurrent();
+    m_renderTarget->makeContextCurrent();
     glClearColor(m_clearColor[0], m_clearColor[1],  m_clearColor[2], m_clearColor[3]);
     glClear(GL_COLOR_BUFFER_BIT);
+
+    #ifdef IMGUI_ENABLED
+    if (s_imguiEnabledAPI == this)
+    {
+        ImGui_ImplOpenGL3_NewFrame();
+        m_renderTarget->imGuiNewFrame();
+    }
+    #endif
+
 }
 
 void OpenGLGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> graphicsPipeline)
@@ -89,13 +136,37 @@ void OpenGLGraphicAPI::drawVertices(uint32 start, uint32 count)
     glDrawArrays(GL_TRIANGLES, start, count);
 }
 
+void OpenGLGraphicAPI::drawIndexedVertices(utils::SharedPtr<IndexBuffer> indexBuffer)
+{
+    if (SharedPtr<OpenGLIndexBuffer> glIndexBuffer = indexBuffer.dynamicCast<OpenGLIndexBuffer>())
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glIndexBuffer->indexBufferID());
+        glDrawElements(GL_TRIANGLES, glIndexBuffer->indexCount(), GL_UNSIGNED_INT, 0);
+    }
+    else
+        logFatal << "IndexBuffer is not OpenGLIndexBuffer" << std::endl;
+}
+
 void OpenGLGraphicAPI::endFrame()
 {
-    m_renderTarget->openGLSwapBuffer();
+    #ifdef IMGUI_ENABLED
+        if (s_imguiEnabledAPI == this)
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    #endif
+
+    m_renderTarget->swapBuffer();
 }
 
 OpenGLGraphicAPI::~OpenGLGraphicAPI()
 {
+    #ifdef IMGUI_ENABLED
+        if (s_imguiEnabledAPI == this)
+        {
+            ImGui_ImplOpenGL3_Shutdown();
+            m_renderTarget->imGuiShutdown();
+        }
+    #endif
+
     logDebug << "OpenGLGraphicAPI destructed" << std::endl;
 }
 

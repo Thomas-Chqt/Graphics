@@ -13,11 +13,13 @@
 #include <cassert>
 
 #include "Logger/Logger.hpp"
-#include "Window/GLFW/GLFWWindow.hpp"
+#ifdef USING_METAL
+    #include "Window/GLFW/GLFWMetalWindow.hpp"
+#endif
 #include "UtilsCPP/Func.hpp"
+#include "Window/GLFW/GLFWOpenGLWindow.hpp"
 
 using utils::SharedPtr;
-using gfx::GLFWWindow;
 using utils::UniquePtr;
 using utils::Func;
 
@@ -38,10 +40,19 @@ void Platform::terminate()
     logDebug << "GLFWPlatform terminated" << std::endl;
 }
 
-SharedPtr<Window> GLFWPlatform::newWindow(int w, int h)
+#ifdef USING_METAL
+utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h)
 {
-    return SharedPtr<Window>(new GLFWWindow(w, h, Func<void(Event&)>(*this, &GLFWPlatform::eventCallBack)));
+    return SharedPtr<Window>(new GLFWMetalWindow(w, h, Func<void(Event&)>(*this, &GLFWPlatform::eventCallBack)));
 }
+#endif
+
+#ifdef USING_OPENGL
+utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h)
+{
+    return SharedPtr<Window>(new GLFWOpenGLWindow(w, h, Func<void(Event&)>(*this, &GLFWPlatform::eventCallBack)));
+}
+#endif
 
 void GLFWPlatform::pollEvents()
 {

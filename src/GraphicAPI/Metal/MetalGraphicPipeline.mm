@@ -7,7 +7,7 @@
  * ---------------------------------------------------
  */
 
-#define OBJCPP
+
 
 #include "Graphics/ShaderLibrary.hpp"
 #include <cassert>

@@ -14,6 +14,9 @@
 #include "Graphics/Platform.hpp"
 #include "UtilsCPP/String.hpp"
 #include <fstream>
+#ifdef IMGUI_ENABLED
+    #include "imgui/imgui.h"
+#endif
 
 using namespace tlog;
 using namespace gfx;
@@ -29,9 +32,20 @@ public:
         Platform::init();
         ShaderLibrary::init();
 
+        #ifdef IMGUI_ENABLED
+            ImGui::CreateContext();
+
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable; 
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+        #endif
+
         #ifdef USING_METAL
             ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
         #endif
+
         {
             std::ifstream f(OPENGL_SHADER_DIR"/vtx1.glsl");
             ShaderLibrary::shared().registerShader(
@@ -60,6 +74,9 @@ public:
 
     void TearDown() override
     {
+        #ifdef IMGUI_ENABLED
+            ImGui::DestroyContext();
+        #endif
         ShaderLibrary::terminated();
         Platform::terminate();
         Logger::terminate();

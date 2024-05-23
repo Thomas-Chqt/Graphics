@@ -25,9 +25,16 @@ public:
     GLFWPlatform(const GLFWPlatform&) = delete;
     GLFWPlatform(GLFWPlatform&&)      = delete;
 
-    utils::SharedPtr<Window> newWindow(int w, int h) override;
-    void pollEvents() override;
     inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_nextEventCallback = cb; }
+
+#ifdef USING_METAL
+    utils::SharedPtr<Window> newMetalWindow(int w, int h) override;
+#endif
+#ifdef USING_OPENGL
+    utils::SharedPtr<Window> newOpenGLWindow(int w, int h) override;
+#endif
+
+    void pollEvents() override;
 
     ~GLFWPlatform() override;
 
