@@ -48,7 +48,7 @@ public:
     void setRenderTarget(const utils::SharedPtr<Window>&) override;
 
 #ifdef IMGUI_ENABLED
-    void useForImGui() override;
+    void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) override;
 #endif
 
     void setClearColor(float r, float g, float b, float a) override;

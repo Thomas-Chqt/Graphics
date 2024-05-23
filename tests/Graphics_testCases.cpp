@@ -603,15 +603,18 @@ TEST_F(GraphicsTestAPIMetal, vertexBuffer)
     }
 #endif
 
-
-
 #ifdef IMGUI_ENABLED
     #if defined (USING_METAL) && defined (USING_OPENGL)
         TEST_F(GraphicsTestAPIMetal, imguiDemoWindow)
         {
             bool running = true;
 
-            m_graphicAPI->useForImGui();
+            m_graphicAPI->useForImGui([](){
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable; 
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+            });
 
             Platform::shared().setEventCallBack([&](Event& ev)
             {
@@ -642,7 +645,12 @@ TEST_F(GraphicsTestAPIMetal, vertexBuffer)
         {
             bool running = true;
 
-            m_graphicAPI->useForImGui();
+            m_graphicAPI->useForImGui([](){
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable; 
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+            });
 
             Platform::shared().setEventCallBack([&](Event& ev)
             {
@@ -674,7 +682,12 @@ TEST_F(GraphicsTestAPIMetal, vertexBuffer)
         {
             bool running = true;
 
-            m_graphicAPI->useForImGui();
+            m_graphicAPI->useForImGui([](){
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable; 
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+            });
 
             Platform::shared().setEventCallBack([&](Event& ev)
             {
@@ -702,6 +715,141 @@ TEST_F(GraphicsTestAPIMetal, vertexBuffer)
             }
         }
     #endif
+#endif
+
+#if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST(GraphicsTest, APISwitch)
+    {
+        bool usingMetal = true;
+        bool running = true;
+        bool looping = true;
+
+        Platform::shared().setEventCallBack([&](Event& event){
+            event.dispatch<KeyDownEvent>([&](KeyDownEvent& keyDownEvent)
+            {
+                if (keyDownEvent.isRepeat())
+                    return;
+                switch (keyDownEvent.keyCode())
+                {
+                case ESC_KEY:
+                    looping = false;
+                    running = false;
+                    break;
+
+                case ONE_KEY:
+                    if (usingMetal == false)
+                    {
+                        usingMetal = true;
+                        looping = false;
+                    }
+                    break;
+
+                case TWO_KEY:
+                    if (usingMetal == true)
+                    {
+                        usingMetal = false;
+                        looping = false;
+                    }
+                    break;
+                }
+            });
+        });
+
+        while (running)
+        {
+            looping = true;
+            
+            SharedPtr<GraphicAPI> graphicAPI = usingMetal ? Platform::shared().newMetalGraphicAPI(Platform::shared().newMetalWindow(800, 600)) : Platform::shared().newOpenGLGraphicAPI(Platform::shared().newOpenGLWindow(800, 600));
+            SharedPtr<VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(Array<Vertex>({{-1, -1}, { 0,  1}, { 1, -1}}));
+            SharedPtr<GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+
+            while(looping)
+            {
+                Platform::shared().pollEvents();
+                
+                graphicAPI->beginFrame();
+                
+                graphicAPI->useVertexBuffer(vertexBuffer);
+                graphicAPI->useGraphicsPipeline(graphicPipeline);
+                graphicAPI->drawVertices(0, 3);
+
+                graphicAPI->endFrame();
+            }
+        }
+    }
+#endif
+
+#ifdef IMGUI_ENABLED
+# if defined (USING_METAL) && defined (USING_OPENGL)
+    TEST(GraphicsTest, imguiDemoWindowAPISwitch)
+    {
+        bool usingMetal = false;
+        bool running = true;
+        bool looping = true;
+
+        Platform::shared().setEventCallBack([&](Event& event)
+        {
+            event.dispatch<KeyDownEvent>([&](KeyDownEvent& keyDownEvent)
+            {
+                if (keyDownEvent.isRepeat())
+                    return;
+                switch (keyDownEvent.keyCode())
+                {
+                case ESC_KEY:
+                    looping = false;
+                    running = false;
+                    break;
+
+                case ONE_KEY:
+                    if (usingMetal == false)
+                    {
+                        usingMetal = true;
+                        looping = false;
+                    }
+                    break;
+
+                case TWO_KEY:
+                    if (usingMetal == true)
+                    {
+                        usingMetal = false;
+                        looping = false;
+                    }
+                    break;
+                }
+            });
+        });
+
+        while (running)
+        {
+            looping = true;
+
+            SharedPtr<GraphicAPI> graphicAPI = usingMetal ? Platform::shared().newMetalGraphicAPI(Platform::shared().newMetalWindow(800, 600)) : Platform::shared().newOpenGLGraphicAPI(Platform::shared().newOpenGLWindow(800, 600));
+
+            graphicAPI->useForImGui([](){
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable; 
+                ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+            });
+
+            while(looping)
+            {
+                Platform::shared().pollEvents();
+                
+                graphicAPI->beginFrame();
+                ImGui::NewFrame();
+                
+                ImGui::ShowDemoWindow();
+                
+                ImGui::Render();
+                graphicAPI->endFrame();
+
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+            }
+        }
+    }
+# endif
 #endif
 
 }

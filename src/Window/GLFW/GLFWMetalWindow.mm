@@ -46,12 +46,15 @@ void GLFWMetalWindow::imGuiNewFrame()
 GLFWMetalWindow::~GLFWMetalWindow()
 {
     ::glfwDestroyWindow(m_glfwWindow);
+    logDebug << "GLFWMetalWindow (" << this << ") destructed" << std::endl;
 }
 
 GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback)
     : m_nextEventCallback(defaultCallback)
 {
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    ::glfwDefaultWindowHints();
+    
+    ::glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     m_glfwWindow = ::glfwCreateWindow(w, h, "", nullptr, nullptr);
     assert(m_glfwWindow);
 
@@ -141,6 +144,8 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& 
         WindowRequestCloseEvent windowRequestCloseEvent(_this);
         _this.eventCallBack(windowRequestCloseEvent);
     });
+
+    logDebug << "GLFWMetalWindow (" << this << ") created" << std::endl;
 }
 
 }

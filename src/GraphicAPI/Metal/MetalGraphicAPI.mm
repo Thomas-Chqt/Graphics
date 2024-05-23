@@ -37,11 +37,20 @@ using utils::Array;
 
 #ifdef IMGUI_ENABLED
     class ImDrawData;
+    class ImGuiContext;
+    class ImFontAtlas;
+
     bool ImGui_ImplMetal_Init(id<MTLDevice> device);
     void ImGui_ImplMetal_Shutdown();
     void ImGui_ImplMetal_NewFrame(MTLRenderPassDescriptor*);
     void ImGui_ImplMetal_RenderDrawData(ImDrawData*, id<MTLCommandBuffer>, id<MTLRenderCommandEncoder>);
-    namespace ImGui { ImDrawData* GetDrawData(); }
+    
+    namespace ImGui
+    {
+        ImDrawData* GetDrawData();
+        ImGuiContext* CreateContext(ImFontAtlas* shared_font_atlas = NULL);
+        void DestroyContext(ImGuiContext* ctx = NULL);
+    }
 #endif
 
 namespace gfx
@@ -86,10 +95,14 @@ void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarg
 }}
 
 #ifdef IMGUI_ENABLED
-void MetalGraphicAPI::useForImGui()
+void MetalGraphicAPI::useForImGui(const utils::Func<void()>& f)
 {
     assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
     assert(m_renderTarget && "Render target need to be set before initializing imgui");
+    
+    ImGui::CreateContext();
+    if (f) f();
+
     m_renderTarget->imGuiInit();
     ImGui_ImplMetal_Init(m_mtlDevice);
     s_imguiEnabledAPI = this;
@@ -142,13 +155,13 @@ void MetalGraphicAPI::beginFrame()
     m_commandEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:m_renderPassDescriptor];
     assert(m_commandEncoder);
 
-#ifdef IMGUI_ENABLED
+    #ifdef IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplMetal_NewFrame(m_renderPassDescriptor);
         m_renderTarget->imGuiNewFrame();
     }
-#endif
+    #endif
 }
 
 void MetalGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> graphicsPipeline)
@@ -192,10 +205,10 @@ void MetalGraphicAPI::endFrame()
 {
     assert(m_frameAutoreleasePool != nullptr);
 
-#ifdef IMGUI_ENABLED
+    #ifdef IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
         ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
-#endif
+    #endif
     
     [m_commandEncoder endEncoding];
 
@@ -211,13 +224,15 @@ MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
     if (m_frameAutoreleasePool != nullptr)
         [m_frameAutoreleasePool drain];
 
-#ifdef IMGUI_ENABLED
+    #ifdef IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplMetal_Shutdown();
         m_renderTarget->imGuiShutdown();
+        ImGui::DestroyContext();
+        s_imguiEnabledAPI = nullptr;
     }
-#endif
+    #endif
 
     if (m_shaderLibrary != nil)
         [m_shaderLibrary release];

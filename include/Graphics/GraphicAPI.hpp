@@ -12,6 +12,7 @@
 
 #include "GraphicPipeline.hpp"
 #include "IndexBuffer.hpp"
+#include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/String.hpp"
 #include "VertexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
@@ -31,7 +32,7 @@ public:
     virtual void setRenderTarget(const utils::SharedPtr<Window>&) = 0;
 
 #ifdef IMGUI_ENABLED
-    virtual void useForImGui() = 0;
+    virtual void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) = 0;
 #endif
 
     virtual void setClearColor(float r, float g, float b, float a) = 0;

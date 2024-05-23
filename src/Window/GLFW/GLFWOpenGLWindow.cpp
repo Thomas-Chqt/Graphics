@@ -8,6 +8,7 @@
  */
 
 #include "Window/GLFW/GLFWOpenGLWindow.hpp"
+#include "Logger/Logger.hpp"
 #include <GLFW/glfw3.h>
 #include <cassert>
 
@@ -41,11 +42,14 @@ void GLFWOpenGLWindow::imGuiNewFrame()
 GLFWOpenGLWindow::~GLFWOpenGLWindow()
 {
     ::glfwDestroyWindow(m_glfwWindow);
+    logDebug << "GLFWOpenGLWindow (" << this << ") destructed" << std::endl;
 }
 
 GLFWOpenGLWindow::GLFWOpenGLWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback)
     : m_nextEventCallback(defaultCallback)
 {
+    ::glfwDefaultWindowHints();
+
     #ifdef __APPLE__
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
@@ -55,7 +59,7 @@ GLFWOpenGLWindow::GLFWOpenGLWindow(int w, int h, const utils::Func<void(Event&)>
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     #endif
-
+    
     m_glfwWindow = ::glfwCreateWindow(w, h, "", nullptr, nullptr);
     assert(m_glfwWindow);
 
@@ -131,6 +135,8 @@ GLFWOpenGLWindow::GLFWOpenGLWindow(int w, int h, const utils::Func<void(Event&)>
         WindowRequestCloseEvent windowRequestCloseEvent(_this);
         _this.eventCallBack(windowRequestCloseEvent);
     });
+
+    logDebug << "GLFWOpenGLWindow (" << this << ") created" << std::endl;
 }
 
 }

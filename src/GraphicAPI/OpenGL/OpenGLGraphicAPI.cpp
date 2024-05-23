@@ -25,12 +25,20 @@
 
 #ifdef IMGUI_ENABLED
     class ImDrawData;
-    namespace ImGui { ImDrawData* GetDrawData(); }
+    class ImGuiContext;
+    class ImFontAtlas;
 
     bool ImGui_ImplOpenGL3_Init(const char* glsl_version = nullptr);
     void ImGui_ImplOpenGL3_Shutdown();
     void ImGui_ImplOpenGL3_NewFrame();
     void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data);
+
+    namespace ImGui
+    {
+        ImDrawData* GetDrawData();
+        ImGuiContext* CreateContext(ImFontAtlas* shared_font_atlas = NULL);
+        void DestroyContext(ImGuiContext* ctx = NULL);
+    }
 #endif
 
 using utils::SharedPtr;
@@ -62,10 +70,14 @@ void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTar
 }
 
 #ifdef IMGUI_ENABLED
-void OpenGLGraphicAPI::useForImGui()
+void OpenGLGraphicAPI::useForImGui(const utils::Func<void()>& f)
 {
     assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
     assert(m_renderTarget && "Render target need to be set before initializing imgui");
+    
+    ImGui::CreateContext();
+    if (f) f();
+
     m_renderTarget->imGuiInit();
     #ifdef __APPLE__
         ImGui_ImplOpenGL3_Init("#version 150");
@@ -112,7 +124,6 @@ void OpenGLGraphicAPI::beginFrame()
         m_renderTarget->imGuiNewFrame();
     }
     #endif
-
 }
 
 void OpenGLGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> graphicsPipeline)
@@ -150,8 +161,8 @@ void OpenGLGraphicAPI::drawIndexedVertices(utils::SharedPtr<IndexBuffer> indexBu
 void OpenGLGraphicAPI::endFrame()
 {
     #ifdef IMGUI_ENABLED
-        if (s_imguiEnabledAPI == this)
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (s_imguiEnabledAPI == this)
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     #endif
 
     m_renderTarget->swapBuffer();
@@ -160,11 +171,13 @@ void OpenGLGraphicAPI::endFrame()
 OpenGLGraphicAPI::~OpenGLGraphicAPI()
 {
     #ifdef IMGUI_ENABLED
-        if (s_imguiEnabledAPI == this)
-        {
-            ImGui_ImplOpenGL3_Shutdown();
-            m_renderTarget->imGuiShutdown();
-        }
+    if (s_imguiEnabledAPI == this)
+    {
+        ImGui_ImplOpenGL3_Shutdown();
+        m_renderTarget->imGuiShutdown();
+        ImGui::DestroyContext();
+        s_imguiEnabledAPI = nullptr;
+    }
     #endif
 
     logDebug << "OpenGLGraphicAPI destructed" << std::endl;
