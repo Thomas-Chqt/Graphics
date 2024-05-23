@@ -45,11 +45,13 @@ public:
 
     void beginFrame() override;    
 
-    void useGraphicsPipeline(utils::SharedPtr<GraphicPipeline>) override;
-    void useVertexBuffer(utils::SharedPtr<VertexBuffer>) override;
+    void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
+    void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
+    
+    void setFragmentUniform(utils::uint32 index, float r, float g, float b, float a) override;
     
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
-    void drawIndexedVertices(utils::SharedPtr<IndexBuffer>) override;
+    void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
     
     void endFrame() override;
 

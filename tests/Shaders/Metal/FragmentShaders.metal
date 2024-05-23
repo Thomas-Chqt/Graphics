@@ -14,3 +14,9 @@ float4 fra1()
 {
     return float4(1.0, 1.0, 1.0, 1.0);
 }
+
+fragment
+float4 fra2(constant float4* u_color [[buffer(0)]])
+{
+    return *u_color;
+}

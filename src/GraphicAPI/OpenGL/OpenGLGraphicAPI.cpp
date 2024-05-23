@@ -126,7 +126,7 @@ void OpenGLGraphicAPI::beginFrame()
     #endif
 }
 
-void OpenGLGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> graphicsPipeline)
+void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline)
 {
     if (utils::SharedPtr<OpenGLGraphicPipeline> glGraphicsPipeline = graphicsPipeline.dynamicCast<OpenGLGraphicPipeline>())
         glUseProgram(glGraphicsPipeline->shaderProgramID());
@@ -134,7 +134,7 @@ void OpenGLGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> gra
         logFatal << "GraphicPipeline is not OpenGLGraphicPipeline" << std::endl;
 }
 
-void OpenGLGraphicAPI::useVertexBuffer(utils::SharedPtr<VertexBuffer> vertexBuffer)
+void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer)
 {
     if (utils::SharedPtr<OpenGLVertexBuffer> glVertexBuffer = vertexBuffer.dynamicCast<OpenGLVertexBuffer>())
         glBindVertexArray(glVertexBuffer->vertexArrayID());
@@ -142,12 +142,17 @@ void OpenGLGraphicAPI::useVertexBuffer(utils::SharedPtr<VertexBuffer> vertexBuff
         logFatal << "VertexBuffer is not OpenGLVertexBuffer" << std::endl;
 }
 
+void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, float r, float g, float b, float a)
+{
+    glUniform4f(index, r, g, b, a);
+}
+
 void OpenGLGraphicAPI::drawVertices(uint32 start, uint32 count)
 {
     glDrawArrays(GL_TRIANGLES, start, count);
 }
 
-void OpenGLGraphicAPI::drawIndexedVertices(utils::SharedPtr<IndexBuffer> indexBuffer)
+void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& indexBuffer)
 {
     if (SharedPtr<OpenGLIndexBuffer> glIndexBuffer = indexBuffer.dynamicCast<OpenGLIndexBuffer>())
     {

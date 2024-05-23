@@ -22,8 +22,10 @@
 
 #ifdef __OBJC__
     #import <QuartzCore/CAMetalLayer.h>
+    #import <AppKit/AppKit.h>
 #else
     class CAMetalLayer;
+    class NSWindow;
 #endif // OBJCPP
 
 namespace gfx
@@ -46,7 +48,7 @@ public:
     void imGuiNewFrame() override;
 #endif
 
-    inline CAMetalLayer* metalLayer() override { return m_mtlLayer; }
+    CAMetalLayer* metalLayer() override;
 
     ~GLFWMetalWindow() override;
 
@@ -57,7 +59,7 @@ protected:
 
     ::GLFWwindow* m_glfwWindow = nullptr;
     utils::Func<void(Event&)> m_nextEventCallback;
-    CAMetalLayer* m_mtlLayer = nullptr;
+    NSWindow* m_nswindow = nullptr;
 
 public:
     GLFWMetalWindow& operator = (const GLFWMetalWindow&) = delete;

@@ -10,16 +10,30 @@
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
 #include "Graphics/ShaderLibrary.hpp"
 #include "Logger/Logger.hpp"
+#include "UtilsCPP/String.hpp"
+#include "UtilsCPP/Types.hpp"
 #include <cassert>
+
+using utils::uint32;
+using utils::String;
 
 namespace gfx
 {
+
+uint32 OpenGLGraphicPipeline::findVertexUniformIndex(const String& name)
+{
+    return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
+}
+
+uint32 OpenGLGraphicPipeline::findFragmentUniformIndex(const String& name)
+{
+    return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
+}
 
 OpenGLGraphicPipeline::~OpenGLGraphicPipeline()
 {
     glDeleteProgram(m_shaderProgramID);
 }
-
 
 OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName)
 {

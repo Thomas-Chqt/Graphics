@@ -60,6 +60,18 @@ public:
                 #endif
             );
         }
+        {
+            std::ifstream f(OPENGL_SHADER_DIR"/fra2.glsl");
+            ShaderLibrary::shared().registerShader(
+                "fra2"
+                #ifdef USING_METAL
+                , "fra2"
+                #endif
+                #ifdef USING_OPENGL
+                , utils::String::contentOf(f)
+                #endif
+            );
+        }
     }
 
     void TearDown() override

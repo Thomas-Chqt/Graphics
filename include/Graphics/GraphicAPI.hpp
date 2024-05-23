@@ -44,11 +44,13 @@ public:
 
     virtual void beginFrame() = 0;
 
-    virtual void useGraphicsPipeline(utils::SharedPtr<GraphicPipeline>) = 0;
-    virtual void useVertexBuffer(utils::SharedPtr<VertexBuffer>) = 0;
+    virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
+    virtual void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) = 0;
+
+    virtual void setFragmentUniform(utils::uint32 index, float r, float g, float b, float a) = 0;
 
     virtual void drawVertices(utils::uint32 start, utils::uint32 count) = 0;
-    virtual void drawIndexedVertices(utils::SharedPtr<IndexBuffer>) = 0;
+    virtual void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) = 0;
 
     virtual void endFrame() = 0;
     

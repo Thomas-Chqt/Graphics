@@ -30,6 +30,9 @@ public:
     OpenGLGraphicPipeline(const OpenGLGraphicPipeline&) = delete;
     OpenGLGraphicPipeline(OpenGLGraphicPipeline&&)      = delete;
 
+    utils::uint32 findVertexUniformIndex(const utils::String& name) override;
+    utils::uint32 findFragmentUniformIndex(const utils::String& name) override;
+
     inline GLuint shaderProgramID() { return m_shaderProgramID; }
     
     ~OpenGLGraphicPipeline();

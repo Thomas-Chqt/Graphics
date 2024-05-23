@@ -42,6 +42,10 @@ void GLFWMetalWindow::imGuiNewFrame()
 }
 #endif
 
+CAMetalLayer* GLFWMetalWindow::metalLayer() { @autoreleasepool 
+{
+    return (CAMetalLayer*)m_nswindow.contentView.layer;
+}}
 
 GLFWMetalWindow::~GLFWMetalWindow()
 {
@@ -49,8 +53,8 @@ GLFWMetalWindow::~GLFWMetalWindow()
     logDebug << "GLFWMetalWindow (" << this << ") destructed" << std::endl;
 }
 
-GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback)
-    : m_nextEventCallback(defaultCallback)
+GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback) 
+    : m_nextEventCallback(defaultCallback) { @autoreleasepool
 {
     ::glfwDefaultWindowHints();
     
@@ -58,15 +62,14 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& 
     m_glfwWindow = ::glfwCreateWindow(w, h, "", nullptr, nullptr);
     assert(m_glfwWindow);
 
-    NSWindow *nswin = glfwGetCocoaWindow(m_glfwWindow);
-    m_mtlLayer = [CAMetalLayer layer];
+    m_nswindow = glfwGetCocoaWindow(m_glfwWindow);
+    m_nswindow.contentView.wantsLayer = YES;
+
+    m_nswindow.contentView.layer = [CAMetalLayer layer];
 
     int frameBufferW, frameBufferH;
     ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
-    m_mtlLayer.drawableSize = CGSizeMake(frameBufferW, frameBufferH);
-
-    nswin.contentView.layer = m_mtlLayer;
-    nswin.contentView.wantsLayer = YES;
+    ((CAMetalLayer*)m_nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
 
     glfwSetWindowUserPointer(m_glfwWindow, this);
 
@@ -124,17 +127,17 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& 
         return;
     });
 
-    ::glfwSetWindowSizeCallback(m_glfwWindow, [](::GLFWwindow* window, int width, int height)
+    ::glfwSetWindowSizeCallback(m_glfwWindow, [](::GLFWwindow* window, int width, int height) { @autoreleasepool
     {
         GLFWMetalWindow& _this = *(GLFWMetalWindow*)glfwGetWindowUserPointer(window);
 
         int frameBufferW, frameBufferH;
         ::glfwGetFramebufferSize(window, &frameBufferW, &frameBufferH);
-        _this.m_mtlLayer.drawableSize = CGSizeMake(frameBufferW, frameBufferH);
+        ((CAMetalLayer*)_this.m_nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
 
         WindowResizeEvent windowResizeEvent(_this, width, height);
         _this.eventCallBack(windowResizeEvent);
-    });
+    }});
 
     ::glfwSetWindowCloseCallback(m_glfwWindow, [](::GLFWwindow* window)
     {
@@ -146,6 +149,6 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& 
     });
 
     logDebug << "GLFWMetalWindow (" << this << ") created" << std::endl;
-}
+}}
 
 }

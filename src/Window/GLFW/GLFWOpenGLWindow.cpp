@@ -38,7 +38,6 @@ void GLFWOpenGLWindow::imGuiNewFrame()
 }
 #endif
 
-
 GLFWOpenGLWindow::~GLFWOpenGLWindow()
 {
     ::glfwDestroyWindow(m_glfwWindow);

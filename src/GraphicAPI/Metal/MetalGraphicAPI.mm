@@ -120,7 +120,7 @@ utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, util
     return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, size));
 }
 
-SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName)
+SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName) { @autoreleasepool
 {
     if (m_shaderLibrary == nil)
     {
@@ -131,28 +131,24 @@ SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& ve
     }
 
     return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, m_shaderLibrary, m_renderTarget->metalLayer(), vertexShaderName, fragmentShaderName));
-}
+}}
 
 SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indices)
 {
     return SharedPtr<IndexBuffer>(new MetalIndexBuffer(m_mtlDevice, indices));
 }
 
-void MetalGraphicAPI::beginFrame()
+void MetalGraphicAPI::beginFrame() { @autoreleasepool
 {
-    assert(m_frameAutoreleasePool == nullptr);
-
-    m_frameAutoreleasePool = [[NSAutoreleasePool alloc] init];
-
-    m_commandBuffer = [m_commandQueue commandBuffer];
+    m_commandBuffer = [[m_commandQueue commandBuffer] retain];
     assert(m_commandBuffer);
 	
-	m_currentDrawable = [m_renderTarget->metalLayer() nextDrawable];
+	m_currentDrawable = [[m_renderTarget->metalLayer() nextDrawable] retain];
     assert(m_currentDrawable);
 
 	m_renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
 
-    m_commandEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:m_renderPassDescriptor];
+    m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:m_renderPassDescriptor] retain];
     assert(m_commandEncoder);
 
     #ifdef IMGUI_ENABLED
@@ -162,35 +158,37 @@ void MetalGraphicAPI::beginFrame()
         m_renderTarget->imGuiNewFrame();
     }
     #endif
-}
+}}
 
-void MetalGraphicAPI::useGraphicsPipeline(utils::SharedPtr<GraphicPipeline> graphicsPipeline)
+void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalGraphicPipeline> mtlGraphicsPipeline = graphicsPipeline.dynamicCast<MetalGraphicPipeline>())
         [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
     else
         logFatal << "GraphicPipeline is not MetalGraphicPipeline" << std::endl;
+}}
 
-}
-
-void MetalGraphicAPI::useVertexBuffer(utils::SharedPtr<VertexBuffer> vertexBuffer)
+void MetalGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalVertexBuffer> mtlVertexBuffer = vertexBuffer.dynamicCast<MetalVertexBuffer>())
         [m_commandEncoder setVertexBuffer:mtlVertexBuffer->mtlBuffer() offset:0 atIndex:0];
     else
         logFatal << "VertexBuffer is not MetalVertexBuffer" << std::endl;
+}}
 
-}
+void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, float r, float g, float b, float a) { @autoreleasepool
+{
+    float values[4] = {r, g, b, a};
+    [m_commandEncoder setFragmentBytes:(const void *)&values length:sizeof(values) * 4 atIndex:index];
+}}
 
-void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count)
+void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
 {
     [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
-}
+}}
 
-void MetalGraphicAPI::drawIndexedVertices(utils::SharedPtr<IndexBuffer> indexBuffer)
+void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& indexBuffer) { @autoreleasepool
 {
-    assert(m_frameAutoreleasePool != nil);
-
     if (utils::SharedPtr<MetalIndexBuffer> mtlIndexBuffer = indexBuffer.dynamicCast<MetalIndexBuffer>())
         [m_commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                      indexCount:mtlIndexBuffer->indexCount()
@@ -199,12 +197,10 @@ void MetalGraphicAPI::drawIndexedVertices(utils::SharedPtr<IndexBuffer> indexBuf
                               indexBufferOffset:0];
     else
         logFatal << "IndexBuffer is not MetalIndexBuffer" << std::endl;
-}
+}}
 
-void MetalGraphicAPI::endFrame()
+void MetalGraphicAPI::endFrame() { @autoreleasepool
 {
-    assert(m_frameAutoreleasePool != nullptr);
-
     #ifdef IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
         ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
@@ -215,15 +211,13 @@ void MetalGraphicAPI::endFrame()
     [m_commandBuffer presentDrawable:m_currentDrawable];
     [m_commandBuffer commit];
 
-    [m_frameAutoreleasePool drain];
-    m_frameAutoreleasePool = nullptr;
-}
+    [m_commandEncoder release];
+    [m_currentDrawable release];
+    [m_commandBuffer release];
+}}
 
 MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
 {
-    if (m_frameAutoreleasePool != nullptr)
-        [m_frameAutoreleasePool drain];
-
     #ifdef IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
@@ -236,6 +230,7 @@ MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
 
     if (m_shaderLibrary != nil)
         [m_shaderLibrary release];
+
     [m_renderPassDescriptor release];
     [m_commandQueue release];
     [m_mtlDevice release];
