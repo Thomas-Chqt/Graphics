@@ -45,8 +45,8 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
     m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:pipelineStateDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
     assert(m_renderPipelineState);
 
-    auto vertexBindings = reflection.vertexBindings;
-    auto fragmentBindings = reflection.fragmentBindings;
+    auto vertexBindings = reflection.vertexArguments;
+    auto fragmentBindings = reflection.fragmentArguments;
 
     for (uint32 i = 0; i < vertexBindings.count; i++)
         m_vertexUniformsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);

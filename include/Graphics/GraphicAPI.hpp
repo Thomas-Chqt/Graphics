@@ -12,6 +12,7 @@
 
 #include "GraphicPipeline.hpp"
 #include "IndexBuffer.hpp"
+#include "Math/Matrix.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/String.hpp"
 #include "VertexBuffer.hpp"
@@ -19,6 +20,7 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Window.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "Math/Vector.hpp"
 
 namespace gfx
 {
@@ -35,7 +37,7 @@ public:
     virtual void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) = 0;
 #endif
 
-    virtual void setClearColor(float r, float g, float b, float a) = 0;
+    virtual void setClearColor(const math::rgba& color) = 0;
 
     virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) = 0;
     template<typename T> inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) { return newVertexBuffer((void*)(const T*)vertices, vertices.length() * sizeof(T), VertexBuffer::Layout<T>()); }
@@ -46,8 +48,11 @@ public:
 
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
     virtual void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) = 0;
-
-    virtual void setFragmentUniform(utils::uint32 index, float r, float g, float b, float a) = 0;
+    
+    virtual void setVertexUniform(utils::uint32 index, const math::vec4f& vec) = 0;
+    virtual void setVertexUniform(utils::uint32 index, const math::mat4x4& mat) = 0;
+    
+    virtual void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) = 0;
 
     virtual void drawVertices(utils::uint32 start, utils::uint32 count) = 0;
     virtual void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) = 0;

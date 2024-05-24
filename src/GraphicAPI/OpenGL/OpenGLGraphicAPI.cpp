@@ -22,6 +22,7 @@
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
+#include "UtilsCPP/UniquePtr.hpp"
 
 #ifdef IMGUI_ENABLED
     class ImDrawData;
@@ -42,6 +43,7 @@
 #endif
 
 using utils::SharedPtr;
+using utils::UniquePtr;
 using utils::String;
 using utils::uint32;
 using utils::uint64;
@@ -88,14 +90,6 @@ void OpenGLGraphicAPI::useForImGui(const utils::Func<void()>& f)
 }
 #endif
 
-void OpenGLGraphicAPI::setClearColor(float r, float g, float b, float a)
-{
-    m_clearColor[0] = r;
-    m_clearColor[1] = g;
-    m_clearColor[2] = b;
-    m_clearColor[3] = a;
-}
-
 SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, uint64 size, const VertexBuffer::LayoutBase& layout)
 {
     return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, size, layout));
@@ -114,7 +108,9 @@ SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& ind
 void OpenGLGraphicAPI::beginFrame()
 {
     m_renderTarget->makeContextCurrent();
-    glClearColor(m_clearColor[0], m_clearColor[1],  m_clearColor[2], m_clearColor[3]);
+    
+    glClearColor(m_clearColor.r, m_clearColor.g,  m_clearColor.b, m_clearColor.a);
+
     glClear(GL_COLOR_BUFFER_BIT);
 
     #ifdef IMGUI_ENABLED
@@ -126,10 +122,17 @@ void OpenGLGraphicAPI::beginFrame()
     #endif
 }
 
-void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline)
+void OpenGLGraphicAPI::useGraphicsPipeline(const SharedPtr<GraphicPipeline>& graphicsPipeline)
 {
     if (utils::SharedPtr<OpenGLGraphicPipeline> glGraphicsPipeline = graphicsPipeline.dynamicCast<OpenGLGraphicPipeline>())
+    {
         glUseProgram(glGraphicsPipeline->shaderProgramID());
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<GraphicPipeline>(graphicsPipeline)
+            )
+        );
+    }
     else
         logFatal << "GraphicPipeline is not OpenGLGraphicPipeline" << std::endl;
 }
@@ -137,14 +140,31 @@ void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipelin
 void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer)
 {
     if (utils::SharedPtr<OpenGLVertexBuffer> glVertexBuffer = vertexBuffer.dynamicCast<OpenGLVertexBuffer>())
+    {
         glBindVertexArray(glVertexBuffer->vertexArrayID());
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<VertexBuffer>(vertexBuffer)
+            )
+        );
+    }
     else
         logFatal << "VertexBuffer is not OpenGLVertexBuffer" << std::endl;
 }
 
-void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, float r, float g, float b, float a)
+void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& vec)
 {
-    glUniform4f(index, r, g, b, a);
+    glUniform4f(index, vec.x, vec.y, vec.z, vec.w);
+}
+
+void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat4x4& mat)
+{
+    glUniformMatrix4fv(index, 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&mat));
+}
+
+void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec)
+{
+    glUniform4f(index, vec.x, vec.y, vec.z, vec.w);
 }
 
 void OpenGLGraphicAPI::drawVertices(uint32 start, uint32 count)
@@ -158,6 +178,11 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& 
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glIndexBuffer->indexBufferID());
         glDrawElements(GL_TRIANGLES, glIndexBuffer->indexCount(), GL_UNSIGNED_INT, 0);
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<IndexBuffer>(indexBuffer)
+            )
+        );
     }
     else
         logFatal << "IndexBuffer is not OpenGLIndexBuffer" << std::endl;
@@ -171,6 +196,7 @@ void OpenGLGraphicAPI::endFrame()
     #endif
 
     m_renderTarget->swapBuffer();
+    m_frameObjects.clear();
 }
 
 OpenGLGraphicAPI::~OpenGLGraphicAPI()

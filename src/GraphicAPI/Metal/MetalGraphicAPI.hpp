@@ -12,6 +12,7 @@
 
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/Platform.hpp"
+#include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include "Window/MetalWindow.hpp"
@@ -51,7 +52,7 @@ public:
     void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) override;
 #endif
 
-    void setClearColor(float r, float g, float b, float a) override;
+    void setClearColor(const math::rgba& color) override;
 
     utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) override;
@@ -62,7 +63,10 @@ public:
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
 
-    void setFragmentUniform(utils::uint32 index, float r, float g, float b, float a) override;
+    void setVertexUniform(utils::uint32 index, const math::vec4f& vec) override;
+    void setVertexUniform(utils::uint32 index, const math::mat4x4& mat) override;
+
+    void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) override;
 
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
@@ -85,7 +89,7 @@ private:
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
     id<CAMetalDrawable> m_currentDrawable = nullptr;
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
-    
+    utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_frameObjects;
 
 public:
     MetalGraphicAPI& operator = (const MetalGraphicAPI&) = delete;

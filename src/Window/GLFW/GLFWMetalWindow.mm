@@ -9,7 +9,6 @@
 
 #include "Window/GLFW/GLFWMetalWindow.hpp"
 #include "Logger/Logger.hpp"
-#include <CoreFoundation/CFCGTypes.h>
 #include <CoreGraphics/CGGeometry.h>
 #define GLFW_INCLUDE_NONE
 #define GLFW_EXPOSE_NATIVE_COCOA

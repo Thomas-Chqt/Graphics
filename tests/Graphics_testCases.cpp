@@ -9,12 +9,13 @@
 
 #include <gtest/gtest.h>
 
+#include "Math/Matrix.hpp"
+#include "Math/Vector.hpp"
 #include "test_fixitures.hpp"
 #include "Graphics/Event.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
-#include "Graphics/Window.hpp"
 #include "Logger/Logger.hpp"
 #include "Graphics/Platform.hpp"
 #include "UtilsCPP/Array.hpp"
@@ -34,6 +35,7 @@ namespace gfx_test
 using namespace gfx;
 using namespace tlog;
 using namespace utils;
+using namespace math;
 
 MULTI_TEST(GraphicsTestWindow, simple,
 {
@@ -79,14 +81,14 @@ MULTI_TEST(GraphicsTestAPI, setClearColor,
         ev.dispatch<MouseDownEvent>([&](MouseDownEvent& e)
         {
             if (e.mouseCode() == MOUSE_L)
-                m_graphicAPI->setClearColor(1, 0, 0, 1);
+                m_graphicAPI->setClearColor(RED);
             if (e.mouseCode() == MOUSE_R)
-                m_graphicAPI->setClearColor(0, 1, 0, 1);
+                m_graphicAPI->setClearColor(GREEN);
         });
 
         ev.dispatch<MouseUpEvent>([&](MouseUpEvent& e)
         {
-            m_graphicAPI->setClearColor(0, 0, 0, 0);
+            m_graphicAPI->setClearColor(BLACK);
         });
     });
 
@@ -421,6 +423,7 @@ MULTI_TEST(GraphicsTestImGui, fragmentUniform,
         });
     });
 
+    rgba color;
     while (running)
     {
         Platform::shared().pollEvents();
@@ -428,13 +431,100 @@ MULTI_TEST(GraphicsTestImGui, fragmentUniform,
         m_graphicAPI->beginFrame();
         ImGui::NewFrame();
 
-        float color[4];
-        ImGui::ColorPicker4("u_color", color);
+        ImGui::ColorPicker4("u_color", (float *)&color);
 
         m_graphicAPI->useGraphicsPipeline(graphicPipeline);
         m_graphicAPI->useVertexBuffer(vertexBuffer);
 
-        m_graphicAPI->setFragmentUniform(graphicPipeline->findFragmentUniformIndex("u_color"), color[0], color[1], color[2], color[3]);
+        m_graphicAPI->setFragmentUniform(graphicPipeline->findFragmentUniformIndex("u_color"), color);
+
+        m_graphicAPI->drawIndexedVertices(indexBuffer);
+
+        ImGui::Render();
+        m_graphicAPI->endFrame();
+
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+})
+
+MULTI_TEST(GraphicsTestImGui, cube,
+{
+    const Array<Vertex3D> vertices = Array<Vertex3D>({
+        { -0.5, -0.5, -0.5 },
+        { -0.5,  0.5, -0.5 },
+        {  0.5,  0.5, -0.5 },
+        {  0.5, -0.5, -0.5 },
+        {  0.5, -0.5,  0.5 },
+        {  0.5,  0.5,  0.5 },
+        { -0.5,  0.5,  0.5 },
+        { -0.5, -0.5,  0.5 }
+    });
+
+    const Array<uint32> indices = Array<uint32>({
+        0, 1, 2, 0, 2, 3, // Front
+        4, 5, 6, 4, 6, 7, // Back
+        3, 2, 5, 3, 5, 4, // Right
+        7, 6, 1, 7, 1, 0, // Left
+        1, 6, 5, 1, 5, 2, // Top
+        0, 3, 4, 0, 4, 7  // Bottom
+    });
+
+    bool running = true;
+
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx2", "fra2");
+    SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+    SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
+
+    Platform::shared().setEventCallBack([&](Event& ev)
+    {
+        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+        {
+            if (e.keyCode() == ESC_KEY)
+                running = false;
+        });
+    });
+
+    float fov = 60 * (M_PI / 180.0f);
+    float aspectRatio = 800.0f / 600.0f;
+    float zNear = 0.1f;
+    float zFar = 100;
+
+    float ys = 1 / std::tanf(fov * 0.5);
+    float xs = ys / aspectRatio;
+    float zs = zFar / (zFar - zNear);
+
+    mat4x4 projectionMatrix (xs,  0,   0,           0,
+                              0,  ys,  0,           0,
+                              0,   0, zs, -zNear * zs,
+                              0,   0,  1,           0 );
+
+    vec3f cubePos(0, 0, 3);
+    rgba cubeColor = WHITE;
+
+    while (running)
+    {
+        Platform::shared().pollEvents();
+        
+        m_graphicAPI->beginFrame();
+        ImGui::NewFrame();
+
+        m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+        m_graphicAPI->useVertexBuffer(vertexBuffer);
+
+        mat4x4 modelMatrix(1, 0, 0, cubePos.x,
+                           0, 1, 0, cubePos.y,
+                           0, 0, 1, cubePos.z,
+                           0, 0, 0, 1         );
+
+        ImGui::Text("FPS : %.1f", ImGui::GetIO().Framerate);
+        ImGui::SliderFloat("Pos X", &cubePos.x, -5, 5);
+        ImGui::SliderFloat("Pos Y", &cubePos.y, -5, 5);
+        ImGui::SliderFloat("Pos Z", &cubePos.z, -1, 10);
+        ImGui::ColorPicker4("u_color", (float *)&cubeColor);
+
+        m_graphicAPI->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_MVPMatrix"), projectionMatrix * modelMatrix);
+        m_graphicAPI->setFragmentUniform(graphicPipeline->findFragmentUniformIndex("u_color"), cubeColor);
 
         m_graphicAPI->drawIndexedVertices(indexBuffer);
 

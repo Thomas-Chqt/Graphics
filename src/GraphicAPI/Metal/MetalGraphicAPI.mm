@@ -24,6 +24,7 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Logger/Logger.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "UtilsCPP/UniquePtr.hpp"
 #include "Window/MetalWindow.hpp"
 #include <Metal/Metal.h>
 #include <QuartzCore/CAMetalLayer.h>
@@ -31,6 +32,7 @@
 #include <cstddef>
 
 using utils::SharedPtr;
+using utils::UniquePtr;
 using utils::String;
 using utils::uint32;
 using utils::Array;
@@ -109,9 +111,9 @@ void MetalGraphicAPI::useForImGui(const utils::Func<void()>& f)
 }
 #endif
 
-void MetalGraphicAPI::setClearColor(float r, float g, float b, float a)
+void MetalGraphicAPI::setClearColor(const math::rgba& color)
 {
-    m_renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(r, g, b, a);
+    m_renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(color.r, color.g, color.b, color.a);
 }
 
 utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout)
@@ -163,7 +165,14 @@ void MetalGraphicAPI::beginFrame() { @autoreleasepool
 void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalGraphicPipeline> mtlGraphicsPipeline = graphicsPipeline.dynamicCast<MetalGraphicPipeline>())
+    {
         [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<GraphicPipeline>(graphicsPipeline)
+            )
+        );
+    }
     else
         logFatal << "GraphicPipeline is not MetalGraphicPipeline" << std::endl;
 }}
@@ -171,15 +180,31 @@ void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline
 void MetalGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalVertexBuffer> mtlVertexBuffer = vertexBuffer.dynamicCast<MetalVertexBuffer>())
+    {
         [m_commandEncoder setVertexBuffer:mtlVertexBuffer->mtlBuffer() offset:0 atIndex:0];
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<VertexBuffer>(vertexBuffer)
+            )
+        );
+    }
     else
         logFatal << "VertexBuffer is not MetalVertexBuffer" << std::endl;
 }}
 
-void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, float r, float g, float b, float a) { @autoreleasepool
+void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
 {
-    float values[4] = {r, g, b, a};
-    [m_commandEncoder setFragmentBytes:(const void *)&values length:sizeof(values) * 4 atIndex:index];
+    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:index];
+}}
+
+void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat4x4& mat) { @autoreleasepool
+{
+    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat4x4) atIndex:index];
+}}
+
+void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
+{
+    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:index];
 }}
 
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
@@ -190,11 +215,18 @@ void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @
 void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& indexBuffer) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalIndexBuffer> mtlIndexBuffer = indexBuffer.dynamicCast<MetalIndexBuffer>())
+    {
         [m_commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                      indexCount:mtlIndexBuffer->indexCount()
                                       indexType:MTLIndexTypeUInt32
                                     indexBuffer:mtlIndexBuffer->mtlBuffer()
                               indexBufferOffset:0];
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<IndexBuffer>(indexBuffer)
+            )
+        );
+    }
     else
         logFatal << "IndexBuffer is not MetalIndexBuffer" << std::endl;
 }}

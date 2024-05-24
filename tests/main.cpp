@@ -14,9 +14,6 @@
 #include "Graphics/Platform.hpp"
 #include "UtilsCPP/String.hpp"
 #include <fstream>
-#ifdef IMGUI_ENABLED
-    #include "imgui/imgui.h"
-#endif
 
 using namespace tlog;
 using namespace gfx;
@@ -66,6 +63,18 @@ public:
                 "fra2"
                 #ifdef USING_METAL
                 , "fra2"
+                #endif
+                #ifdef USING_OPENGL
+                , utils::String::contentOf(f)
+                #endif
+            );
+        }
+        {
+            std::ifstream f(OPENGL_SHADER_DIR"/vtx2.glsl");
+            ShaderLibrary::shared().registerShader(
+                "vtx2"
+                #ifdef USING_METAL
+                , "vtx2"
                 #endif
                 #ifdef USING_OPENGL
                 , utils::String::contentOf(f)
