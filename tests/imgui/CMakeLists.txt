@@ -21,12 +21,7 @@ target_sources(imgui PRIVATE
     "include/imgui/imgui.h"
 )
 
-if (USED_WINDOW_LIBRARY STREQUAL AppKit)
-    target_sources(imgui PRIVATE
-        "src/imgui_impl_osx.mm"
-        "include/imgui/imgui_impl_osx.h"
-    )
-elseif (USED_WINDOW_LIBRARY STREQUAL GLFW)
+if (USED_WINDOW_LIBRARY STREQUAL GLFW)
     target_sources(imgui PRIVATE
         "src/imgui_impl_glfw.cpp"
         "include/imgui/imgui_impl_glfw.h"
@@ -45,9 +40,6 @@ if (ENABLE_OPENGL)
         "src/imgui_impl_opengl3.cpp"
         "src/imgui_impl_opengl3_loader.h"
         "include/imgui/imgui_impl_opengl3.h"
-    
-        "src/imgui_impl_opengl2.cpp"
-        "include/imgui/imgui_impl_opengl2.h"
     )
 endif()
 
