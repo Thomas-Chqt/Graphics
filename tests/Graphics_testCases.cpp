@@ -7,8 +7,11 @@
  * ---------------------------------------------------
  */
 
+#include <cassert>
 #include <gtest/gtest.h>
 
+#include "Graphics/ShaderLibrary.hpp"
+#include "Graphics/Texture.hpp"
 #include "Math/Matrix.hpp"
 #include "Math/Vector.hpp"
 #include "test_fixitures.hpp"
@@ -28,6 +31,8 @@
 #ifdef IMGUI_ENABLED
     #include "imgui/imgui.h"
 #endif
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h" 
 
 namespace gfx_test
 {
@@ -102,7 +107,7 @@ MULTI_TEST(GraphicsTestAPI, setClearColor,
 
 MULTI_TEST(GraphicsTestAPI, vertexBuffer,
 {
-    Array<Vertex> vertices;
+    Array<Vertex_vertexBuffer> vertices;
 
     vertices.append({-1, -1});
     vertices.append({ 1,  1});
@@ -113,21 +118,45 @@ MULTI_TEST(GraphicsTestAPI, vertexBuffer,
 
 MULTI_TEST(GraphicsTestAPI, graphicPipeline,
 {
-    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("graphicPipeline_vertex",   "graphicPipeline_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/graphicPipeline/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("graphicPipeline_fragment", "graphicPipeline_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/graphicPipeline/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("graphicPipeline_vertex",   "graphicPipeline_vertex");
+        ShaderLibrary::shared().registerShader("graphicPipeline_fragment", "graphicPipeline_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("graphicPipeline_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/graphicPipeline/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("graphicPipeline_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/graphicPipeline/fragment.glsl"));
+    #else
+    #endif
+
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("graphicPipeline_vertex", "graphicPipeline_fragment");
 })
 
 MULTI_TEST(GraphicsTestAPI, triangle,
 {
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("triangle_vertex",   "triangle_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("triangle_fragment", "triangle_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("triangle_vertex",   "triangle_vertex");
+        ShaderLibrary::shared().registerShader("triangle_fragment", "triangle_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("triangle_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("triangle_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle/fragment.glsl"));
+    #else
+    #endif
+
     bool running = true;
 
-    Array<Vertex> vertices;
+    Array<Vertex_triangle> vertices;
 
     vertices.append({-1, -1});
     vertices.append({ 0,  1});
     vertices.append({ 1, -1});
 
     SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
-    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("triangle_vertex", "triangle_fragment");
 
     Platform::shared().setEventCallBack([&](Event& ev)
     {
@@ -154,9 +183,21 @@ MULTI_TEST(GraphicsTestAPI, triangle,
 
 MULTI_TEST(GraphicsTestAPI, indexedShape,
 {
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("indexedShape_vertex",   "indexedShape_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/indexedShape/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("indexedShape_fragment", "indexedShape_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/indexedShape/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("indexedShape_vertex",   "indexedShape_vertex");
+        ShaderLibrary::shared().registerShader("indexedShape_fragment", "indexedShape_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("indexedShape_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/indexedShape/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("indexedShape_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/indexedShape/fragment.glsl"));
+    #else
+    #endif
+
     bool running = true;
 
-    Array<Vertex> vertices = Array<Vertex>({
+    Array<Vertex_indexedShape> vertices = Array<Vertex_indexedShape>({
         {-0.5, -0.5},
         {-0.5,  0.5},
         { 0.5,  0.5},
@@ -164,7 +205,7 @@ MULTI_TEST(GraphicsTestAPI, indexedShape,
     });
     Array<uint32> indices = Array<uint32>({ 0, 1, 2, 0, 2, 3 });
 
-    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("indexedShape_vertex", "indexedShape_fragment");
     SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
     SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
 
@@ -198,6 +239,18 @@ MULTI_TEST(GraphicsTestAPI, indexedShape,
 #if defined (USING_METAL) && defined (USING_OPENGL)
 TEST(GraphicsTest, APISwitch)
 {
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("APISwitch_vertex",   "APISwitch_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/APISwitch/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("APISwitch_fragment", "APISwitch_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/APISwitch/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("APISwitch_vertex",   "APISwitch_vertex");
+        ShaderLibrary::shared().registerShader("APISwitch_fragment", "APISwitch_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("APISwitch_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/APISwitch/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("APISwitch_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/APISwitch/fragment.glsl"));
+    #else
+    #endif
+
     bool usingMetal = true;
     bool running = true;
     bool looping = true;
@@ -238,8 +291,8 @@ TEST(GraphicsTest, APISwitch)
         looping = true;
         
         SharedPtr<GraphicAPI> graphicAPI = usingMetal ? Platform::shared().newMetalGraphicAPI(Platform::shared().newMetalWindow(800, 600)) : Platform::shared().newOpenGLGraphicAPI(Platform::shared().newOpenGLWindow(800, 600));
-        SharedPtr<VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(Array<Vertex>({{-1, -1}, { 0,  1}, { 1, -1}}));
-        SharedPtr<GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("vtx1", "fra1");
+        SharedPtr<VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(Array<Vertex_APISwitch>({{-1, -1}, { 0,  1}, { 1, -1}}));
+        SharedPtr<GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("APISwitch_vertex", "APISwitch_fragment");
 
         while(looping)
         {
@@ -399,7 +452,19 @@ MULTI_TEST(GraphicsTestImGui, imguiHelloWorld,
 
 MULTI_TEST(GraphicsTestImGui, fragmentUniform,
 {
-    const Array<Vertex> vertices = Array<Vertex>({
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("fragmentUniform_vertex",   "fragmentUniform_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/fragmentUniform/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("fragmentUniform_fragment", "fragmentUniform_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/fragmentUniform/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("fragmentUniform_vertex",   "fragmentUniform_vertex");
+        ShaderLibrary::shared().registerShader("fragmentUniform_fragment", "fragmentUniform_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("fragmentUniform_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/fragmentUniform/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("fragmentUniform_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/fragmentUniform/fragment.glsl"));
+    #else
+    #endif
+
+    const Array<Vertex_fragmentUniform> vertices = Array<Vertex_fragmentUniform>({
         {-0.5, -0.5},
         {-0.5,  0.5},
         { 0.5,  0.5},
@@ -410,7 +475,7 @@ MULTI_TEST(GraphicsTestImGui, fragmentUniform,
 
     bool running = true;
 
-    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx1", "fra2");
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("fragmentUniform_vertex", "fragmentUniform_fragment");
     SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
     SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
 
@@ -448,9 +513,21 @@ MULTI_TEST(GraphicsTestImGui, fragmentUniform,
     }
 })
 
-MULTI_TEST(GraphicsTestImGui, cube,
+MULTI_TEST(GraphicsTestImGui, flatColorCube,
 {
-    const Array<Vertex3D> vertices = Array<Vertex3D>({
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("flatColorCube_vertex",   "flatColorCube_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColorCube/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("flatColorCube_fragment", "flatColorCube_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColorCube/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("flatColorCube_vertex",   "flatColorCube_vertex");
+        ShaderLibrary::shared().registerShader("flatColorCube_fragment", "flatColorCube_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("flatColorCube_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColorCube/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("flatColorCube_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColorCube/fragment.glsl"));
+    #else
+    #endif
+
+    const Array<Vertex_flatColorCube> vertices = Array<Vertex_flatColorCube>({
         { -0.5, -0.5, -0.5 },
         { -0.5,  0.5, -0.5 },
         {  0.5,  0.5, -0.5 },
@@ -472,7 +549,7 @@ MULTI_TEST(GraphicsTestImGui, cube,
 
     bool running = true;
 
-    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("vtx2", "fra2");
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("flatColorCube_vertex", "flatColorCube_fragment");
     SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
     SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
 
@@ -537,5 +614,71 @@ MULTI_TEST(GraphicsTestImGui, cube,
 })
 
 #endif // IMGUI_ENABLED
+
+MULTI_TEST(GraphicsTestAPI, texturedSquare,
+{
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("texturedSquare_vertex",   "texturedSquare_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("texturedSquare_fragment", "texturedSquare_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("texturedSquare_vertex",   "texturedSquare_vertex");
+        ShaderLibrary::shared().registerShader("texturedSquare_fragment", "texturedSquare_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("texturedSquare_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("texturedSquare_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare/fragment.glsl"));
+    #else
+    #endif
+    
+    const Array<Vertex_texturedSquare> vertices = Array<Vertex_texturedSquare>({
+        { .pos = {-0.5, -0.5}, .uv = { 0.0, 0.0 }},
+        { .pos = {-0.5,  0.5}, .uv = { 0.0, 1.0 }},
+        { .pos = { 0.5,  0.5}, .uv = { 1.0, 1.0 }},
+        { .pos = { 0.5, -0.5}, .uv = { 1.0, 0.0 }}
+    });
+    const Array<uint32> indices = Array<uint32>({ 0, 1, 2, 0, 2, 3 });
+
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("texturedSquare_vertex", "texturedSquare_fragment");
+    SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+    SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
+
+    int width;
+    int height;
+    stbi_set_flip_vertically_on_load(true);
+    stbi_uc* imgBytes = stbi_load("tests/Ressources/mc_grass.jpg", &width, &height, nullptr, STBI_rgb_alpha);
+    ASSERT_NE(imgBytes, nullptr);
+    SharedPtr<Texture> texture = m_graphicAPI->newTexture(width, height);
+    texture->setBytes(imgBytes);
+    stbi_image_free(imgBytes);
+
+    bool running = true;
+    Platform::shared().setEventCallBack([&](Event& ev)
+    {
+        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+        {
+            switch (e.keyCode())
+            {
+            case ESC_KEY:
+                running = false;
+                break;
+            }
+        });
+    });
+
+    while (running)
+    {
+        Platform::shared().pollEvents();
+        
+        m_graphicAPI->beginFrame();
+        
+        m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+        m_graphicAPI->useVertexBuffer(vertexBuffer);
+        m_graphicAPI->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), texture);
+
+        m_graphicAPI->drawIndexedVertices(indexBuffer);
+
+        m_graphicAPI->endFrame();
+    }
+
+})
 
 }

@@ -12,8 +12,6 @@
 #include "Graphics/ShaderLibrary.hpp"
 #include "Logger/Logger.hpp"
 #include "Graphics/Platform.hpp"
-#include "UtilsCPP/String.hpp"
-#include <fstream>
 
 using namespace tlog;
 using namespace gfx;
@@ -32,55 +30,6 @@ public:
         #ifdef USING_METAL
             ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
         #endif
-
-        {
-            std::ifstream f(OPENGL_SHADER_DIR"/vtx1.glsl");
-            ShaderLibrary::shared().registerShader(
-                "vtx1"
-                #ifdef USING_METAL
-                , "vtx1"
-                #endif
-                #ifdef USING_OPENGL
-                , utils::String::contentOf(f)
-                #endif
-            );
-        }
-        {
-            std::ifstream f(OPENGL_SHADER_DIR"/fra1.glsl");
-            ShaderLibrary::shared().registerShader(
-                "fra1"
-                #ifdef USING_METAL
-                , "fra1"
-                #endif
-                #ifdef USING_OPENGL
-                , utils::String::contentOf(f)
-                #endif
-            );
-        }
-        {
-            std::ifstream f(OPENGL_SHADER_DIR"/fra2.glsl");
-            ShaderLibrary::shared().registerShader(
-                "fra2"
-                #ifdef USING_METAL
-                , "fra2"
-                #endif
-                #ifdef USING_OPENGL
-                , utils::String::contentOf(f)
-                #endif
-            );
-        }
-        {
-            std::ifstream f(OPENGL_SHADER_DIR"/vtx2.glsl");
-            ShaderLibrary::shared().registerShader(
-                "vtx2"
-                #ifdef USING_METAL
-                , "vtx2"
-                #endif
-                #ifdef USING_OPENGL
-                , utils::String::contentOf(f)
-                #endif
-            );
-        }
     }
 
     void TearDown() override

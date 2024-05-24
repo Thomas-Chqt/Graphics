@@ -10,6 +10,7 @@
 #include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 
 #include "GraphicAPI/Metal/MetalIndexBuffer.hpp"
+#include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 #include "Graphics/IndexBuffer.hpp"
@@ -140,6 +141,17 @@ SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indi
     return SharedPtr<IndexBuffer>(new MetalIndexBuffer(m_mtlDevice, indices));
 }
 
+SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height) { @autoreleasepool
+{
+    MTLTextureDescriptor* textureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
+
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+
+    return SharedPtr<Texture>(new MetalTexture(m_mtlDevice, textureDescriptor));
+}}
+
 void MetalGraphicAPI::beginFrame() { @autoreleasepool
 {
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
@@ -207,6 +219,21 @@ void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f&
     [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:index];
 }}
 
+void MetalGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>& texture) { @autoreleasepool
+{
+    if (utils::SharedPtr<MetalTexture> mtlTexture = texture.dynamicCast<MetalTexture>())
+    {
+        [m_commandEncoder setFragmentTexture:mtlTexture->mtlTexture() atIndex:index];
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<Texture>(texture)
+            )
+        );
+    }
+    else
+        logFatal << "Texture is not MetalTexture" << std::endl;
+}}
+
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
 {
     [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
@@ -246,6 +273,7 @@ void MetalGraphicAPI::endFrame() { @autoreleasepool
     [m_commandEncoder release];
     [m_currentDrawable release];
     [m_commandBuffer release];
+    m_frameObjects.clear();
 }}
 
 MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool

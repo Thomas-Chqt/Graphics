@@ -11,77 +11,247 @@
 # define VERTEX_HPP
 
 #ifndef __METAL_VERSION__
+    #include <cstddef>
     #include "Graphics/VertexBuffer.hpp"
 #endif // __METAL_VERSION__
 
+#include "../dependencies/Math/include/Math/Vector.hpp"
+
 namespace gfx_test
 {
-    struct Vertex
-    {
-        float x;
-        float y;
-    };
 
-    struct Vertex3D
-    {
-        float x;
-        float y;
-        float z;
-    };
+struct Vertex_vertexBuffer
+{
+    float x;
+    float y;
+};
+
+struct Vertex_triangle
+{
+    float x;
+    float y;
+};
+
+struct Vertex_indexedShape
+{
+    float x;
+    float y;
+};
+
+struct Vertex_APISwitch
+{
+    float x;
+    float y;
+};
+
+struct Vertex_fragmentUniform
+{
+    float x;
+    float y;
+};
+
+struct Vertex_flatColorCube
+{
+    float x;
+    float y;
+    float z;
+};
+
+struct Vertex_texturedSquare
+{
+    math::vec2f pos;
+    math::vec2f uv;
+};
+
 }
 
 #ifndef __METAL_VERSION__
 namespace gfx
 {
-    template<>
-    class VertexBuffer::Layout<gfx_test::Vertex> : public VertexBuffer::LayoutBase
-    {
-    public:
-        #ifdef USING_OPENGL
-        Layout()
-        {
-            m_elements.append({
-                .size = 2,
-                .type = GL_FLOAT,
-                .normalized = GL_FALSE,
-                .stride = sizeof(gfx_test::Vertex),
-                .pointer = (void*)0
-            });
-        }
-        inline const utils::Array<Element>& getElements() const override { return m_elements; };
-        #endif
-        inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex); };
 
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_vertexBuffer> : public VertexBuffer::LayoutBase
+{
+public:
     #ifdef USING_OPENGL
-    private:
-        utils::Array<Element> m_elements;
-    #endif
-    };
-
-    template<>
-    class VertexBuffer::Layout<gfx_test::Vertex3D> : public VertexBuffer::LayoutBase
+    Layout()
     {
-    public:
-        #ifdef USING_OPENGL
-        Layout()
-        {
-            m_elements.append({
-                .size = 3,
-                .type = GL_FLOAT,
-                .normalized = GL_FALSE,
-                .stride = sizeof(gfx_test::Vertex3D),
-                .pointer = (void*)0
-            });
-        }
-        inline const utils::Array<Element>& getElements() const override { return m_elements; };
-        #endif
-        inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex3D); };
-
-    #ifdef USING_OPENGL
-    private:
-        utils::Array<Element> m_elements;
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_vertexBuffer),
+            .pointer = (void*)0
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
     #endif
-    };
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_vertexBuffer); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_triangle> : public VertexBuffer::LayoutBase
+{
+public:
+    #ifdef USING_OPENGL
+    Layout()
+    {
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_triangle),
+            .pointer = (void*)0
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
+    #endif
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_triangle); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_indexedShape> : public VertexBuffer::LayoutBase
+{
+public:
+    #ifdef USING_OPENGL
+    Layout()
+    {
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_indexedShape),
+            .pointer = (void*)0
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
+    #endif
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_indexedShape); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_APISwitch> : public VertexBuffer::LayoutBase
+{
+public:
+    #ifdef USING_OPENGL
+    Layout()
+    {
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_APISwitch),
+            .pointer = (void*)0
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
+    #endif
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_APISwitch); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_fragmentUniform> : public VertexBuffer::LayoutBase
+{
+public:
+    #ifdef USING_OPENGL
+    Layout()
+    {
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_fragmentUniform),
+            .pointer = (void*)0
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
+    #endif
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_fragmentUniform); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_flatColorCube> : public VertexBuffer::LayoutBase
+{
+public:
+    #ifdef USING_OPENGL
+    Layout()
+    {
+        m_elements.append({
+            .size = 3,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_flatColorCube),
+            .pointer = (void*)0
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
+    #endif
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_flatColorCube); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_texturedSquare> : public VertexBuffer::LayoutBase
+{
+public:
+    #ifdef USING_OPENGL
+    Layout()
+    {
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_texturedSquare),
+            .pointer = (void*)0
+        });
+
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_texturedSquare),
+            .pointer = (void*)offsetof(gfx_test::Vertex_texturedSquare, uv)
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
+    #endif
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_texturedSquare); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
 }
 #endif // __METAL_VERSION__
 

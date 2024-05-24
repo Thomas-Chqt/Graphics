@@ -31,7 +31,7 @@ private:
     friend utils::SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const utils::Array<utils::uint32>&);
 
 public:
-    MetalIndexBuffer()                         = delete;
+    MetalIndexBuffer()                        = delete;
     MetalIndexBuffer(const MetalIndexBuffer&) = delete;
     MetalIndexBuffer(MetalIndexBuffer&&)      = delete;
 

@@ -39,7 +39,7 @@ private:
     friend utils::SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName);
     
 public:
-    MetalGraphicPipeline()                             = delete;
+    MetalGraphicPipeline()                            = delete;
     MetalGraphicPipeline(const MetalGraphicPipeline&) = delete;
     MetalGraphicPipeline(MetalGraphicPipeline&&)      = delete;
 

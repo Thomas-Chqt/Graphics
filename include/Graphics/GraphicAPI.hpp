@@ -11,6 +11,7 @@
 # define GRAPHICAPI_HPP
 
 #include "GraphicPipeline.hpp"
+#include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
 #include "UtilsCPP/Func.hpp"
@@ -39,20 +40,27 @@ public:
 
     virtual void setClearColor(const math::rgba& color) = 0;
 
+    template<typename T>
+    inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices)
+    {
+        return newVertexBuffer((void*)(const T*)vertices, vertices.length() * sizeof(T), VertexBuffer::Layout<T>());
+    }
+
     virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) = 0;
-    template<typename T> inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) { return newVertexBuffer((void*)(const T*)vertices, vertices.length() * sizeof(T), VertexBuffer::Layout<T>()); }
     virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) = 0;
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) = 0;
+    virtual utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height) = 0;
 
     virtual void beginFrame() = 0;
 
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
     virtual void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) = 0;
     
-    virtual void setVertexUniform(utils::uint32 index, const math::vec4f& vec) = 0;
-    virtual void setVertexUniform(utils::uint32 index, const math::mat4x4& mat) = 0;
+    virtual void setVertexUniform(utils::uint32 index, const math::vec4f&) = 0;
+    virtual void setVertexUniform(utils::uint32 index, const math::mat4x4&) = 0;
     
-    virtual void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) = 0;
+    virtual void setFragmentUniform(utils::uint32 index, const math::vec4f&) = 0;
+    virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) = 0;
 
     virtual void drawVertices(utils::uint32 start, utils::uint32 count) = 0;
     virtual void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) = 0;

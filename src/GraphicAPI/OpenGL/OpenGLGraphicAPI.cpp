@@ -9,9 +9,11 @@
 
 #include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
+#include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
 #include "GraphicAPI/OpenGL/OpenGLVertexBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/IndexBuffer.hpp"
+#include "Graphics/Texture.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -105,6 +107,11 @@ SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& ind
     return SharedPtr<IndexBuffer>(new OpenGLIndexBuffer(indices));
 }
 
+SharedPtr<Texture> OpenGLGraphicAPI::newTexture(uint32 width, uint32 height)
+{
+    return SharedPtr<Texture>(new OpenGLTexture(width, height));
+}
+
 void OpenGLGraphicAPI::beginFrame()
 {
     m_renderTarget->makeContextCurrent();
@@ -120,6 +127,8 @@ void OpenGLGraphicAPI::beginFrame()
         m_renderTarget->imGuiNewFrame();
     }
     #endif
+
+    m_nextTextureUnit = 0;
 }
 
 void OpenGLGraphicAPI::useGraphicsPipeline(const SharedPtr<GraphicPipeline>& graphicsPipeline)
@@ -186,6 +195,23 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& 
     }
     else
         logFatal << "IndexBuffer is not OpenGLIndexBuffer" << std::endl;
+}
+
+void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>& texture)
+{
+    if (SharedPtr<OpenGLTexture> glTexture = texture.dynamicCast<OpenGLTexture>())
+    {
+        glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit);
+        glUniform1i(index, m_nextTextureUnit++);
+        glBindTexture(GL_TEXTURE_2D, glTexture->textureID());
+        m_frameObjects.append(
+            UniquePtr<utils::SharedPtrBase>(
+                new SharedPtr<Texture>(texture)
+            )
+        );
+    }
+    else
+        logFatal << "Texture is not OpenGLTexture" << std::endl;
 }
 
 void OpenGLGraphicAPI::endFrame()

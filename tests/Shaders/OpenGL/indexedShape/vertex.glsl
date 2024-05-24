@@ -1,19 +1,17 @@
 /*
  * ---------------------------------------------------
- * vtx1.glsl
+ * vertex.glsl
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/05/20 17:54:25
+ * Date: 2024/05/24 19:35:44
  * ---------------------------------------------------
  */
 
 #version 410 core
 
-layout (location = 0) in vec3 pos;
-
-uniform mat4 u_MVPMatrix;
+layout (location = 0) in vec2 pos;
 
 void main()
 {
-    gl_Position = u_MVPMatrix * vec4(pos, 1.0);
+    gl_Position = vec4(pos, 0.0, 1.0);
 }

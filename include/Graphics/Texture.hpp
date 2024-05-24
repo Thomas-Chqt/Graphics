@@ -10,6 +10,7 @@
 #ifndef TEXTURE_HPP
 # define TEXTURE_HPP
 
+#include "UtilsCPP/Types.hpp"
 namespace gfx
 {
 
@@ -19,7 +20,13 @@ public:
     Texture(const Texture&) = delete;
     Texture(Texture&&)      = delete;
 
-    ~Texture() = default;
+    virtual utils::uint32 width() = 0;
+    virtual utils::uint32 height() = 0;
+
+    virtual void replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes) = 0;
+    inline void setBytes(const void* ptr) { replaceRegion(0, 0, width(), height(), ptr); }
+
+    virtual ~Texture() = default;
 
 protected:
     Texture() = default;

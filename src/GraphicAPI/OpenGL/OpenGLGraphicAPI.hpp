@@ -31,6 +31,7 @@ private:
     friend utils::SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
 
 public:
+    OpenGLGraphicAPI()                        = delete;
     OpenGLGraphicAPI(const OpenGLGraphicAPI&) = delete;
     OpenGLGraphicAPI(OpenGLGraphicAPI&&)      = delete;
 
@@ -45,6 +46,7 @@ public:
     utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) override;
+    utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height) override;
 
     void beginFrame() override;    
 
@@ -55,6 +57,7 @@ public:
     void setVertexUniform(utils::uint32 index, const math::mat4x4& mat) override;
     
     void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) override;
+    void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
     
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
@@ -68,6 +71,7 @@ private:
 
     utils::SharedPtr<OpenGLWindow> m_renderTarget;
     math::rgba m_clearColor = BLACK;
+    utils::uint32 m_nextTextureUnit = 0;
 
     utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_frameObjects;
 

@@ -1,17 +1,17 @@
 /*
  * ---------------------------------------------------
- * fra1.glsl
+ * vertex.glsl
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/05/20 17:54:41
+ * Date: 2024/05/24 19:35:44
  * ---------------------------------------------------
  */
 
 #version 410 core
 
-out vec4 fragmentColor;
-        
+layout (location = 0) in vec2 pos;
+
 void main()
 {
-    fragmentColor = vec4(1.0, 1.0, 1.0, 1.0);
+    gl_Position = vec4(pos, 0.0, 1.0);
 }
