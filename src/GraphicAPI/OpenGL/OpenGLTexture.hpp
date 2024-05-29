@@ -22,7 +22,7 @@ namespace gfx
 class OpenGLTexture : public Texture
 {
 private:
-    friend utils::SharedPtr<Texture> OpenGLGraphicAPI::newTexture(utils::uint32 width, utils::uint32 height);
+    friend utils::SharedPtr<Texture> OpenGLGraphicAPI::newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat pxFormat);
 
 public:
     OpenGLTexture()                     = delete;
@@ -39,11 +39,12 @@ public:
     ~OpenGLTexture() override;
 
 private:
-    OpenGLTexture(utils::uint32 width, utils::uint32 height);
+    OpenGLTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat);
 
     GLuint m_textureID;
     utils::uint32 m_width;
     utils::uint32 m_height;
+    GLenum m_pixelFormat;
 
 public:
     OpenGLTexture& operator = (const OpenGLTexture&) = delete;

@@ -11,6 +11,7 @@
 # define GLFWPLATFORM_HPP
 
 #include "Graphics/Platform.hpp"
+#include "UtilsCPP/Error.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
 namespace gfx
@@ -18,6 +19,9 @@ namespace gfx
 
 class GLFWPlatform : public Platform
 {
+public:
+    struct GLFWInitError : public utils::Error { inline const char* description() const override { return "fail to initialize GLFW"; }  };
+
 private:
     friend void Platform::init();
 

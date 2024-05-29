@@ -17,6 +17,9 @@ namespace gfx
 class Texture
 {
 public:
+    enum class PixelFormat { RGBA, ARGB };
+
+public:
     Texture(const Texture&) = delete;
     Texture(Texture&&)      = delete;
 

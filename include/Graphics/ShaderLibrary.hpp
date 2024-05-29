@@ -66,8 +66,6 @@ private:
     utils::Dictionary<utils::String, Shader> m_shaders;
 };
 
-inline utils::UniquePtr<ShaderLibrary> ShaderLibrary::s_sharedInstance;
-
 }
 
 #endif // SHADERLIBRARY_HPP

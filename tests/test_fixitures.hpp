@@ -118,7 +118,8 @@ using namespace utils;
     TEST_F(fixiture##OpenGL, name)           \
     body
 #else
-    TEST_F(fixiture, name, body)             \
+#define MULTI_TEST(fixiture, name, body)     \
+    TEST_F(fixiture, name)                   \
     body
 #endif
 

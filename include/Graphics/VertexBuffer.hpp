@@ -13,6 +13,7 @@
 #ifdef USING_OPENGL
     #include "UtilsCPP/Array.hpp"
     #include <GL/glew.h>
+    #include <cassert>
 #endif
 #include "UtilsCPP/Types.hpp"
 
@@ -40,7 +41,11 @@ public:
     {
     public:
         #ifdef USING_OPENGL
-        inline const utils::Array<Element>& getElements() const override { static_assert(false, "Need to be define in a template specialization"); };
+        #if defined(__clang__) && __clang_major__ >= 18 
+            inline const utils::Array<Element>& getElements() const override { static_assert(false, "Need to be define in a template specialization"); };
+        #else
+            inline const utils::Array<Element>& getElements() const override { assert(false && "Need to be define in a template specialization"); };
+        #endif
         #endif
         inline utils::uint64 getSize() const override { return sizeof(T); };
     };

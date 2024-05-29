@@ -36,7 +36,7 @@ namespace gfx
 class MetalGraphicPipeline : public GraphicPipeline
 {
 private:
-    friend utils::SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName);
+    friend utils::SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const utils::String&, const utils::String&, GraphicPipeline::BlendingOperation);
     
 public:
     MetalGraphicPipeline()                            = delete;
@@ -51,7 +51,7 @@ public:
     ~MetalGraphicPipeline();
 
 private:
-    MetalGraphicPipeline(id<MTLDevice>, id<MTLLibrary>, CAMetalLayer*, const utils::String& vertexShaderName, const utils::String& fragmentShaderName);
+    MetalGraphicPipeline(id<MTLDevice>, id<MTLLibrary>, CAMetalLayer*, const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation);
 
     id<MTLRenderPipelineState> m_renderPipelineState = nullptr;
 

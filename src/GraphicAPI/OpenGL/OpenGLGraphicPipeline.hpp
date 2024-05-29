@@ -23,7 +23,7 @@ namespace gfx
 class OpenGLGraphicPipeline : public GraphicPipeline
 {
 private:
-    friend utils::SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName);
+    friend utils::SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const utils::String&, const utils::String&, GraphicPipeline::BlendingOperation);
 
 public:
     OpenGLGraphicPipeline()                             = delete;
@@ -38,7 +38,7 @@ public:
     ~OpenGLGraphicPipeline();
 
 private:
-    OpenGLGraphicPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName);
+    OpenGLGraphicPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation operation);
 
     GLuint m_shaderProgramID = 0;
 

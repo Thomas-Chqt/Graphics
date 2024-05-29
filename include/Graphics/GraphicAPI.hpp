@@ -14,7 +14,9 @@
 #include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
-#include "UtilsCPP/Func.hpp"
+#ifdef IMGUI_ENABLED
+    #include "UtilsCPP/Func.hpp"
+#endif
 #include "UtilsCPP/String.hpp"
 #include "VertexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
@@ -47,9 +49,9 @@ public:
     }
 
     virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) = 0;
-    virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) = 0;
+    virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation = GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA) = 0;
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) = 0;
-    virtual utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height) = 0;
+    virtual utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) = 0;
 
     virtual void beginFrame() = 0;
 
@@ -58,6 +60,8 @@ public:
     
     virtual void setVertexUniform(utils::uint32 index, const math::vec4f&) = 0;
     virtual void setVertexUniform(utils::uint32 index, const math::mat4x4&) = 0;
+    virtual void setVertexUniform(utils::uint32 index, const math::vec2f&) = 0;
+    virtual void setVertexUniform(utils::uint32 index, const math::mat3x3&) = 0;
     
     virtual void setFragmentUniform(utils::uint32 index, const math::vec4f&) = 0;
     virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) = 0;
@@ -73,7 +77,7 @@ protected:
     GraphicAPI() = default;
 
 #ifdef IMGUI_ENABLED
-    inline static GraphicAPI* s_imguiEnabledAPI = nullptr;
+    static GraphicAPI* s_imguiEnabledAPI;
 #endif
 
 public:

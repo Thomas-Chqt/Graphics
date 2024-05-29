@@ -123,7 +123,7 @@ utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, util
     return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, size));
 }
 
-SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName) { @autoreleasepool
+SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName, GraphicPipeline::BlendingOperation operation) { @autoreleasepool
 {
     if (m_shaderLibrary == nil)
     {
@@ -133,7 +133,7 @@ SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& ve
         assert(m_shaderLibrary);
     }
 
-    return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, m_shaderLibrary, m_renderTarget->metalLayer(), vertexShaderName, fragmentShaderName));
+    return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, m_shaderLibrary, m_renderTarget->metalLayer(), vertexShaderName, fragmentShaderName, operation));
 }}
 
 SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indices)
@@ -141,13 +141,21 @@ SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indi
     return SharedPtr<IndexBuffer>(new MetalIndexBuffer(m_mtlDevice, indices));
 }
 
-SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height) { @autoreleasepool
+SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height, Texture::PixelFormat pxFormat) { @autoreleasepool
 {
     MTLTextureDescriptor* textureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
 
     textureDescriptor.width = width;
     textureDescriptor.height = height;
-    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    switch (pxFormat)
+    {
+    case Texture::PixelFormat::RGBA:
+        textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+        break;
+    case Texture::PixelFormat::ARGB:
+        textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+        break;
+    }
 
     return SharedPtr<Texture>(new MetalTexture(m_mtlDevice, textureDescriptor));
 }}
@@ -212,6 +220,16 @@ void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& v
 void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat4x4& mat) { @autoreleasepool
 {
     [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat4x4) atIndex:index];
+}}
+
+void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec2f& vec){ @autoreleasepool
+{
+    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec2f) atIndex:index];
+}}
+
+void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3& mat) { @autoreleasepool
+{
+    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat3x3) atIndex:index];
 }}
 
 void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool

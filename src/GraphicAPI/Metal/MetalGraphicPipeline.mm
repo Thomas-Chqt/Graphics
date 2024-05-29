@@ -9,6 +9,7 @@
 
 
 
+#include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/ShaderLibrary.hpp"
 #include <cassert>
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
@@ -21,7 +22,7 @@ MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
     [m_renderPipelineState release];
 }}
 
-MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, CAMetalLayer* metalLayer, const utils::String& vertexShaderName, const utils::String& fragmentShaderName) { @autoreleasepool
+MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, CAMetalLayer* metalLayer, const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation operation) { @autoreleasepool
 {
     NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(vertexShaderName) encoding:NSUTF8StringEncoding] autorelease];
     id<MTLFunction> vertexFunction = [[mtlLibrary newFunctionWithName:vertexShaderFuncName] autorelease];
@@ -38,6 +39,33 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
     pipelineStateDescriptor.fragmentFunction = fragmentFunction;
 
     pipelineStateDescriptor.colorAttachments[0].pixelFormat = metalLayer.pixelFormat;
+    pipelineStateDescriptor.colorAttachments[0].blendingEnabled = YES;
+
+
+    switch (operation)
+    {
+    case GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA:
+        pipelineStateDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+        pipelineStateDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+
+        pipelineStateDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
+        pipelineStateDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+
+        pipelineStateDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+        pipelineStateDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+        break;
+
+    case GraphicPipeline::BlendingOperation::one_minus_srcA_plus_srcA:
+        pipelineStateDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+        pipelineStateDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+
+        pipelineStateDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+        pipelineStateDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+
+        pipelineStateDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorSourceAlpha;
+        pipelineStateDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+        break;
+    }
 
     NSError* error;
     MTLAutoreleasedRenderPipelineReflection reflection;

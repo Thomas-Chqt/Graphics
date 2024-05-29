@@ -44,17 +44,19 @@ public:
     inline void setClearColor(const math::rgba& color) override { m_clearColor = color; }
 
     utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) override;
-    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) override;
+    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation = GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA) override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) override;
-    utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height) override;
+    utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) override;
 
-    void beginFrame() override;    
+    void beginFrame() override;
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
 
     void setVertexUniform(utils::uint32 index, const math::vec4f& vec) override;
     void setVertexUniform(utils::uint32 index, const math::mat4x4& mat) override;
+    void setVertexUniform(utils::uint32 index, const math::vec2f&) override;
+    void setVertexUniform(utils::uint32 index, const math::mat3x3& mat) override;
     
     void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;

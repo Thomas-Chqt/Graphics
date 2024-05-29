@@ -17,7 +17,9 @@
     #include "Window/GLFW/GLFWMetalWindow.hpp"
 #endif
 #include "UtilsCPP/Func.hpp"
-#include "Window/GLFW/GLFWOpenGLWindow.hpp"
+#ifdef USING_OPENGL
+    #include "Window/GLFW/GLFWOpenGLWindow.hpp"
+#endif
 
 using utils::SharedPtr;
 using utils::UniquePtr;
@@ -66,8 +68,8 @@ GLFWPlatform::~GLFWPlatform()
 
 GLFWPlatform::GLFWPlatform()
 {
-    int ret = ::glfwInit();
-    assert(ret == GLFW_TRUE);
+    if(::glfwInit() != GLFW_TRUE)
+        throw GLFWInitError();
 }
 
 void GLFWPlatform::eventCallBack(Event& e)

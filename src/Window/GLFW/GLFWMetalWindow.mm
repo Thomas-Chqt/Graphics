@@ -117,6 +117,18 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& 
         }   
     });
 
+    ::glfwSetScrollCallback(m_glfwWindow, [](::GLFWwindow* window, double xoffset, double yoffset)
+    {
+        double x, y;
+        glfwGetCursorPos(window, &x, &y);
+
+        GLFWMetalWindow& _this = *(GLFWMetalWindow*)glfwGetWindowUserPointer(window);
+
+        MouseDownEvent mouseDownEvent(_this, yoffset > 0 ? 4 : 5, (int)x, (int)y);
+        _this.eventCallBack(mouseDownEvent);
+        return;
+    });
+
     ::glfwSetCursorPosCallback(m_glfwWindow, [](::GLFWwindow* window, double x, double y)
     {
         GLFWMetalWindow& _this = *(GLFWMetalWindow*)glfwGetWindowUserPointer(window);

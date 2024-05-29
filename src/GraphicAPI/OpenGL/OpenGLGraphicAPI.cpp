@@ -70,6 +70,8 @@ void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTar
     GLenum err = glewInit();
     assert(err == GLEW_OK);
 
+    glEnable(GL_BLEND);
+
     logDebug << "OpenGLGraphicAPI render target set to window " << renderTarget << std::endl;
 }
 
@@ -97,9 +99,9 @@ SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, uint64 siz
     return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, size, layout));
 }
 
-SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName)
+SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName, GraphicPipeline::BlendingOperation operation)
 {
-    return SharedPtr<GraphicPipeline>(new OpenGLGraphicPipeline(vertexShaderName, fragmentShaderName));
+    return SharedPtr<GraphicPipeline>(new OpenGLGraphicPipeline(vertexShaderName, fragmentShaderName, operation));
 }
 
 SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& indices)
@@ -107,9 +109,9 @@ SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& ind
     return SharedPtr<IndexBuffer>(new OpenGLIndexBuffer(indices));
 }
 
-SharedPtr<Texture> OpenGLGraphicAPI::newTexture(uint32 width, uint32 height)
+SharedPtr<Texture> OpenGLGraphicAPI::newTexture(uint32 width, uint32 height, Texture::PixelFormat pxFormat)
 {
-    return SharedPtr<Texture>(new OpenGLTexture(width, height));
+    return SharedPtr<Texture>(new OpenGLTexture(width, height, pxFormat));
 }
 
 void OpenGLGraphicAPI::beginFrame()
@@ -169,6 +171,22 @@ void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& 
 void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat4x4& mat)
 {
     glUniformMatrix4fv(index, 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&mat));
+}
+
+void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec2f& vec)
+{
+    glUniform2f(index, vec.x, vec.y);
+}
+
+void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3& mat)
+{
+    float glmat[] = {
+        mat[0].x, mat[0].y, mat[0].z,
+        mat[1].x, mat[1].y, mat[1].z,
+        mat[2].x, mat[2].y, mat[2].z
+    };
+
+    glUniformMatrix3fv(index, 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&glmat));
 }
 
 void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec)
