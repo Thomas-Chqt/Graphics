@@ -17,13 +17,13 @@
 #include "Graphics/Platform.hpp"
 #include "Graphics/ShaderLibrary.hpp"
 #include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/String.hpp"
 #include <Foundation/Foundation.h>
 #include "GraphicAPI/Metal/MetalVertexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
-#include "Logger/Logger.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window/MetalWindow.hpp"
@@ -69,7 +69,7 @@ void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarg
     if (SharedPtr<MetalWindow> mtlWindow = renderTarget.dynamicCast<MetalWindow>())
         m_renderTarget = mtlWindow;
     else
-        logFatal << "Window is not MetalWindow" << std::endl;
+        throw utils::RuntimeError("Window is not MetalWindow");
 
     if (m_mtlDevice == nullptr)
     {
@@ -90,11 +90,10 @@ void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarg
         m_renderPassDescriptor = [[MTLRenderPassDescriptor alloc] init];
         assert(m_renderPassDescriptor);
         m_renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1);
-        m_renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
         m_renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     }
-    
-    logDebug << "MetalGraphicAPI render target set to window " << renderTarget << std::endl;
+
+    m_frameCount = 0;
 }}
 
 #ifdef IMGUI_ENABLED
@@ -160,8 +159,12 @@ SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height, Text
     return SharedPtr<Texture>(new MetalTexture(m_mtlDevice, textureDescriptor));
 }}
 
-void MetalGraphicAPI::beginFrame() { @autoreleasepool
+void MetalGraphicAPI::beginFrame(bool clearBuffer) { @autoreleasepool
 {
+    m_renderPassDescriptor.colorAttachments[0].loadAction = (m_frameCount < 3 || clearBuffer) ? MTLLoadActionClear : MTLLoadActionLoad;
+    if (m_frameCount < 3)
+        m_frameCount++;
+
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
     assert(m_commandBuffer);
 	
@@ -194,7 +197,7 @@ void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline
         );
     }
     else
-        logFatal << "GraphicPipeline is not MetalGraphicPipeline" << std::endl;
+        throw utils::RuntimeError("GraphicPipeline is not MetalGraphicPipeline");
 }}
 
 void MetalGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer) { @autoreleasepool
@@ -209,7 +212,7 @@ void MetalGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vert
         );
     }
     else
-        logFatal << "VertexBuffer is not MetalVertexBuffer" << std::endl;
+        throw utils::RuntimeError("VertexBuffer is not MetalVertexBuffer");
 }}
 
 void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
@@ -249,7 +252,7 @@ void MetalGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::Share
         );
     }
     else
-        logFatal << "Texture is not MetalTexture" << std::endl;
+        throw utils::RuntimeError("Texture is not MetalTexture");
 }}
 
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
@@ -273,7 +276,7 @@ void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& i
         );
     }
     else
-        logFatal << "IndexBuffer is not MetalIndexBuffer" << std::endl;
+        throw utils::RuntimeError("IndexBuffer is not MetalIndexBuffer");
 }}
 
 void MetalGraphicAPI::endFrame() { @autoreleasepool
@@ -312,15 +315,12 @@ MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
     [m_renderPassDescriptor release];
     [m_commandQueue release];
     [m_mtlDevice release];
-
-    logDebug << "MetalGraphicAPI destructed" << std::endl;
 }}
 
 MetalGraphicAPI::MetalGraphicAPI(const SharedPtr<Window>& renderTarget)
 {
     if (renderTarget)
         setRenderTarget(renderTarget);
-    logDebug << "MetalGraphicAPI created" << std::endl;
 }
 
 }

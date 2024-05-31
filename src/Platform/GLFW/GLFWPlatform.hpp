@@ -12,6 +12,7 @@
 
 #include "Graphics/Platform.hpp"
 #include "UtilsCPP/Error.hpp"
+#include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
 namespace gfx
@@ -29,7 +30,7 @@ public:
     GLFWPlatform(const GLFWPlatform&) = delete;
     GLFWPlatform(GLFWPlatform&&)      = delete;
 
-    inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_nextEventCallback = cb; }
+    inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_eventCallBack = cb; }
 
 #ifdef USING_METAL
     utils::SharedPtr<Window> newMetalWindow(int w, int h) override;
@@ -45,9 +46,7 @@ public:
 private:
     GLFWPlatform();
 
-    void eventCallBack(Event& e);
-
-    utils::Func<void(Event&)> m_nextEventCallback;
+    utils::Func<void(Event&)> m_eventCallBack;
 
 public:
     GLFWPlatform& operator = (const GLFWPlatform&) = delete;

@@ -24,23 +24,43 @@ WindowRequestCloseEvent::WindowRequestCloseEvent(Window& window) : WindowEvent(w
 {
 }
 
-KeyDownEvent::KeyDownEvent(Window& window, utils::uint8 keyCode, bool isRepeat) : WindowEvent(window), m_keyCode(keyCode), m_isRepeat(isRepeat)
+InputEvent::InputEvent(Window& window) : WindowEvent(window)
 {
 }
 
-KeyUpEvent::KeyUpEvent(Window& window, utils::uint8 keyCode) : WindowEvent(window), m_keyCode(keyCode)
+KeyboardEvent::KeyboardEvent(Window& window, utils::uint8 keyCode) : InputEvent(window), m_keyCode(keyCode)
 {
 }
 
-MouseDownEvent::MouseDownEvent(Window& window, utils::uint8 mouseCode, int x, int y) : WindowEvent(window), m_mouseCode(mouseCode), m_pos_x(x), m_pos_y(y)
+KeyDownEvent::KeyDownEvent(Window& window, utils::uint8 keyCode, bool isRepeat) : KeyboardEvent(window, keyCode), m_isRepeat(isRepeat)
 {
 }
 
-MouseUpEvent::MouseUpEvent(Window& window, utils::uint8 mouseCode, int x, int y) : WindowEvent(window), m_mouseCode(mouseCode), m_pos_x(x), m_pos_y(y)
+KeyUpEvent::KeyUpEvent(Window& window, utils::uint8 keyCode) : KeyboardEvent(window, keyCode)
 {
 }
 
-MouseMoveEvent::MouseMoveEvent(Window& window, int x, int y) : WindowEvent(window), m_pos_x(x), m_pos_y(y)
+MouseEvent::MouseEvent(Window& window, int posX, int posY) : InputEvent(window), m_pos_x(posX), m_pos_y(posY)
+{
+}
+
+ScrollEvent::ScrollEvent(Window& window, int posX, int posY, double offsetX, double offsetY) : MouseEvent(window, posX, posY), m_offsetX(offsetX), m_offsetY(offsetY)
+{
+}
+
+MouseMoveEvent::MouseMoveEvent(Window& window, int posX, int posY) : MouseEvent(window, posX, posY)
+{
+}
+
+MouseButtonEvent::MouseButtonEvent(Window& window, int posX, int posY, utils::uint8 mouseCode) : MouseEvent(window, posX, posY), m_mouseCode(mouseCode)
+{
+}
+
+MouseDownEvent::MouseDownEvent(Window& window, int posX, int posY, utils::uint8 mouseCode) : MouseButtonEvent(window, posX, posY, mouseCode)
+{
+}
+
+MouseUpEvent::MouseUpEvent(Window& window, int posX, int posY, utils::uint8 mouseCode) : MouseButtonEvent(window, posX, posY, mouseCode)
 {
 }
 

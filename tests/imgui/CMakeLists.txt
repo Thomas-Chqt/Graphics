@@ -7,6 +7,8 @@
 
 add_library(imgui)
 
+set_target_properties(imgui PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
+
 target_sources(imgui PRIVATE
     "src/imgui_demo.cpp"
     "src/imgui_draw.cpp"

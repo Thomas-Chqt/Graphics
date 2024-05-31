@@ -11,7 +11,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/ShaderLibrary.hpp"
 #include "Graphics/VertexBuffer.hpp"
-#include "Logger/Logger.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <cassert>
@@ -50,7 +49,7 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderNa
     if (success == 0)
     {
         glGetShaderInfoLog(vertexShaderID, 1024, nullptr, &errorLog[0]);
-        logFatal << errorLog << std::endl;
+        throw OpenGLShaderCompileError(errorLog);
     }
 
     GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
@@ -61,7 +60,7 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderNa
     if (success == 0)
     {
         glGetShaderInfoLog(fragmentShaderID, 1024, nullptr, &errorLog[0]);
-        logFatal << errorLog << std::endl;
+        throw OpenGLShaderCompileError(errorLog);
     }
 
     m_shaderProgramID = glCreateProgram();
@@ -72,7 +71,7 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderNa
     if (success == 0)
     {
         glGetProgramInfoLog(m_shaderProgramID, 1024, nullptr, &errorLog[0]);
-        logFatal << errorLog << std::endl;
+        throw OpenGLShaderCompileError(errorLog);
     }
 
     glDeleteShader(vertexShaderID);
@@ -84,6 +83,7 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderNa
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glBlendEquation(GL_FUNC_ADD);
         break;
+
     case GraphicPipeline::BlendingOperation::one_minus_srcA_plus_srcA:
         glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
         glBlendEquation(GL_FUNC_ADD);

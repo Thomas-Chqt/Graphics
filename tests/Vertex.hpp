@@ -63,6 +63,11 @@ struct Vertex_texturedSquare
     math::vec2f uv;
 };
 
+struct Vertex_noClearBuffer
+{
+    math::vec2f pos;
+};
+
 }
 
 #ifndef __METAL_VERSION__
@@ -251,6 +256,32 @@ private:
     utils::Array<Element> m_elements;
 #endif
 };
+
+template<>
+class VertexBuffer::Layout<gfx_test::Vertex_noClearBuffer> : public VertexBuffer::LayoutBase
+{
+public:
+    #ifdef USING_OPENGL
+    Layout()
+    {
+        m_elements.append({
+            .size = 2,
+            .type = GL_FLOAT,
+            .normalized = GL_FALSE,
+            .stride = sizeof(gfx_test::Vertex_noClearBuffer),
+            .pointer = (void*)0
+        });
+    }
+    inline const utils::Array<Element>& getElements() const override { return m_elements; };
+    #endif
+    inline utils::uint64 getSize() const override { return sizeof(gfx_test::Vertex_noClearBuffer); };
+
+#ifdef USING_OPENGL
+private:
+    utils::Array<Element> m_elements;
+#endif
+};
+
 
 }
 #endif // __METAL_VERSION__

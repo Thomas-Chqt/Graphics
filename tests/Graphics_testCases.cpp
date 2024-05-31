@@ -19,7 +19,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
-#include "Logger/Logger.hpp"
 #include "Graphics/Platform.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
@@ -38,7 +37,6 @@ namespace gfx_test
 {
 
 using namespace gfx;
-using namespace tlog;
 using namespace utils;
 using namespace math;
 
@@ -52,7 +50,7 @@ MULTI_TEST(GraphicsTestWindow, event,
 
     Platform::shared().setEventCallBack([&](Event& ev)
     {
-        logDebug << ev << std::endl;
+        std::cout << ev << std::endl;
 
         ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
         {
@@ -679,6 +677,165 @@ MULTI_TEST(GraphicsTestAPI, texturedSquare,
         m_graphicAPI->endFrame();
     }
 
+})
+
+MULTI_TEST(GraphicsTestWindow, noEventCallBack,
+{
+    bool running = true;
+
+    while (running)
+        Platform::shared().pollEvents();
+})
+
+MULTI_TEST(GraphicsTestWindow, eventCallBackOnWindow,
+{
+    bool running = true;
+
+    m_window->setEventCallBack([&](Event& ev)
+    {
+        std::cout << ev << std::endl;
+
+        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+        {
+            switch (e.keyCode())
+            {
+            case ESC_KEY:
+                running = false;
+                break;
+            }
+        });
+    });
+
+    while (running)
+        Platform::shared().pollEvents();
+})
+
+MULTI_TEST(GraphicsTestWindow, setCursorPos,
+{
+    bool running = true;
+
+    Platform::shared().setEventCallBack([&](Event& ev)
+    {
+        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+        {
+            switch (e.keyCode())
+            {
+            case ESC_KEY:
+                running = false;
+                break;
+                
+            case ONE_KEY:
+                m_window->setCursorPos(0, 0);
+                break;
+
+            case TWO_KEY:
+                m_window->setCursorPos(100, 100);
+                break;
+            }
+        });
+    });
+
+    while (running)
+        Platform::shared().pollEvents();
+})
+
+MULTI_TEST(GraphicsTestWindow, hideCusor,
+{
+    bool running = true;
+
+    Platform::shared().setEventCallBack([&](Event& ev)
+    {
+        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+        {
+            switch (e.keyCode())
+            {
+            case ESC_KEY:
+                running = false;
+                break;
+
+            case ONE_KEY:
+                m_window->setCursorVisibility(false);
+                break;
+
+            case TWO_KEY:
+                m_window->setCursorVisibility(true);
+                break;
+            }
+        });
+    });
+
+    while (running)
+        Platform::shared().pollEvents();
+})
+
+MULTI_TEST(GraphicsTestImGui, noClearBuffer, {
+    Array<Vertex_noClearBuffer> vertices = Array<Vertex_noClearBuffer>({
+        { .pos = {-0.25, -0.25} },
+        { .pos = {-0.25,  0.25} },
+        { .pos = { 0.25,  0.25} },
+        { .pos = { 0.25, -0.25} }
+    });
+    Array<uint32> indices = Array<uint32>({ 0, 1, 2, 0, 2, 3 });
+
+    #if defined (USING_METAL) && defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("noClearBuffer_vertex",   "noClearBuffer_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/noClearBuffer/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("noClearBuffer_fragment", "noClearBuffer_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/noClearBuffer/fragment.glsl"));
+    #elif defined (USING_METAL)
+        ShaderLibrary::shared().registerShader("noClearBuffer_vertex",   "noClearBuffer_vertex");
+        ShaderLibrary::shared().registerShader("noClearBuffer_fragment", "noClearBuffer_fragment");
+    #elif defined (USING_OPENGL)
+        ShaderLibrary::shared().registerShader("noClearBuffer_vertex",   utils::String::contentOfFile(OPENGL_SHADER_DIR"/noClearBuffer/vertex.glsl"));
+        ShaderLibrary::shared().registerShader("noClearBuffer_fragment", utils::String::contentOfFile(OPENGL_SHADER_DIR"/noClearBuffer/fragment.glsl"));
+    #else
+    #endif
+
+    SharedPtr<GraphicPipeline> graphicPipeline = m_graphicAPI->newGraphicsPipeline("noClearBuffer_vertex", "noClearBuffer_fragment");
+    SharedPtr<VertexBuffer> vertexBuffer = m_graphicAPI->newVertexBuffer(vertices);
+    SharedPtr<IndexBuffer> indexBuffer = m_graphicAPI->newIndexBuffer(indices);
+
+    bool running = true;
+    Platform::shared().setEventCallBack([&](Event& ev)
+    {
+        ev.dispatch<KeyDownEvent>([&](KeyDownEvent& e)
+        {
+            if (e.keyCode() == ESC_KEY)
+                running = false;
+        });
+    });
+
+    vec2f pos(0, 0);
+    rgba color = WHITE;
+
+    while (running)
+    {
+        Platform::shared().pollEvents();
+        
+        m_graphicAPI->beginFrame(false);
+        ImGui::NewFrame();
+
+        m_graphicAPI->useGraphicsPipeline(graphicPipeline);
+        m_graphicAPI->useVertexBuffer(vertexBuffer);
+
+        mat3x3 modelMatrix(1, 0, pos.x,
+                           0, 1, pos.y,
+                           0, 0,     1); 
+
+        ImGui::Text("FPS : %.1f", ImGui::GetIO().Framerate);
+        ImGui::SliderFloat("Pos X", &pos.x, -1, 1);
+        ImGui::SliderFloat("Pos Y", &pos.y, -1, 1);
+        ImGui::ColorPicker4("u_color", (float *)&color);
+
+        m_graphicAPI->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_MVPMatrix"), modelMatrix);
+        m_graphicAPI->setFragmentUniform(graphicPipeline->findFragmentUniformIndex("u_color"), color);
+
+        m_graphicAPI->drawIndexedVertices(indexBuffer);
+
+        ImGui::Render();
+        m_graphicAPI->endFrame();
+
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 })
 
 }

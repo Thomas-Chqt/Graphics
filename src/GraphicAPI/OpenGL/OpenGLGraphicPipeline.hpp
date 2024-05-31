@@ -13,6 +13,7 @@
 #include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/VertexBuffer.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include <GL/glew.h>
@@ -22,6 +23,9 @@ namespace gfx
 
 class OpenGLGraphicPipeline : public GraphicPipeline
 {
+public:
+    struct OpenGLShaderCompileError : public utils::RuntimeError { using utils::RuntimeError::RuntimeError; };
+
 private:
     friend utils::SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const utils::String&, const utils::String&, GraphicPipeline::BlendingOperation);
 

@@ -48,7 +48,7 @@ public:
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) override;
     utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) override;
 
-    void beginFrame() override;
+    void beginFrame(bool clearBuffer = true) override;
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;

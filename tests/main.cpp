@@ -10,10 +10,8 @@
 #include <gtest/gtest.h>
 
 #include "Graphics/ShaderLibrary.hpp"
-#include "Logger/Logger.hpp"
 #include "Graphics/Platform.hpp"
 
-using namespace tlog;
 using namespace gfx;
 
 class Environment : public ::testing::Environment
@@ -23,7 +21,6 @@ public:
 
     void SetUp() override
     {
-        Logger::init();
         Platform::init();
         ShaderLibrary::init();
 
@@ -36,7 +33,6 @@ public:
     {
         ShaderLibrary::terminated();
         Platform::terminate();
-        Logger::terminate();
     }
 };
 

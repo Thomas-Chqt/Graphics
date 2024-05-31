@@ -11,12 +11,6 @@ if(NOT TARGET UtilsCPP)
     add_subdirectory(UtilsCPP)
 endif()
 
-if(NOT TARGET Logger)
-    find_program(GIT_PATH git REQUIRED)
-    execute_process(COMMAND ${GIT_PATH} submodule update --init Logger WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-    add_subdirectory(Logger)
-endif()
-
 if(NOT TARGET Math)
     find_program(GIT_PATH git REQUIRED)
     execute_process(COMMAND ${GIT_PATH} submodule update --init Math WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})

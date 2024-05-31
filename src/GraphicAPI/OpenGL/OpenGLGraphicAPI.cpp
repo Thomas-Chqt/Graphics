@@ -16,11 +16,11 @@
 #include "Graphics/Texture.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include <GL/glew.h>
 #include <cassert>
-#include "Logger/Logger.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
@@ -64,7 +64,7 @@ void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTar
     if (SharedPtr<OpenGLWindow> glWindow = renderTarget.dynamicCast<OpenGLWindow>())
         m_renderTarget = glWindow;
     else
-        logFatal << "Window is not OpenGLWindow" << std::endl;
+        throw utils::RuntimeError("Window is not OpenGLWindow");
     
     m_renderTarget->makeContextCurrent();
     GLenum err = glewInit();
@@ -72,7 +72,7 @@ void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTar
 
     glEnable(GL_BLEND);
 
-    logDebug << "OpenGLGraphicAPI render target set to window " << renderTarget << std::endl;
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 #ifdef IMGUI_ENABLED
@@ -114,13 +114,15 @@ SharedPtr<Texture> OpenGLGraphicAPI::newTexture(uint32 width, uint32 height, Tex
     return SharedPtr<Texture>(new OpenGLTexture(width, height, pxFormat));
 }
 
-void OpenGLGraphicAPI::beginFrame()
+void OpenGLGraphicAPI::beginFrame(bool clearBuffer)
 {
     m_renderTarget->makeContextCurrent();
     
-    glClearColor(m_clearColor.r, m_clearColor.g,  m_clearColor.b, m_clearColor.a);
-
-    glClear(GL_COLOR_BUFFER_BIT);
+    if (clearBuffer)
+    {
+        glClearColor(m_clearColor.r, m_clearColor.g,  m_clearColor.b, m_clearColor.a);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
 
     #ifdef IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
@@ -145,7 +147,7 @@ void OpenGLGraphicAPI::useGraphicsPipeline(const SharedPtr<GraphicPipeline>& gra
         );
     }
     else
-        logFatal << "GraphicPipeline is not OpenGLGraphicPipeline" << std::endl;
+        throw utils::RuntimeError("GraphicPipeline is not OpenGLGraphicPipeline");
 }
 
 void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer)
@@ -160,7 +162,7 @@ void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& ver
         );
     }
     else
-        logFatal << "VertexBuffer is not OpenGLVertexBuffer" << std::endl;
+        throw utils::RuntimeError("VertexBuffer is not OpenGLVertexBuffer");
 }
 
 void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& vec)
@@ -212,7 +214,7 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& 
         );
     }
     else
-        logFatal << "IndexBuffer is not OpenGLIndexBuffer" << std::endl;
+        throw utils::RuntimeError("IndexBuffer is not OpenGLIndexBuffer");
 }
 
 void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>& texture)
@@ -229,7 +231,7 @@ void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::Shar
         );
     }
     else
-        logFatal << "Texture is not OpenGLTexture" << std::endl;
+        throw utils::RuntimeError("Texture is not OpenGLTexture");
 }
 
 void OpenGLGraphicAPI::endFrame()
@@ -254,15 +256,12 @@ OpenGLGraphicAPI::~OpenGLGraphicAPI()
         s_imguiEnabledAPI = nullptr;
     }
     #endif
-
-    logDebug << "OpenGLGraphicAPI destructed" << std::endl;
 }
 
 OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget)
 {
     if (renderTarget)
         setRenderTarget(renderTarget);
-    logDebug << "OpenGLGraphicAPI created" << std::endl;
 }
 
 }

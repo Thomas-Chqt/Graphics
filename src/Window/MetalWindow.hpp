@@ -21,13 +21,13 @@
 namespace gfx
 {
 
-class MetalWindow : public Window_internal
+class MetalWindow : virtual public Window_internal
 {
 public:
     MetalWindow(const MetalWindow&) = delete;
     MetalWindow(MetalWindow&&)      = delete;
 
-    virtual CAMetalLayer* metalLayer() = 0;    
+    virtual CAMetalLayer* metalLayer() = 0;
 
     virtual ~MetalWindow() = default;
 

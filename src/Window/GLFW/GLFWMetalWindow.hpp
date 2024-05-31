@@ -14,11 +14,9 @@
 #include "Platform/GLFW/GLFWPlatform.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "Window/GLFW/GLFWWindow.hpp"
 #include "Window/MetalWindow.hpp"
-#define GLFW_INCLUDE_NONE
-#define GLFW_EXPOSE_NATIVE_COCOA
 #include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
 
 #ifdef __OBJC__
     #import <QuartzCore/CAMetalLayer.h>
@@ -31,7 +29,7 @@
 namespace gfx
 {
 
-class GLFWMetalWindow : public MetalWindow
+class GLFWMetalWindow final : public GLFWWindow, public MetalWindow
 {
 private:
     friend utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h);
@@ -40,26 +38,18 @@ public:
     GLFWMetalWindow(const GLFWMetalWindow&) = delete;
     GLFWMetalWindow(GLFWMetalWindow&&)      = delete;
 
-    inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_nextEventCallback = cb; }
-
-#ifdef IMGUI_ENABLED
-    void imGuiInit() override;
-    void imGuiShutdown() override;
-    void imGuiNewFrame() override;
-#endif
+    void setEventCallBack(const utils::Func<void(Event&)>& cb) override;
+    
+    #ifdef IMGUI_ENABLED
+        void imGuiInit() override;
+    #endif
 
     CAMetalLayer* metalLayer() override;
 
-    ~GLFWMetalWindow() override;
+    ~GLFWMetalWindow() override = default;
 
-protected:
-    GLFWMetalWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback);
-
-    inline void eventCallBack(Event& e) { m_nextEventCallback(e); }
-
-    ::GLFWwindow* m_glfwWindow = nullptr;
-    utils::Func<void(Event&)> m_nextEventCallback;
-    NSWindow* m_nswindow = nullptr;
+private:
+    GLFWMetalWindow(int w, int h);
 
 public:
     GLFWMetalWindow& operator = (const GLFWMetalWindow&) = delete;

@@ -13,14 +13,15 @@
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "Window/GLFW/GLFWWindow.hpp"
 #include "Window/OpenGLWindow.hpp"
-#include "Platform/GLFW/GLFWPlatform.hpp"
 #include <GLFW/glfw3.h>
+#include "Platform/GLFW/GLFWPlatform.hpp"
 
 namespace gfx
 {
 
-class GLFWOpenGLWindow : public OpenGLWindow
+class GLFWOpenGLWindow final : public GLFWWindow, public OpenGLWindow
 {
 private:
     friend utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h);
@@ -29,26 +30,17 @@ public:
     GLFWOpenGLWindow(const GLFWOpenGLWindow&) = delete;
     GLFWOpenGLWindow(GLFWOpenGLWindow&&)      = delete;
 
-    inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_nextEventCallback = cb; }
-
-#ifdef IMGUI_ENABLED
-    void imGuiInit() override;
-    void imGuiShutdown() override;
-    void imGuiNewFrame() override;
-#endif
+    #ifdef IMGUI_ENABLED
+        void imGuiInit() override;
+    #endif
 
     inline void makeContextCurrent() override { ::glfwMakeContextCurrent(m_glfwWindow); }
     inline void swapBuffer() override { ::glfwSwapBuffers(m_glfwWindow); }
 
-    ~GLFWOpenGLWindow() override;
+    ~GLFWOpenGLWindow() override = default;
 
 protected:
-    GLFWOpenGLWindow(int w, int h, const utils::Func<void(Event&)>& defaultCallback);
-
-    inline void eventCallBack(Event& e) { m_nextEventCallback(e); }
-
-    ::GLFWwindow* m_glfwWindow = nullptr;
-    utils::Func<void(Event&)> m_nextEventCallback;
+    GLFWOpenGLWindow(int w, int h);
 
 public:
     GLFWOpenGLWindow& operator = (const GLFWOpenGLWindow&) = delete;

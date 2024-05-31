@@ -24,6 +24,9 @@ public:
 
     virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
 
+    virtual void setCursorPos(int x, int y) = 0;
+    virtual void setCursorVisibility(bool) = 0;
+
     virtual ~Window() = default;
 
 protected:

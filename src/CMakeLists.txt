@@ -38,6 +38,8 @@ if (ENABLE_OPENGL)
 endif()
 
 if(USED_WINDOW_LIBRARY STREQUAL GLFW)
+    list(APPEND GRAPHICS_SRC "Window/GLFW/GLFWWindow.cpp" "Window/GLFW/GLFWWindow.hpp")
+
     if (ENABLE_METAL)
         list(APPEND GRAPHICS_SRC "Window/GLFW/GLFWMetalWindow.mm" "Window/GLFW/GLFWMetalWindow.hpp")
     endif()

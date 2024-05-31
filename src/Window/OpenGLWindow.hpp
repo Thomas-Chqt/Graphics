@@ -15,7 +15,7 @@
 namespace gfx
 {
 
-class OpenGLWindow : public Window_internal
+class OpenGLWindow : virtual public Window_internal
 {
 public:
     OpenGLWindow(const OpenGLWindow&) = delete;

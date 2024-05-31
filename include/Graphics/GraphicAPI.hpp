@@ -53,7 +53,7 @@ public:
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) = 0;
     virtual utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) = 0;
 
-    virtual void beginFrame() = 0;
+    virtual void beginFrame(bool clearBuffer = true) = 0;
 
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
     virtual void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) = 0;

@@ -71,6 +71,7 @@ if (USED_WINDOW_LIBRARY STREQUAL "AppKit")
     target_compile_definitions(Graphics PUBLIC USING_APPKIT)
 elseif(USED_WINDOW_LIBRARY STREQUAL "GLFW")
     target_compile_definitions(Graphics PUBLIC USING_GLFW)
+    target_compile_definitions(Graphics PRIVATE GLFW_INCLUDE_NONE)
 endif()
 
 if (ENABLE_METAL)
@@ -91,7 +92,7 @@ if (APPLE AND ENABLE_OPENGL)
 endif()
 
 
-target_link_libraries(Graphics PUBLIC UtilsCPP Logger Math)
+target_link_libraries(Graphics PUBLIC UtilsCPP Math)
 
 if (USED_WINDOW_LIBRARY STREQUAL "AppKit")
     target_link_libraries(Graphics PUBLIC "-framework AppKit")
