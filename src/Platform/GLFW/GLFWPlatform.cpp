@@ -19,6 +19,9 @@
     #include "Window/GLFW/GLFWOpenGLWindow.hpp"
 #endif
 
+#include "UtilsCPP/RuntimeError.hpp"
+#include "UtilsCPP/String.hpp"
+
 using utils::SharedPtr;
 using utils::UniquePtr;
 
@@ -75,6 +78,9 @@ GLFWPlatform::GLFWPlatform()
 {
     if(::glfwInit() != GLFW_TRUE)
         throw GLFWInitError();
+    ::glfwSetErrorCallback([](int code, const char *description){
+        throw utils::RuntimeError(utils::String(std::move(description)));
+    });
 }
 
 }
