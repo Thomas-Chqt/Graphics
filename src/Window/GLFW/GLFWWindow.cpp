@@ -80,13 +80,13 @@ void GLFWWindow::setupGLFWcallback()
 
         if (action == GLFW_PRESS)
         {
-            MouseDownEvent mouseDownEvent(gfxWindow, button, (int)x, (int)y);
+            MouseDownEvent mouseDownEvent(gfxWindow, (int)x, (int)y, button);
             callback(mouseDownEvent);
             return;
         }
         if (action == GLFW_RELEASE)
         {
-            MouseUpEvent mouseUpEvent(gfxWindow, button, (int)x, (int)y);
+            MouseUpEvent mouseUpEvent(gfxWindow, (int)x, (int)y, button);
             callback(mouseUpEvent);
             return;
         }   
