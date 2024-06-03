@@ -39,11 +39,11 @@ public:
     #endif
 
     #if defined (USING_METAL) && !defined (USING_OPENGL)
-        inline void registerShader(const utils::String& name, const utils::String& metalFuncName)                                { m_shaders.insert(name, (Shader){ metalFuncName }); }
+        inline void registerShader(const utils::String& name, const utils::String& metalFuncName)                                { m_shaders.insert(name, Shader{ metalFuncName }); }
     #elif !defined (USING_METAL) && defined (USING_OPENGL)
-        inline void registerShader(const utils::String& name, const utils::String& glslCode)                                     { m_shaders.insert(name, (Shader){ glslCode }); }
+        inline void registerShader(const utils::String& name, const utils::String& glslCode)                                     { m_shaders.insert(name, Shader{ glslCode }); }
     #elif defined (USING_METAL) && defined (USING_OPENGL)
-        inline void registerShader(const utils::String& name, const utils::String& metalFuncName, const utils::String& glslCode) { m_shaders.insert(name, (Shader){ metalFuncName, glslCode }); }
+        inline void registerShader(const utils::String& name, const utils::String& metalFuncName, const utils::String& glslCode) { m_shaders.insert(name, Shader{ metalFuncName, glslCode }); }
     #endif
 
     #ifdef USING_METAL

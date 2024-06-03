@@ -82,11 +82,11 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_vertexBuffer),
-            .pointer = (void*)0
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_vertexBuffer),
+            (void*)0
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };
@@ -107,11 +107,11 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_triangle),
-            .pointer = (void*)0
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_triangle),
+            (void*)0
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };
@@ -132,11 +132,11 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_indexedShape),
-            .pointer = (void*)0
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_indexedShape),
+            (void*)0
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };
@@ -157,11 +157,11 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_APISwitch),
-            .pointer = (void*)0
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_APISwitch),
+            (void*)0
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };
@@ -182,11 +182,11 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_fragmentUniform),
-            .pointer = (void*)0
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_fragmentUniform),
+            (void*)0
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };
@@ -207,11 +207,11 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 3,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_flatColorCube),
-            .pointer = (void*)0
+            3,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_flatColorCube),
+            (void*)0
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };
@@ -232,19 +232,19 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_texturedSquare),
-            .pointer = (void*)0
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_texturedSquare),
+            (void*)0
         });
 
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_texturedSquare),
-            .pointer = (void*)offsetof(gfx_test::Vertex_texturedSquare, uv)
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_texturedSquare),
+            (void*)offsetof(gfx_test::Vertex_texturedSquare, uv)
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };
@@ -265,11 +265,11 @@ public:
     Layout()
     {
         m_elements.append({
-            .size = 2,
-            .type = GL_FLOAT,
-            .normalized = GL_FALSE,
-            .stride = sizeof(gfx_test::Vertex_noClearBuffer),
-            .pointer = (void*)0
+            2,
+            GL_FLOAT,
+            GL_FALSE,
+            sizeof(gfx_test::Vertex_noClearBuffer),
+            (void*)0
         });
     }
     inline const utils::Array<Element>& getElements() const override { return m_elements; };

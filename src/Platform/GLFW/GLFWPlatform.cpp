@@ -25,6 +25,7 @@ using utils::UniquePtr;
 namespace gfx
 {
 
+GFLWError GFLWError::s_lastError = GFLWError();
 UniquePtr<Platform> Platform::s_shared;
 
 void Platform::init()
@@ -74,7 +75,8 @@ GLFWPlatform::~GLFWPlatform()
 GLFWPlatform::GLFWPlatform()
 {
     if(::glfwInit() != GLFW_TRUE)
-        throw GLFWInitError();
+        throw InitError();
+    ::glfwSetErrorCallback(GFLWError::setLastError);
 }
 
 }
