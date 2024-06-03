@@ -1,8 +1,9 @@
 name: Continuous Integration
 run-name: Multi platform build for ${{ github.ref }} by ${{ github.actor }}
 on:
-  pull_request_target:
-    branches: [ $default-branch ]
+  pull_request:
+    branches: $default-branch
+
   workflow_dispatch:
 
 jobs:
@@ -70,6 +71,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DGLFW_USE_WAYLAND=OFF
           
       - name: Build
         run: cmake --build build
