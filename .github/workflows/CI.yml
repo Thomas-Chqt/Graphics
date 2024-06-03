@@ -2,8 +2,6 @@ name: Continuous Integration
 run-name: Multi platform build for ${{ github.ref }} by ${{ github.actor }}
 on:
   pull_request:
-    branches: $default-branch
-
   workflow_dispatch:
 
 jobs:
