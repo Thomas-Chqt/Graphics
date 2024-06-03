@@ -1,0 +1,68 @@
+name: Continuous Integration
+run-name: Multi platform build for ${{ github.ref }} by ${{ github.actor }}
+on:
+  pull_request_target:
+    branches: [ $default-branch ]
+  workflow_dispatch:
+
+jobs:
+  Build-and-Test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        compiler: [ clang, gcc, cl ]
+        
+        exclude:
+          - os: macos-latest
+            compiler: cl
+          - os: ubuntu-latest
+            compiler: cl
+          - os: windows-latest
+            compiler: clang
+          - os: windows-latest
+            compiler: gcc
+
+        include:
+          - os: macos-latest
+            compiler: clang
+            c_compiler: $(brew --prefix llvm@15)/bin/clang
+            cpp_compiler: $(brew --prefix llvm@15)/bin/clang++
+            
+          - os: macos-latest
+            compiler: gcc
+            c_compiler: gcc-12
+            cpp_compiler: g++-12
+            
+          - os: ubuntu-latest
+            compiler: clang
+            c_compiler: clang-15
+            cpp_compiler: clang++-15
+            
+          - os: ubuntu-latest
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+
+          - os: windows-latest
+            c_compiler: cl
+            cpp_compiler: cl
+          
+        
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: de-vri-es/setup-git-credentials@v2.1.2
+        with:
+            credentials: https://${{ github.actor }}:${{ secrets.ACCESS_TOKEN }}@github.com/
+            
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: > 
+          cmake -B build -S ${{ github.workspace }}
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          
+      - name: Build
+        run: cmake --build build
