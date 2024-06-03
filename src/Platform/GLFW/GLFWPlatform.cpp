@@ -38,7 +38,7 @@ void Platform::terminate()
 }
 
 #ifdef USING_METAL
-utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h)
+utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWMetalWindow(w, h));
     newWindow->setEventCallBack([this](Event& event){
@@ -50,7 +50,7 @@ utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h)
 #endif
 
 #ifdef USING_OPENGL
-utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h)
+utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWOpenGLWindow(w, h));
     newWindow->setEventCallBack([this](Event& event){

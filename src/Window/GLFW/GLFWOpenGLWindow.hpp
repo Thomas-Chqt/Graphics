@@ -24,7 +24,7 @@ namespace gfx
 class GLFWOpenGLWindow final : public GLFWWindow, public OpenGLWindow
 {
 private:
-    friend utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h);
+    friend utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h) const;
 
 public:
     GLFWOpenGLWindow(const GLFWOpenGLWindow&) = delete;

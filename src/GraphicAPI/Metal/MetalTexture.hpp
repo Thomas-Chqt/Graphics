@@ -32,7 +32,7 @@ namespace gfx
 class MetalTexture : public Texture
 {
 private:
-    friend utils::SharedPtr<Texture> MetalGraphicAPI::newTexture(utils::uint32, utils::uint32, Texture::PixelFormat);
+    friend utils::SharedPtr<Texture> MetalGraphicAPI::newTexture(utils::uint32, utils::uint32, Texture::PixelFormat) const;
 
 public:
     MetalTexture()                    = delete;

@@ -22,7 +22,7 @@ namespace gfx
 class OpenGLIndexBuffer : public IndexBuffer
 {
 private:
-    friend utils::SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const utils::Array<utils::uint32>&);
+    friend utils::SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const utils::Array<utils::uint32>&) const;
 
 public:
     OpenGLIndexBuffer()                         = delete;

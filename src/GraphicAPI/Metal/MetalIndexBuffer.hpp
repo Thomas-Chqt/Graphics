@@ -28,7 +28,7 @@ namespace gfx
 class MetalIndexBuffer : public IndexBuffer
 {
 private:
-    friend utils::SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const utils::Array<utils::uint32>&);
+    friend utils::SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const utils::Array<utils::uint32>&) const;
 
 public:
     MetalIndexBuffer()                        = delete;

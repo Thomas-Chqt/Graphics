@@ -59,7 +59,7 @@ using utils::Array;
 namespace gfx
 {
 
-SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const SharedPtr<Window>& renderTarget)
+SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const SharedPtr<Window>& renderTarget) const
 {
     return SharedPtr<GraphicAPI>(new MetalGraphicAPI(renderTarget));
 }
@@ -116,7 +116,7 @@ void MetalGraphicAPI::setClearColor(const math::rgba& color)
     m_renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(color.r, color.g, color.b, color.a);
 }
 
-utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout)
+utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const
 {
     (void)layout;
     return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, size));
@@ -135,12 +135,12 @@ SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& ve
     return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, m_shaderLibrary, m_renderTarget->metalLayer(), vertexShaderName, fragmentShaderName, operation));
 }}
 
-SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indices)
+SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indices) const
 {
     return SharedPtr<IndexBuffer>(new MetalIndexBuffer(m_mtlDevice, indices));
 }
 
-SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height, Texture::PixelFormat pxFormat) { @autoreleasepool
+SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height, Texture::PixelFormat pxFormat) const { @autoreleasepool
 {
     MTLTextureDescriptor* textureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
 

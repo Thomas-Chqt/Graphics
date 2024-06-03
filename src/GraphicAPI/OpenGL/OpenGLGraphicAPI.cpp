@@ -54,7 +54,7 @@ using utils::Array;
 namespace gfx
 {
 
-SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const SharedPtr<Window>& renderTarget)
+SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const SharedPtr<Window>& renderTarget) const
 {
     return SharedPtr<GraphicAPI>(new OpenGLGraphicAPI(renderTarget));
 }
@@ -94,7 +94,7 @@ void OpenGLGraphicAPI::useForImGui(const utils::Func<void()>& f)
 }
 #endif
 
-SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, uint64 size, const VertexBuffer::LayoutBase& layout)
+SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, uint64 size, const VertexBuffer::LayoutBase& layout) const
 {
     return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, size, layout));
 }
@@ -104,12 +104,12 @@ SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const String& v
     return SharedPtr<GraphicPipeline>(new OpenGLGraphicPipeline(vertexShaderName, fragmentShaderName, operation));
 }
 
-SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& indices)
+SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& indices) const
 {
     return SharedPtr<IndexBuffer>(new OpenGLIndexBuffer(indices));
 }
 
-SharedPtr<Texture> OpenGLGraphicAPI::newTexture(uint32 width, uint32 height, Texture::PixelFormat pxFormat)
+SharedPtr<Texture> OpenGLGraphicAPI::newTexture(uint32 width, uint32 height, Texture::PixelFormat pxFormat) const
 {
     return SharedPtr<Texture>(new OpenGLTexture(width, height, pxFormat));
 }

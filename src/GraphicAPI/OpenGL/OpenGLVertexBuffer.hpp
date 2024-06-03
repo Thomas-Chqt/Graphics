@@ -22,7 +22,7 @@ namespace gfx
 class OpenGLVertexBuffer : public VertexBuffer
 {
 private:
-    friend utils::SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout);
+    friend utils::SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const;
 
 public:
     OpenGLVertexBuffer()                          = delete;

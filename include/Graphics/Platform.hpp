@@ -41,12 +41,12 @@ public:
     virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
 
 #ifdef USING_METAL
-    virtual utils::SharedPtr<Window> newMetalWindow(int w, int h) = 0;
-    utils::SharedPtr<GraphicAPI> newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>());
+    virtual utils::SharedPtr<Window> newMetalWindow(int w, int h) const = 0;
+    utils::SharedPtr<GraphicAPI> newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>()) const;
 #endif
 #ifdef USING_OPENGL
-    virtual utils::SharedPtr<Window> newOpenGLWindow(int w, int h) = 0;
-    utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>());
+    virtual utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const = 0;
+    utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>()) const;
 #endif
 
     virtual void pollEvents() = 0;

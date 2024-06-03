@@ -43,15 +43,15 @@ public:
     virtual void setClearColor(const math::rgba& color) = 0;
 
     template<typename T>
-    inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices)
+    inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) const
     {
         return newVertexBuffer((void*)(const T*)vertices, vertices.length() * sizeof(T), VertexBuffer::Layout<T>());
     }
 
-    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) = 0;
+    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const = 0;
     virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation = GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA) = 0;
-    virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) = 0;
-    virtual utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) = 0;
+    virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const = 0;
+    virtual utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) const = 0;
 
     virtual void beginFrame(bool clearBuffer = true) = 0;
 

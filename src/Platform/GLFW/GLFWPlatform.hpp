@@ -33,10 +33,10 @@ public:
     inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_eventCallBack = cb; }
 
 #ifdef USING_METAL
-    utils::SharedPtr<Window> newMetalWindow(int w, int h) override;
+    utils::SharedPtr<Window> newMetalWindow(int w, int h) const override;
 #endif
 #ifdef USING_OPENGL
-    utils::SharedPtr<Window> newOpenGLWindow(int w, int h) override;
+    utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const override;
 #endif
 
     void pollEvents() override;

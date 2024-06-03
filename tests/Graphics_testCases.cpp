@@ -486,7 +486,7 @@ MULTI_TEST(GraphicsTestImGui, fragmentUniform,
         });
     });
 
-    rgba color;
+    rgba color = WHITE;
     while (running)
     {
         Platform::shared().pollEvents();
@@ -768,6 +768,8 @@ MULTI_TEST(GraphicsTestWindow, hideCusor,
         Platform::shared().pollEvents();
 })
 
+#ifdef IMGUI_ENABLED
+
 MULTI_TEST(GraphicsTestImGui, noClearBuffer, {
     Array<Vertex_noClearBuffer> vertices = Array<Vertex_noClearBuffer>({
         { .pos = {-0.25, -0.25} },
@@ -837,5 +839,8 @@ MULTI_TEST(GraphicsTestImGui, noClearBuffer, {
         ImGui::RenderPlatformWindowsDefault();
     }
 })
+
+#endif // IMGUI_ENABLED
+
 
 }

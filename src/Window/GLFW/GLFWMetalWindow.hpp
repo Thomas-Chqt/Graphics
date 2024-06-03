@@ -32,7 +32,7 @@ namespace gfx
 class GLFWMetalWindow final : public GLFWWindow, public MetalWindow
 {
 private:
-    friend utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h);
+    friend utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const;
 
 public:
     GLFWMetalWindow(const GLFWMetalWindow&) = delete;
