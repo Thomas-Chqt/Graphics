@@ -8,9 +8,11 @@
  */
 
 #include "Platform/GLFW/GLFWPlatform.hpp"
+#include "Graphics/Error.hpp"
+#include "UtilsCPP/String.hpp"
 
 #include <GLFW/glfw3.h>
-#include <cassert>
+#include <iostream>
 
 #ifdef USING_METAL
     #include "Window/GLFW/GLFWMetalWindow.hpp"
@@ -25,7 +27,9 @@ using utils::UniquePtr;
 namespace gfx
 {
 
-GFLWError GFLWError::s_lastError = GFLWError();
+int GLFWError::s_lastErrorCode = 0;
+utils::String GLFWError::s_lastErrorDesc = "No error";
+
 UniquePtr<Platform> Platform::s_shared;
 
 void Platform::init()
@@ -74,9 +78,21 @@ GLFWPlatform::~GLFWPlatform()
 
 GLFWPlatform::GLFWPlatform()
 {
-    if(::glfwInit() != GLFW_TRUE)
-        throw InitError();
-    ::glfwSetErrorCallback(GFLWError::setLastError);
+    ::glfwSetErrorCallback([](int code, const char* desc){
+        GLFWError::s_lastErrorCode = code;
+        GLFWError::s_lastErrorDesc = utils::String(std::move(desc));
+    });
+
+    try
+    {
+        if(::glfwInit() != GLFW_TRUE)
+            throw GLFWInitError();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+        throw;
+    }
 }
 
 }

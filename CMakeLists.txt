@@ -5,16 +5,16 @@
 # Date: 2024/05/15 13:43:58
 # ---------------------------------------------------
 
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.27)
 
 include(FetchContent)
 
 enable_testing()
 
-option(BUILD_SHARED_LIBS       "Build using shared libraries"       OFF)
-option(GRAPHICS_IN_PARENT_PROJ "Add Graphics to the parend project" ON)
-option(GRAPHICS_INLCUDE_TESTS  "Build utils cpp test executables"   OFF)
-option(ENABLE_IMGUI            "Build with imgui capabilities"      OFF)
+option(BUILD_SHARED_LIBS  "Build using shared libraries"        OFF)
+option(GFX_BUILD_TESTS    "Build Graphics tests"                OFF)
+option(GFX_BUILD_EXEMPLES "Build Graphics exemples executables" OFF)
+option(ENABLE_IMGUI       "Build with imgui capabilities"       OFF)
 
 if (APPLE)
     set(USED_WINDOW_LIBRARY "GLFW" CACHE STRING "Libray to use for handle window (available options: GLFW)")
@@ -49,7 +49,7 @@ endif()
 add_subdirectory("dependencies")
 
 enable_language(CXX)
-if(ENABLE_METAL OR USED_WINDOW_LIBRARY STREQUAL "AppKit")
+if(ENABLE_METAL)
     enable_language(OBJCXX)
 endif()
 
@@ -67,11 +67,9 @@ add_subdirectory(src)
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 
 
-if (USED_WINDOW_LIBRARY STREQUAL "AppKit")
-    target_compile_definitions(Graphics PUBLIC USING_APPKIT)
-elseif(USED_WINDOW_LIBRARY STREQUAL "GLFW")
+if(USED_WINDOW_LIBRARY STREQUAL "GLFW")
     target_compile_definitions(Graphics PUBLIC USING_GLFW)
-    target_compile_definitions(Graphics PRIVATE GLFW_INCLUDE_NONE)
+    target_compile_definitions(Graphics PUBLIC GLFW_INCLUDE_NONE)
 endif()
 
 if (ENABLE_METAL)
@@ -94,10 +92,6 @@ endif()
 
 target_link_libraries(Graphics PUBLIC UtilsCPP Math)
 
-if (USED_WINDOW_LIBRARY STREQUAL "AppKit")
-    target_link_libraries(Graphics PUBLIC "-framework AppKit")
-endif()
-
 if (USED_WINDOW_LIBRARY STREQUAL "GLFW")
     if (APPLE)
         enable_language(OBJC)
@@ -106,7 +100,8 @@ if (USED_WINDOW_LIBRARY STREQUAL "GLFW")
     FetchContent_Declare(glfw GIT_REPOSITORY https://github.com/glfw/glfw.git GIT_TAG master)
     FetchContent_MakeAvailable(glfw)
     target_compile_options(glfw PRIVATE -w)
-    target_link_libraries(Graphics PUBLIC glfw)
+    target_link_libraries(Graphics PUBLIC $<IF:$<BOOL:${GFX_BUILD_TESTS}>,$<COMPILE_ONLY:glfw>,glfw>)
+    # target_link_libraries(Graphics PUBLIC glfw)
 endif()
 
 if (ENABLE_METAL)
@@ -116,10 +111,11 @@ endif()
 if (ENABLE_OPENGL)
     FetchContent_Declare(glew-cmake GIT_REPOSITORY https://github.com/Perlmint/glew-cmake.git GIT_TAG glew-cmake-2.2.0)
     FetchContent_MakeAvailable(glew-cmake)
-    target_link_libraries(Graphics PUBLIC libglew_static)
+    target_link_libraries(Graphics PUBLIC $<IF:$<BOOL:${GFX_BUILD_TESTS}>,$<COMPILE_ONLY:libglew_static>,libglew_static>)
+    # target_link_libraries(Graphics PUBLIC libglew_static)
 endif()
 
 
-if (GRAPHICS_INLCUDE_TESTS)
+if (GFX_BUILD_TESTS)
     add_subdirectory(tests)
 endif()

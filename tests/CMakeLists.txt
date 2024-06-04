@@ -2,44 +2,32 @@
 # CMakeLists.txt
 #
 # Author: Thomas Choquet <thomas.publique@icloud.com>
-# Date: 2024/05/15 13:50:09
+# Date: 2024/06/04 12:47:23
 # ---------------------------------------------------
 
 include(FetchContent)
 include(GoogleTest)
 
+add_executable(GFX_tests)
+set_target_properties(GFX_tests PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
 
-add_executable(Graphics_test)
+file(GLOB GFX_TESTS_SRC "*.cpp" "*.tpp" "*.hpp" "*.h")
+target_sources(GFX_tests PRIVATE ${GFX_TESTS_SRC})
 
-set_target_properties(Graphics_test PROPERTIES CXX_STANDARD 14 CXX_STANDARD_REQUIRED ON)
+target_include_directories(GFX_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-
-file(GLOB GRAPHICS_TEST_SRC "*.cpp" "*.tpp" "*.hpp")
-target_sources(Graphics_test PRIVATE ${GRAPHICS_TEST_SRC})
-
-target_include_directories(Graphics_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-
-
-target_link_libraries(Graphics_test PRIVATE Graphics)
-
-if (ENABLE_IMGUI)
-    add_subdirectory("imgui")
-    target_link_libraries(Graphics_test PRIVATE imgui)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_link_options(GFX_tests PRIVATE "-Wl,--unresolved-symbols=ignore-all")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_link_options(GFX_tests PRIVATE "-Wl,-undefined,dynamic_lookup")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_link_options(my_executable PRIVATE "/FORCE")
 endif()
 
-set(BUILD_GMOCK OFF)
+target_link_libraries(GFX_tests PRIVATE Graphics)
+
 FetchContent_Declare(googletest GIT_REPOSITORY https://github.com/google/googletest.git GIT_TAG main)
 FetchContent_MakeAvailable(googletest)
-target_link_libraries(Graphics_test PRIVATE GTest::gtest)
+target_link_libraries(GFX_tests PRIVATE GTest::gtest_main GTest::gmock)
 
-add_subdirectory("Shaders")
-if(ENABLE_METAL)
-    target_compile_definitions(Graphics_test PRIVATE "MTL_SHADER_LIB=\"${MTL_SHADER_LIB}\"")
-    add_dependencies(Graphics_test gfx_tests_MetalShaderLibrary)
-endif()
-if(ENABLE_OPENGL)
-    target_compile_definitions(Graphics_test PRIVATE "OPENGL_SHADER_DIR=\"${OPENGL_SHADER_DIR}\"")
-endif()
-
-
-gtest_discover_tests(Graphics_test WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+gtest_discover_tests(GFX_tests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
