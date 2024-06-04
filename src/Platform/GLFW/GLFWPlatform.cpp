@@ -83,16 +83,8 @@ GLFWPlatform::GLFWPlatform()
         GLFWError::s_lastErrorDesc = utils::String(std::move(desc));
     });
 
-    try
-    {
-        if(::glfwInit() != GLFW_TRUE)
-            throw GLFWInitError();
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << e.what() << std::endl;
-        throw;
-    }
+    if(::glfwInit() != GLFW_TRUE)
+        throw GLFWInitError();
 }
 
 }
