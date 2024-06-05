@@ -12,7 +12,6 @@
 #include "UtilsCPP/String.hpp"
 
 #include <GLFW/glfw3.h>
-#include <iostream>
 
 #ifdef USING_METAL
     #include "Window/GLFW/GLFWMetalWindow.hpp"

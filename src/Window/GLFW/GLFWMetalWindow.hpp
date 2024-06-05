@@ -10,17 +10,18 @@
 #ifndef GLFWMETALWINDOW_HPP
 # define GLFWMETALWINDOW_HPP
 
-#include "Graphics/Event.hpp"
-#include "Platform/GLFW/GLFWPlatform.hpp"
-#include "UtilsCPP/Func.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
 #include "Window/GLFW/GLFWWindow.hpp"
 #include "Window/MetalWindow.hpp"
+
 #include <GLFW/glfw3.h>
+
+#include "Platform/GLFW/GLFWPlatform.hpp"
+#include "UtilsCPP/Func.hpp"
+#include "Graphics/Event.hpp"
+#include "UtilsCPP/SharedPtr.hpp"
 
 #ifdef __OBJC__
     #import <QuartzCore/CAMetalLayer.h>
-    #import <AppKit/AppKit.h>
 #else
     class CAMetalLayer;
     class NSWindow;

@@ -33,4 +33,14 @@ FetchContent_Declare(googletest GIT_REPOSITORY https://github.com/google/googlet
 FetchContent_MakeAvailable(googletest)
 target_link_libraries(GFX_tests PRIVATE GTest::gtest_main GTest::gmock)
 
+add_subdirectory(MockLibs)
+if (ENABLE_METAL)
+    target_compile_definitions(MockLibs PRIVATE METAL_ENABLED) 
+endif()
+if (ENABLE_OPENGL)
+    target_compile_definitions(MockLibs PRIVATE OPENGL_ENABLED)
+endif()
+
+target_link_libraries(GFX_tests PRIVATE MockLibs)
+
 gtest_discover_tests(GFX_tests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

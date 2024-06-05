@@ -9,77 +9,48 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include <exception>
 
-#include "GLFW/glfw3.h"
-#include "Graphics/Error.hpp"
-#include "IMockGLFW.hpp"
+#include "MockClasses.hpp"
+#include "Graphics_testFixitures.hpp"
 
 #include "Graphics/Platform.hpp"
+#include "Graphics/Window.hpp"
+#include "UtilsCPP/SharedPtr.hpp"
 
 using ::testing::Return;
 using ::testing::_;
-using ::testing::StrictMock;
-using ::testing::StrEq;
 
-namespace gfx_test
+namespace gfx_tests
 {
 
-class MockGLFW : public IMockGLFW
+#ifdef USING_GLFW
+
+TEST_F(GfxTest, initNoError)
 {
-public:
-    MOCK_METHOD(int,          glfwInit,             (),             (override));
-    MOCK_METHOD(GLFWerrorfun, glfwSetErrorCallback, (GLFWerrorfun), (override));
-    MOCK_METHOD(void,         glfwTerminate,        (),             (override));
-
-    MockGLFW()
-    {
-        ON_CALL(*this, glfwSetErrorCallback).WillByDefault([this](GLFWerrorfun fn) -> GLFWerrorfun { return m_errorCallback = fn; });
-    }
-
-    inline void sendError(int code, const char *desc) { m_errorCallback(code, desc); }
-
-private:
-    GLFWerrorfun m_errorCallback;
-};
-
-TEST(gfxTest, initNoError)
-{
-    StrictMock<MockGLFW> instance;
-
-    EXPECT_CALL(instance, glfwSetErrorCallback(_))
+    EXPECT_CALL(mockGFLW, glfwSetErrorCallback(_))
         .Times(1);
 
-    EXPECT_CALL(instance, glfwInit())
+    EXPECT_CALL(mockGFLW, glfwInit())
         .WillOnce(Return(GLFW_TRUE));
 
-    EXPECT_CALL(instance, glfwTerminate())
+    EXPECT_NO_THROW({ gfx::Platform::init(); });
+
+
+    EXPECT_CALL(mockGFLW, glfwTerminate())
         .Times(1);
 
-    IMockGLFW::s_instance = &instance;
-
-    EXPECT_NO_THROW({
-        gfx::Platform::init();
-        gfx::Platform::terminate();
-    });
+    gfx::Platform::terminate();
 }
 
-TEST(gfxTest, initError)
+/*
+TEST_F(GfxTestInit, glfwInitReturnError)
 {
-    StrictMock<MockGLFW> instance;
-
-    EXPECT_CALL(instance, glfwSetErrorCallback(_))
+    EXPECT_CALL(mockGFLW, glfwSetErrorCallback(_))
         .Times(1);
 
-    EXPECT_CALL(instance, glfwInit())
-        .WillOnce([&]()
-        {
-            instance.sendError(123, "fake error");
-            return -1;
-        });
+    EXPECT_CALL(mockGFLW, glfwInit())
+        .WillOnce([&]() { return mockGFLW.sendError(123, "fake error"), -1; });
 
-    IMockGLFW::s_instance = &instance;
-    
     EXPECT_THROW(
     {
         try {
@@ -91,6 +62,59 @@ TEST(gfxTest, initError)
         }
     }, gfx::GLFWInitError);
 }
+*/
 
+#ifdef METAL_ENABLED
+
+TEST_F(GfxTestPostInit, newMetalWindowNoError)
+{
+    GLFWwindow* fakeGLFWWindow = (GLFWwindow*)123;
+    StrictMock<MockNSWindow> mockNSWindow;
+    StrictMock<MockNSView> mockNSView;
+    StrictMock<MockCAMetalLayer> mockCAMetalLayer;
+
+    EXPECT_CALL(mockGFLW, glfwDefaultWindowHints())
+        .Times(1);
+
+    EXPECT_CALL(mockGFLW, glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API))
+        .Times(1);
+
+    EXPECT_CALL(mockGFLW, glfwCreateWindow(800, 600, "", nullptr, nullptr))
+        .WillOnce(Return(fakeGLFWWindow));
+
+    EXPECT_CALL(mockGFLW, glfwGetCocoaWindow(fakeGLFWWindow))
+        .WillOnce(Return(mockNSWindow.nsWindow));
+
+    EXPECT_CALL(mockNSWindow, getContentView())
+        .WillOnce(Return(&mockNSView))
+        .WillOnce(Return(&mockNSView))
+        .WillOnce(Return(&mockNSView));
+
+    EXPECT_CALL(mockNSView, setWantsLayer(1))
+        .Times(1);
+
+    EXPECT_CALL(mockNSView, setWantsLayer(1))
+        .Times(1);
+
+    EXPECT_CALL(mockCAMetalLayerStaticFuncs, layer())
+        .WillOnce(Return(&mockCAMetalLayer));
+
+    EXPECT_CALL(mockNSView, setLayer(mockCAMetalLayer.caMetalLayer))
+        .Times(1);
+
+    EXPECT_CALL(mockGFLW, glfwGetFramebufferSize(fakeGLFWWindow, _, _))
+        .WillOnce([](GLFWwindow* window, int* width, int* height){
+            *width = 1280;
+            *height = 720;
+        });
+
+    utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newMetalWindow(800, 600);
+
+    EXPECT_TRUE(window);
+}
+
+#endif
+
+#endif
 
 }

@@ -10,10 +10,15 @@
 #define GLFW_EXPOSE_NATIVE_COCOA
 
 #include "Window/GLFW/GLFWMetalWindow.hpp"
-#include "Graphics/Event.hpp"
-#include <CoreGraphics/CGGeometry.h>
+
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
+
+#include <AppKit/NSWindow.h>
+#include <QuartzCore/CAMetalLayer.h>
+#include <CoreGraphics/CGGeometry.h>
+
+#include "Graphics/Event.hpp"
 
 #ifdef IMGUI_ENABLED
     bool ImGui_ImplGlfw_InitForOther(GLFWwindow* window, bool install_callbacks);
