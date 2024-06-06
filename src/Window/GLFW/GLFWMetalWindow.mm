@@ -20,7 +20,7 @@
 
 #include "Graphics/Event.hpp"
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     bool ImGui_ImplGlfw_InitForOther(GLFWwindow* window, bool install_callbacks);
 #endif
 
@@ -43,7 +43,7 @@ void GLFWMetalWindow::setEventCallBack(const utils::Func<void(Event&)>& cb)
     };
 }
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
 void GLFWMetalWindow::imGuiInit()
 {
     ImGui_ImplGlfw_InitForOther(m_glfwWindow, true);

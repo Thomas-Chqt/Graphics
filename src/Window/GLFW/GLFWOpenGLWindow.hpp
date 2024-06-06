@@ -30,7 +30,7 @@ public:
     GLFWOpenGLWindow(const GLFWOpenGLWindow&) = delete;
     GLFWOpenGLWindow(GLFWOpenGLWindow&&)      = delete;
 
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
         void imGuiInit() override;
     #endif
 

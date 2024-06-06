@@ -10,7 +10,7 @@
 #ifndef VERTEXBUFFER_HPP
 # define VERTEXBUFFER_HPP
 
-#ifdef USING_OPENGL
+#ifdef GFX_OPENGL_ENABLED
     #include "UtilsCPP/Array.hpp"
     #include <GL/glew.h>
     #include <cassert>
@@ -26,11 +26,11 @@ public:
     class LayoutBase
     {
     public:
-        #ifdef USING_OPENGL
+        #ifdef GFX_OPENGL_ENABLED
         struct Element { GLint size; GLenum type; GLboolean normalized; GLsizei stride; const void * pointer; };
         #endif
 
-        #ifdef USING_OPENGL
+        #ifdef GFX_OPENGL_ENABLED
         virtual const utils::Array<Element>& getElements() const = 0;
         #endif
         virtual utils::uint64 getSize() const = 0;
@@ -40,7 +40,7 @@ public:
     class Layout : public LayoutBase
     {
     public:
-        #ifdef USING_OPENGL
+        #ifdef GFX_OPENGL_ENABLED
         #if defined(__clang__) && __clang_major__ >= 18 
             inline const utils::Array<Element>& getElements() const override { static_assert(false, "Need to be define in a template specialization"); };
         #else

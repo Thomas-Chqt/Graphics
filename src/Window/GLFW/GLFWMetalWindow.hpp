@@ -41,7 +41,7 @@ public:
 
     void setEventCallBack(const utils::Func<void(Event&)>& cb) override;
     
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
         void imGuiInit() override;
     #endif
 

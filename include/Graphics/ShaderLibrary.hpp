@@ -20,11 +20,11 @@ namespace gfx
 class ShaderLibrary
 {
 private:
-    #if defined (USING_METAL) && !defined (USING_OPENGL)
+    #if defined (GFX_METAL_ENABLED) && !defined (GFX_OPENGL_ENABLED)
         struct Shader { utils::String metalFuncName; };
-    #elif !defined (USING_METAL) && defined (USING_OPENGL)
+    #elif !defined (GFX_METAL_ENABLED) && defined (GFX_OPENGL_ENABLED)
         struct Shader { utils::String glslCode; };
-    #elif defined (USING_METAL) && defined (USING_OPENGL)
+    #elif defined (GFX_METAL_ENABLED) && defined (GFX_OPENGL_ENABLED)
         struct Shader { utils::String metalFuncName; utils::String glslCode; };
     #endif
 
@@ -33,23 +33,23 @@ public:
     static inline ShaderLibrary& shared() { return *s_sharedInstance; }
     static inline void terminated() { s_sharedInstance.clear(); }
 
-    #ifdef USING_METAL
+    #ifdef GFX_METAL_ENABLED
         inline void setMetalShaderLibPath(const utils::String& libPath) { m_metalShaderLibPath = libPath; }
         inline const utils::String& getMetalShaderLibPath() { return m_metalShaderLibPath; }
     #endif
 
-    #if defined (USING_METAL) && !defined (USING_OPENGL)
+    #if defined (GFX_METAL_ENABLED) && !defined (GFX_OPENGL_ENABLED)
         inline void registerShader(const utils::String& name, const utils::String& metalFuncName)                                { m_shaders.insert(name, Shader{ metalFuncName }); }
-    #elif !defined (USING_METAL) && defined (USING_OPENGL)
+    #elif !defined (GFX_METAL_ENABLED) && defined (GFX_OPENGL_ENABLED)
         inline void registerShader(const utils::String& name, const utils::String& glslCode)                                     { m_shaders.insert(name, Shader{ glslCode }); }
-    #elif defined (USING_METAL) && defined (USING_OPENGL)
+    #elif defined (GFX_METAL_ENABLED) && defined (GFX_OPENGL_ENABLED)
         inline void registerShader(const utils::String& name, const utils::String& metalFuncName, const utils::String& glslCode) { m_shaders.insert(name, Shader{ metalFuncName, glslCode }); }
     #endif
 
-    #ifdef USING_METAL
+    #ifdef GFX_METAL_ENABLED
         inline const utils::String& getMetalShaderFuncName(const utils::String& name) { return m_shaders[name].metalFuncName; }
     #endif
-    #ifdef USING_OPENGL
+    #ifdef GFX_OPENGL_ENABLED
         inline const utils::String& getGlslCode(const utils::String& name) { return m_shaders[name].glslCode; }
     #endif
 
@@ -60,7 +60,7 @@ private:
 
     static utils::UniquePtr<ShaderLibrary> s_sharedInstance;
 
-    #ifdef USING_METAL
+    #ifdef GFX_METAL_ENABLED
         utils::String m_metalShaderLibPath;
     #endif
     utils::Dictionary<utils::String, Shader> m_shaders;

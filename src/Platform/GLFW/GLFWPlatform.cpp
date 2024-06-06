@@ -13,10 +13,10 @@
 
 #include <GLFW/glfw3.h>
 
-#ifdef USING_METAL
+#ifdef GFX_METAL_ENABLED
     #include "Window/GLFW/GLFWMetalWindow.hpp"
 #endif
-#ifdef USING_OPENGL
+#ifdef GFX_OPENGL_ENABLED
     #include "Window/GLFW/GLFWOpenGLWindow.hpp"
 #endif
 
@@ -41,7 +41,7 @@ void Platform::terminate()
     s_shared.clear();
 }
 
-#ifdef USING_METAL
+#ifdef GFX_METAL_ENABLED
 utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWMetalWindow(w, h));
@@ -53,7 +53,7 @@ utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const
 }
 #endif
 
-#ifdef USING_OPENGL
+#ifdef GFX_OPENGL_ENABLED
 utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWOpenGLWindow(w, h));

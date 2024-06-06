@@ -39,7 +39,7 @@ using utils::String;
 using utils::uint32;
 using utils::Array;
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     class ImDrawData;
     class ImGuiContext;
     class ImFontAtlas;
@@ -97,7 +97,7 @@ void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarg
     m_frameCount = 0;
 }}
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
 void MetalGraphicAPI::useForImGui(const utils::Func<void()>& f)
 {
     assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
@@ -177,7 +177,7 @@ void MetalGraphicAPI::beginFrame(bool clearBuffer) { @autoreleasepool
     m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:m_renderPassDescriptor] retain];
     assert(m_commandEncoder);
 
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplMetal_NewFrame(m_renderPassDescriptor);
@@ -282,7 +282,7 @@ void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& i
 
 void MetalGraphicAPI::endFrame() { @autoreleasepool
 {
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
         ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
     #endif
@@ -300,7 +300,7 @@ void MetalGraphicAPI::endFrame() { @autoreleasepool
 
 MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
 {
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplMetal_Shutdown();

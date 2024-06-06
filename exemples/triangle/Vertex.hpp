@@ -1,17 +1,19 @@
 /*
  * ---------------------------------------------------
- * vertex.glsl
+ * Vertex.hpp
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/05/24 19:35:44
+ * Date: 2024/06/06 17:21:42
  * ---------------------------------------------------
  */
 
-#version 410 core
+#ifndef VERTEX_HPP
+# define VERTEX_HPP
 
-layout (location = 0) in vec2 pos;
-
-void main()
+struct Vertex
 {
-    gl_Position = vec4(pos, 0.0, 1.0);
-}
+    float x;
+    float y;
+};
+
+#endif // VERTEX_HPP

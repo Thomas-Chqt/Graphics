@@ -17,7 +17,7 @@
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window.hpp"
 
-#if __APPLE__ && defined (USING_METAL)
+#ifdef GFX_METAL_ENABLED
     #define newDefaultWindow(w, h) newMetalWindow(w, h)
     #define newDefaultGraphicAPI(target) newMetalGraphicAPI(target)
 #else
@@ -40,11 +40,11 @@ public:
 
     virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
 
-#ifdef USING_METAL
+#ifdef GFX_METAL_ENABLED
     virtual utils::SharedPtr<Window> newMetalWindow(int w, int h) const = 0;
     utils::SharedPtr<GraphicAPI> newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>()) const;
 #endif
-#ifdef USING_OPENGL
+#ifdef GFX_OPENGL_ENABLED
     virtual utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const = 0;
     utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>()) const;
 #endif

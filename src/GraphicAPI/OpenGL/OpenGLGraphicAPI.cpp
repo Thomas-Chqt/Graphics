@@ -26,7 +26,7 @@
 #include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     class ImDrawData;
     class ImGuiContext;
     class ImFontAtlas;
@@ -75,7 +75,7 @@ void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTar
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
 void OpenGLGraphicAPI::useForImGui(const utils::Func<void()>& f)
 {
     assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
@@ -124,7 +124,7 @@ void OpenGLGraphicAPI::beginFrame(bool clearBuffer)
         glClear(GL_COLOR_BUFFER_BIT);
     }
 
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplOpenGL3_NewFrame();
@@ -236,7 +236,7 @@ void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::Shar
 
 void OpenGLGraphicAPI::endFrame()
 {
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     #endif
@@ -247,7 +247,7 @@ void OpenGLGraphicAPI::endFrame()
 
 OpenGLGraphicAPI::~OpenGLGraphicAPI()
 {
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplOpenGL3_Shutdown();

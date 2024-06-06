@@ -11,14 +11,14 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     bool ImGui_ImplGlfw_InitForOpenGL(GLFWwindow* window, bool install_callbacks);
 #endif
 
 namespace gfx
 {
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
 void GLFWOpenGLWindow::imGuiInit()
 {
     ImGui_ImplGlfw_InitForOpenGL(m_glfwWindow, true);

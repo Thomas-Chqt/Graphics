@@ -14,7 +14,7 @@
 #include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     #include "UtilsCPP/Func.hpp"
 #endif
 #include "UtilsCPP/String.hpp"
@@ -36,7 +36,7 @@ public:
 
     virtual void setRenderTarget(const utils::SharedPtr<Window>&) = 0;
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     virtual void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) = 0;
 #endif
 
@@ -76,7 +76,7 @@ public:
 protected:
     GraphicAPI() = default;
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     static GraphicAPI* s_imguiEnabledAPI;
 #endif
 

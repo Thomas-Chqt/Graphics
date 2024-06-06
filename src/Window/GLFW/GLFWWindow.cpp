@@ -10,7 +10,7 @@
 #include "Window/GLFW/GLFWWindow.hpp"
 #include "GLFW/glfw3.h"
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     bool ImGui_ImplGlfw_InitForOther(GLFWwindow* window, bool install_callbacks);
     void ImGui_ImplGlfw_Shutdown();
     void ImGui_ImplGlfw_NewFrame();
@@ -24,7 +24,7 @@ void GLFWWindow::setEventCallBack(const utils::Func<void(Event&)>& cb)
     m_callback = cb;
 }
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
 void GLFWWindow::imGuiShutdown()
 {
     ImGui_ImplGlfw_Shutdown();

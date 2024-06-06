@@ -49,7 +49,7 @@ public:
 
     void setRenderTarget(const utils::SharedPtr<Window>&) override;
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) override;
 #endif
 

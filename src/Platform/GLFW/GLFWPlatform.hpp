@@ -28,10 +28,10 @@ public:
 
     inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_eventCallBack = cb; }
 
-#ifdef USING_METAL
+#ifdef GFX_METAL_ENABLED
     utils::SharedPtr<Window> newMetalWindow(int w, int h) const override;
 #endif
-#ifdef USING_OPENGL
+#ifdef GFX_OPENGL_ENABLED
     utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const override;
 #endif
 

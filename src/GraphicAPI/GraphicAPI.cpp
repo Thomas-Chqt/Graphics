@@ -7,14 +7,14 @@
  * ---------------------------------------------------
  */
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     #include "Graphics/GraphicAPI.hpp"
 #endif
 
 namespace gfx
 {
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     GraphicAPI* GraphicAPI::s_imguiEnabledAPI = nullptr;
 #endif
 

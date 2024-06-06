@@ -20,7 +20,7 @@ namespace gfx
 
 struct GFXError : public utils::Error {};
 
-#ifdef USING_GLFW
+#ifdef GFX_USING_GLFW
     struct GLFWError : public GFXError
     {
         static int s_lastErrorCode;
