@@ -76,7 +76,7 @@ add_subdirectory(src)
 
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 if(GFX_BUILD_TESTS)
-    target_include_directories(Graphics SYSTEM PRIVATE "src" PUBLIC "tests/MockLibs/includes")
+    target_include_directories(Graphics SYSTEM PRIVATE "tests/MockLibs/includes")
 endif()
 
 

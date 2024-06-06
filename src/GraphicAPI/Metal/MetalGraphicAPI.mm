@@ -19,7 +19,8 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/String.hpp"
-#include <Foundation/Foundation.h>
+#include <Foundation/NSString.h>
+#include <Foundation/NSURL.h>
 #include "GraphicAPI/Metal/MetalVertexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
@@ -165,10 +166,10 @@ void MetalGraphicAPI::beginFrame(bool clearBuffer) { @autoreleasepool
     if (m_frameCount < 3)
         m_frameCount++;
 
-    m_commandBuffer = [[m_commandQueue commandBuffer] retain];
+    m_commandBuffer = [m_commandQueue commandBuffer];
     assert(m_commandBuffer);
 	
-	m_currentDrawable = [[m_renderTarget->metalLayer() nextDrawable] retain];
+	m_currentDrawable = [m_renderTarget->metalLayer() nextDrawable];
     assert(m_currentDrawable);
 
 	m_renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
