@@ -17,6 +17,7 @@
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Vector.hpp"
+#include "Math/Constants.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
@@ -96,7 +97,7 @@ int main()
         });
     });
 
-    float fov = 60 * (M_PI / 180.0f);
+    float fov = 60 * (PI / 180.0f);
     float aspectRatio = 800.0f / 600.0f;
     float zNear = 0.1f;
     float zFar = 100;

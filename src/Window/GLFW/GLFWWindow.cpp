@@ -15,11 +15,6 @@
 namespace gfx
 {
 
-void GLFWWindow::setEventCallBack(const utils::Func<void(Event&)>& cb)
-{
-    m_callback = cb;
-}
-
 #ifdef GFX_IMGUI_ENABLED
 void GLFWWindow::imGuiShutdown()
 {
