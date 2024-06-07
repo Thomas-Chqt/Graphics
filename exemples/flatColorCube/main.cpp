@@ -13,7 +13,7 @@
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
 #include "Graphics/ShaderLibrary.hpp"
-
+#include <cmath>
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Vector.hpp"
@@ -102,7 +102,7 @@ int main()
     float zNear = 0.1f;
     float zFar = 100;
 
-    float ys = 1 / std::tanf(fov * 0.5);
+    float ys = 1 / std::tan(fov * 0.5);
     float xs = ys / aspectRatio;
     float zs = zFar / (zFar - zNear);
 
