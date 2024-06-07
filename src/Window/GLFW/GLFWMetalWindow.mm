@@ -18,11 +18,9 @@
 #include <QuartzCore/CAMetalLayer.h>
 #include <CoreGraphics/CGGeometry.h>
 
-#include "Graphics/Event.hpp"
+#include "imgui/imgui_impl_glfw.h"
 
-#ifdef GFX_IMGUI_ENABLED
-    bool ImGui_ImplGlfw_InitForOther(GLFWwindow* window, bool install_callbacks);
-#endif
+#include "Graphics/Event.hpp"
 
 namespace gfx
 {

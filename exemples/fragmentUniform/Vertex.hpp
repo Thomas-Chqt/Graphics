@@ -3,7 +3,7 @@
  * Vertex.hpp
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/06/06 17:21:42
+ * Date: 2024/06/07 16:27:21
  * ---------------------------------------------------
  */
 

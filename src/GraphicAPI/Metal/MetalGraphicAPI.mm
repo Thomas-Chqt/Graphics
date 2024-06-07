@@ -32,30 +32,14 @@
 #include <QuartzCore/CAMetalLayer.h>
 #include <cassert>
 #include <cstddef>
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_metal.h"
 
 using utils::SharedPtr;
 using utils::UniquePtr;
 using utils::String;
 using utils::uint32;
 using utils::Array;
-
-#ifdef GFX_IMGUI_ENABLED
-    class ImDrawData;
-    class ImGuiContext;
-    class ImFontAtlas;
-
-    bool ImGui_ImplMetal_Init(id<MTLDevice> device);
-    void ImGui_ImplMetal_Shutdown();
-    void ImGui_ImplMetal_NewFrame(MTLRenderPassDescriptor*);
-    void ImGui_ImplMetal_RenderDrawData(ImDrawData*, id<MTLCommandBuffer>, id<MTLRenderCommandEncoder>);
-    
-    namespace ImGui
-    {
-        ImDrawData* GetDrawData();
-        ImGuiContext* CreateContext(ImFontAtlas* shared_font_atlas = NULL);
-        void DestroyContext(ImGuiContext* ctx = NULL);
-    }
-#endif
 
 namespace gfx
 {
@@ -98,13 +82,14 @@ void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarg
 }}
 
 #ifdef GFX_IMGUI_ENABLED
-void MetalGraphicAPI::useForImGui(const utils::Func<void()>& f)
+void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 {
     assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
     assert(m_renderTarget && "Render target need to be set before initializing imgui");
     
     ImGui::CreateContext();
-    if (f) f();
+    
+    ImGui::GetIO().ConfigFlags = flags;
 
     m_renderTarget->imGuiInit();
     ImGui_ImplMetal_Init(m_mtlDevice);
@@ -166,10 +151,10 @@ void MetalGraphicAPI::beginFrame(bool clearBuffer) { @autoreleasepool
     if (m_frameCount < 3)
         m_frameCount++;
 
-    m_commandBuffer = [m_commandQueue commandBuffer];
+    m_commandBuffer = [[m_commandQueue commandBuffer] retain];
     assert(m_commandBuffer);
 	
-	m_currentDrawable = [m_renderTarget->metalLayer() nextDrawable];
+	m_currentDrawable = [[m_renderTarget->metalLayer() nextDrawable] retain];
     assert(m_currentDrawable);
 
 	m_renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
@@ -182,6 +167,7 @@ void MetalGraphicAPI::beginFrame(bool clearBuffer) { @autoreleasepool
     {
         ImGui_ImplMetal_NewFrame(m_renderPassDescriptor);
         m_renderTarget->imGuiNewFrame();
+        ImGui::NewFrame();
     }
     #endif
 }}
@@ -284,7 +270,16 @@ void MetalGraphicAPI::endFrame() { @autoreleasepool
 {
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
+    {
+        ImGui::Render();
         ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
+
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
+    }
     #endif
     
     [m_commandEncoder endEncoding];

@@ -10,11 +10,7 @@
 #include "Window/GLFW/GLFWWindow.hpp"
 #include "GLFW/glfw3.h"
 
-#ifdef GFX_IMGUI_ENABLED
-    bool ImGui_ImplGlfw_InitForOther(GLFWwindow* window, bool install_callbacks);
-    void ImGui_ImplGlfw_Shutdown();
-    void ImGui_ImplGlfw_NewFrame();
-#endif
+#include "imgui/imgui_impl_glfw.h"
 
 namespace gfx
 {

@@ -76,6 +76,12 @@ if(GFX_BUILD_IMGUI)
         "imgui/imstb_textedit.h"
         "imgui/imstb_truetype.h"
     )
+    if(GFX_USED_WINDOW_LIBRARY STREQUAL GLFW)
+        list(APPEND GRAPHICS_SRC
+            "imgui/imgui_impl_glfw.cpp"
+            "imgui/imgui_impl_glfw.h"
+        )
+    endif()
     if (GFX_ENABLE_METAL)
         list(APPEND GRAPHICS_SRC
             "imgui/imgui_impl_metal.mm"

@@ -95,6 +95,13 @@ if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
     FetchContent_Declare(glfw GIT_REPOSITORY https://github.com/glfw/glfw.git GIT_TAG master)
     FetchContent_MakeAvailable(glfw)
 
+    get_target_property(GLFW_FOLDER glfw FOLDER)
+    set_target_properties(glfw PROPERTIES FOLDER "dependencies/${GLFW_FOLDER}")
+    get_target_property(UPDATE_MAP_FOLDER update_mappings FOLDER)
+    set_target_properties(update_mappings PROPERTIES FOLDER "dependencies/${UPDATE_MAP_FOLDER}")
+
+    target_compile_options(glfw PRIVATE "-w")
+
     target_link_libraries(Graphics PRIVATE glfw)
 endif()
 
@@ -106,6 +113,7 @@ if (GFX_ENABLE_OPENGL)
     set(glew-cmake_BUILD_SHARED OFF CACHE BOOL "" FORCE)
     FetchContent_Declare(glew-cmake GIT_REPOSITORY https://github.com/Perlmint/glew-cmake.git GIT_TAG glew-cmake-2.2.0)
     FetchContent_MakeAvailable(glew-cmake)
+    set_target_properties(libglew_static PROPERTIES FOLDER "dependencies")
     target_link_libraries(Graphics PUBLIC libglew_static)
 endif()
 

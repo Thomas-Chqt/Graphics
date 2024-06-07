@@ -21,6 +21,7 @@
 #include "UtilsCPP/Types.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window/OpenGLWindow.hpp"
+#include "imgui/imgui.h"
 
 namespace gfx
 {
@@ -38,7 +39,7 @@ public:
     void setRenderTarget(const utils::SharedPtr<Window>&) override;
 
 #ifdef GFX_IMGUI_ENABLED
-    void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) override;
+    void useForImGui(ImGuiConfigFlags flags = 0) override;
 #endif
 
     inline void setClearColor(const math::rgba& color) override { m_clearColor = color; }

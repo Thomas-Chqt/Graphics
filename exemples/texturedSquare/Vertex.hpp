@@ -3,7 +3,7 @@
  * Vertex.hpp
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/06/06 17:21:42
+ * Date: 2024/06/07 16:56:07
  * ---------------------------------------------------
  */
 
@@ -11,13 +11,16 @@
 # define VERTEX_HPP
 
 #ifndef __METAL_VERSION__
+    #include <cstddef>
     #include "Graphics/VertexBuffer.hpp"
 #endif // __METAL_VERSION__
 
+#include "Math/Vector.hpp"
+
 struct Vertex
 {
-    float x;
-    float y;
+    math::vec2f pos;
+    math::vec2f uv;
 };
 
 #ifndef __METAL_VERSION__
@@ -29,6 +32,7 @@ public:
         Layout()
         {
             m_elements.append({ 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0 });
+            m_elements.append({ 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, uv) });
         }
         inline const utils::Array<Element>& getElements() const override { return m_elements; };
     #endif
