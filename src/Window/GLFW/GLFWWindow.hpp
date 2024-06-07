@@ -25,12 +25,10 @@ public:
     GLFWWindow(const GLFWWindow&) = delete;
     GLFWWindow(GLFWWindow&&)      = delete;
 
-    virtual void setEventCallBack(const utils::Func<void(Event&)>& cb);
-
     inline void setCursorPos(int x, int y) { ::glfwSetCursorPos(m_glfwWindow, (double)x, (double)y); }
     inline void setCursorVisibility(bool val) { ::glfwSetInputMode(m_glfwWindow, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN); }
 
-    #ifdef IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
         void imGuiShutdown();
         void imGuiNewFrame();
     #endif

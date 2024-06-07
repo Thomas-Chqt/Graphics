@@ -8,14 +8,15 @@
  */
 
 #include "Platform/GLFW/GLFWPlatform.hpp"
+#include "Graphics/Error.hpp"
+#include "UtilsCPP/String.hpp"
 
 #include <GLFW/glfw3.h>
-#include <cassert>
 
-#ifdef USING_METAL
+#ifdef GFX_METAL_ENABLED
     #include "Window/GLFW/GLFWMetalWindow.hpp"
 #endif
-#ifdef USING_OPENGL
+#ifdef GFX_OPENGL_ENABLED
     #include "Window/GLFW/GLFWOpenGLWindow.hpp"
 #endif
 
@@ -25,7 +26,9 @@ using utils::UniquePtr;
 namespace gfx
 {
 
-GFLWError GFLWError::s_lastError = GFLWError();
+int GLFWError::s_lastErrorCode = 0;
+utils::String GLFWError::s_lastErrorDesc = "No error";
+
 UniquePtr<Platform> Platform::s_shared;
 
 void Platform::init()
@@ -38,7 +41,7 @@ void Platform::terminate()
     s_shared.clear();
 }
 
-#ifdef USING_METAL
+#ifdef GFX_METAL_ENABLED
 utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWMetalWindow(w, h));
@@ -50,7 +53,7 @@ utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const
 }
 #endif
 
-#ifdef USING_OPENGL
+#ifdef GFX_OPENGL_ENABLED
 utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWOpenGLWindow(w, h));
@@ -74,9 +77,13 @@ GLFWPlatform::~GLFWPlatform()
 
 GLFWPlatform::GLFWPlatform()
 {
+    ::glfwSetErrorCallback([](int code, const char* desc){
+        GLFWError::s_lastErrorCode = code;
+        GLFWError::s_lastErrorDesc = utils::String(std::move(desc));
+    });
+
     if(::glfwInit() != GLFW_TRUE)
-        throw InitError();
-    ::glfwSetErrorCallback(GFLWError::setLastError);
+        throw GLFWInitError();
 }
 
 }

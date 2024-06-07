@@ -16,6 +16,7 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include "Window/MetalWindow.hpp"
+#include "imgui/imgui.h"
 
 #ifdef __OBJC__
     #import <Metal/Metal.h>
@@ -49,8 +50,8 @@ public:
 
     void setRenderTarget(const utils::SharedPtr<Window>&) override;
 
-#ifdef IMGUI_ENABLED
-    void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) override;
+#ifdef GFX_IMGUI_ENABLED
+    void useForImGui(ImGuiConfigFlags flags = 0) override;
 #endif
 
     void setClearColor(const math::rgba& color) override;

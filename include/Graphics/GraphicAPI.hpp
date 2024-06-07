@@ -14,8 +14,8 @@
 #include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
-#ifdef IMGUI_ENABLED
-    #include "UtilsCPP/Func.hpp"
+#ifdef GFX_IMGUI_ENABLED
+    #include "imgui/imgui.h"
 #endif
 #include "UtilsCPP/String.hpp"
 #include "VertexBuffer.hpp"
@@ -36,8 +36,8 @@ public:
 
     virtual void setRenderTarget(const utils::SharedPtr<Window>&) = 0;
 
-#ifdef IMGUI_ENABLED
-    virtual void useForImGui(const utils::Func<void()>& f = utils::Func<void()>()) = 0;
+#ifdef GFX_IMGUI_ENABLED
+    virtual void useForImGui(ImGuiConfigFlags flags = 0) = 0;
 #endif
 
     virtual void setClearColor(const math::rgba& color) = 0;
@@ -76,7 +76,7 @@ public:
 protected:
     GraphicAPI() = default;
 
-#ifdef IMGUI_ENABLED
+#ifdef GFX_IMGUI_ENABLED
     static GraphicAPI* s_imguiEnabledAPI;
 #endif
 

@@ -10,7 +10,7 @@
 #ifndef KEYCODES_HPP
 # define KEYCODES_HPP
 
-#ifdef USING_GLFW
+#ifdef GFX_USING_GLFW
     #define ESC_KEY   0
 
     #define ONE_KEY   49

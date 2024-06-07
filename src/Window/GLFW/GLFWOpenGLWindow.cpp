@@ -11,14 +11,27 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 
-#ifdef IMGUI_ENABLED
-    bool ImGui_ImplGlfw_InitForOpenGL(GLFWwindow* window, bool install_callbacks);
-#endif
+#include "imgui/imgui_impl_glfw.h"
 
 namespace gfx
 {
 
-#ifdef IMGUI_ENABLED
+void GLFWOpenGLWindow::setEventCallBack(const utils::Func<void(Event&)>& cb)
+{
+    m_callback = [cb, this](Event& event)
+    {
+        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event)
+        {
+            int frameBufferW, frameBufferH;
+            ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
+            ::glViewport(0, 0, frameBufferW, frameBufferH);
+        });
+
+        cb(event);
+    };
+}
+
+#ifdef GFX_IMGUI_ENABLED
 void GLFWOpenGLWindow::imGuiInit()
 {
     ImGui_ImplGlfw_InitForOpenGL(m_glfwWindow, true);

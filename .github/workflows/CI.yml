@@ -67,6 +67,8 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DGLFW_BUILD_WAYLAND=OFF
+          -DGFX_BUILD_EXEMPLES=ON
+          -DGFX_BUILD_IMGUI=ON
           
       - name: Build
         run: cmake --build build
