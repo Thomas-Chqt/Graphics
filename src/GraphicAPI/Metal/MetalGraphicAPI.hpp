@@ -16,7 +16,9 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include "Window/MetalWindow.hpp"
-#include "imgui/imgui.h"
+#ifdef GFX_IMGUI_ENABLED
+    #include "imgui/imgui.h"
+#endif
 
 #ifdef __OBJC__
     #import <Metal/Metal.h>
@@ -96,7 +98,6 @@ private:
     id<CAMetalDrawable> m_currentDrawable = nullptr;
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
     utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_frameObjects;
-    int m_frameCount = 0;
 
 public:
     MetalGraphicAPI& operator = (const MetalGraphicAPI&) = delete;

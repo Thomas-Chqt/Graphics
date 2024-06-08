@@ -77,8 +77,6 @@ void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTarg
         m_renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1);
         m_renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     }
-
-    m_frameCount = 0;
 }}
 
 #ifdef GFX_IMGUI_ENABLED
@@ -147,9 +145,7 @@ SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height, Text
 
 void MetalGraphicAPI::beginFrame(bool clearBuffer) { @autoreleasepool
 {
-    m_renderPassDescriptor.colorAttachments[0].loadAction = (m_frameCount < 3 || clearBuffer) ? MTLLoadActionClear : MTLLoadActionLoad;
-    if (m_frameCount < 3)
-        m_frameCount++;
+    m_renderPassDescriptor.colorAttachments[0].loadAction = clearBuffer ? MTLLoadActionClear : MTLLoadActionLoad;
 
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
     assert(m_commandBuffer);

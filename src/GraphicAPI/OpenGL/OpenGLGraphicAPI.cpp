@@ -25,7 +25,9 @@
 #include "UtilsCPP/Types.hpp"
 #include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
-#include "imgui/imgui_impl_opengl3.h"
+#ifdef GFX_IMGUI_ENABLED
+    #include "imgui/imgui_impl_opengl3.h"
+#endif
 
 using utils::SharedPtr;
 using utils::UniquePtr;
@@ -54,8 +56,6 @@ void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<Window>& renderTar
     assert(err == GLEW_OK);
 
     glEnable(GL_BLEND);
-
-    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 #ifdef GFX_IMGUI_ENABLED
