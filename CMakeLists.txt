@@ -40,7 +40,9 @@ if (NOT GFX_ENABLE_METAL AND NOT GFX_ENABLE_OPENGL)
 endif()
 
 
-project(Graphics ${GFX_LIBRARY_TYPE} CXX)
+project(Graphics)
+
+enable_language(CXX)
 
 if (APPLE AND GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
     enable_language(OBJC)
@@ -50,7 +52,7 @@ if(GFX_ENABLE_METAL)
 endif()
 
 
-add_library(Graphics)
+add_library(Graphics ${GFX_LIBRARY_TYPE})
 
 set_target_properties(Graphics PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
 
