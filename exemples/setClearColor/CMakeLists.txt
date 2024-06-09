@@ -7,7 +7,11 @@
 
 add_executable(setClearColor)
 
-set_target_properties(setClearColor PROPERTIES FOLDER "exemples")
+set_target_properties(setClearColor PROPERTIES 
+    CXX_STANDARD          11
+    CXX_STANDARD_REQUIRED ON
+    FOLDER                "exemples"
+)
 
 target_sources(setClearColor PRIVATE "main.cpp")
 
