@@ -21,7 +21,9 @@
 #include "UtilsCPP/Types.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window/OpenGLWindow.hpp"
-#include "imgui/imgui.h"
+#ifdef GFX_IMGUI_ENABLED
+    #include "imgui/imgui.h"
+#endif
 
 namespace gfx
 {

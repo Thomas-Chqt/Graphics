@@ -1,7 +1,10 @@
 .cache
 .vscode
-build
+build/
+build.nosync/
 .leak_suppr
 **/imgui.ini
 window_inheritance.drawio.svg
 build_xcode/
+build_xcode.nosync/
+.clangd
