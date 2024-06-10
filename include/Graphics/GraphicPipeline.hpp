@@ -19,9 +19,6 @@ namespace gfx
 class GraphicPipeline
 {
 public:
-    enum class BlendingOperation { srcA_plus_1_minus_srcA, one_minus_srcA_plus_srcA };
-
-public:
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline(GraphicPipeline&&)      = delete;
 

@@ -15,6 +15,7 @@
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
+#include "UtilsCPP/Types.hpp"
 #include "Window/MetalWindow.hpp"
 #ifdef GFX_IMGUI_ENABLED
     #include "imgui/imgui.h"
@@ -28,7 +29,6 @@
 
     class MTLDevice;
     class MTLCommandQueue;
-    class MTLRenderPassDescriptor;
     class MTLLibrary;
     class NSAutoreleasePool;
     class MTLCommandBuffer;
@@ -40,6 +40,8 @@
 namespace gfx
 {
 
+class MetalFrameBuffer;
+
 class MetalGraphicAPI : public GraphicAPI
 {
 private:
@@ -50,20 +52,17 @@ public:
     MetalGraphicAPI(const MetalGraphicAPI&) = delete;
     MetalGraphicAPI(MetalGraphicAPI&&)      = delete;
 
-    void setRenderTarget(const utils::SharedPtr<Window>&) override;
-
 #ifdef GFX_IMGUI_ENABLED
     void useForImGui(ImGuiConfigFlags flags = 0) override;
 #endif
 
-    void setClearColor(const math::rgba& color) override;
-
     utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const override;
-    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation = GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA) override;
+    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) const override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
     utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) const override;
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(utils::uint32 width, utils::uint32 height) const override;
 
-    void beginFrame(bool clearBuffer = true) override;
+    void beginFrame(const RenderPassDescriptor& = RenderPassDescriptor()) override;
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
@@ -75,9 +74,12 @@ public:
 
     void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
+    void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<FrameBuffer>&) override;
 
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
+
+    void nextRenderPass(const RenderPassDescriptor& = RenderPassDescriptor()) override;
     
     void endFrame() override;
 
@@ -86,18 +88,23 @@ public:
 private:
     MetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
 
-    utils::SharedPtr<MetalWindow> m_renderTarget;
+    void beginRenderPass(const RenderPassDescriptor&);
+    void endRenderPass();
 
+    utils::SharedPtr<MetalWindow> m_window;
+
+    // life time
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
-    MTLRenderPassDescriptor* m_renderPassDescriptor = nullptr;
 
-    id<MTLLibrary> m_shaderLibrary = nullptr;
-    
+    // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
     id<CAMetalDrawable> m_currentDrawable = nullptr;
+
+    // pass time
+    utils::uint32 m_renderPassTargetPixelFormat; 
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
-    utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_frameObjects;
+    utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_renderPassObjects;
 
 public:
     MetalGraphicAPI& operator = (const MetalGraphicAPI&) = delete;

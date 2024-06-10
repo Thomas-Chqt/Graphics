@@ -20,7 +20,9 @@ if(GFX_BUILD_IMGUI)
 endif()
 
 if(GFX_BUILD_IMGUI)
-    add_subdirectory(flatColorCube)
+    add_subdirectory(flatcolorcube)
 endif()
 
 add_subdirectory(texturedSquare)
+
+add_subdirectory(offscreenRenderPass)

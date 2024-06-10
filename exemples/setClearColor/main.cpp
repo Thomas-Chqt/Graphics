@@ -23,6 +23,7 @@ int main()
     utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newDefaultGraphicAPI(window);
 
     bool running = true;
+    math::rgba clearColor = BLACK;
 
     window->setEventCallBack([&](gfx::Event& event)
     {
@@ -40,17 +41,17 @@ int main()
             switch (event.mouseCode())
             {
             case MOUSE_L:
-                graphicAPI->setClearColor(GREEN);
+                clearColor = GREEN;
                 break;
             case MOUSE_R:
-                graphicAPI->setClearColor(RED);
+                clearColor = RED;
                 break;
             }
         });
 
         event.dispatch<gfx::MouseUpEvent>([&](gfx::MouseUpEvent& event)
         {
-           graphicAPI->setClearColor(BLACK); 
+            clearColor = BLACK;
         });
     });
 
@@ -58,7 +59,10 @@ int main()
     {
         gfx::Platform::shared().pollEvents();
 
-        graphicAPI->beginFrame();
+        gfx::RenderPassDescriptor renderPassDescriptor;
+        renderPassDescriptor.clearColor = clearColor;
+
+        graphicAPI->beginFrame(renderPassDescriptor);
         graphicAPI->endFrame();
     }
 

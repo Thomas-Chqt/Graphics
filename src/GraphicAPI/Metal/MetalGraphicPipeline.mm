@@ -7,71 +7,30 @@
  * ---------------------------------------------------
  */
 
-
-
+#include "Graphics/Error.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/ShaderLibrary.hpp"
-#include <cassert>
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 
 namespace gfx
 {
 
-MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
+const id<MTLRenderPipelineState>& MetalGraphicPipeline::makeRenderPipelineState(id<MTLDevice> mtlDevice, MTLRenderPipelineDescriptor* decriptor) { @autoreleasepool
 {
-    [m_renderPipelineState release];
-}}
-
-MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, CAMetalLayer* metalLayer, const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation operation) { @autoreleasepool
-{
-    NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(vertexShaderName) encoding:NSUTF8StringEncoding] autorelease];
-    id<MTLFunction> vertexFunction = [[mtlLibrary newFunctionWithName:vertexShaderFuncName] autorelease];
-    assert(vertexFunction);
-
-    NSString* fragmentShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(fragmentShaderName) encoding:NSUTF8StringEncoding] autorelease];
-    id<MTLFunction> fragmentFunction = [[mtlLibrary newFunctionWithName:fragmentShaderFuncName] autorelease];
-    assert(fragmentFunction);
-
-    MTLRenderPipelineDescriptor* pipelineStateDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
-    assert(pipelineStateDescriptor);
-
-    pipelineStateDescriptor.vertexFunction = vertexFunction;
-    pipelineStateDescriptor.fragmentFunction = fragmentFunction;
-
-    pipelineStateDescriptor.colorAttachments[0].pixelFormat = metalLayer.pixelFormat;
-    pipelineStateDescriptor.colorAttachments[0].blendingEnabled = YES;
-
-
-    switch (operation)
-    {
-    case GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA:
-        pipelineStateDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
-        pipelineStateDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
-
-        pipelineStateDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
-
-        pipelineStateDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-        break;
-
-    case GraphicPipeline::BlendingOperation::one_minus_srcA_plus_srcA:
-        pipelineStateDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
-        pipelineStateDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
-
-        pipelineStateDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-
-        pipelineStateDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorSourceAlpha;
-        break;
-    }
+    if (m_renderPipelineState)
+        [m_renderPipelineState release];
+    m_fragmentUniformsIndices.clear();
+    m_vertexUniformsIndices.clear();
+    
+    decriptor.vertexFunction = m_vertexFunction;
+    decriptor.fragmentFunction = m_fragmentFunction;
 
     NSError* error;
     MTLAutoreleasedRenderPipelineReflection reflection;
 
-    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:pipelineStateDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
-    assert(m_renderPipelineState);
+    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:decriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
+    if (!m_renderPipelineState)
+        throw MTLRenderPipelineStateCreationError();
 
     auto vertexBindings = reflection.vertexArguments;
     auto fragmentBindings = reflection.fragmentArguments;
@@ -81,6 +40,36 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
 
     for (uint32 i = 0; i < fragmentBindings.count; i++)
         m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+
+    return m_renderPipelineState;
+}}
+
+MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
+{
+    if (m_renderPipelineState)
+        [m_renderPipelineState release];
+    [m_mtlLibrary release];
+    [m_fragmentFunction release];
+    [m_vertexFunction release];
+}}
+
+MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, const utils::String& vertexShaderName, const utils::String& fragmentShaderName) { @autoreleasepool
+{
+    NSError *error;
+    NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderLibPath() encoding:NSUTF8StringEncoding] autorelease];
+    m_mtlLibrary = [mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:&error];
+    if (!m_mtlLibrary)
+        throw MTLLibraryCreationError();
+
+    NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(vertexShaderName) encoding:NSUTF8StringEncoding] autorelease];
+    m_vertexFunction = [m_mtlLibrary newFunctionWithName:vertexShaderFuncName];
+    if (!m_vertexFunction)
+        throw MTLFunctionCreationError();
+
+    NSString* fragmentShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(fragmentShaderName) encoding:NSUTF8StringEncoding] autorelease];
+    m_fragmentFunction = [m_mtlLibrary newFunctionWithName:fragmentShaderFuncName];
+    if (!m_fragmentFunction)
+        throw MTLFunctionCreationError();
 }}
 
 }

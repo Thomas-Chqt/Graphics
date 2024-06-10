@@ -14,6 +14,16 @@
 namespace gfx
 {
 
+MetalTexture::MetalTexture(MetalTexture&& mv) : m_mtlTexture(mv.m_mtlTexture)
+{
+    mv.m_mtlTexture = nullptr;
+}
+
+MetalTexture::MetalTexture(id<MTLDevice> device, MTLTextureDescriptor* desc) { @autoreleasepool
+{
+    m_mtlTexture = [device newTextureWithDescriptor:desc];
+}}
+
 utils::uint32 MetalTexture::width() { @autoreleasepool
 {
     return m_mtlTexture.width;
@@ -34,12 +44,8 @@ void MetalTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, u
 
 MetalTexture::~MetalTexture() { @autoreleasepool
 {
-    [m_mtlTexture release];
-}}
-
-MetalTexture::MetalTexture(id<MTLDevice> device, MTLTextureDescriptor* desc) { @autoreleasepool
-{
-    m_mtlTexture = [device newTextureWithDescriptor:desc];
+    if (m_mtlTexture)
+        [m_mtlTexture release];
 }}
 
 }

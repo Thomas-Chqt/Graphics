@@ -34,6 +34,27 @@ struct GFXError : public utils::Error {};
     };
 #endif // GLFW_ENABLE
 
+#ifdef GFX_METAL_ENABLED
+    struct MetalError : public GFXError {};
+
+
+    struct RenderCommandEncoderCreationError : public MetalError {
+        ERR_DESC { return "RenderCommandEncoder creation failed"; }
+    };
+    
+    struct MTLLibraryCreationError : public MetalError {
+        ERR_DESC { return "MTLLibrary creation failed"; }
+    };
+
+    struct MTLFunctionCreationError : public MetalError {
+        ERR_DESC { return "MTLFunction creation failed"; }
+    };
+
+    struct MTLRenderPipelineStateCreationError : public MetalError {
+        ERR_DESC { return "MTLRenderPipelineState creation failed"; }
+    };
+#endif
+
 }
 
 #endif // GFX_ERROR_HPP
