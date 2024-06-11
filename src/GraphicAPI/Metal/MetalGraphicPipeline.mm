@@ -7,28 +7,85 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/Enums.hpp"
 #include "Graphics/Error.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/ShaderLibrary.hpp"
+#include <Metal/Metal.h>
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 
 namespace gfx
 {
 
-const id<MTLRenderPipelineState>& MetalGraphicPipeline::makeRenderPipelineState(id<MTLDevice> mtlDevice, MTLRenderPipelineDescriptor* decriptor) { @autoreleasepool
+MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
 {
-    if (m_renderPipelineState)
-        [m_renderPipelineState release];
-    m_fragmentUniformsIndices.clear();
-    m_vertexUniformsIndices.clear();
+    [m_renderPipelineState release];
+}}
+
+MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, const GraphicPipeline::Descriptor& descriptor) { @autoreleasepool
+{
+    NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:descriptor.metalVSFunction encoding:NSUTF8StringEncoding] autorelease];
+    id<MTLFunction> vertexFunction = [[mtlLibrary newFunctionWithName:vertexShaderFuncName] autorelease];
+    if (!vertexFunction)
+        throw MTLFunctionCreationError();
+
+    NSString* fragmentShaderFuncName = [[[NSString alloc] initWithCString:descriptor.metalFSFunction encoding:NSUTF8StringEncoding] autorelease];
+    id<MTLFunction> fragmentFunction = [[mtlLibrary newFunctionWithName:fragmentShaderFuncName] autorelease];
+    if (!fragmentFunction)
+        throw MTLFunctionCreationError();
+
+    MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
     
-    decriptor.vertexFunction = m_vertexFunction;
-    decriptor.fragmentFunction = m_fragmentFunction;
+    renderPipelineDescriptor.vertexFunction = vertexFunction;
+    renderPipelineDescriptor.fragmentFunction = fragmentFunction;
+    switch (descriptor.pixelFormat)
+    {
+    case PixelFormat::RGBA:
+        renderPipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA8Unorm;
+    case PixelFormat::ARGB:
+        renderPipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    }
+    if (descriptor.blendOperation != BlendOperation::blendingOff)
+    {
+        renderPipelineDescriptor.colorAttachments[0].blendingEnabled = YES;
+        switch (descriptor.blendOperation)
+        {
+        case BlendOperation::srcA_plus_1_minus_srcA:
+            renderPipelineDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+            renderPipelineDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+
+            renderPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+
+            renderPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            break;
+
+        case BlendOperation::one_minus_srcA_plus_srcA:
+            renderPipelineDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+            renderPipelineDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+
+            renderPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+
+            renderPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+            break;
+
+        case BlendOperation::blendingOff:
+            #if defined(_MSC_VER) && !defined(__clang__) // MSVC
+                __assume(false);
+            #else // GCC, Clang
+                __builtin_unreachable();
+            #endif
+        }
+    }
+    else
+        renderPipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
 
     NSError* error;
     MTLAutoreleasedRenderPipelineReflection reflection;
 
-    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:decriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
+    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:renderPipelineDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
     if (!m_renderPipelineState)
         throw MTLRenderPipelineStateCreationError();
 
@@ -40,36 +97,6 @@ const id<MTLRenderPipelineState>& MetalGraphicPipeline::makeRenderPipelineState(
 
     for (uint32 i = 0; i < fragmentBindings.count; i++)
         m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
-
-    return m_renderPipelineState;
-}}
-
-MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
-{
-    if (m_renderPipelineState)
-        [m_renderPipelineState release];
-    [m_mtlLibrary release];
-    [m_fragmentFunction release];
-    [m_vertexFunction release];
-}}
-
-MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, const utils::String& vertexShaderName, const utils::String& fragmentShaderName) { @autoreleasepool
-{
-    NSError *error;
-    NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderLibPath() encoding:NSUTF8StringEncoding] autorelease];
-    m_mtlLibrary = [mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:&error];
-    if (!m_mtlLibrary)
-        throw MTLLibraryCreationError();
-
-    NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(vertexShaderName) encoding:NSUTF8StringEncoding] autorelease];
-    m_vertexFunction = [m_mtlLibrary newFunctionWithName:vertexShaderFuncName];
-    if (!m_vertexFunction)
-        throw MTLFunctionCreationError();
-
-    NSString* fragmentShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(fragmentShaderName) encoding:NSUTF8StringEncoding] autorelease];
-    m_fragmentFunction = [m_mtlLibrary newFunctionWithName:fragmentShaderFuncName];
-    if (!m_fragmentFunction)
-        throw MTLFunctionCreationError();
 }}
 
 }

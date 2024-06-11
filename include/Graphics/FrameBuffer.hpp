@@ -16,6 +16,14 @@ namespace gfx
 class FrameBuffer
 {
 public:
+	struct Descriptor
+	{
+		utils::uint32 width;
+		utils::uint32 height;
+		gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
+	};
+
+public:
     FrameBuffer(const FrameBuffer&) = delete;
     FrameBuffer(FrameBuffer&&)      = delete;
 

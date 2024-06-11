@@ -13,8 +13,13 @@
 namespace gfx
 {
 
-MetalFrameBuffer::MetalFrameBuffer(MetalTexture&& colorTexture) : m_colorTexture(std::move(colorTexture))
+MetalTextureFrameBuffer::MetalTextureFrameBuffer(MetalTexture&& colorTexture) : m_colorTexture(std::move(colorTexture))
 {
+}
+
+MetalDrawableFrameBuffer::MetalDrawableFrameBuffer(id<CAMetalDrawable> caDrawable)
+{
+
 }
 
 }

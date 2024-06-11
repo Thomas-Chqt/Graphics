@@ -11,6 +11,7 @@
 # define METALGRAPHICAPI_HPP
 
 #include "Graphics/GraphicAPI.hpp"
+#include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Platform.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -36,7 +37,6 @@
     class MTLRenderCommandEncoder;
 #endif // OBJCPP
 
-
 namespace gfx
 {
 
@@ -52,34 +52,38 @@ public:
     MetalGraphicAPI(const MetalGraphicAPI&) = delete;
     MetalGraphicAPI(MetalGraphicAPI&&)      = delete;
 
-#ifdef GFX_IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     void useForImGui(ImGuiConfigFlags flags = 0) override;
-#endif
+    #endif
 
-    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const override;
-    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) const override;
+    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const override;
+    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
-    utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) const override;
-    utils::SharedPtr<FrameBuffer> newFrameBuffer(utils::uint32 width, utils::uint32 height) const override;
+    utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
 
-    void beginFrame(const RenderPassDescriptor& = RenderPassDescriptor()) override;
+    void setLoadAction(LoadAction) override;
+    void setClearColor(math::rgba) override;
+    void setRenderTarget(const utils::SharedPtr<FrameBuffer>&) override;
+
+    void beginFrame() override;
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
 
-    void setVertexUniform(utils::uint32 index, const math::vec4f& vec) override;
-    void setVertexUniform(utils::uint32 index, const math::mat4x4& mat) override;
+    void setVertexUniform(utils::uint32 index, const math::vec4f&) override;
+    void setVertexUniform(utils::uint32 index, const math::mat4x4&) override;
     void setVertexUniform(utils::uint32 index, const math::vec2f&) override;
-    void setVertexUniform(utils::uint32 index, const math::mat3x3& mat) override;
+    void setVertexUniform(utils::uint32 index, const math::mat3x3&) override;
 
-    void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) override;
+    void setFragmentUniform(utils::uint32 index, const math::vec4f&) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<FrameBuffer>&) override;
 
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
 
-    void nextRenderPass(const RenderPassDescriptor& = RenderPassDescriptor()) override;
+    void nextRenderPass() override;
     
     void endFrame() override;
 
@@ -88,10 +92,11 @@ public:
 private:
     MetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
 
-    void beginRenderPass(const RenderPassDescriptor&);
+    void beginRenderPass();
     void endRenderPass();
 
     utils::SharedPtr<MetalWindow> m_window;
+    id<MTLLibrary> m_shaderLib = nullptr;
 
     // life time
     id<MTLDevice> m_mtlDevice = nullptr;
@@ -102,7 +107,9 @@ private:
     id<CAMetalDrawable> m_currentDrawable = nullptr;
 
     // pass time
-    utils::uint32 m_renderPassTargetPixelFormat; 
+    LoadAction m_nextPassLoadAction = LoadAction::clear; 
+    math::rgba m_nextPassClearColor = BLACK; 
+    utils::SharedPtr<FrameBuffer> m_nextPassTarget;
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
     utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_renderPassObjects;
 

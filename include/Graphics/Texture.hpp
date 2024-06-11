@@ -10,14 +10,21 @@
 #ifndef TEXTURE_HPP
 # define TEXTURE_HPP
 
+#include "Graphics/Enums.hpp"
 #include "UtilsCPP/Types.hpp"
+
 namespace gfx
 {
 
 class Texture
 {
 public:
-    enum class PixelFormat { RGBA, ARGB };
+    struct Descriptor
+    {
+        utils::uint32 width;
+        utils::uint32 height;
+        gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
+    };
 
 public:
     Texture(const Texture&) = delete;

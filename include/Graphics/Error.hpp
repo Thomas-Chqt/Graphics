@@ -53,6 +53,10 @@ struct GFXError : public utils::Error {};
     struct MTLRenderPipelineStateCreationError : public MetalError {
         ERR_DESC { return "MTLRenderPipelineState creation failed"; }
     };
+
+    struct MetalShaderLibNotInitError : public MetalError {
+        ERR_DESC { return "Metal shader library is not initialized"; }
+    };
 #endif
 
 }

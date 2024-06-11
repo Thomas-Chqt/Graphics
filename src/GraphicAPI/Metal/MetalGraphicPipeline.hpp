@@ -25,8 +25,6 @@
 
     class MTLDevice;
     class MTLLibrary;
-    class MTLFunction;
-    class MTLRenderPipelineDescriptor;
     class MTLRenderPipelineState;
 #endif // OBJCPP
 
@@ -37,7 +35,7 @@ namespace gfx
 class MetalGraphicPipeline : public GraphicPipeline
 {
 private:
-    friend utils::SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName) const;
+    friend utils::SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor&) const;
     
 public:
     MetalGraphicPipeline()                            = delete;
@@ -46,17 +44,13 @@ public:
 
     inline utils::uint32 findVertexUniformIndex(const utils::String& name) override { return m_vertexUniformsIndices[name]; }
     inline utils::uint32 findFragmentUniformIndex(const utils::String& name) override { return m_fragmentUniformsIndices[name]; }
-
-    const id<MTLRenderPipelineState>& makeRenderPipelineState(id<MTLDevice>, MTLRenderPipelineDescriptor*);
+    
+    const id<MTLRenderPipelineState>& renderPipelineState() { return m_renderPipelineState; };
     
     ~MetalGraphicPipeline();
 
 private:
-    MetalGraphicPipeline(id<MTLDevice> mtlDevice, const utils::String& vertexShaderName, const utils::String& fragmentShaderName);
-
-    id<MTLLibrary> m_mtlLibrary;
-    id<MTLFunction> m_vertexFunction = nullptr;
-    id<MTLFunction> m_fragmentFunction = nullptr;
+    MetalGraphicPipeline(id<MTLDevice>, id<MTLLibrary>, const GraphicPipeline::Descriptor&);
 
     id<MTLRenderPipelineState> m_renderPipelineState = nullptr;
 

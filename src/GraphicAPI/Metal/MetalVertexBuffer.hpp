@@ -27,7 +27,7 @@ namespace gfx
 class MetalVertexBuffer : public VertexBuffer
 {
 private:
-    friend utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const;
+    friend utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void*, utils::uint64, utils::uint32, const utils::Array<VertexBuffer::LayoutElement>&) const;
 
 public:
     MetalVertexBuffer()                         = delete;

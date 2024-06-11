@@ -12,12 +12,12 @@
 #include "GraphicAPI/Metal/MetalFrameBuffer.hpp"
 #include "GraphicAPI/Metal/MetalIndexBuffer.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
+#include "Graphics/Enums.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/Platform.hpp"
-#include "Graphics/ShaderLibrary.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
@@ -41,7 +41,6 @@
 
 using utils::SharedPtr;
 using utils::UniquePtr;
-using utils::String;
 using utils::uint32;
 using utils::Array;
 
@@ -68,15 +67,17 @@ void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 }
 #endif
 
-utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const
+utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const
 {
     (void)layout;
-    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, size));
+    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, count * vertexSize));
 }
 
-SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const String& vertexShaderName, const String& fragmentShaderName) const { @autoreleasepool
+SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& descriptor) const { @autoreleasepool
 {
-    return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, vertexShaderName, fragmentShaderName));
+    if (m_shaderLib == nullptr)
+        throw MetalShaderLibNotInitError();
+    return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, m_shaderLib, descriptor));
 }}
 
 SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indices) const
@@ -84,18 +85,18 @@ SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indi
     return SharedPtr<IndexBuffer>(new MetalIndexBuffer(m_mtlDevice, indices));
 }
 
-SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height, Texture::PixelFormat pxFormat) const { @autoreleasepool
+SharedPtr<Texture> MetalGraphicAPI::newTexture(const Texture::Descriptor& descriptor) const { @autoreleasepool
 {
     MTLTextureDescriptor* textureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
 
-    textureDescriptor.width = width;
-    textureDescriptor.height = height;
-    switch (pxFormat)
+    textureDescriptor.width = descriptor.width;
+    textureDescriptor.height = descriptor.height;
+    switch (descriptor.pixelFormat)
     {
-    case Texture::PixelFormat::RGBA:
+    case PixelFormat::RGBA:
         textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
         break;
-    case Texture::PixelFormat::ARGB:
+    case PixelFormat::ARGB:
         textureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
         break;
     }
@@ -103,19 +104,27 @@ SharedPtr<Texture> MetalGraphicAPI::newTexture(uint32 width, uint32 height, Text
     return SharedPtr<Texture>(new MetalTexture(m_mtlDevice, textureDescriptor));
 }}
 
-utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(utils::uint32 width, utils::uint32 height) const { @autoreleasepool
+utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const FrameBuffer::Descriptor& descriptor) const { @autoreleasepool
 {
     MTLTextureDescriptor* colorTextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
     colorTextureDescriptor.textureType = MTLTextureType2D;
-    colorTextureDescriptor.width = width;
-    colorTextureDescriptor.height = height;
-    colorTextureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    colorTextureDescriptor.width = descriptor.width;
+    colorTextureDescriptor.height = descriptor.height;
+	switch (descriptor.pixelFormat)
+	{
+		case PixelFormat::RGBA:
+			colorTextureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+			break;
+		case PixelFormat::ARGB:
+			colorTextureDescriptor.pixelFormat = MTLPixelFormatBGRA8Unorm;
+			break;
+	}
     colorTextureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
     return SharedPtr<FrameBuffer>(new MetalFrameBuffer(MetalTexture(m_mtlDevice, colorTextureDescriptor)));
 }}
 
-void MetalGraphicAPI::beginFrame(const RenderPassDescriptor& renderPassDescriptor)
+void MetalGraphicAPI::beginFrame()
 {
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
     assert(m_commandBuffer);
@@ -138,27 +147,14 @@ void MetalGraphicAPI::beginFrame(const RenderPassDescriptor& renderPassDescripto
     }
     #endif
 
-    beginRenderPass(renderPassDescriptor);
+    beginRenderPass();
 }
 
 void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalGraphicPipeline> mtlGraphicsPipeline = graphicsPipeline.dynamicCast<MetalGraphicPipeline>())
     {
-        MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
-        renderPipelineDescriptor.colorAttachments[0].pixelFormat = (MTLPixelFormat)m_renderPassTargetPixelFormat;
-        renderPipelineDescriptor.colorAttachments[0].blendingEnabled = YES;
-
-        renderPipelineDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
-        renderPipelineDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
-
-        renderPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
-        renderPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
-
-        renderPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-        renderPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-
-        [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->makeRenderPipelineState(m_mtlDevice, renderPipelineDescriptor)];
+        [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
         m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<GraphicPipeline>(graphicsPipeline)));
     }
     else
@@ -214,13 +210,13 @@ void MetalGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::Share
 
 void MetalGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<FrameBuffer>& frameBuffer) { @autoreleasepool
 {
-    if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = frameBuffer.dynamicCast<MetalFrameBuffer>())
+    if (utils::SharedPtr<MetalTextureFrameBuffer> mtlFrameBuffer = frameBuffer.dynamicCast<MetalTextureFrameBuffer>())
     {
         [m_commandEncoder setFragmentTexture:mtlFrameBuffer->colorTexture().mtlTexture() atIndex:index];
         m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<FrameBuffer>(frameBuffer)));
     }
     else
-        throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
+        throw utils::RuntimeError("FrameBuffer is not MetalTextureFrameBuffer");
 }}
 
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
@@ -243,10 +239,10 @@ void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& i
         throw utils::RuntimeError("IndexBuffer is not MetalIndexBuffer");
 }}
 
-void MetalGraphicAPI::nextRenderPass(const RenderPassDescriptor& renderPassDescriptor)
+void MetalGraphicAPI::nextRenderPass()
 {
     endRenderPass();
-    beginRenderPass(renderPassDescriptor);
+    beginRenderPass();
 }
 
 void MetalGraphicAPI::endFrame() { @autoreleasepool
@@ -306,30 +302,24 @@ MetalGraphicAPI::MetalGraphicAPI(const SharedPtr<Window>& renderTarget)
     assert(m_commandQueue);
 }
 
-void MetalGraphicAPI::beginRenderPass(const RenderPassDescriptor& desc) { @autoreleasepool
+void MetalGraphicAPI::beginRenderPass() { @autoreleasepool
 {
     MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
     
-    renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(desc.clearColor.r, desc.clearColor.g, desc.clearColor.b, desc.clearColor.a);
-    renderPassDescriptor.colorAttachments[0].loadAction = desc.clearBuffer ? MTLLoadActionClear : MTLLoadActionLoad;
+    switch (m_nextPassLoadAction)
+    {
+    case LoadAction::load:
+        renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
+    case LoadAction::clear:
+        renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+    }
     renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-
-    if (desc.frameBuffer)
-    {
-        if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = desc.frameBuffer.dynamicCast<MetalFrameBuffer>())
-        {
-            renderPassDescriptor.colorAttachments[0].texture = mtlFrameBuffer->colorTexture().mtlTexture();
-            m_renderPassTargetPixelFormat = mtlFrameBuffer->colorTexture().mtlTexture().pixelFormat;
-            m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<FrameBuffer>(desc.frameBuffer)));
-        }
-        else
-            throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
-    }
+    renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
+    
+    if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = m_nextPassTarget.dynamicCast<MetalFrameBuffer>())
+        renderPassDescriptor.colorAttachments[0].texture = mtlFrameBuffer->mtlColorTexture();
     else
-    {
-        renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
-        m_renderPassTargetPixelFormat = m_currentDrawable.texture.pixelFormat;
-    }
+        throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
 
     m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
     if (!m_commandEncoder)

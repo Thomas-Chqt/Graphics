@@ -12,12 +12,27 @@
 
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "Graphics/Enums.hpp"
 
 namespace gfx
 {
 
 class GraphicPipeline
 {
+public:
+    struct Descriptor
+    {
+        utils::String metalVSFunction;
+        utils::String metalFSFunction;
+
+        utils::String openglVSCode;
+        utils::String openglFSCode;
+
+        gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
+        
+        gfx::BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
+    };
+
 public:
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline(GraphicPipeline&&)      = delete;

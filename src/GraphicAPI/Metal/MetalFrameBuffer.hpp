@@ -18,34 +18,76 @@
     #import <Metal/Metal.h>
 #else
     template<typename T> using id = void*;
-    class MTLDevice;
+    class MTLTexture;
 #endif // OBJCPP
 
 namespace gfx
 {
-
 class MetalFrameBuffer : public FrameBuffer
 {
-private:
-    friend utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(utils::uint32, utils::uint32) const;
-
 public:
-    MetalFrameBuffer()                        = delete;
     MetalFrameBuffer(const MetalFrameBuffer&) = delete;
     MetalFrameBuffer(MetalFrameBuffer&&)      = delete;
 
-    inline const MetalTexture& colorTexture() const { return m_colorTexture; }
-    
-    ~MetalFrameBuffer() override = default;
+    virtual id<MTLTexture> mtlColorTexture() = 0;
 
-private:
-    MetalFrameBuffer(MetalTexture&& colorTexture);
+    virtual ~MetalFrameBuffer() override = default;
 
-    MetalTexture m_colorTexture;
+protected:
+    MetalFrameBuffer() = default;
 
 public:
     MetalFrameBuffer& operator = (const MetalFrameBuffer&) = delete;
     MetalFrameBuffer& operator = (MetalFrameBuffer&&)      = delete;
+};
+
+
+class MetalTextureFrameBuffer : public MetalFrameBuffer
+{
+private:
+    friend utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const FrameBuffer::Descriptor&) const;
+
+public:
+    MetalTextureFrameBuffer()                               = delete;
+    MetalTextureFrameBuffer(const MetalTextureFrameBuffer&) = delete;
+    MetalTextureFrameBuffer(MetalTextureFrameBuffer&&)      = delete;
+
+    id<MTLTexture> mtlColorTexture() override;
+
+    inline const MetalTexture& colorTexture() const { return m_colorTexture; }
+    
+    ~MetalTextureFrameBuffer() override = default;
+
+private:
+    MetalTextureFrameBuffer(MetalTexture&& colorTexture);
+
+    MetalTexture m_colorTexture;
+
+public:
+    MetalTextureFrameBuffer& operator = (const MetalTextureFrameBuffer&) = delete;
+    MetalTextureFrameBuffer& operator = (MetalTextureFrameBuffer&&)      = delete;
+};
+
+
+class MetalDrawableFrameBuffer : public MetalFrameBuffer
+{
+public:
+    MetalDrawableFrameBuffer()                                = delete;
+    MetalDrawableFrameBuffer(const MetalDrawableFrameBuffer&) = delete;
+    MetalDrawableFrameBuffer(MetalDrawableFrameBuffer&&)      = delete;
+
+    MetalDrawableFrameBuffer(id<CAMetalDrawable>);
+
+    id<MTLTexture> mtlColorTexture() override;
+
+    ~MetalDrawableFrameBuffer() override;
+
+private:
+    id<CAMetalDrawable> m_caDrawable;
+
+public:
+    MetalDrawableFrameBuffer& operator = (const MetalDrawableFrameBuffer&) = delete;
+    MetalDrawableFrameBuffer& operator = (MetalDrawableFrameBuffer&&)      = delete;
 };
 
 }
