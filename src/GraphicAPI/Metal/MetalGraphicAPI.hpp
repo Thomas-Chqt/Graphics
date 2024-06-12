@@ -108,8 +108,10 @@ private:
 
     // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
+    #ifdef GFX_IMGUI_ENABLED
     MTLRenderPassDescriptor* m_imguiRenderPassDesc = nullptr;
-
+    #endif
+    
     // pass time
     LoadAction m_nextPassLoadAction = LoadAction::clear; 
     math::rgba m_nextPassClearColor = BLACK; 

@@ -8,6 +8,7 @@
  */
 
 #include "Graphics/Platform.hpp"
+#include "Graphics/GraphicAPI.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 
@@ -15,7 +16,7 @@
     #include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 #endif
 #ifdef GFX_OPENGL_ENABLED
-    #include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
+    #include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
 #endif
 
 namespace gfx
@@ -25,6 +26,13 @@ namespace gfx
 utils::SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const
 {
     return utils::SharedPtr<GraphicAPI>(new MetalGraphicAPI(renderTarget));
+}
+#endif
+
+#ifdef GFX_OPENGL_ENABLED
+utils::SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const
+{
+    return utils::SharedPtr<GraphicAPI>(new OpenGLGraphicAPI(renderTarget));
 }
 #endif
 

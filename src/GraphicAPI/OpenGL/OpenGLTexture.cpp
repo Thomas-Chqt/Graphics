@@ -8,10 +8,42 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
-#include "Graphics/VertexBuffer.hpp"
 
 namespace gfx
 {
+
+OpenGLTexture::OpenGLTexture(const Texture::Descriptor& desc) : m_width(desc.width), m_height(desc.height)
+{
+    switch (desc.pixelFormat)
+    {
+    case PixelFormat::RGBA:
+        m_pixelFormat = GL_RGBA;
+        break;
+    case PixelFormat::ARGB:
+        m_pixelFormat = GL_BGRA;
+        break;
+    }
+
+    glGenTextures(1, &m_textureID);
+    glBindTexture(GL_TEXTURE_2D, m_textureID);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 	  GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)m_width, (GLsizei)m_height, 0, m_pixelFormat, GL_UNSIGNED_BYTE, nullptr);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+OpenGLTexture::OpenGLTexture(OpenGLTexture&& mv)
+    : m_textureID(mv.m_textureID),
+      m_width(mv.m_width), m_height(mv.m_height),
+      m_pixelFormat(mv.m_pixelFormat)
+{
+    mv.m_textureID = 0;
+}
 
 void OpenGLTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes)
 {
@@ -27,32 +59,8 @@ void OpenGLTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, 
 
 OpenGLTexture::~OpenGLTexture()
 {
-    glDeleteTextures(1, &m_textureID);
-}
-
-OpenGLTexture::OpenGLTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat pxFormat) : m_width(width), m_height(height)
-{
-    switch (pxFormat)
-    {
-    case Texture::PixelFormat::RGBA:
-        m_pixelFormat = GL_RGBA;
-        break;
-    case Texture::PixelFormat::ARGB:
-        m_pixelFormat = GL_BGRA;
-        break;
-    }
-
-    glGenTextures(1, &m_textureID);
-    glBindTexture(GL_TEXTURE_2D, m_textureID);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 	  GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)width, (GLsizei)height, 0, m_pixelFormat, GL_UNSIGNED_BYTE, nullptr);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
+    if (m_textureID)
+        glDeleteTextures(1, &m_textureID);
 }
 
 }

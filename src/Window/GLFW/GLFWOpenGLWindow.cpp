@@ -10,6 +10,7 @@
 #include "Window/GLFW/GLFWOpenGLWindow.hpp"
 #include <GLFW/glfw3.h>
 #include <cassert>
+#include "GL/glew.h"
 
 #include "imgui/imgui_impl_glfw.h"
 
@@ -24,7 +25,7 @@ void GLFWOpenGLWindow::setEventCallBack(const utils::Func<void(Event&)>& cb)
         {
             int frameBufferW, frameBufferH;
             ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
-            ::glViewport(0, 0, frameBufferW, frameBufferH);
+            glViewport(0, 0, frameBufferW, frameBufferH);
         });
 
         cb(event);

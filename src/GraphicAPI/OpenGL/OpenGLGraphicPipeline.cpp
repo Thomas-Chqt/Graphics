@@ -9,11 +9,9 @@
 
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/ShaderLibrary.hpp"
-#include "Graphics/VertexBuffer.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
-#include <cassert>
+#include "Graphics/Error.hpp"
 
 using utils::uint32;
 using utils::String;
@@ -21,28 +19,13 @@ using utils::String;
 namespace gfx
 {
 
-uint32 OpenGLGraphicPipeline::findVertexUniformIndex(const String& name)
-{
-    return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
-}
-
-uint32 OpenGLGraphicPipeline::findFragmentUniformIndex(const String& name)
-{
-    return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
-}
-
-OpenGLGraphicPipeline::~OpenGLGraphicPipeline()
-{
-    glDeleteProgram(m_shaderProgramID);
-}
-
-OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation operation)
+OpenGLGraphicPipeline::OpenGLGraphicPipeline(const GraphicPipeline::Descriptor& desc)
 {
     int success;
     char errorLog[1024];
 
     GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
-    const GLchar *const vertexShaderSRC = ShaderLibrary::shared().getGlslCode(vertexShaderName);
+    const GLchar *const vertexShaderSRC = desc.openglVSCode;
     glShaderSource(vertexShaderID, 1, &vertexShaderSRC, nullptr);
     glCompileShader(vertexShaderID);
     glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
@@ -53,7 +36,7 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderNa
     }
 
     GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-    const GLchar *const fragmentShaderSRC = ShaderLibrary::shared().getGlslCode(fragmentShaderName);
+    const GLchar *const fragmentShaderSRC = desc.openglFSCode;
     glShaderSource(fragmentShaderID, 1, &fragmentShaderSRC, nullptr);
     glCompileShader(fragmentShaderID);
     glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
@@ -71,24 +54,26 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(const utils::String& vertexShaderNa
     if (success == 0)
     {
         glGetProgramInfoLog(m_shaderProgramID, 1024, nullptr, &errorLog[0]);
-        throw OpenGLShaderCompileError(errorLog);
+        throw OpenGLShaderLinkError(errorLog);
     }
 
     glDeleteShader(vertexShaderID);
     glDeleteShader(fragmentShaderID);
+}
 
-    switch (operation)
-    {
-    case GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA:
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glBlendEquation(GL_FUNC_ADD);
-        break;
+uint32 OpenGLGraphicPipeline::findVertexUniformIndex(const String& name)
+{
+    return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
+}
 
-    case GraphicPipeline::BlendingOperation::one_minus_srcA_plus_srcA:
-        glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-        glBlendEquation(GL_FUNC_ADD);
-        break;
-    }
+uint32 OpenGLGraphicPipeline::findFragmentUniformIndex(const String& name)
+{
+    return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
+}
+
+OpenGLGraphicPipeline::~OpenGLGraphicPipeline()
+{
+    glDeleteProgram(m_shaderProgramID);
 }
 
 }

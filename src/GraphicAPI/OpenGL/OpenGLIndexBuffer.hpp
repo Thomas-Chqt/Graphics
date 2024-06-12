@@ -7,7 +7,6 @@
  * ---------------------------------------------------
  */
 
-#include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
 #include "Graphics/IndexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Types.hpp"
@@ -21,13 +20,12 @@ namespace gfx
 
 class OpenGLIndexBuffer : public IndexBuffer
 {
-private:
-    friend utils::SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const utils::Array<utils::uint32>&) const;
-
 public:
     OpenGLIndexBuffer()                         = delete;
     OpenGLIndexBuffer(const OpenGLIndexBuffer&) = delete;
     OpenGLIndexBuffer(OpenGLIndexBuffer&&)      = delete;
+
+    OpenGLIndexBuffer(const utils::Array<utils::uint32>& indices);
 
     inline GLuint indexBufferID() { return m_indexBufferID; }
     inline utils::uint64 indexCount() override { return static_cast<utils::uint64>(m_indexCount); }
@@ -35,8 +33,6 @@ public:
     ~OpenGLIndexBuffer() override;
 
 private:
-    OpenGLIndexBuffer(const utils::Array<utils::uint32>& indices);
-
     utils::Array<utils::uint32>::Size m_indexCount;
     GLuint m_indexBufferID;
 

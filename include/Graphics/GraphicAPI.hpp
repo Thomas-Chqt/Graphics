@@ -15,7 +15,7 @@
 #include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
-#include "UtilsCPP/String.hpp"
+#include "UtilsCPP/String.hpp" // IWYU pragma: keep
 #include "VertexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"

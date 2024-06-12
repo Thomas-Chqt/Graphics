@@ -38,8 +38,8 @@ gfx::GraphicPipeline::Descriptor makeGfxPipelineDescriptor(const utils::String& 
         graphicPipelineDescriptor.metalFSFunction = shaderName + "_fs";
     #endif 
     #if GFX_OPENGL_ENABLED
-        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".vs");
-        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".fs");
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(utils::String(OPENGL_SHADER_DIR) + utils::String("/") + shaderName + utils::String(".vs"));
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(utils::String(OPENGL_SHADER_DIR) + utils::String("/") + shaderName + utils::String(".fs"));
     #endif
 
     return graphicPipelineDescriptor;

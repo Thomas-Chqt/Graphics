@@ -17,11 +17,6 @@ using utils::Array;
 namespace gfx
 {
 
-OpenGLIndexBuffer::~OpenGLIndexBuffer()
-{
-    glDeleteBuffers(1, &m_indexBufferID);
-} 
-
 OpenGLIndexBuffer::OpenGLIndexBuffer(const Array<uint32>& indices)
 {
     glGenBuffers(1, &m_indexBufferID);
@@ -33,5 +28,10 @@ OpenGLIndexBuffer::OpenGLIndexBuffer(const Array<uint32>& indices)
 
     m_indexCount = indices.length();
 }
+
+OpenGLIndexBuffer::~OpenGLIndexBuffer()
+{
+    glDeleteBuffers(1, &m_indexBufferID);
+} 
 
 }

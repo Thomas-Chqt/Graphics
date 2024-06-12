@@ -10,14 +10,14 @@
 #ifndef OPENGLGRAPHICAPI_HPP
 # define OPENGLGRAPHICAPI_HPP
 
+#include "GraphicAPI/OpenGL/OpenGLFrameBuffer.hpp"
+#include "Graphics/Enums.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/Platform.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
-#include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window/OpenGLWindow.hpp"
@@ -30,55 +30,68 @@ namespace gfx
 
 class OpenGLGraphicAPI : public GraphicAPI
 {
-private:
-    friend utils::SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
-
 public:
     OpenGLGraphicAPI()                        = delete;
     OpenGLGraphicAPI(const OpenGLGraphicAPI&) = delete;
     OpenGLGraphicAPI(OpenGLGraphicAPI&&)      = delete;
 
-    void setRenderTarget(const utils::SharedPtr<Window>&) override;
-
-#ifdef GFX_IMGUI_ENABLED
+    OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
+    
+    #ifdef GFX_IMGUI_ENABLED
     void useForImGui(ImGuiConfigFlags flags = 0) override;
-#endif
+    #endif
 
-    inline void setClearColor(const math::rgba& color) override { m_clearColor = color; }
+    #ifdef GFX_METAL_ENABLED
+    inline void initMetalShaderLib(const utils::String& path) override {}
+    #endif
 
-    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const override;
-    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation = GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA) override;
+    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const override;
+    utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
-    utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) const override;
+    utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
+    inline utils::SharedPtr<FrameBuffer> screenFrameBuffer() const override { return m_screenFrameBuffer.staticCast<FrameBuffer>(); }
 
-    void beginFrame(bool clearBuffer = true) override;
+    inline void setLoadAction(LoadAction act) override { m_nextPassLoadAction = act; }
+    inline void setClearColor(math::rgba col) override { m_nextPassClearColor = col; }
+    void setRenderTarget(const utils::SharedPtr<FrameBuffer>&) override;
+
+    void beginFrame() override;
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
 
-    void setVertexUniform(utils::uint32 index, const math::vec4f& vec) override;
-    void setVertexUniform(utils::uint32 index, const math::mat4x4& mat) override;
+    void setVertexUniform(utils::uint32 index, const math::vec4f&) override;
+    void setVertexUniform(utils::uint32 index, const math::mat4x4&) override;
     void setVertexUniform(utils::uint32 index, const math::vec2f&) override;
-    void setVertexUniform(utils::uint32 index, const math::mat3x3& mat) override;
+    void setVertexUniform(utils::uint32 index, const math::mat3x3&) override;
     
-    void setFragmentUniform(utils::uint32 index, const math::vec4f& vec) override;
+    void setFragmentUniform(utils::uint32 index, const math::vec4f&) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
+    void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<FrameBuffer>&) override;
     
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
-    
+
+    void nextRenderPass() override;
+
     void endFrame() override;
 
     ~OpenGLGraphicAPI() override;
 
 private:
-    OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
+    void beginRenderPass();
+    void endRenderPass();
 
     utils::SharedPtr<OpenGLWindow> m_renderTarget;
-    math::rgba m_clearColor = BLACK;
-    utils::uint32 m_nextTextureUnit = 0;
+    utils::SharedPtr<OpenGLScreenFrameBuffer> m_screenFrameBuffer;
 
-    utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_frameObjects;
+    //pass time
+    LoadAction m_nextPassLoadAction = LoadAction::clear; 
+    math::rgba m_nextPassClearColor = BLACK; 
+    utils::SharedPtr<OpenGLFrameBuffer> m_nextPassTarget;
+    utils::uint32 m_nextTextureUnit = 0;
+    utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_passObjects;
 
 public:
     OpenGLGraphicAPI& operator = (const OpenGLGraphicAPI&) = delete;

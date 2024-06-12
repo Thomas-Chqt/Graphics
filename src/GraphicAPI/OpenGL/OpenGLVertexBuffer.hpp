@@ -11,34 +11,28 @@
 # define OPENGLVERTEXBUFFER_HPP
 
 #include "Graphics/VertexBuffer.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
-#include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
 
 namespace gfx
 {
 
 class OpenGLVertexBuffer : public VertexBuffer
 {
-private:
-    friend utils::SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const;
-
 public:
     OpenGLVertexBuffer()                          = delete;
     OpenGLVertexBuffer(const OpenGLVertexBuffer&) = delete;
     OpenGLVertexBuffer(OpenGLVertexBuffer&&)      = delete;
+
+    OpenGLVertexBuffer(void* data, utils::uint64 size, const utils::Array<VertexBuffer::LayoutElement>& layout);
 
     inline GLuint vertexArrayID() { return m_vertexArrayID; }
     
     ~OpenGLVertexBuffer() override;
 
 private:
-    OpenGLVertexBuffer(void* data, utils::uint64 size, const LayoutBase& layout);
-
     GLuint m_vertexArrayID;
     GLuint m_vertexBufferID;
-
 
 public:
     OpenGLVertexBuffer& operator = (const OpenGLVertexBuffer&) = delete;
