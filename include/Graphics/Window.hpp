@@ -12,6 +12,7 @@
 
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
+#include "UtilsCPP/Types.hpp"
 
 namespace gfx
 {
@@ -26,6 +27,9 @@ public:
 
     virtual void setCursorPos(int x, int y) = 0;
     virtual void setCursorVisibility(bool) = 0;
+
+    virtual void getWindowSize(utils::uint32* width, utils::uint32* height) = 0;
+    virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) = 0;
 
     virtual ~Window() = default;
 

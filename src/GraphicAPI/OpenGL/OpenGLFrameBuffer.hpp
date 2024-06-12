@@ -13,6 +13,8 @@
 #include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "GL/glew.h"
+#include "UtilsCPP/SharedPtr.hpp"
+#include "Window/OpenGLWindow.hpp"
 
 namespace gfx
 {
@@ -38,18 +40,22 @@ public:
 class OpenGLScreenFrameBuffer : public OpenGLFrameBuffer
 {
 public:
-    OpenGLScreenFrameBuffer()                               = default;
+    OpenGLScreenFrameBuffer()                               = delete;
     OpenGLScreenFrameBuffer(const OpenGLScreenFrameBuffer&) = delete;
     OpenGLScreenFrameBuffer(OpenGLScreenFrameBuffer&&)      = delete;
+
+    OpenGLScreenFrameBuffer(const utils::SharedPtr<OpenGLWindow>& window);
 
     void useForRendering() override;
 
     ~OpenGLScreenFrameBuffer() override = default;
 
+private:
+    utils::SharedPtr<OpenGLWindow> m_window;
+
 public:
     OpenGLScreenFrameBuffer& operator = (const OpenGLScreenFrameBuffer&) = delete;
     OpenGLScreenFrameBuffer& operator = (OpenGLScreenFrameBuffer&&)      = delete;
-
 };
 
 class OpenGLTextureFrameBuffer : public OpenGLFrameBuffer

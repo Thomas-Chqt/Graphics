@@ -44,15 +44,15 @@ namespace gfx
 OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget)
 {
     if (SharedPtr<OpenGLWindow> glWindow = renderTarget.dynamicCast<OpenGLWindow>())
-        m_renderTarget = glWindow;
+        m_window = glWindow;
     else
         throw utils::RuntimeError("Window is not OpenGLWindow");
     
-    m_renderTarget->makeContextCurrent();
+    m_window->makeContextCurrent();
     GLenum err = glewInit();
     assert(err == GLEW_OK);
 
-    m_screenFrameBuffer = utils::SharedPtr<OpenGLScreenFrameBuffer>(new OpenGLScreenFrameBuffer);
+    m_screenFrameBuffer = utils::SharedPtr<OpenGLScreenFrameBuffer>(new OpenGLScreenFrameBuffer(m_window));
     m_nextPassTarget = m_screenFrameBuffer.dynamicCast<OpenGLFrameBuffer>();
 }
 
@@ -60,13 +60,13 @@ OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget)
 void OpenGLGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 {
     assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
-    assert(m_renderTarget && "Render target need to be set before initializing imgui");
+    assert(m_window && "Render target need to be set before initializing imgui");
     
     ImGui::CreateContext();
     
     ImGui::GetIO().ConfigFlags = flags;
 
-    m_renderTarget->imGuiInit();
+    m_window->imGuiInit();
     #ifdef __APPLE__
         ImGui_ImplOpenGL3_Init("#version 150");
     #else
@@ -115,13 +115,13 @@ void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<FrameBuffer>& fBuf
 
 void OpenGLGraphicAPI::beginFrame()
 {
-    m_renderTarget->makeContextCurrent();
+    m_window->makeContextCurrent();
     
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplOpenGL3_NewFrame();
-        m_renderTarget->imGuiNewFrame();
+        m_window->imGuiNewFrame();
         ImGui::NewFrame();
     }
     #endif
@@ -248,7 +248,7 @@ void OpenGLGraphicAPI::endFrame()
     }
     #endif
 
-    m_renderTarget->swapBuffer();
+    m_window->swapBuffer();
 }
 
 OpenGLGraphicAPI::~OpenGLGraphicAPI()
@@ -257,7 +257,7 @@ OpenGLGraphicAPI::~OpenGLGraphicAPI()
     if (s_imguiEnabledAPI == this)
     {
         ImGui_ImplOpenGL3_Shutdown();
-        m_renderTarget->imGuiShutdown();
+        m_window->imGuiShutdown();
         ImGui::DestroyContext();
         s_imguiEnabledAPI = nullptr;
     }

@@ -8,7 +8,7 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLFrameBuffer.hpp"
-#include "UtilsCPP/RuntimeError.hpp"
+#include "UtilsCPP/Types.hpp"
 
 #include <GL/glew.h>
 #include <utility>
@@ -16,11 +16,17 @@
 namespace gfx
 {
 
+OpenGLScreenFrameBuffer::OpenGLScreenFrameBuffer(const utils::SharedPtr<OpenGLWindow>& window) : m_window(window)
+{
+}
+
 void OpenGLScreenFrameBuffer::useForRendering()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, 800 * 2, 600 * 2);
-
+    utils::uint32 width;
+    utils::uint32 height;
+    m_window->getFrameBufferSize(&width, &height);
+    glViewport(0, 0, width, height);
 }
 
 OpenGLTextureFrameBuffer::OpenGLTextureFrameBuffer(OpenGLTexture&& colorTexture) : m_colorTexture(std::move(colorTexture))
@@ -36,9 +42,6 @@ void OpenGLTextureFrameBuffer::useForRendering()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferID);
     glViewport(0, 0, m_colorTexture.width(), m_colorTexture.height());
-    
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        throw utils::RuntimeError("glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE");
 }
 
 }

@@ -83,7 +83,7 @@ private:
     void beginRenderPass();
     void endRenderPass();
 
-    utils::SharedPtr<OpenGLWindow> m_renderTarget;
+    utils::SharedPtr<OpenGLWindow> m_window;
     utils::SharedPtr<OpenGLScreenFrameBuffer> m_screenFrameBuffer;
 
     //pass time
