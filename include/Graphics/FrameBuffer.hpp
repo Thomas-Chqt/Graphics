@@ -10,7 +10,7 @@
 #ifndef FRAMEBUFFER_HPP
 # define FRAMEBUFFER_HPP
 
-#include "Graphics/Enums.hpp"
+#include "Enums.hpp"
 #include "UtilsCPP/Types.hpp"
 
 namespace gfx
@@ -29,6 +29,8 @@ public:
 public:
     FrameBuffer(const FrameBuffer&) = delete;
     FrameBuffer(FrameBuffer&&)      = delete;
+
+    virtual PixelFormat pixelFormat() = 0;
 
     virtual ~FrameBuffer() = default;
 

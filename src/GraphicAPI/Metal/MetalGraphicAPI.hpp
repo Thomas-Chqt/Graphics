@@ -67,11 +67,13 @@ public:
     utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
     utils::SharedPtr<FrameBuffer> screenFrameBuffer() const override;
 
+    void beginFrame() override;
+
     inline void setLoadAction(LoadAction act) override { m_nextPassLoadAction = act; }
     inline void setClearColor(math::rgba col) override { m_nextPassClearColor = col; }
     void setRenderTarget(const utils::SharedPtr<FrameBuffer>&) override;
 
-    void beginFrame() override;
+    void beginRenderPass() override;
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
@@ -88,16 +90,13 @@ public:
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
 
-    void nextRenderPass() override;
+    void endRenderPass() override;
     
     void endFrame() override;
 
     ~MetalGraphicAPI() override;
 
 private:
-    void beginRenderPass();
-    void endRenderPass();
-
     utils::SharedPtr<MetalWindow> m_window;
     id<MTLLibrary> m_shaderLib = nullptr;
 
