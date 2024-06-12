@@ -13,11 +13,12 @@
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
+    template<typename T> using id = void*;
+
     class MTLBuffer;
     class MTLDevice;
 #endif // OBJCPP
 
-#include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "UtilsCPP/Types.hpp"
 
@@ -26,21 +27,18 @@ namespace gfx
 
 class MetalVertexBuffer : public VertexBuffer
 {
-private:
-    friend utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void*, utils::uint64, utils::uint32, const utils::Array<VertexBuffer::LayoutElement>&) const;
-
 public:
     MetalVertexBuffer()                         = delete;
     MetalVertexBuffer(const MetalVertexBuffer&) = delete;
     MetalVertexBuffer(MetalVertexBuffer&&)      = delete;
+
+    MetalVertexBuffer(id<MTLDevice> device, void* data, utils::uint64 size);
 
     inline id<MTLBuffer> mtlBuffer() { return m_mtlBuffer; }
     
     ~MetalVertexBuffer() override;
 
 private:
-    MetalVertexBuffer(id<MTLDevice> device, void* data, utils::uint64 size);
-
     id<MTLBuffer> m_mtlBuffer;
 
 public:

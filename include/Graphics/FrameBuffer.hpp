@@ -10,6 +10,9 @@
 #ifndef FRAMEBUFFER_HPP
 # define FRAMEBUFFER_HPP
 
+#include "Graphics/Enums.hpp"
+#include "UtilsCPP/Types.hpp"
+
 namespace gfx
 {
 

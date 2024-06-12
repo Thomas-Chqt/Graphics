@@ -12,8 +12,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
-#include "Graphics/ShaderLibrary.hpp"
-
 #include "Graphics/Texture.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
@@ -21,36 +19,58 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
+#include "UtilsCPP/String.hpp"
 #include "Vertex.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h" 
 
+template<>
+utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+{
+    return {
+        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)0 },
+        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, uv) },
+    };
+}
+
+gfx::GraphicPipeline::Descriptor makeGfxPipelineDescriptor(const utils::String& shaderName)
+{
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    #ifdef GFX_METAL_ENABLED
+        graphicPipelineDescriptor.metalVSFunction = shaderName + "_vs";
+        graphicPipelineDescriptor.metalFSFunction = shaderName + "_fs";
+    #endif 
+    #if GFX_OPENGL_ENABLED
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".vs");
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".fs");
+    #endif
+
+    return graphicPipelineDescriptor;
+}
+
+utils::SharedPtr<gfx::Texture> textureFromFile(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::String& path)
+{
+    int width;
+    int height;
+    stbi_set_flip_vertically_on_load(true);
+    stbi_uc* imgBytes = stbi_load(path, &width, &height, nullptr, STBI_rgb_alpha);
+
+    gfx::Texture::Descriptor textureDescriptor;
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
+
+    utils::SharedPtr<gfx::Texture> texture = api->newTexture(textureDescriptor);
+    texture->setBytes(imgBytes);
+
+    stbi_image_free(imgBytes);
+
+    return texture;
+}
+
 int main()
 {
     gfx::Platform::init();
-    gfx::ShaderLibrary::init();
-
-    #ifdef GFX_METAL_ENABLED
-        gfx::ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
-    #endif
-
-    gfx::ShaderLibrary::shared().registerShader("texturedSquare_vs"
-        #if GFX_METAL_ENABLED
-            , "texturedSquare_vs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.vs")
-        #endif
-    );
-    gfx::ShaderLibrary::shared().registerShader("texturedSquare_fs"
-        #if GFX_METAL_ENABLED
-            , "texturedSquare_fs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.fs")
-        #endif
-    );
 
     const utils::Array<Vertex> vertices = {
         { math::vec2f{-0.5, -0.5}, math::vec2f{ 0.0, 0.0 } },
@@ -61,21 +81,17 @@ int main()
 
     const utils::Array<utils::uint32> indices = utils::Array<utils::uint32>({ 0, 1, 2, 0, 2, 3 });
 
-
     utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newDefaultWindow(800, 600);
     utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newDefaultGraphicAPI(window);
 
-    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("texturedSquare_vs", "texturedSquare_fs");
+    #ifdef GFX_METAL_ENABLED
+        graphicAPI->initMetalShaderLib(MTL_SHADER_LIB);
+    #endif    
+
+    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline(makeGfxPipelineDescriptor("texturedSquare"));
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(vertices);
     utils::SharedPtr<gfx::IndexBuffer> indexBuffer = graphicAPI->newIndexBuffer(indices);
-
-    int width;
-    int height;
-    stbi_set_flip_vertically_on_load(true);
-    stbi_uc* imgBytes = stbi_load(RESSOURCES_DIR"/mc_grass.jpg", &width, &height, nullptr, STBI_rgb_alpha);
-    utils::SharedPtr<gfx::Texture> texture = graphicAPI->newTexture(width, height);
-    texture->setBytes(imgBytes);
-    stbi_image_free(imgBytes);
+    utils::SharedPtr<gfx::Texture> grassTexture = textureFromFile(graphicAPI, RESSOURCES_DIR"/mc_grass.jpg");
 
     bool running = true;
 
@@ -99,12 +115,11 @@ int main()
         
         graphicAPI->useGraphicsPipeline(graphicPipeline);
         graphicAPI->useVertexBuffer(vertexBuffer);
-        graphicAPI->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), texture);
+        graphicAPI->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), grassTexture);
         graphicAPI->drawIndexedVertices(indexBuffer);
 
         graphicAPI->endFrame();
     }
 
-    gfx::ShaderLibrary::terminated();
     gfx::Platform::terminate();
 }

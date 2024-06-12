@@ -10,7 +10,6 @@
 #ifndef METALTEXTURE_HPP
 # define METALTEXTURE_HPP
 
-#include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/Types.hpp"
 

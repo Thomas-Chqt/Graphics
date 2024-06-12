@@ -9,17 +9,41 @@
 
 #include "GraphicAPI/Metal/MetalFrameBuffer.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
+#include <algorithm>
 
 namespace gfx
 {
+
+MetalLayerFrameBuffer::MetalLayerFrameBuffer(CAMetalLayer* metalLayer) : m_metalLayer(metalLayer)
+{
+}
+
+id<MTLTexture> MetalLayerFrameBuffer::mtlRenderTexture()
+{
+    if (m_currentDrawable == nullptr)
+        m_currentDrawable = [[m_metalLayer nextDrawable] retain];
+    return m_currentDrawable.texture;
+}
+
+void MetalLayerFrameBuffer::releaseCurrentDrawable()
+{
+    [m_currentDrawable release];
+    m_currentDrawable = nullptr;
+}
+
+MetalLayerFrameBuffer::~MetalLayerFrameBuffer()
+{
+    if (m_currentDrawable)
+        [m_currentDrawable release];
+}
 
 MetalTextureFrameBuffer::MetalTextureFrameBuffer(MetalTexture&& colorTexture) : m_colorTexture(std::move(colorTexture))
 {
 }
 
-MetalDrawableFrameBuffer::MetalDrawableFrameBuffer(id<CAMetalDrawable> caDrawable)
+id<MTLTexture> MetalTextureFrameBuffer::mtlRenderTexture()
 {
-
+    return m_colorTexture.mtlTexture();
 }
 
 }

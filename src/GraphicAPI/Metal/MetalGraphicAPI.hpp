@@ -10,9 +10,9 @@
 #ifndef METALGRAPHICAPI_HPP
 # define METALGRAPHICAPI_HPP
 
+#include "GraphicAPI/Metal/MetalFrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/Platform.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
@@ -35,7 +35,8 @@
     class MTLCommandBuffer;
     class CAMetalDrawable;
     class MTLRenderCommandEncoder;
-#endif // OBJCPP
+    class MTLRenderPassDescriptor;
+#endif // __OBJC__
 
 namespace gfx
 {
@@ -44,16 +45,19 @@ class MetalFrameBuffer;
 
 class MetalGraphicAPI : public GraphicAPI
 {
-private:
-    friend utils::SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
-
 public:
     MetalGraphicAPI()                       = delete;
     MetalGraphicAPI(const MetalGraphicAPI&) = delete;
     MetalGraphicAPI(MetalGraphicAPI&&)      = delete;
 
+    MetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
+
     #ifdef GFX_IMGUI_ENABLED
     void useForImGui(ImGuiConfigFlags flags = 0) override;
+    #endif
+
+    #ifdef GFX_METAL_ENABLED
+    void initMetalShaderLib(const utils::String& path) override;
     #endif
 
     utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const override;
@@ -61,9 +65,10 @@ public:
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
     utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
+    utils::SharedPtr<FrameBuffer> screenFrameBuffer() const override;
 
-    void setLoadAction(LoadAction) override;
-    void setClearColor(math::rgba) override;
+    inline void setLoadAction(LoadAction act) override { m_nextPassLoadAction = act; }
+    inline void setClearColor(math::rgba col) override { m_nextPassClearColor = col; }
     void setRenderTarget(const utils::SharedPtr<FrameBuffer>&) override;
 
     void beginFrame() override;
@@ -90,8 +95,6 @@ public:
     ~MetalGraphicAPI() override;
 
 private:
-    MetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
-
     void beginRenderPass();
     void endRenderPass();
 
@@ -101,15 +104,16 @@ private:
     // life time
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
+    utils::SharedPtr<MetalLayerFrameBuffer> m_metalLayerFrameBuffer;
 
     // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
-    id<CAMetalDrawable> m_currentDrawable = nullptr;
+    MTLRenderPassDescriptor* m_imguiRenderPassDesc = nullptr;
 
     // pass time
     LoadAction m_nextPassLoadAction = LoadAction::clear; 
     math::rgba m_nextPassClearColor = BLACK; 
-    utils::SharedPtr<FrameBuffer> m_nextPassTarget;
+    utils::SharedPtr<MetalFrameBuffer> m_nextPassTarget;
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
     utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_renderPassObjects;
 

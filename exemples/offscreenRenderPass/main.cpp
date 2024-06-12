@@ -12,36 +12,38 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
-#include "Graphics/ShaderLibrary.hpp"
-
+#include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Vertex.hpp"
+#include "imgui/imgui.h"
+
+template<>
+utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+{
+    return {
+        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)0 },
+        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, uv) },
+    };
+}
+
+gfx::GraphicPipeline::Descriptor makeGfxPipelineDescriptor(const utils::String& shaderName)
+{
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    #ifdef GFX_METAL_ENABLED
+        graphicPipelineDescriptor.metalVSFunction = shaderName + "_vs";
+        graphicPipelineDescriptor.metalFSFunction = shaderName + "_fs";
+    #endif 
+    #if GFX_OPENGL_ENABLED
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".vs");
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".fs");
+    #endif
+
+    return graphicPipelineDescriptor;
+}
 
 int main()
 {
     gfx::Platform::init();
-    gfx::ShaderLibrary::init();
-
-    #ifdef GFX_METAL_ENABLED
-        gfx::ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
-    #endif
-
-    #if defined (GFX_METAL_ENABLED) && defined (GFX_OPENGL_ENABLED)
-        gfx::ShaderLibrary::shared().registerShader("triangle_vs",       "triangle_vs",       utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle.vs"));
-        gfx::ShaderLibrary::shared().registerShader("triangle_fs",       "triangle_fs",       utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle.fs"));
-        gfx::ShaderLibrary::shared().registerShader("texturedSquare_vs", "texturedSquare_vs", utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.vs"));
-        gfx::ShaderLibrary::shared().registerShader("texturedSquare_fs", "texturedSquare_fs", utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.fs"));
-    #elif defined (GFX_METAL_ENABLED)
-        gfx::ShaderLibrary::shared().registerShader("triangle_vs",       "triangle_vs");
-        gfx::ShaderLibrary::shared().registerShader("triangle_fs",       "triangle_fs");
-        gfx::ShaderLibrary::shared().registerShader("texturedSquare_vs", "texturedSquare_vs");
-        gfx::ShaderLibrary::shared().registerShader("texturedSquare_fs", "texturedSquare_fs");
-    #elif defined (GFX_OPENGL_ENABLED)
-        gfx::ShaderLibrary::shared().registerShader("triangle_vs",       utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle.vs"));
-        gfx::ShaderLibrary::shared().registerShader("triangle_fs",       utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle.fs"));
-        gfx::ShaderLibrary::shared().registerShader("texturedSquare_vs", utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.vs"));
-        gfx::ShaderLibrary::shared().registerShader("texturedSquare_fs", utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.fs"));
-    #endif
 
     const utils::Array<Vertex> triangle_vertices = {
         { math::vec2f{ -1, -1 }, math::vec2f{ 0, 0 } },
@@ -60,14 +62,29 @@ int main()
     utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newDefaultWindow(800, 600);
     utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newDefaultGraphicAPI(window);
 
-    utils::SharedPtr<gfx::GraphicPipeline> triangleGfxPipeline = graphicAPI->newGraphicsPipeline("triangle_vs", "triangle_fs");
-    utils::SharedPtr<gfx::VertexBuffer>    triangleVtxBuffer   = graphicAPI->newVertexBuffer(triangle_vertices);
+    #ifdef GFX_IMGUI_ENABLED
+        graphicAPI->useForImGui(
+            ImGuiConfigFlags_NavEnableKeyboard |
+            ImGuiConfigFlags_DockingEnable     |
+            ImGuiConfigFlags_ViewportsEnable
+        );
+    #endif
 
-    utils::SharedPtr<gfx::GraphicPipeline> squareGfxPipeline   = graphicAPI->newGraphicsPipeline("texturedSquare_vs", "texturedSquare_fs");
-    utils::SharedPtr<gfx::VertexBuffer>    squareVtxBuffer     = graphicAPI->newVertexBuffer(square_vertices);
-    utils::SharedPtr<gfx::IndexBuffer>     squateIdxBuffer     = graphicAPI->newIndexBuffer(square_indices);
+    #ifdef GFX_METAL_ENABLED
+        graphicAPI->initMetalShaderLib(MTL_SHADER_LIB);
+    #endif    
 
-    utils::SharedPtr<gfx::FrameBuffer>     offscreenFrameBuf   = graphicAPI->newFrameBuffer(1000, 1000);
+    utils::SharedPtr<gfx::GraphicPipeline> triangleGfxPipeline = graphicAPI->newGraphicsPipeline(makeGfxPipelineDescriptor("triangle"));
+    utils::SharedPtr<gfx::VertexBuffer> triangleVtxBuffer = graphicAPI->newVertexBuffer(triangle_vertices);
+
+    utils::SharedPtr<gfx::GraphicPipeline> squareGfxPipeline = graphicAPI->newGraphicsPipeline(makeGfxPipelineDescriptor("texturedSquare"));
+    utils::SharedPtr<gfx::VertexBuffer> squareVtxBuffer = graphicAPI->newVertexBuffer(square_vertices);
+    utils::SharedPtr<gfx::IndexBuffer> squateIdxBuffer = graphicAPI->newIndexBuffer(square_indices);
+
+    gfx::FrameBuffer::Descriptor frameBufferDescriptor;
+    frameBufferDescriptor.width = 1000;
+    frameBufferDescriptor.height = 1000;
+    utils::SharedPtr<gfx::FrameBuffer> offscreenFrameBuf = graphicAPI->newFrameBuffer(frameBufferDescriptor);
 
     bool running = true;
 
@@ -87,17 +104,21 @@ int main()
     {
         gfx::Platform::shared().pollEvents();
         
-        gfx::RenderPassDescriptor offscreenRenderPassDescriptor;
-        offscreenRenderPassDescriptor.clearColor = RED;
-        offscreenRenderPassDescriptor.frameBuffer = offscreenFrameBuf;
+        graphicAPI->setClearColor(RED);
+        graphicAPI->setRenderTarget(offscreenFrameBuf);
+        graphicAPI->beginFrame();
 
-        graphicAPI->beginFrame(offscreenRenderPassDescriptor);
-        
         graphicAPI->useGraphicsPipeline(triangleGfxPipeline);
         graphicAPI->useVertexBuffer(triangleVtxBuffer);
         graphicAPI->drawVertices(0, 3);
 
+        graphicAPI->setClearColor(BLACK);
+        graphicAPI->setRenderTarget(graphicAPI->screenFrameBuffer());
         graphicAPI->nextRenderPass();
+
+        #ifdef GFX_IMGUI_ENABLED
+        ImGui::Text("Hello World");
+        #endif
 
         graphicAPI->useGraphicsPipeline(squareGfxPipeline);
         graphicAPI->useVertexBuffer(squareVtxBuffer);
@@ -107,6 +128,5 @@ int main()
         graphicAPI->endFrame();
     }
 
-    gfx::ShaderLibrary::terminated();
     gfx::Platform::terminate();
 };

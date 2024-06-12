@@ -12,40 +12,41 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
-#include "Graphics/ShaderLibrary.hpp"
 
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
+#include "UtilsCPP/String.hpp"
 #include "Vertex.hpp"
+
+template<>
+utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+{
+    return {
+        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)0 }
+    };
+}
+
+gfx::GraphicPipeline::Descriptor makeGfxPipelineDescriptor(const utils::String& shaderName)
+{
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    #ifdef GFX_METAL_ENABLED
+        graphicPipelineDescriptor.metalVSFunction = shaderName + "_vs";
+        graphicPipelineDescriptor.metalFSFunction = shaderName + "_fs";
+    #endif 
+    #if GFX_OPENGL_ENABLED
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".vs");
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".fs");
+    #endif
+
+    return graphicPipelineDescriptor;
+}
 
 int main()
 {
     gfx::Platform::init();
-    gfx::ShaderLibrary::init();
-
-    #ifdef GFX_METAL_ENABLED
-        gfx::ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
-    #endif
-
-    gfx::ShaderLibrary::shared().registerShader("indexedShape_vs"
-        #if GFX_METAL_ENABLED
-            , "indexedShape_vs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/indexedShape.vs")
-        #endif
-    );
-    gfx::ShaderLibrary::shared().registerShader("indexedShape_fs"
-        #if GFX_METAL_ENABLED
-            , "indexedShape_fs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/indexedShape.fs")
-        #endif
-    );
 
     const utils::Array<Vertex> vertices = {
         {-0.5, -0.5},
@@ -56,11 +57,14 @@ int main()
 
     const utils::Array<utils::uint32> indices = utils::Array<utils::uint32>({ 0, 1, 2, 0, 2, 3 });
 
-
     utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newDefaultWindow(800, 600);
     utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newDefaultGraphicAPI(window);
 
-    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("indexedShape_vs", "indexedShape_fs");
+    #ifdef GFX_METAL_ENABLED
+        graphicAPI->initMetalShaderLib(MTL_SHADER_LIB);
+    #endif    
+
+    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline(makeGfxPipelineDescriptor("indexedShape"));
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(vertices);
     utils::SharedPtr<gfx::IndexBuffer> indexBuffer = graphicAPI->newIndexBuffer(indices);
 
@@ -91,6 +95,5 @@ int main()
         graphicAPI->endFrame();
     }
 
-    gfx::ShaderLibrary::terminated();
     gfx::Platform::terminate();
 }

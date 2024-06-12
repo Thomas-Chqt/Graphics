@@ -13,7 +13,6 @@
 #include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "UtilsCPP/Dictionary.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 
@@ -33,14 +32,13 @@ namespace gfx
 {
 
 class MetalGraphicPipeline : public GraphicPipeline
-{
-private:
-    friend utils::SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor&) const;
-    
+{    
 public:
     MetalGraphicPipeline()                            = delete;
     MetalGraphicPipeline(const MetalGraphicPipeline&) = delete;
     MetalGraphicPipeline(MetalGraphicPipeline&&)      = delete;
+
+    MetalGraphicPipeline(id<MTLDevice>, id<MTLLibrary>, const GraphicPipeline::Descriptor&);
 
     inline utils::uint32 findVertexUniformIndex(const utils::String& name) override { return m_vertexUniformsIndices[name]; }
     inline utils::uint32 findFragmentUniformIndex(const utils::String& name) override { return m_fragmentUniformsIndices[name]; }
@@ -50,8 +48,6 @@ public:
     ~MetalGraphicPipeline();
 
 private:
-    MetalGraphicPipeline(id<MTLDevice>, id<MTLLibrary>, const GraphicPipeline::Descriptor&);
-
     id<MTLRenderPipelineState> m_renderPipelineState = nullptr;
 
     utils::Dictionary<utils::String, utils::uint32> m_vertexUniformsIndices;

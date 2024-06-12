@@ -12,7 +12,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
-#include "Graphics/ShaderLibrary.hpp"
 #include <cmath>
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
@@ -23,31 +22,32 @@
 
 #include "Vertex.hpp"
 
+template<>
+utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+{
+    return {
+        { 3, Type::FLOAT, false, sizeof(Vertex), (void*)0 },
+    };
+}
+
+gfx::GraphicPipeline::Descriptor makeGfxPipelineDescriptor(const utils::String& shaderName)
+{
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    #ifdef GFX_METAL_ENABLED
+        graphicPipelineDescriptor.metalVSFunction = shaderName + "_vs";
+        graphicPipelineDescriptor.metalFSFunction = shaderName + "_fs";
+    #endif 
+    #if GFX_OPENGL_ENABLED
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".vs");
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR + "/" + shaderName + ".fs");
+    #endif
+
+    return graphicPipelineDescriptor;
+}
+
 int main()
 {
     gfx::Platform::init();
-    gfx::ShaderLibrary::init();
-
-    #ifdef GFX_METAL_ENABLED
-        gfx::ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
-    #endif
-
-    gfx::ShaderLibrary::shared().registerShader("flatColorCube_vs"
-        #if GFX_METAL_ENABLED
-            , "flatColorCube_vs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColorCube.vs")
-        #endif
-    );
-    gfx::ShaderLibrary::shared().registerShader("flatColorCube_fs"
-        #if GFX_METAL_ENABLED
-            , "flatColorCube_fs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColorCube.fs")
-        #endif
-    );
 
     const utils::Array<Vertex> vertices = {
         { -0.5, -0.5, -0.5 },
@@ -79,7 +79,11 @@ int main()
         ImGuiConfigFlags_ViewportsEnable
     );
 
-    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("flatColorCube_vs", "flatColorCube_fs");
+    #ifdef GFX_METAL_ENABLED
+        graphicAPI->initMetalShaderLib(MTL_SHADER_LIB);
+    #endif
+
+    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline(makeGfxPipelineDescriptor("flatColorCube"));
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(vertices);
     utils::SharedPtr<gfx::IndexBuffer> indexBuffer = graphicAPI->newIndexBuffer(indices);
 
@@ -140,6 +144,5 @@ int main()
         graphicAPI->endFrame();
     }
 
-    gfx::ShaderLibrary::terminated();
     gfx::Platform::terminate();
 }

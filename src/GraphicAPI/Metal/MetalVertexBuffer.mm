@@ -14,17 +14,17 @@
 namespace gfx
 {
 
-MetalVertexBuffer::~MetalVertexBuffer()
-{
-    [m_mtlBuffer release];
-}
-
 MetalVertexBuffer::MetalVertexBuffer(id<MTLDevice> device, void* data, utils::uint64 size)
 {
     m_mtlBuffer = [device newBufferWithBytes:data
                                       length:size
                                      options:MTLResourceStorageModeShared];
     assert(m_mtlBuffer);
+}
+
+MetalVertexBuffer::~MetalVertexBuffer()
+{
+    [m_mtlBuffer release];
 }
 
 }

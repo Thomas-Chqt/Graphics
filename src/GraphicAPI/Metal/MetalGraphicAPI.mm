@@ -47,9 +47,23 @@ using utils::Array;
 namespace gfx
 {
 
-SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const SharedPtr<Window>& renderTarget) const
+MetalGraphicAPI::MetalGraphicAPI(const SharedPtr<Window>& renderTarget)
 {
-    return SharedPtr<GraphicAPI>(new MetalGraphicAPI(renderTarget));
+    if (SharedPtr<MetalWindow> mtlWindow = renderTarget.dynamicCast<MetalWindow>())
+        m_window = mtlWindow;
+    else
+        throw utils::RuntimeError("Window is not MetalWindow");
+
+    m_mtlDevice = MTLCreateSystemDefaultDevice();
+    assert(m_mtlDevice); // TODO use throw
+    
+    m_window->metalLayer().device = m_mtlDevice;
+    m_metalLayerFrameBuffer = SharedPtr<MetalLayerFrameBuffer>(new MetalLayerFrameBuffer(m_window->metalLayer()));
+
+    m_commandQueue = [m_mtlDevice newCommandQueue];
+    assert(m_commandQueue); // TODO use throw
+
+    m_nextPassTarget = m_metalLayerFrameBuffer.staticCast<MetalFrameBuffer>();
 }
 
 #ifdef GFX_IMGUI_ENABLED
@@ -64,6 +78,15 @@ void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
     m_window->imGuiInit();
     ImGui_ImplMetal_Init(m_mtlDevice);
     s_imguiEnabledAPI = this;
+}
+#endif
+
+#ifdef GFX_METAL_ENABLED
+void MetalGraphicAPI::initMetalShaderLib(const utils::String& path)
+{
+    NSError *error;
+    NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:path encoding:NSUTF8StringEncoding] autorelease];
+    m_shaderLib = [m_mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:&error];
 }
 #endif
 
@@ -121,28 +144,36 @@ utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const FrameBuffer:
 	}
     colorTextureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
 
-    return SharedPtr<FrameBuffer>(new MetalFrameBuffer(MetalTexture(m_mtlDevice, colorTextureDescriptor)));
+    return SharedPtr<FrameBuffer>(new MetalTextureFrameBuffer(MetalTexture(m_mtlDevice, colorTextureDescriptor)));
 }}
+
+utils::SharedPtr<FrameBuffer> MetalGraphicAPI::screenFrameBuffer() const
+{
+    return m_metalLayerFrameBuffer.staticCast<FrameBuffer>();
+}
+
+void MetalGraphicAPI::setRenderTarget(const utils::SharedPtr<FrameBuffer>& frameBuffer)
+{
+    if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = frameBuffer.dynamicCast<MetalFrameBuffer>())
+        m_nextPassTarget = mtlFrameBuffer;
+    else
+        throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
+}
 
 void MetalGraphicAPI::beginFrame()
 {
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
-    assert(m_commandBuffer);
-
-    m_currentDrawable = [[m_window->metalLayer() nextDrawable] retain];
-    assert(m_currentDrawable);
+    assert(m_commandBuffer); // TODO use throw
 
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
-        MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
-    
-        renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionLoad;
-        renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-        renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
-
-        ImGui_ImplMetal_NewFrame(renderPassDescriptor);
         m_window->imGuiNewFrame();
+        m_imguiRenderPassDesc = [[MTLRenderPassDescriptor alloc] init];
+        m_imguiRenderPassDesc.colorAttachments[0].loadAction = MTLLoadActionLoad;
+        m_imguiRenderPassDesc.colorAttachments[0].storeAction = MTLStoreActionStore;
+        m_imguiRenderPassDesc.colorAttachments[0].texture = m_metalLayerFrameBuffer->mtlRenderTexture();
+        ImGui_ImplMetal_NewFrame(m_imguiRenderPassDesc);
         ImGui::NewFrame();
     }
     #endif
@@ -247,11 +278,16 @@ void MetalGraphicAPI::nextRenderPass()
 
 void MetalGraphicAPI::endFrame() { @autoreleasepool
 {
+    endRenderPass();
+
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
         ImGui::Render();
-        ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
+        
+        id<MTLRenderCommandEncoder> renderCommandEncoder = [m_commandBuffer renderCommandEncoderWithDescriptor:m_imguiRenderPassDesc];
+        ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, renderCommandEncoder);
+        [renderCommandEncoder endEncoding];
 
         if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
         {
@@ -260,13 +296,13 @@ void MetalGraphicAPI::endFrame() { @autoreleasepool
         }
     }
     #endif
-
-    endRenderPass();
     
-    [m_commandBuffer presentDrawable:m_currentDrawable];
+    if (m_metalLayerFrameBuffer->currentDrawable())
+        [m_commandBuffer presentDrawable:m_metalLayerFrameBuffer->currentDrawable()];
+
     [m_commandBuffer commit];
 
-    [m_currentDrawable release];
+    m_metalLayerFrameBuffer->releaseCurrentDrawable();
     [m_commandBuffer release];
 }}
 
@@ -282,25 +318,11 @@ MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
     }
     #endif
 
+    if (m_shaderLib)
+        [m_shaderLib release];
     [m_commandQueue release];
     [m_mtlDevice release];
 }}
-
-MetalGraphicAPI::MetalGraphicAPI(const SharedPtr<Window>& renderTarget)
-{
-    if (SharedPtr<MetalWindow> mtlWindow = renderTarget.dynamicCast<MetalWindow>())
-        m_window = mtlWindow;
-    else
-        throw utils::RuntimeError("Window is not MetalWindow");
-
-    m_mtlDevice = MTLCreateSystemDefaultDevice();
-    assert(m_mtlDevice);
-    
-    m_window->metalLayer().device = m_mtlDevice;
-
-    m_commandQueue = [m_mtlDevice newCommandQueue];
-    assert(m_commandQueue);
-}
 
 void MetalGraphicAPI::beginRenderPass() { @autoreleasepool
 {
@@ -317,7 +339,7 @@ void MetalGraphicAPI::beginRenderPass() { @autoreleasepool
     renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
     
     if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = m_nextPassTarget.dynamicCast<MetalFrameBuffer>())
-        renderPassDescriptor.colorAttachments[0].texture = mtlFrameBuffer->mtlColorTexture();
+        renderPassDescriptor.colorAttachments[0].texture = mtlFrameBuffer->mtlRenderTexture();
     else
         throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
 

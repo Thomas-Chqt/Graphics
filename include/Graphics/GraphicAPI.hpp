@@ -15,6 +15,7 @@
 #include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
+#include "UtilsCPP/String.hpp"
 #include "VertexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -32,16 +33,20 @@ class GraphicAPI
 {
 public:
     GraphicAPI(const GraphicAPI&) = delete;
-    GraphicAPI(GraphicAPI&&) = delete;
+    GraphicAPI(GraphicAPI&&)      = delete;
 
     #ifdef GFX_IMGUI_ENABLED
     virtual void useForImGui(ImGuiConfigFlags flags = 0) = 0;
     #endif
 
+    #ifdef GFX_METAL_ENABLED
+    virtual void initMetalShaderLib(const utils::String& path) = 0;
+    #endif
+
     template<typename T>
     inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) const
     {
-        return newVertexBuffer((const T*)vertices, vertices.length(), sizeof(T), VertexBuffer::getLayout<T>());
+        return newVertexBuffer((void*)(const T*)vertices, vertices.length(), sizeof(T), VertexBuffer::getLayout<T>());
     }
 
     virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const = 0;
@@ -49,10 +54,11 @@ public:
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>&) const = 0;
     virtual utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const = 0;
     virtual utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const = 0;
+    virtual utils::SharedPtr<FrameBuffer> screenFrameBuffer() const = 0;
 
-    virtual void setLoadAction(LoadAction);
-    virtual void setClearColor(math::rgba);
-    virtual void setRenderTarget(const utils::SharedPtr<FrameBuffer>&);
+    virtual void setLoadAction(LoadAction) = 0;
+    virtual void setClearColor(math::rgba) = 0;
+    virtual void setRenderTarget(const utils::SharedPtr<FrameBuffer>&) = 0;
 
     virtual void beginFrame() = 0;
 
@@ -80,7 +86,6 @@ public:
 protected:
     GraphicAPI() = default;
 
-
     #ifdef GFX_IMGUI_ENABLED
     static GraphicAPI* s_imguiEnabledAPI;
     #endif
@@ -89,6 +94,7 @@ public:
     GraphicAPI& operator = (const GraphicAPI&) = delete;
     GraphicAPI& operator = (GraphicAPI&&)      = delete;
 };
+
 }
 
 #endif // GRAPHICAPI_HPP

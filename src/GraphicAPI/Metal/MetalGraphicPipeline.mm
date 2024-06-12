@@ -16,11 +16,6 @@
 namespace gfx
 {
 
-MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
-{
-    [m_renderPipelineState release];
-}}
-
 MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, const GraphicPipeline::Descriptor& descriptor) { @autoreleasepool
 {
     NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:descriptor.metalVSFunction encoding:NSUTF8StringEncoding] autorelease];
@@ -97,6 +92,11 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
 
     for (uint32 i = 0; i < fragmentBindings.count; i++)
         m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+}}
+
+MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
+{
+    [m_renderPipelineState release];
 }}
 
 }
