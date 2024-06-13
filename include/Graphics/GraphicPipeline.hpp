@@ -12,6 +12,7 @@
 
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "Graphics/Enums.hpp"
 
 namespace gfx
 {
@@ -19,7 +20,18 @@ namespace gfx
 class GraphicPipeline
 {
 public:
-    enum class BlendingOperation { srcA_plus_1_minus_srcA, one_minus_srcA_plus_srcA };
+    struct Descriptor
+    {
+        utils::String metalVSFunction;
+        utils::String metalFSFunction;
+
+        utils::String openglVSCode;
+        utils::String openglFSCode;
+
+        gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
+        
+        gfx::BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
+    };
 
 public:
     GraphicPipeline(const GraphicPipeline&) = delete;

@@ -10,9 +10,8 @@
 #ifndef OPENGLTEXTURE_HPP
 # define OPENGLTEXTURE_HPP
 
-#include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
+#include "Graphics/Enums.hpp"
 #include "Graphics/Texture.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
 
@@ -21,13 +20,12 @@ namespace gfx
 
 class OpenGLTexture : public Texture
 {
-private:
-    friend utils::SharedPtr<Texture> OpenGLGraphicAPI::newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat pxFormat) const;
-
 public:
     OpenGLTexture()                     = delete;
     OpenGLTexture(const OpenGLTexture&) = delete;
     OpenGLTexture(OpenGLTexture&&)      = delete;
+
+    OpenGLTexture(const Texture::Descriptor&);
 
     inline utils::uint32 width() override { return m_width; }
     inline utils::uint32 height() override { return m_height; }
@@ -39,12 +37,10 @@ public:
     ~OpenGLTexture() override;
 
 private:
-    OpenGLTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat);
-
     GLuint m_textureID;
     utils::uint32 m_width;
     utils::uint32 m_height;
-    GLenum m_pixelFormat;
+    PixelFormat m_pixelFormat;
 
 public:
     OpenGLTexture& operator = (const OpenGLTexture&) = delete;

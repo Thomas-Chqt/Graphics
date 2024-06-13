@@ -99,4 +99,13 @@ endif()
 
 ################################################################################################################
 
+if (GFX_ENABLE_METAL)
+    list(APPEND GRAPHICS_SRC ${FILES} "Utils/MetalPixelTypesConv.mm")
+endif()
+if (GFX_ENABLE_OPENGL)
+    list(APPEND GRAPHICS_SRC ${FILES} "Utils/OpenGLPixelTypesConv.cpp")
+endif()
+
+################################################################################################################
+
 target_sources(Graphics PRIVATE ${GRAPHICS_SRC})

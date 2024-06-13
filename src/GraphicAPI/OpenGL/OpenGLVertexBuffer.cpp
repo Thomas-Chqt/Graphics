@@ -8,6 +8,7 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLVertexBuffer.hpp"
+#include "Graphics/Enums.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
 
@@ -17,13 +18,16 @@ using utils::uint32;
 namespace gfx
 {
 
-OpenGLVertexBuffer::~OpenGLVertexBuffer()
+static GLenum convertType(gfx::Type type)
 {
-    glDeleteBuffers(1, &m_vertexBufferID);
-    glDeleteVertexArrays(1, &m_vertexArrayID);
+    switch (type)
+    {
+    case gfx::Type::FLOAT:
+        return GL_FLOAT;
+    }
 }
 
-OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint64 size, const LayoutBase& layout)
+OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint64 size, const utils::Array<VertexBuffer::LayoutElement>& layout)
 {
     glGenVertexArrays(1, &m_vertexArrayID);
     glGenBuffers(1, &m_vertexBufferID);
@@ -33,15 +37,21 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint64 size, const LayoutBase
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferID);
     glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 
-    for (uint32 i = 0; i < layout.getElements().length(); i++)
+    for (uint32 i = 0; i < layout.length(); i++)
     {
-        const LayoutBase::Element& el = layout.getElements()[i];
+        const VertexBuffer::LayoutElement& el = layout[i];
         glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i, el.size, el.type, el.normalized, el.stride, el.pointer);
+        glVertexAttribPointer(i, el.size, convertType(el.type), el.normalized, el.stride, el.pointer);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+}
+
+OpenGLVertexBuffer::~OpenGLVertexBuffer()
+{
+    glDeleteBuffers(1, &m_vertexBufferID);
+    glDeleteVertexArrays(1, &m_vertexArrayID);
 }
 
 }

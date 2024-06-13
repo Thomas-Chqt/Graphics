@@ -42,11 +42,11 @@ public:
 
 #ifdef GFX_METAL_ENABLED
     virtual utils::SharedPtr<Window> newMetalWindow(int w, int h) const = 0;
-    utils::SharedPtr<GraphicAPI> newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>()) const;
+    utils::SharedPtr<GraphicAPI> newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
 #endif
 #ifdef GFX_OPENGL_ENABLED
     virtual utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const = 0;
-    utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget = utils::SharedPtr<Window>()) const;
+    utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
 #endif
 
     virtual void pollEvents() = 0;

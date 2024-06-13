@@ -24,3 +24,5 @@ if(GFX_BUILD_IMGUI)
 endif()
 
 add_subdirectory(texturedSquare)
+
+add_subdirectory(offscreenRenderPass)

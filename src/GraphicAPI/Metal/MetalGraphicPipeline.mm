@@ -7,71 +7,76 @@
  * ---------------------------------------------------
  */
 
-
-
+#include "Graphics/Enums.hpp"
+#include "Graphics/Error.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/ShaderLibrary.hpp"
-#include <cassert>
+#include <Metal/Metal.h>
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 
 namespace gfx
 {
 
-MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
+MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, const GraphicPipeline::Descriptor& descriptor) { @autoreleasepool
 {
-    [m_renderPipelineState release];
-}}
-
-MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, CAMetalLayer* metalLayer, const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation operation) { @autoreleasepool
-{
-    NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(vertexShaderName) encoding:NSUTF8StringEncoding] autorelease];
+    NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:descriptor.metalVSFunction encoding:NSUTF8StringEncoding] autorelease];
     id<MTLFunction> vertexFunction = [[mtlLibrary newFunctionWithName:vertexShaderFuncName] autorelease];
-    assert(vertexFunction);
+    if (!vertexFunction)
+        throw MTLFunctionCreationError();
 
-    NSString* fragmentShaderFuncName = [[[NSString alloc] initWithCString:ShaderLibrary::shared().getMetalShaderFuncName(fragmentShaderName) encoding:NSUTF8StringEncoding] autorelease];
+    NSString* fragmentShaderFuncName = [[[NSString alloc] initWithCString:descriptor.metalFSFunction encoding:NSUTF8StringEncoding] autorelease];
     id<MTLFunction> fragmentFunction = [[mtlLibrary newFunctionWithName:fragmentShaderFuncName] autorelease];
-    assert(fragmentFunction);
+    if (!fragmentFunction)
+        throw MTLFunctionCreationError();
 
-    MTLRenderPipelineDescriptor* pipelineStateDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
-    assert(pipelineStateDescriptor);
-
-    pipelineStateDescriptor.vertexFunction = vertexFunction;
-    pipelineStateDescriptor.fragmentFunction = fragmentFunction;
-
-    pipelineStateDescriptor.colorAttachments[0].pixelFormat = metalLayer.pixelFormat;
-    pipelineStateDescriptor.colorAttachments[0].blendingEnabled = YES;
-
-
-    switch (operation)
+    MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
+    
+    renderPipelineDescriptor.vertexFunction = vertexFunction;
+    renderPipelineDescriptor.fragmentFunction = fragmentFunction;
+    renderPipelineDescriptor.colorAttachments[0].pixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.pixelFormat);
+    if (descriptor.blendOperation != BlendOperation::blendingOff)
     {
-    case GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA:
-        pipelineStateDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
-        pipelineStateDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+        renderPipelineDescriptor.colorAttachments[0].blendingEnabled = YES;
+        switch (descriptor.blendOperation)
+        {
+        case BlendOperation::srcA_plus_1_minus_srcA:
+            renderPipelineDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+            renderPipelineDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
 
-        pipelineStateDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
 
-        pipelineStateDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-        break;
+            renderPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            break;
 
-    case GraphicPipeline::BlendingOperation::one_minus_srcA_plus_srcA:
-        pipelineStateDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
-        pipelineStateDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+        case BlendOperation::one_minus_srcA_plus_srcA:
+            renderPipelineDescriptor.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+            renderPipelineDescriptor.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
 
-        pipelineStateDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
 
-        pipelineStateDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorSourceAlpha;
-        pipelineStateDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorSourceAlpha;
-        break;
+            renderPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorSourceAlpha;
+            renderPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+            break;
+
+        case BlendOperation::blendingOff:
+            #if defined(_MSC_VER) && !defined(__clang__) // MSVC
+                __assume(false);
+            #else // GCC, Clang
+                __builtin_unreachable();
+            #endif
+        }
     }
+    else
+        renderPipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
 
     NSError* error;
     MTLAutoreleasedRenderPipelineReflection reflection;
 
-    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:pipelineStateDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
-    assert(m_renderPipelineState);
+    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:renderPipelineDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
+    if (!m_renderPipelineState)
+        throw MTLRenderPipelineStateCreationError();
 
     auto vertexBindings = reflection.vertexArguments;
     auto fragmentBindings = reflection.fragmentArguments;
@@ -81,6 +86,11 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
 
     for (uint32 i = 0; i < fragmentBindings.count; i++)
         m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+}}
+
+MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
+{
+    [m_renderPipelineState release];
 }}
 
 }

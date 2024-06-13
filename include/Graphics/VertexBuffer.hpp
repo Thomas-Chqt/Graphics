@@ -10,11 +10,8 @@
 #ifndef VERTEXBUFFER_HPP
 # define VERTEXBUFFER_HPP
 
-#ifdef GFX_OPENGL_ENABLED
-    #include "UtilsCPP/Array.hpp"
-    #include <GL/glew.h>
-    #include <cassert>
-#endif
+#include "Graphics/Enums.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Types.hpp"
 
 namespace gfx
@@ -23,32 +20,8 @@ namespace gfx
 class VertexBuffer
 {
 public:
-    class LayoutBase
-    {
-    public:
-        #ifdef GFX_OPENGL_ENABLED
-        struct Element { GLint size; GLenum type; GLboolean normalized; GLsizei stride; const void * pointer; };
-        #endif
-
-        #ifdef GFX_OPENGL_ENABLED
-        virtual const utils::Array<Element>& getElements() const = 0;
-        #endif
-        virtual utils::uint64 getSize() const = 0;
-    };
-
-    template<typename T>
-    class Layout : public LayoutBase
-    {
-    public:
-        #ifdef GFX_OPENGL_ENABLED
-        #if defined(__clang__) && __clang_major__ >= 18 
-            inline const utils::Array<Element>& getElements() const override { static_assert(false, "Need to be define in a template specialization"); };
-        #else
-            inline const utils::Array<Element>& getElements() const override { assert(false && "Need to be define in a template specialization"); };
-        #endif
-        #endif
-        inline utils::uint64 getSize() const override { return sizeof(T); };
-    };
+    struct LayoutElement { int size; gfx::Type type; bool normalized; utils::uint32 stride; const void* pointer; };
+    template<typename T> static utils::Array<LayoutElement> getLayout();
 
 public:
     VertexBuffer(const VertexBuffer&) = delete;

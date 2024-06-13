@@ -50,7 +50,7 @@ int main()
 
         event.dispatch<gfx::MouseUpEvent>([&](gfx::MouseUpEvent& event)
         {
-           graphicAPI->setClearColor(BLACK); 
+            graphicAPI->setClearColor(BLACK);
         });
     });
 
@@ -59,6 +59,8 @@ int main()
         gfx::Platform::shared().pollEvents();
 
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 

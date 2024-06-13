@@ -1,17 +1,17 @@
 /*
  * ---------------------------------------------------
- * ShaderLibrary.cpp
+ * fragment.glsl
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/05/25 16:02:26
+ * Date: 2024/05/24 19:36:04
  * ---------------------------------------------------
  */
 
-#include "Graphics/ShaderLibrary.hpp"
+#version 410 core
 
-namespace gfx
+out vec4 fragmentColor;
+        
+void main()
 {
-
-utils::UniquePtr<ShaderLibrary> ShaderLibrary::s_sharedInstance;
-
+    fragmentColor = vec4(1, 1, 1, 1);
 }

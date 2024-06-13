@@ -8,39 +8,14 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
-#include "Graphics/VertexBuffer.hpp"
+#include "Graphics/Enums.hpp"
 
 namespace gfx
 {
 
-void OpenGLTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes)
+OpenGLTexture::OpenGLTexture(const Texture::Descriptor& desc) : m_width(desc.width), m_height(desc.height)
 {
-    glBindTexture(GL_TEXTURE_2D, m_textureID);
-
-    glTexSubImage2D(GL_TEXTURE_2D, 0,
-        (GLint)offsetX, (GLint)offsetY,
-        (GLsizei)width, (GLsizei)height,
-        m_pixelFormat, GL_UNSIGNED_BYTE, bytes);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-OpenGLTexture::~OpenGLTexture()
-{
-    glDeleteTextures(1, &m_textureID);
-}
-
-OpenGLTexture::OpenGLTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat pxFormat) : m_width(width), m_height(height)
-{
-    switch (pxFormat)
-    {
-    case Texture::PixelFormat::RGBA:
-        m_pixelFormat = GL_RGBA;
-        break;
-    case Texture::PixelFormat::ARGB:
-        m_pixelFormat = GL_BGRA;
-        break;
-    }
+    m_pixelFormat = desc.pixelFormat;
 
     glGenTextures(1, &m_textureID);
     glBindTexture(GL_TEXTURE_2D, m_textureID);
@@ -50,9 +25,27 @@ OpenGLTexture::OpenGLTexture(utils::uint32 width, utils::uint32 height, Texture:
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 	  GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)width, (GLsizei)height, 0, m_pixelFormat, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)m_width, (GLsizei)m_height, 0, toOpenGLPixelFormat(m_pixelFormat), GL_UNSIGNED_BYTE, nullptr);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void OpenGLTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes)
+{
+    glBindTexture(GL_TEXTURE_2D, m_textureID);
+
+    glTexSubImage2D(GL_TEXTURE_2D, 0,
+        (GLint)offsetX, (GLint)offsetY,
+        (GLsizei)width, (GLsizei)height,
+        toOpenGLPixelFormat(m_pixelFormat), GL_UNSIGNED_BYTE, bytes);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+OpenGLTexture::~OpenGLTexture()
+{
+    if (m_textureID)
+        glDeleteTextures(1, &m_textureID);
 }
 
 }

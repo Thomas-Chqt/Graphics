@@ -11,19 +11,20 @@
 # define GRAPHICAPI_HPP
 
 #include "GraphicPipeline.hpp"
+#include "Graphics/FrameBuffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
-#ifdef GFX_IMGUI_ENABLED
-    #include "imgui/imgui.h"
-#endif
-#include "UtilsCPP/String.hpp"
+#include "UtilsCPP/String.hpp" // IWYU pragma: keep
 #include "VertexBuffer.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
-#include "Window.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Math/Vector.hpp"
+
+#ifdef GFX_IMGUI_ENABLED
+    #include "imgui/imgui.h"
+#endif
 
 namespace gfx
 {
@@ -34,51 +35,61 @@ public:
     GraphicAPI(const GraphicAPI&) = delete;
     GraphicAPI(GraphicAPI&&)      = delete;
 
-    virtual void setRenderTarget(const utils::SharedPtr<Window>&) = 0;
-
-#ifdef GFX_IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     virtual void useForImGui(ImGuiConfigFlags flags = 0) = 0;
-#endif
+    #endif
 
-    virtual void setClearColor(const math::rgba& color) = 0;
+    #ifdef GFX_METAL_ENABLED
+    virtual void initMetalShaderLib(const utils::String& path) = 0;
+    #endif
 
     template<typename T>
     inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) const
     {
-        return newVertexBuffer((void*)(const T*)vertices, vertices.length() * sizeof(T), VertexBuffer::Layout<T>());
+        return newVertexBuffer((void*)(const T*)vertices, vertices.length(), sizeof(T), VertexBuffer::getLayout<T>());
     }
 
-    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 size, const VertexBuffer::LayoutBase& layout) const = 0;
-    virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation = GraphicPipeline::BlendingOperation::srcA_plus_1_minus_srcA) = 0;
-    virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const = 0;
-    virtual utils::SharedPtr<Texture> newTexture(utils::uint32 width, utils::uint32 height, Texture::PixelFormat = Texture::PixelFormat::RGBA) const = 0;
+    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const = 0;
+    virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const = 0;
+    virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>&) const = 0;
+    virtual utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const = 0;
+    virtual utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const = 0;
 
-    virtual void beginFrame(bool clearBuffer = true) = 0;
+    virtual void beginFrame() = 0;
+
+    virtual void setLoadAction(LoadAction) = 0;
+    virtual void setClearColor(math::rgba) = 0;
+
+    virtual void beginOnScreenRenderPass() = 0;
+    virtual void beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>&) = 0;
 
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
     virtual void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) = 0;
-    
+
     virtual void setVertexUniform(utils::uint32 index, const math::vec4f&) = 0;
     virtual void setVertexUniform(utils::uint32 index, const math::mat4x4&) = 0;
     virtual void setVertexUniform(utils::uint32 index, const math::vec2f&) = 0;
     virtual void setVertexUniform(utils::uint32 index, const math::mat3x3&) = 0;
-    
+
     virtual void setFragmentUniform(utils::uint32 index, const math::vec4f&) = 0;
     virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) = 0;
 
     virtual void drawVertices(utils::uint32 start, utils::uint32 count) = 0;
     virtual void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) = 0;
 
+    virtual void endOnScreenRenderPass() = 0;
+    virtual void endOffScreeRenderPass() = 0;
+
     virtual void endFrame() = 0;
-    
+
     virtual ~GraphicAPI() = default;
 
 protected:
     GraphicAPI() = default;
 
-#ifdef GFX_IMGUI_ENABLED
+    #ifdef GFX_IMGUI_ENABLED
     static GraphicAPI* s_imguiEnabledAPI;
-#endif
+    #endif
 
 public:
     GraphicAPI& operator = (const GraphicAPI&) = delete;

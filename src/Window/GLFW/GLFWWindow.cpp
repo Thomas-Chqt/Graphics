@@ -27,6 +27,16 @@ void GLFWWindow::imGuiNewFrame()
 }
 #endif
 
+void GLFWWindow::getWindowSize(utils::uint32* width, utils::uint32* height)
+{
+    ::glfwGetWindowSize(m_glfwWindow, (int*)width, (int*)height);
+}
+
+void GLFWWindow::getFrameBufferSize(utils::uint32* width, utils::uint32* height)
+{
+    ::glfwGetFramebufferSize(m_glfwWindow, (int*)width, (int*)height);
+}
+
 GLFWWindow::~GLFWWindow()
 {
     ::glfwDestroyWindow(m_glfwWindow);

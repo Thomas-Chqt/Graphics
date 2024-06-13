@@ -12,7 +12,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
-#include "Graphics/ShaderLibrary.hpp"
 
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
@@ -21,31 +20,33 @@
 
 #include "Vertex.hpp"
 
+template<>
+utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+{
+    return {
+        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)0 }
+    };
+}
+
+gfx::GraphicPipeline::Descriptor makeGfxPipelineDescriptor(const utils::String& shaderName)
+{
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    #ifdef GFX_METAL_ENABLED
+        graphicPipelineDescriptor.metalVSFunction = shaderName + "_vs";
+        graphicPipelineDescriptor.metalFSFunction = shaderName + "_fs";
+    #endif 
+    #if GFX_OPENGL_ENABLED
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(utils::String(OPENGL_SHADER_DIR) + utils::String("/") + shaderName + utils::String(".vs"));
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(utils::String(OPENGL_SHADER_DIR) + utils::String("/") + shaderName + utils::String(".fs"));
+    #endif
+
+    return graphicPipelineDescriptor;
+}
+
+
 int main()
 {
     gfx::Platform::init();
-    gfx::ShaderLibrary::init();
-
-    #ifdef GFX_METAL_ENABLED
-        gfx::ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
-    #endif
-
-    gfx::ShaderLibrary::shared().registerShader("triangle_vs"
-        #if GFX_METAL_ENABLED
-            , "triangle_vs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle.vs")
-        #endif
-    );
-    gfx::ShaderLibrary::shared().registerShader("triangle_fs"
-        #if GFX_METAL_ENABLED
-            , "triangle_fs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/triangle.fs")
-        #endif
-    );
 
     const utils::Array<Vertex> vertices = {
         {-1, -1},
@@ -56,7 +57,11 @@ int main()
     utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newDefaultWindow(800, 600);
     utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newDefaultGraphicAPI(window);
 
-    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("triangle_vs", "triangle_fs");
+    #ifdef GFX_METAL_ENABLED
+        graphicAPI->initMetalShaderLib(MTL_SHADER_LIB);
+    #endif    
+
+    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline(makeGfxPipelineDescriptor("triangle"));
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(vertices);
 
     bool running = true;
@@ -78,14 +83,15 @@ int main()
         gfx::Platform::shared().pollEvents();
         
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
         
         graphicAPI->useGraphicsPipeline(graphicPipeline);
         graphicAPI->useVertexBuffer(vertexBuffer);
         graphicAPI->drawVertices(0, 3);
 
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 
-    gfx::ShaderLibrary::terminated();
     gfx::Platform::terminate();
 }

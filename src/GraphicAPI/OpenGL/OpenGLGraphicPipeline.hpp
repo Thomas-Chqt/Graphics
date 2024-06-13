@@ -10,11 +10,7 @@
 #ifndef OPENGLGRAPHICSPIPELINE_HPP
 # define OPENGLGRAPHICSPIPELINE_HPP
 
-#include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/VertexBuffer.hpp"
-#include "UtilsCPP/RuntimeError.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include <GL/glew.h>
 
@@ -24,27 +20,23 @@ namespace gfx
 class OpenGLGraphicPipeline : public GraphicPipeline
 {
 public:
-    struct OpenGLShaderCompileError : public utils::RuntimeError { using utils::RuntimeError::RuntimeError; };
-
-private:
-    friend utils::SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const utils::String&, const utils::String&, GraphicPipeline::BlendingOperation);
-
-public:
     OpenGLGraphicPipeline()                             = delete;
     OpenGLGraphicPipeline(const OpenGLGraphicPipeline&) = delete;
     OpenGLGraphicPipeline(OpenGLGraphicPipeline&&)      = delete;
+
+    OpenGLGraphicPipeline(const GraphicPipeline::Descriptor&);
 
     utils::uint32 findVertexUniformIndex(const utils::String& name) override;
     utils::uint32 findFragmentUniformIndex(const utils::String& name) override;
 
     inline GLuint shaderProgramID() { return m_shaderProgramID; }
+    inline BlendOperation blendOperation() { return m_blendOperation; }
     
     ~OpenGLGraphicPipeline();
 
 private:
-    OpenGLGraphicPipeline(const utils::String& vertexShaderName, const utils::String& fragmentShaderName, GraphicPipeline::BlendingOperation operation);
-
     GLuint m_shaderProgramID = 0;
+    BlendOperation m_blendOperation;
 
 public:
     OpenGLGraphicPipeline& operator = (const OpenGLGraphicPipeline&) = delete;

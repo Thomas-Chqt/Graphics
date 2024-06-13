@@ -12,8 +12,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
-#include "Graphics/ShaderLibrary.hpp"
-
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Vector.hpp"
@@ -22,31 +20,32 @@
 
 #include "Vertex.hpp"
 
+template<>
+utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+{
+    return {
+        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)0 },
+    };
+}
+
+gfx::GraphicPipeline::Descriptor makeGfxPipelineDescriptor(const utils::String& shaderName)
+{
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    #ifdef GFX_METAL_ENABLED
+        graphicPipelineDescriptor.metalVSFunction = shaderName + "_vs";
+        graphicPipelineDescriptor.metalFSFunction = shaderName + "_fs";
+    #endif 
+    #if GFX_OPENGL_ENABLED
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(utils::String(OPENGL_SHADER_DIR) + utils::String("/") + shaderName + utils::String(".vs"));
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(utils::String(OPENGL_SHADER_DIR) + utils::String("/") + shaderName + utils::String(".fs"));
+    #endif
+
+    return graphicPipelineDescriptor;
+}
+
 int main()
 {
     gfx::Platform::init();
-    gfx::ShaderLibrary::init();
-
-    #ifdef GFX_METAL_ENABLED
-        gfx::ShaderLibrary::shared().setMetalShaderLibPath(MTL_SHADER_LIB);
-    #endif
-
-    gfx::ShaderLibrary::shared().registerShader("fragmentUniform_vs"
-        #if GFX_METAL_ENABLED
-            , "fragmentUniform_vs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/fragmentUniform.vs")
-        #endif
-    );
-    gfx::ShaderLibrary::shared().registerShader("fragmentUniform_fs"
-        #if GFX_METAL_ENABLED
-            , "fragmentUniform_fs"
-        #endif
-        #if GFX_OPENGL_ENABLED
-            , utils::String::contentOfFile(OPENGL_SHADER_DIR"/fragmentUniform.fs")
-        #endif
-    );
 
     const utils::Array<Vertex> vertices = {
         {-0.5, -0.5},
@@ -67,7 +66,11 @@ int main()
         ImGuiConfigFlags_ViewportsEnable
     );
 
-    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline("fragmentUniform_vs", "fragmentUniform_fs");
+    #ifdef GFX_METAL_ENABLED
+        graphicAPI->initMetalShaderLib(MTL_SHADER_LIB);
+    #endif
+
+    utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline(makeGfxPipelineDescriptor("fragmentUniform"));
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer = graphicAPI->newVertexBuffer(vertices);
     utils::SharedPtr<gfx::IndexBuffer> indexBuffer = graphicAPI->newIndexBuffer(indices);
 
@@ -91,6 +94,7 @@ int main()
         gfx::Platform::shared().pollEvents();
         
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
 
         ImGui::ColorPicker4("u_color", (float *)&color);
         
@@ -99,9 +103,9 @@ int main()
         graphicAPI->setFragmentUniform(graphicPipeline->findFragmentUniformIndex("u_color"), color);
         graphicAPI->drawIndexedVertices(indexBuffer);
 
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 
-    gfx::ShaderLibrary::terminated();
     gfx::Platform::terminate();
 }
