@@ -30,11 +30,13 @@ public:
     utils::uint32 findFragmentUniformIndex(const utils::String& name) override;
 
     inline GLuint shaderProgramID() { return m_shaderProgramID; }
+    inline BlendOperation blendOperation() { return m_blendOperation; }
     
     ~OpenGLGraphicPipeline();
 
 private:
     GLuint m_shaderProgramID = 0;
+    BlendOperation m_blendOperation;
 
 public:
     OpenGLGraphicPipeline& operator = (const OpenGLGraphicPipeline&) = delete;

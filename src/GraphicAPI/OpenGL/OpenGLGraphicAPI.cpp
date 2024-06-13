@@ -154,6 +154,29 @@ void OpenGLGraphicAPI::useGraphicsPipeline(const SharedPtr<GraphicPipeline>& gra
     {
         glUseProgram(glGraphicsPipeline->shaderProgramID());
         m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<GraphicPipeline>(graphicsPipeline)));
+        if (glGraphicsPipeline->blendOperation() != BlendOperation::blendingOff)
+        {
+            glEnable(GL_BLEND);
+            switch (glGraphicsPipeline->blendOperation())
+            {
+            case BlendOperation::srcA_plus_1_minus_srcA:
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                break;
+            case BlendOperation::one_minus_srcA_plus_srcA:
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+                break;
+            case BlendOperation::blendingOff:
+                #if defined(_MSC_VER) && !defined(__clang__) // MSVC
+                    __assume(false);
+                #else // GCC, Clang
+                    __builtin_unreachable();
+                #endif
+            }
+        }
+        else
+            glDisable(GL_BLEND);
     }
     else
         throw utils::RuntimeError("GraphicPipeline is not OpenGLGraphicPipeline");
