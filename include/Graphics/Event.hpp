@@ -260,8 +260,8 @@ public:
 
     ScrollEvent(Window& window, int posX, int posY, double offsetX, double offsetY);
 
-    inline int offsetX() const { return m_offsetX; }
-    inline int offsetY() const { return m_offsetY; }
+    inline double offsetX() const { return m_offsetX; }
+    inline double offsetY() const { return m_offsetY; }
 
     ~ScrollEvent() override = default;
 
