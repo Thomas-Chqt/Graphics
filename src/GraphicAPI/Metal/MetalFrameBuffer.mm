@@ -9,41 +9,25 @@
 
 #include "GraphicAPI/Metal/MetalFrameBuffer.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
-#include <algorithm>
+#include "Graphics/Texture.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
+#include "UtilsCPP/SharedPtr.hpp"
 
 namespace gfx
 {
 
-MetalLayerFrameBuffer::MetalLayerFrameBuffer(CAMetalLayer* metalLayer) : m_metalLayer(metalLayer)
+MetalFrameBuffer::MetalFrameBuffer(const utils::SharedPtr<Texture>& colorTexture)
 {
+    if (colorTexture)
+        setColorTexture(colorTexture);
 }
 
-id<MTLTexture> MetalLayerFrameBuffer::mtlRenderTexture()
+void MetalFrameBuffer::setColorTexture(const utils::SharedPtr<Texture>& texture)
 {
-    if (m_currentDrawable == nullptr)
-        m_currentDrawable = [[m_metalLayer nextDrawable] retain];
-    return m_currentDrawable.texture;
-}
-
-void MetalLayerFrameBuffer::releaseCurrentDrawable()
-{
-    [m_currentDrawable release];
-    m_currentDrawable = nullptr;
-}
-
-MetalLayerFrameBuffer::~MetalLayerFrameBuffer()
-{
-    if (m_currentDrawable)
-        [m_currentDrawable release];
-}
-
-MetalTextureFrameBuffer::MetalTextureFrameBuffer(MetalTexture&& colorTexture) : m_colorTexture(std::move(colorTexture))
-{
-}
-
-id<MTLTexture> MetalTextureFrameBuffer::mtlRenderTexture()
-{
-    return m_colorTexture.mtlTexture();
+    if (utils::SharedPtr<MetalTexture> mtlTexture = texture.dynamicCast<MetalTexture>())
+        m_colorTexture = mtlTexture;
+    else
+        throw utils::RuntimeError("Texture is not MetalTexture");
 }
 
 }

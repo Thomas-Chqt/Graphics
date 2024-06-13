@@ -10,6 +10,7 @@
 #ifndef OPENGLTEXTURE_HPP
 # define OPENGLTEXTURE_HPP
 
+#include "Graphics/Enums.hpp"
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
@@ -22,7 +23,7 @@ class OpenGLTexture : public Texture
 public:
     OpenGLTexture()                     = delete;
     OpenGLTexture(const OpenGLTexture&) = delete;
-    OpenGLTexture(OpenGLTexture&&);
+    OpenGLTexture(OpenGLTexture&&)      = delete;
 
     OpenGLTexture(const Texture::Descriptor&);
 
@@ -39,7 +40,7 @@ private:
     GLuint m_textureID;
     utils::uint32 m_width;
     utils::uint32 m_height;
-    GLenum m_pixelFormat;
+    PixelFormat m_pixelFormat;
 
 public:
     OpenGLTexture& operator = (const OpenGLTexture&) = delete;

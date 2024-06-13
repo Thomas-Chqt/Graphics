@@ -53,16 +53,15 @@ public:
     virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const = 0;
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>&) const = 0;
     virtual utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const = 0;
-    virtual utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const = 0;
-    virtual utils::SharedPtr<FrameBuffer> screenFrameBuffer() const = 0;
+    virtual utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const = 0;
 
     virtual void beginFrame() = 0;
 
     virtual void setLoadAction(LoadAction) = 0;
     virtual void setClearColor(math::rgba) = 0;
-    virtual void setRenderTarget(const utils::SharedPtr<FrameBuffer>&) = 0;
 
-    virtual void beginRenderPass() = 0;
+    virtual void beginOnScreenRenderPass() = 0;
+    virtual void beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>&) = 0;
 
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
     virtual void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) = 0;
@@ -74,12 +73,12 @@ public:
 
     virtual void setFragmentUniform(utils::uint32 index, const math::vec4f&) = 0;
     virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) = 0;
-    virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<FrameBuffer>&) = 0;
 
     virtual void drawVertices(utils::uint32 start, utils::uint32 count) = 0;
     virtual void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) = 0;
 
-    virtual void endRenderPass() = 0;
+    virtual void endOnScreenRenderPass() = 0;
+    virtual void endOffScreeRenderPass() = 0;
 
     virtual void endFrame() = 0;
 

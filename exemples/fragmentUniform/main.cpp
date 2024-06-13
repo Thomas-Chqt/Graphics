@@ -94,6 +94,7 @@ int main()
         gfx::Platform::shared().pollEvents();
         
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
 
         ImGui::ColorPicker4("u_color", (float *)&color);
         
@@ -102,6 +103,7 @@ int main()
         graphicAPI->setFragmentUniform(graphicPipeline->findFragmentUniformIndex("u_color"), color);
         graphicAPI->drawIndexedVertices(indexBuffer);
 
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 

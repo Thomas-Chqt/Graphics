@@ -59,6 +59,8 @@ int main()
         gfx::Platform::shared().pollEvents();
 
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 

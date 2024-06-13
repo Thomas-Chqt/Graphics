@@ -8,10 +8,10 @@
  */
 
 #ifndef FRAMEBUFFER_HPP
-# define FRAMEBUFFER_HPP
+#define FRAMEBUFFER_HPP
 
-#include "Enums.hpp"
-#include "UtilsCPP/Types.hpp"
+#include "Texture.hpp"
+#include "UtilsCPP/SharedPtr.hpp"
 
 namespace gfx
 {
@@ -19,18 +19,11 @@ namespace gfx
 class FrameBuffer
 {
 public:
-	struct Descriptor
-	{
-		utils::uint32 width;
-		utils::uint32 height;
-		gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
-	};
-
-public:
     FrameBuffer(const FrameBuffer&) = delete;
     FrameBuffer(FrameBuffer&&)      = delete;
 
-    virtual PixelFormat pixelFormat() = 0;
+    virtual void setColorTexture(const utils::SharedPtr<Texture>&) = 0;
+    virtual utils::SharedPtr<Texture> colorTexture() = 0;
 
     virtual ~FrameBuffer() = default;
 
@@ -42,6 +35,6 @@ public:
     FrameBuffer& operator = (FrameBuffer&&)      = delete;
 };
 
-}
+} // namespace gfx
 
 #endif // FRAMEBUFFER_HPP

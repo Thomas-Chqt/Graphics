@@ -46,9 +46,11 @@ int main()
         gfx::Platform::shared().pollEvents();
 
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
 
         ImGui::ShowDemoWindow();
 
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 

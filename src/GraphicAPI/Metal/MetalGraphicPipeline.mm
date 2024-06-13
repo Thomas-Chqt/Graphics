@@ -32,13 +32,7 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
     
     renderPipelineDescriptor.vertexFunction = vertexFunction;
     renderPipelineDescriptor.fragmentFunction = fragmentFunction;
-    switch (descriptor.pixelFormat)
-    {
-    case PixelFormat::RGBA:
-        renderPipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA8Unorm;
-    case PixelFormat::ARGB:
-        renderPipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
-    }
+    renderPipelineDescriptor.colorAttachments[0].pixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.pixelFormat);
     if (descriptor.blendOperation != BlendOperation::blendingOff)
     {
         renderPipelineDescriptor.colorAttachments[0].blendingEnabled = YES;

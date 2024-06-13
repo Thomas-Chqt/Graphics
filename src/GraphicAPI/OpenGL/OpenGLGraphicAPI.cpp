@@ -41,9 +41,9 @@ using utils::Array;
 namespace gfx
 {
 
-OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget)
+OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window)
 {
-    if (SharedPtr<OpenGLWindow> glWindow = renderTarget.dynamicCast<OpenGLWindow>())
+    if (SharedPtr<OpenGLWindow> glWindow = window.dynamicCast<OpenGLWindow>())
         m_window = glWindow;
     else
         throw utils::RuntimeError("Window is not OpenGLWindow");
@@ -51,9 +51,6 @@ OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget)
     m_window->makeContextCurrent();
     GLenum err = glewInit();
     assert(err == GLEW_OK);
-
-    m_screenFrameBuffer = utils::SharedPtr<OpenGLScreenFrameBuffer>(new OpenGLScreenFrameBuffer(m_window));
-    m_nextPassTarget = m_screenFrameBuffer.dynamicCast<OpenGLFrameBuffer>();
 }
 
 #ifdef GFX_IMGUI_ENABLED
@@ -96,21 +93,9 @@ SharedPtr<Texture> OpenGLGraphicAPI::newTexture(const Texture::Descriptor& desc)
     return SharedPtr<Texture>(new OpenGLTexture(desc));
 }
 
-SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const FrameBuffer::Descriptor& desc) const
+SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const
 {
-    Texture::Descriptor colorTextureDescriptor;
-    colorTextureDescriptor.width = desc.width;
-    colorTextureDescriptor.height = desc.height;
-    colorTextureDescriptor.pixelFormat = desc.pixelFormat;
-    return SharedPtr<FrameBuffer>(new OpenGLTextureFrameBuffer(OpenGLTexture(colorTextureDescriptor)));
-}
-
-void OpenGLGraphicAPI::setRenderTarget(const utils::SharedPtr<FrameBuffer>& fBuff)
-{
-    if (utils::SharedPtr<OpenGLFrameBuffer> glFrameBuffer = fBuff.dynamicCast<OpenGLFrameBuffer>())
-        m_nextPassTarget = glFrameBuffer;
-    else
-        throw utils::RuntimeError("FrameBuffer is not OpenGLFrameBuffer");
+    return SharedPtr<FrameBuffer>(new OpenGLFrameBuffer(colorTexture));
 }
 
 void OpenGLGraphicAPI::beginFrame()
@@ -125,8 +110,42 @@ void OpenGLGraphicAPI::beginFrame()
         ImGui::NewFrame();
     }
     #endif
+}
 
-    beginRenderPass();
+void OpenGLGraphicAPI::beginOnScreenRenderPass()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    utils::uint32 width, height;
+    m_window->getFrameBufferSize(&width, &height);
+    glViewport(0, 0, width, height);
+
+    if (m_nextPassLoadAction == LoadAction::clear)
+    {
+        glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    m_nextTextureUnit = 0;
+}
+
+void OpenGLGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>& fBuff)
+{
+    if (utils::SharedPtr<OpenGLFrameBuffer> glFrameBuffer = fBuff.dynamicCast<OpenGLFrameBuffer>())
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, glFrameBuffer->frameBufferID());
+        glViewport(0, 0, glFrameBuffer->glColorTexture()->width(), glFrameBuffer->glColorTexture()->height());
+    }
+    else
+        throw utils::RuntimeError("FrameBuffer is not OpenGLFrameBuffer");
+
+    if (m_nextPassLoadAction == LoadAction::clear)
+    {
+        glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    m_nextTextureUnit = 0;
+
 }
 
 void OpenGLGraphicAPI::useGraphicsPipeline(const SharedPtr<GraphicPipeline>& graphicsPipeline)
@@ -212,24 +231,14 @@ void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::Shar
         throw utils::RuntimeError("Texture is not OpenGLTexture");
 }
 
-void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<FrameBuffer>& fBuff)
+void OpenGLGraphicAPI::endOnScreenRenderPass()
 {
-    if (SharedPtr<OpenGLTextureFrameBuffer> glFrameBuff = fBuff.dynamicCast<OpenGLTextureFrameBuffer>())
-    {
-        glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit);
-        glUniform1i(index, m_nextTextureUnit++);
-        glBindTexture(GL_TEXTURE_2D, glFrameBuff->colorTexture().textureID());
-        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<FrameBuffer>(fBuff)));
-    }
-    else
-        throw utils::RuntimeError("Texture is not OpenGLTexture");
-
+    m_passObjects.clear();
 }
 
-void OpenGLGraphicAPI::nextRenderPass()
+void OpenGLGraphicAPI::endOffScreeRenderPass()
 {
-    endRenderPass();
-    beginRenderPass();
+    m_passObjects.clear();
 }
 
 void OpenGLGraphicAPI::endFrame()
@@ -262,24 +271,6 @@ OpenGLGraphicAPI::~OpenGLGraphicAPI()
         s_imguiEnabledAPI = nullptr;
     }
     #endif
-}
-
-void OpenGLGraphicAPI::beginRenderPass()
-{
-    m_nextPassTarget->useForRendering();
-
-    if (m_nextPassLoadAction == LoadAction::clear)
-    {
-        glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a);
-        glClear(GL_COLOR_BUFFER_BIT);
-    }
-
-    m_nextTextureUnit = 0;
-}
-
-void OpenGLGraphicAPI::endRenderPass()
-{
-    m_passObjects.clear();
 }
 
 }

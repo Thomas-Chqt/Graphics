@@ -10,7 +10,6 @@
 #ifndef OPENGLGRAPHICAPI_HPP
 # define OPENGLGRAPHICAPI_HPP
 
-#include "GraphicAPI/OpenGL/OpenGLFrameBuffer.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
@@ -35,7 +34,7 @@ public:
     OpenGLGraphicAPI(const OpenGLGraphicAPI&) = delete;
     OpenGLGraphicAPI(OpenGLGraphicAPI&&)      = delete;
 
-    OpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
+    OpenGLGraphicAPI(const utils::SharedPtr<Window>&);
     
     #ifdef GFX_IMGUI_ENABLED
     void useForImGui(ImGuiConfigFlags flags = 0) override;
@@ -49,14 +48,15 @@ public:
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
-    utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
-    inline utils::SharedPtr<FrameBuffer> screenFrameBuffer() const override { return m_screenFrameBuffer.staticCast<FrameBuffer>(); }
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const override;
+
+    void beginFrame() override;
 
     inline void setLoadAction(LoadAction act) override { m_nextPassLoadAction = act; }
     inline void setClearColor(math::rgba col) override { m_nextPassClearColor = col; }
-    void setRenderTarget(const utils::SharedPtr<FrameBuffer>&) override;
-
-    void beginFrame() override;
+    
+    void beginOnScreenRenderPass() override;
+    void beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
@@ -68,28 +68,23 @@ public:
     
     void setFragmentUniform(utils::uint32 index, const math::vec4f&) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
-    void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<FrameBuffer>&) override;
     
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
 
-    void nextRenderPass() override;
+    void endOnScreenRenderPass() override;
+    void endOffScreeRenderPass() override;
 
     void endFrame() override;
 
     ~OpenGLGraphicAPI() override;
 
 private:
-    void beginRenderPass();
-    void endRenderPass();
-
     utils::SharedPtr<OpenGLWindow> m_window;
-    utils::SharedPtr<OpenGLScreenFrameBuffer> m_screenFrameBuffer;
-
+    
     //pass time
     LoadAction m_nextPassLoadAction = LoadAction::clear; 
     math::rgba m_nextPassClearColor = BLACK; 
-    utils::SharedPtr<OpenGLFrameBuffer> m_nextPassTarget;
     utils::uint32 m_nextTextureUnit = 0;
     utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_passObjects;
 

@@ -112,12 +112,14 @@ int main()
         gfx::Platform::shared().pollEvents();
         
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
         
         graphicAPI->useGraphicsPipeline(graphicPipeline);
         graphicAPI->useVertexBuffer(vertexBuffer);
         graphicAPI->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), grassTexture);
         graphicAPI->drawIndexedVertices(indexBuffer);
 
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 

@@ -128,6 +128,7 @@ int main()
                                  0, 0, 0, 1);
 
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
 
         ImGui::Text("FPS : %.1f", ImGui::GetIO().Framerate);
         ImGui::SliderFloat("Pos X", &cubePos.x, -5, 5);
@@ -141,6 +142,7 @@ int main()
         graphicAPI->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_MVPMatrix"), projectionMatrix * modelMatrix);
         graphicAPI->drawIndexedVertices(indexBuffer);
 
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 

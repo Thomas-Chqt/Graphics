@@ -8,40 +8,38 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLFrameBuffer.hpp"
-#include "UtilsCPP/Types.hpp"
+#include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
+#include "UtilsCPP/SharedPtr.hpp"
 
 #include <GL/glew.h>
-#include <utility>
 
 namespace gfx
 {
 
-OpenGLScreenFrameBuffer::OpenGLScreenFrameBuffer(const utils::SharedPtr<OpenGLWindow>& window) : m_window(window)
-{
-}
-
-void OpenGLScreenFrameBuffer::useForRendering()
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    utils::uint32 width;
-    utils::uint32 height;
-    m_window->getFrameBufferSize(&width, &height);
-    glViewport(0, 0, width, height);
-}
-
-OpenGLTextureFrameBuffer::OpenGLTextureFrameBuffer(OpenGLTexture&& colorTexture) : m_colorTexture(std::move(colorTexture))
+OpenGLFrameBuffer::OpenGLFrameBuffer(const utils::SharedPtr<Texture>& colorTexture)
 {
     glGenFramebuffers(1, &m_frameBufferID);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferID);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture.textureID(), 0);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (colorTexture)
+        setColorTexture(colorTexture);
 }
 
-void OpenGLTextureFrameBuffer::useForRendering()
+void OpenGLFrameBuffer::setColorTexture(const utils::SharedPtr<Texture>& texture)
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferID);
-    glViewport(0, 0, m_colorTexture.width(), m_colorTexture.height());
+    if (utils::SharedPtr<OpenGLTexture> glTexture = texture.dynamicCast<OpenGLTexture>())
+    {
+        m_colorTexture = glTexture;
+        glBindFramebuffer(GL_FRAMEBUFFER, m_frameBufferID);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorTexture->textureID(), 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+    else
+        throw utils::RuntimeError("Texture is not OpenGLTexture");
+}
+
+OpenGLFrameBuffer::~OpenGLFrameBuffer()
+{
+    glDeleteFramebuffers(1, &m_frameBufferID);
 }
 
 }

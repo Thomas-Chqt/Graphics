@@ -87,11 +87,13 @@ int main()
         gfx::Platform::shared().pollEvents();
         
         graphicAPI->beginFrame();
+        graphicAPI->beginOnScreenRenderPass();
         
         graphicAPI->useGraphicsPipeline(graphicPipeline);
         graphicAPI->useVertexBuffer(vertexBuffer);
         graphicAPI->drawIndexedVertices(indexBuffer);
 
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 

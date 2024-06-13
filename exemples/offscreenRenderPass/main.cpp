@@ -12,10 +12,13 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
+#include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Vertex.hpp"
+#ifdef GFX_IMGUI_ENABLED
 #include "imgui/imgui.h"
+#endif
 
 template<>
 utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
@@ -81,10 +84,9 @@ int main()
     utils::SharedPtr<gfx::VertexBuffer> squareVtxBuffer = graphicAPI->newVertexBuffer(square_vertices);
     utils::SharedPtr<gfx::IndexBuffer> squateIdxBuffer = graphicAPI->newIndexBuffer(square_indices);
 
-    gfx::FrameBuffer::Descriptor frameBufferDescriptor;
-    frameBufferDescriptor.width = 1000;
-    frameBufferDescriptor.height = 1000;
-    utils::SharedPtr<gfx::FrameBuffer> offscreenFrameBuf = graphicAPI->newFrameBuffer(frameBufferDescriptor);
+    utils::SharedPtr<gfx::FrameBuffer> offscreenFrameBuf = graphicAPI->newFrameBuffer(
+        graphicAPI->newTexture(gfx::Texture::Descriptor(1000, 1000))
+    );
 
     bool running = true;
 
@@ -104,27 +106,30 @@ int main()
     {
         gfx::Platform::shared().pollEvents();
         
-        graphicAPI->setClearColor(RED);
-        graphicAPI->setRenderTarget(offscreenFrameBuf);
         graphicAPI->beginFrame();
+
+        graphicAPI->setClearColor(RED);
+        graphicAPI->beginOffScreenRenderPass(offscreenFrameBuf);
 
         graphicAPI->useGraphicsPipeline(triangleGfxPipeline);
         graphicAPI->useVertexBuffer(triangleVtxBuffer);
         graphicAPI->drawVertices(0, 3);
+        
+        graphicAPI->endOffScreeRenderPass();
 
         graphicAPI->setClearColor(BLACK);
-        graphicAPI->setRenderTarget(graphicAPI->screenFrameBuffer());
-        graphicAPI->nextRenderPass();
+        graphicAPI->beginOnScreenRenderPass();
+
+        graphicAPI->useGraphicsPipeline(squareGfxPipeline);
+        graphicAPI->useVertexBuffer(squareVtxBuffer);
+        graphicAPI->setFragmentTexture(squareGfxPipeline->findFragmentUniformIndex("u_texture"), offscreenFrameBuf->colorTexture());
+        graphicAPI->drawIndexedVertices(squateIdxBuffer);
 
         #ifdef GFX_IMGUI_ENABLED
         ImGui::Text("Hello World");
         #endif
 
-        graphicAPI->useGraphicsPipeline(squareGfxPipeline);
-        graphicAPI->useVertexBuffer(squareVtxBuffer);
-        graphicAPI->setFragmentTexture(squareGfxPipeline->findFragmentUniformIndex("u_texture"), offscreenFrameBuf);
-        graphicAPI->drawIndexedVertices(squateIdxBuffer);
-
+        graphicAPI->endOnScreenRenderPass();
         graphicAPI->endFrame();
     }
 
