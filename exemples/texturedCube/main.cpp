@@ -126,10 +126,10 @@ public:
         float xs = ys / aspectRatio;
         float zs = zFar / (zFar - zNear);
 
-        m_projectionMatrix = math::mat4x4 (xs, 0,  0,           0,
-                                          0,  ys,  0,           0,
-                                          0,   0, zs, -zNear * zs,
-                                          0,   0,  1,           0);
+        m_projectionMatrix = math::mat4x4 (xs,   0,  0,           0,
+                                            0,  ys,  0,           0,
+                                            0,   0, zs, -zNear * zs,
+                                            0,   0,  1,           0);
 
     }
 
