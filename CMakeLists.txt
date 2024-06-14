@@ -116,7 +116,7 @@ if (GFX_ENABLE_OPENGL)
     FetchContent_Declare(glew-cmake GIT_REPOSITORY https://github.com/Perlmint/glew-cmake.git GIT_TAG glew-cmake-2.2.0)
     FetchContent_MakeAvailable(glew-cmake)
     set_target_properties(libglew_static PROPERTIES FOLDER "dependencies")
-    target_link_libraries(Graphics PUBLIC libglew_static)
+    target_link_libraries(Graphics PRIVATE libglew_static)
 endif()
 
 if(GFX_BUILD_EXEMPLES)

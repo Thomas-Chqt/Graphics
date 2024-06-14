@@ -38,9 +38,9 @@ public:
 
 private:
     GLuint m_textureID;
-    utils::uint32 m_width;
-    utils::uint32 m_height;
-    PixelFormat m_pixelFormat;
+    const utils::uint32 m_width;
+    const utils::uint32 m_height;
+    const ColorPixelFormat m_pixelFormat;
 
 public:
     OpenGLTexture& operator = (const OpenGLTexture&) = delete;

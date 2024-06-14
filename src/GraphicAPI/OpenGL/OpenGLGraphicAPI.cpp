@@ -51,6 +51,8 @@ OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window)
     m_window->makeContextCurrent();
     GLenum err = glewInit();
     assert(err == GLEW_OK);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 #ifdef GFX_IMGUI_ENABLED
@@ -122,7 +124,7 @@ void OpenGLGraphicAPI::beginOnScreenRenderPass()
     if (m_nextPassLoadAction == LoadAction::clear)
     {
         glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     m_nextTextureUnit = 0;

@@ -18,6 +18,7 @@
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/Platform.hpp"
+#include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
@@ -47,7 +48,7 @@ using utils::Array;
 namespace gfx
 {
 
-MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window)
+MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window) { @autoreleasepool
 {
     if (SharedPtr<MetalWindow> mtlWindow = window.dynamicCast<MetalWindow>())
         m_window = mtlWindow;
@@ -61,7 +62,17 @@ MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window)
 
     m_commandQueue = [m_mtlDevice newCommandQueue];
     assert(m_commandQueue); // TODO use throw
-}
+
+    MTLTextureDescriptor* depthDextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
+    utils::uint32 winFbuffWidth, winFbuffHeight;
+    window->getFrameBufferSize(&winFbuffWidth, &winFbuffHeight);
+    depthDextureDescriptor.width = winFbuffWidth;
+    depthDextureDescriptor.height = winFbuffHeight;
+    depthDextureDescriptor.pixelFormat = MTLPixelFormatDepth32Float;
+    depthDextureDescriptor.usage = MTLTextureUsageRenderTarget;
+    depthDextureDescriptor.storageMode = MTLStorageModePrivate;
+    m_depthTexture = MetalTexture(m_mtlDevice, depthDextureDescriptor);
+}}
 
 #ifdef GFX_IMGUI_ENABLED
 void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
@@ -136,6 +147,10 @@ void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
     renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
     renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
 
+    renderPassDescriptor.depthAttachment.loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
+    renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
+    renderPassDescriptor.depthAttachment.texture = m_depthTexture.mtlTexture();
+
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
     {
@@ -161,6 +176,8 @@ void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffe
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
         renderPassDescriptor.colorAttachments[0].texture = mtlFrameBuffer->mtlColorTexture()->mtlTexture();
 
+        // TODO depth for frame buffer
+
         m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
         if (!m_commandEncoder)
             throw RenderCommandEncoderCreationError();
@@ -176,6 +193,7 @@ void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline
     if (utils::SharedPtr<MetalGraphicPipeline> mtlGraphicsPipeline = graphicsPipeline.dynamicCast<MetalGraphicPipeline>())
     {
         [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
+        [m_commandEncoder setDepthStencilState:mtlGraphicsPipeline->depthStencilState()];
         m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<GraphicPipeline>(graphicsPipeline)));
     }
     else

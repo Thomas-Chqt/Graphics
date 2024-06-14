@@ -10,6 +10,7 @@
 #ifndef METALGRAPHICAPI_HPP
 # define METALGRAPHICAPI_HPP
 
+#include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
@@ -102,6 +103,7 @@ private:
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
     id<MTLLibrary> m_shaderLib = nullptr;
+    MetalTexture m_depthTexture;
 
     // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;

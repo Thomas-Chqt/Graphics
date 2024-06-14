@@ -28,7 +28,8 @@ public:
         utils::String openglVSCode;
         utils::String openglFSCode;
 
-        gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
+        gfx::ColorPixelFormat colorPixelFormat = ColorPixelFormat::RGBA;
+        gfx::DepthPixelFormat depthPixelFormat = DepthPixelFormat::Depth32;
         
         gfx::BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
     };

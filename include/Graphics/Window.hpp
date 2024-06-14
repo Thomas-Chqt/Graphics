@@ -32,7 +32,7 @@ public:
     virtual void getWindowSize(utils::uint32* width, utils::uint32* height) = 0;
     virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) = 0;
 
-    // virtual PixelFormat pixelFormat() = 0;
+    // virtual ColorPixelFormat pixelFormat() = 0;
 
     virtual ~Window() = default;
 

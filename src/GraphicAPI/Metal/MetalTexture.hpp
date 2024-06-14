@@ -30,7 +30,7 @@ namespace gfx
 class MetalTexture : public Texture
 {
 public:
-    MetalTexture()                    = delete;
+    MetalTexture()                    = default;
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&);
 
@@ -50,7 +50,7 @@ private:
 
 public:
     MetalTexture& operator = (const MetalTexture&) = delete;
-    MetalTexture& operator = (MetalTexture&&)      = delete;
+    MetalTexture& operator = (MetalTexture&&);
 
 };
 

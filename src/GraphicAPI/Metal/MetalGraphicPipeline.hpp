@@ -25,6 +25,7 @@
     class MTLDevice;
     class MTLLibrary;
     class MTLRenderPipelineState;
+    class MTLDepthStencilState;
 #endif // OBJCPP
 
 
@@ -44,11 +45,13 @@ public:
     inline utils::uint32 findFragmentUniformIndex(const utils::String& name) override { return m_fragmentUniformsIndices[name]; }
     
     const id<MTLRenderPipelineState>& renderPipelineState() { return m_renderPipelineState; };
+    const id<MTLDepthStencilState>& depthStencilState() { return m_depthStencilState; };
     
     ~MetalGraphicPipeline();
 
 private:
     id<MTLRenderPipelineState> m_renderPipelineState = nullptr;
+    id<MTLDepthStencilState> m_depthStencilState = nullptr;
 
     utils::Dictionary<utils::String, utils::uint32> m_vertexUniformsIndices;
     utils::Dictionary<utils::String, utils::uint32> m_fragmentUniformsIndices;

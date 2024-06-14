@@ -32,7 +32,7 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
     
     renderPipelineDescriptor.vertexFunction = vertexFunction;
     renderPipelineDescriptor.fragmentFunction = fragmentFunction;
-    renderPipelineDescriptor.colorAttachments[0].pixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.pixelFormat);
+    renderPipelineDescriptor.colorAttachments[0].pixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.colorPixelFormat);
     if (descriptor.blendOperation != BlendOperation::blendingOff)
     {
         renderPipelineDescriptor.colorAttachments[0].blendingEnabled = YES;
@@ -71,6 +71,8 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
     else
         renderPipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
 
+    renderPipelineDescriptor.depthAttachmentPixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.depthPixelFormat);
+
     NSError* error;
     MTLAutoreleasedRenderPipelineReflection reflection;
 
@@ -86,6 +88,11 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
 
     for (uint32 i = 0; i < fragmentBindings.count; i++)
         m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+
+    MTLDepthStencilDescriptor* depthStencilDescriptor = [[[MTLDepthStencilDescriptor alloc] init] autorelease];
+    depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;
+    depthStencilDescriptor.depthWriteEnabled = YES;
+    m_depthStencilState = [mtlDevice newDepthStencilStateWithDescriptor:depthStencilDescriptor];
 }}
 
 MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool

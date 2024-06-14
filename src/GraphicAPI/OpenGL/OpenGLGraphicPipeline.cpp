@@ -19,7 +19,7 @@ using utils::String;
 namespace gfx
 {
 
-OpenGLGraphicPipeline::OpenGLGraphicPipeline(const GraphicPipeline::Descriptor& desc) : m_blendOperation(desc.blendOperation)
+OpenGLGraphicPipeline::OpenGLGraphicPipeline(const GraphicPipeline::Descriptor& desc)
 {
     int success;
     char errorLog[1024];

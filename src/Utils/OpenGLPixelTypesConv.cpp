@@ -16,25 +16,25 @@
 namespace gfx
 {
 
-utils::uint64 toOpenGLPixelFormat(PixelFormat pxFormat)
+utils::uint64 toOpenGLPixelFormat(ColorPixelFormat pxFormat)
 {
     switch (pxFormat)
     {
-    case PixelFormat::RGBA:
+    case ColorPixelFormat::RGBA:
         return GL_RGBA;
-    case PixelFormat::BGRA:
+    case ColorPixelFormat::BGRA:
         return GL_BGRA;
     }
 }
-PixelFormat fromOpenGLPixelFormat(utils::uint64 glPxFormat)
+ColorPixelFormat fromOpenGLPixelFormat(utils::uint64 glPxFormat)
 {
     switch (glPxFormat)
     {
     case GL_RGBA:
-        return PixelFormat::RGBA;
+        return ColorPixelFormat::RGBA;
 
     case GL_BGRA:
-        return PixelFormat::BGRA;
+        return ColorPixelFormat::BGRA;
 
     default:
         throw utils::RuntimeError("not implemented");
