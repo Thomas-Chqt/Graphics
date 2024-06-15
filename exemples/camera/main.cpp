@@ -47,26 +47,37 @@ struct GrassCube : Entity
     {
         vertexBuffer = api->newVertexBuffer<Vertex>(
         {
+            // Front face
             {{ -0.5, -0.5, -0.5 }, { 0.0, 1.0 }},
             {{ -0.5,  0.5, -0.5 }, { 0.0, 0.0 }},
             {{  0.5,  0.5, -0.5 }, { 1.0, 0.0 }},
             {{  0.5, -0.5, -0.5 }, { 1.0, 1.0 }},
+            
+            // Back face
             {{ -0.5, -0.5,  0.5 }, { 0.0, 1.0 }},
             {{ -0.5,  0.5,  0.5 }, { 0.0, 0.0 }},
             {{  0.5,  0.5,  0.5 }, { 1.0, 0.0 }},
             {{  0.5, -0.5,  0.5 }, { 1.0, 1.0 }},
+            
+            // Top face
             {{ -0.5,  0.5, -0.5 }, { 0.0, 1.0 }},
             {{ -0.5,  0.5,  0.5 }, { 0.0, 0.0 }},
             {{  0.5,  0.5,  0.5 }, { 1.0, 0.0 }},
             {{  0.5,  0.5, -0.5 }, { 1.0, 1.0 }},
+            
+            // Bottom face
             {{ -0.5, -0.5, -0.5 }, { 0.0, 1.0 }},
             {{ -0.5, -0.5,  0.5 }, { 0.0, 0.0 }},
             {{  0.5, -0.5,  0.5 }, { 1.0, 0.0 }},
             {{  0.5, -0.5, -0.5 }, { 1.0, 1.0 }},
+            
+            // Left face
             {{ -0.5, -0.5,  0.5 }, { 0.0, 1.0 }},
             {{ -0.5,  0.5,  0.5 }, { 0.0, 0.0 }},
             {{ -0.5,  0.5, -0.5 }, { 1.0, 0.0 }},
             {{ -0.5, -0.5, -0.5 }, { 1.0, 1.0 }},
+            
+            // Right face
             {{  0.5, -0.5, -0.5 }, { 0.0, 1.0 }},
             {{  0.5,  0.5, -0.5 }, { 0.0, 0.0 }},
             {{  0.5,  0.5,  0.5 }, { 1.0, 0.0 }},
@@ -75,23 +86,14 @@ struct GrassCube : Entity
 
         indexBufferSides = api->newIndexBuffer(
         {
-            0, 1, 2, 2, 3, 0, // Front face
-            4, 5, 6, 6, 7, 4, // Back face
-            8, 9, 10, 10, 11, 8, // Top face
-            12, 13, 14, 14, 15, 12, // Bottom face
+             0,  1,  2,  2,  3,  0, // Front face
+             4,  5,  6,  6,  7,  4, // Back face
             16, 17, 18, 18, 19, 16, // Left face
-            20, 21, 22, 22, 23, 20 // Right face
+            20, 21, 22, 22, 23, 20  // Right face
         });
 
-        indexBufferTop = api->newIndexBuffer(
-        {
-            8, 9, 10, 10, 11, 8 // Top face
-        });
-
-        indexBufferBottom = api->newIndexBuffer(
-        {
-            12, 13, 14, 14, 15, 12 // Bottom face
-        });
+        indexBufferTop = api->newIndexBuffer({ 8, 9, 10, 10, 11, 8 });
+        indexBufferBottom = api->newIndexBuffer({ 12, 13, 14, 14, 15, 12 });
 
         graphicPipeline = makePipeline(api, "texturedCube2");
 

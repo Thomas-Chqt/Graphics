@@ -20,5 +20,5 @@ uniform mat4 u_vpMatrix;
 void main()
 {
     texCoord = uv;
-    gl_Position = u_modelMatrix * u_vpMatrix * vec4(pos, 1.0);
+    gl_Position = u_vpMatrix * u_modelMatrix * vec4(pos, 1.0);
 }

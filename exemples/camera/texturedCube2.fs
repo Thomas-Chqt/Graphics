@@ -9,12 +9,12 @@
 
 #version 410 core
 
-uniform sampler2D u_texture;
-
 in vec2 texCoord;
 
 out vec4 fragmentColor;
-        
+
+uniform sampler2D u_texture;
+
 void main()
 {
     fragmentColor = texture(u_texture, texCoord);
