@@ -232,6 +232,11 @@ void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3& 
     [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat3x3) atIndex:index];
 }}
 
+void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, float f) { @autoreleasepool
+{
+    [m_commandEncoder setFragmentBytes:(const void *)&f length:sizeof(float) atIndex:index];
+}}
+
 void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
 {
     [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:index];

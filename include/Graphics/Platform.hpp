@@ -17,14 +17,6 @@
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window.hpp"
 
-#ifdef GFX_METAL_ENABLED
-    #define newDefaultWindow(w, h) newMetalWindow(w, h)
-    #define newDefaultGraphicAPI(target) newMetalGraphicAPI(target)
-#else
-    #define newDefaultWindow(w, h) newOpenGLWindow(w, h)
-    #define newDefaultGraphicAPI(target) newOpenGLGraphicAPI(target)
-#endif
-
 namespace gfx
 {
 
@@ -48,6 +40,9 @@ public:
     virtual utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const = 0;
     utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
 #endif
+
+    utils::SharedPtr<Window> newDefaultWindow(int w, int h);
+    utils::SharedPtr<GraphicAPI> newDefaultGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
 
     virtual void pollEvents() = 0;
 

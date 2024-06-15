@@ -31,4 +31,10 @@ if(GFX_BUILD_IMGUI)
     add_subdirectory(texturedCube)
 endif()
 
-add_subdirectory(camera)
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(camera)
+endif()
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(ambiantLight)
+endif()

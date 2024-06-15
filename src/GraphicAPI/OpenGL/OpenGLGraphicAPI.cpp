@@ -221,6 +221,11 @@ void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3&
     glUniformMatrix3fv(index, 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&glmat));
 }
 
+void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, float f)
+{
+    glUniform1f(index, f);
+}
+
 void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec)
 {
     glUniform4f(index, vec.x, vec.y, vec.z, vec.w);
