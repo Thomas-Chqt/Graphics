@@ -18,11 +18,11 @@ struct VertexOut
 
 vertex VertexOut texturedCube2_vs(uint vID                                [[vertex_id]],
                                   constant Vertex *vertices               [[buffer(0)]],
-                                  constant metal::float4x4& u_VPMatrix    [[buffer(1)]],
-                                  constant metal::float4x4& u_ModelMatrix [[buffer(2)]])
+                                  constant metal::float4x4& u_modelMatrix [[buffer(1)]],
+                                  constant metal::float4x4& u_vpMatrix    [[buffer(2)]])
 {
     return (VertexOut){
-        .pos = u_ModelMatrix * u_VPMatrix * float4(vertices[vID].pos, 1.0),
+        .pos =  u_vpMatrix * u_modelMatrix * float4(vertices[vID].pos, 1.0),
         .uv  = vertices[vID].uv
     };
 }

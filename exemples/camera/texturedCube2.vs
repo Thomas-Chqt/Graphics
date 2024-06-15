@@ -14,10 +14,11 @@ layout (location = 1) in vec2 uv;
 
 out vec2 texCoord;
 
-uniform mat4 u_MVPMatrix;
+uniform mat4 u_modelMatrix;
+uniform mat4 u_vpMatrix;
 
 void main()
 {
     texCoord = uv;
-    gl_Position = u_MVPMatrix * vec4(pos, 1.0);
+    gl_Position = u_modelMatrix * u_vpMatrix * vec4(pos, 1.0);
 }
