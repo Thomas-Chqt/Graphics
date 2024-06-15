@@ -148,6 +148,7 @@ void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
     renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
 
     renderPassDescriptor.depthAttachment.loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
+    renderPassDescriptor.depthAttachment.clearDepth = 1.0;
     renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
     renderPassDescriptor.depthAttachment.texture = m_depthTexture.mtlTexture();
 
@@ -267,7 +268,7 @@ void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& i
         throw utils::RuntimeError("IndexBuffer is not MetalIndexBuffer");
 }}
 
-void MetalGraphicAPI::endOnScreenRenderPass()
+void MetalGraphicAPI::endOnScreenRenderPass() { @autoreleasepool
 {
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
@@ -289,14 +290,14 @@ void MetalGraphicAPI::endOnScreenRenderPass()
     [m_currentDrawable release];
 
     m_renderPassObjects.clear();
-}
+}}
 
-void MetalGraphicAPI::endOffScreeRenderPass()
+void MetalGraphicAPI::endOffScreeRenderPass() { @autoreleasepool
 {
     [m_commandEncoder endEncoding];
     [m_commandEncoder release];
     m_renderPassObjects.clear();
-}
+}}
 
 void MetalGraphicAPI::endFrame() { @autoreleasepool
 {

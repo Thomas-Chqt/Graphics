@@ -30,3 +30,5 @@ add_subdirectory(offscreenRenderPass)
 if(GFX_BUILD_IMGUI)
     add_subdirectory(texturedCube)
 endif()
+
+add_subdirectory(camera)

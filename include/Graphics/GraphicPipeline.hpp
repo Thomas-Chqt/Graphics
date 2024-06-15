@@ -12,7 +12,7 @@
 
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "Graphics/Enums.hpp"
+#include "Enums.hpp"
 
 namespace gfx
 {
@@ -28,7 +28,7 @@ public:
         utils::String openglVSCode;
         utils::String openglFSCode;
 
-        gfx::ColorPixelFormat colorPixelFormat = ColorPixelFormat::RGBA;
+        gfx::ColorPixelFormat colorPixelFormat = ColorPixelFormat::BGRA;
         gfx::DepthPixelFormat depthPixelFormat = DepthPixelFormat::Depth32;
         
         gfx::BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
