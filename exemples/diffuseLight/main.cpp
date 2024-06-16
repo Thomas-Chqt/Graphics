@@ -45,8 +45,8 @@ struct Earth : DrawableEntity
     Earth(const utils::SharedPtr<gfx::GraphicAPI>& api)
     {
         graphicPipeline = makePipeline(api, "diffuseLight");
-        subMeshes = loadModel(api, RESSOURCES_DIR"/CatBackArched.obj");
-        // subMeshes[0].texture = textureFromFile(api, RESSOURCES_DIR"/earth.jpg");
+        subMeshes = loadModel(api, RESSOURCES_DIR"/earth.blend");
+        subMeshes[0].texture = textureFromFile(api, RESSOURCES_DIR"/earth.jpg");
 
         position = {0, 0, 30};
         rotation = {PI, 0, 0};
@@ -58,7 +58,7 @@ struct Earth : DrawableEntity
         {
             api->useVertexBuffer(mesh.vertexBuffer);
             api->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_modelMatrix"), modelMatrix());
-            // api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), mesh.texture);
+            api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), mesh.texture);
             api->drawIndexedVertices(mesh.indexBuffer);
         }
     }

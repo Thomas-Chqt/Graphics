@@ -87,7 +87,8 @@ utils::Array<SubMesh> loadModel(const utils::SharedPtr<gfx::GraphicAPI>& api, co
         aiProcess_FindInvalidData           |
         aiProcess_GenUVCoords               |
         aiProcess_FlipUVs                   |
-        aiProcess_FlipWindingOrder
+        aiProcess_FlipWindingOrder          |
+        aiProcess_SortByPType
     );
 
     if (scene == nullptr)
@@ -127,9 +128,9 @@ utils::Array<SubMesh> loadModel(const utils::SharedPtr<gfx::GraphicAPI>& api, co
 
         for(utils::uint32 faceIndex = 0; faceIndex < aiMesh->mNumFaces; faceIndex++)
         {
-            indices[faceIndex + 0] = aiMesh->mFaces[faceIndex].mIndices[0];
-            indices[faceIndex + 1] = aiMesh->mFaces[faceIndex].mIndices[1];
-            indices[faceIndex + 2] = aiMesh->mFaces[faceIndex].mIndices[2];
+            indices[faceIndex * 3 + 0] = aiMesh->mFaces[faceIndex].mIndices[0];
+            indices[faceIndex * 3 + 1] = aiMesh->mFaces[faceIndex].mIndices[1];
+            indices[faceIndex * 3 + 2] = aiMesh->mFaces[faceIndex].mIndices[2];
         }
 
         output[meshIndex].vertexBuffer = api->newVertexBuffer(vertices);
