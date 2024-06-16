@@ -72,6 +72,7 @@ public:
     virtual void setVertexUniform(utils::uint32 index, const math::mat3x3&) = 0;
 
     virtual void setFragmentUniform(utils::uint32 index, float) = 0;
+    virtual void setFragmentUniform(utils::uint32 index, const math::vec3f&) = 0;
     virtual void setFragmentUniform(utils::uint32 index, const math::vec4f&) = 0;
     virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) = 0;
 

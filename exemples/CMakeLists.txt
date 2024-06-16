@@ -38,3 +38,7 @@ endif()
 if(GFX_BUILD_IMGUI)
     add_subdirectory(ambiantLight)
 endif()
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(diffuseLight)
+endif()

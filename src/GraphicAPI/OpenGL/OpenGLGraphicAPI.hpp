@@ -67,6 +67,7 @@ public:
     void setVertexUniform(utils::uint32 index, const math::mat3x3&) override;
     
     void setFragmentUniform(utils::uint32 index, float f) override;
+    void setFragmentUniform(utils::uint32 index, const math::vec3f&) override;
     void setFragmentUniform(utils::uint32 index, const math::vec4f&) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
     

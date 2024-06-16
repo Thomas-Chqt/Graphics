@@ -226,6 +226,11 @@ void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, float f)
     glUniform1f(index, f);
 }
 
+void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec3f& vec)
+{
+    glUniform3f(index, vec.x, vec.y, vec.z);
+}
+
 void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec)
 {
     glUniform4f(index, vec.x, vec.y, vec.z, vec.w);

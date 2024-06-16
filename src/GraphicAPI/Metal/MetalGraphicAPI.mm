@@ -237,6 +237,11 @@ void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, float f) { @autore
     [m_commandEncoder setFragmentBytes:(const void *)&f length:sizeof(float) atIndex:index];
 }}
 
+void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec3f& vec) { @autoreleasepool
+{
+    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec3f) atIndex:index];
+}}
+
 void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
 {
     [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:index];
