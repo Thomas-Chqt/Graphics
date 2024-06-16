@@ -18,10 +18,8 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
-#include "Vertex.hpp"
 #include "helpers.hpp"
 #include "imgui/imgui.h"
-#include "earthObj.hpp"
 
 struct Entity
 {
@@ -42,15 +40,13 @@ struct DrawableEntity : Entity
 
 struct Earth : DrawableEntity
 {
-    utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
-    utils::SharedPtr<gfx::Texture> texture;
+    utils::Array<SubMesh> subMeshes;
 
     Earth(const utils::SharedPtr<gfx::GraphicAPI>& api)
     {
-        vertexBuffer = api->newVertexBuffer<Vertex>(EARTH_VRTX);
-
         graphicPipeline = makePipeline(api, "diffuseLight");
-        texture = textureFromFile(api, RESSOURCES_DIR"/earth.jpg");
+        subMeshes = loadModel(api, RESSOURCES_DIR"/CatBackArched.obj");
+        // subMeshes[0].texture = textureFromFile(api, RESSOURCES_DIR"/earth.jpg");
 
         position = {0, 0, 30};
         rotation = {PI, 0, 0};
@@ -58,10 +54,13 @@ struct Earth : DrawableEntity
 
     void draw(const utils::SharedPtr<gfx::GraphicAPI>& api) const override
     {
-        api->useVertexBuffer(vertexBuffer);
-        api->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_modelMatrix"), modelMatrix());
-        api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), texture);
-        api->drawVertices(0, EARTH_VRTX.length());
+        for (auto& mesh : subMeshes)
+        {
+            api->useVertexBuffer(mesh.vertexBuffer);
+            api->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_modelMatrix"), modelMatrix());
+            // api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), mesh.texture);
+            api->drawIndexedVertices(mesh.indexBuffer);
+        }
     }
 };
 

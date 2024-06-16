@@ -5,6 +5,8 @@
 # Date: 2024/06/15 21:19:22
 # ---------------------------------------------------
 
+include(FetchContent)
+
 if(GFX_ENABLE_METAL)
     set(MTL_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
     set(MTL_SHADER_LIB "${CMAKE_CURRENT_BINARY_DIR}/MTLShaderLib.metallib")
@@ -41,6 +43,15 @@ endif()
 target_compile_definitions(diffuseLight PRIVATE "RESSOURCES_DIR=\"${RESSOURCES_DIR}\"")
 
 target_link_libraries(diffuseLight PRIVATE Graphics)
+
+FetchContent_Declare(assimp GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG v5.4.1)
+set(ASSIMP_BUILD_TESTS OFF)
+set(ASSIMP_INSTALL OFF)
+FetchContent_MakeAvailable(assimp)
+set_target_properties(assimp PROPERTIES FOLDER "dependencies")
+
+target_link_libraries(diffuseLight PRIVATE assimp)
+
 
 if(GFX_ENABLE_METAL)
     add_custom_target(MTLShaderLib_diffuseLight DEPENDS ${MTL_SHADER_LIB})

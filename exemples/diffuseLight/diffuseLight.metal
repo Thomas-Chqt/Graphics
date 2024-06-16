@@ -41,8 +41,9 @@ fragment float4 diffuseLight_fs(
     constant float3& u_diffuseDirection [[buffer(2)]]
 )
 {
-    constexpr metal::sampler textureSampler(metal::mag_filter::nearest, metal::min_filter::nearest);
-    float4 pixelColor = u_texture.sample(textureSampler, in.uv);
-    float diffuseFactor = dot(normalize(in.normal), -u_diffuseDirection);
-    return float4(pixelColor.xyz * u_diffuseColor.xyz * diffuseFactor * u_diffuseIntensity, pixelColor.w);
+    // constexpr metal::sampler textureSampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+    // float4 pixelColor = u_texture.sample(textureSampler, in.uv);
+    // float diffuseFactor = dot(normalize(in.normal), -u_diffuseDirection);
+    // return float4(pixelColor.xyz * u_diffuseColor.xyz * diffuseFactor * u_diffuseIntensity, pixelColor.w);
+    return float4(1, 1, 1, 1);
 }
