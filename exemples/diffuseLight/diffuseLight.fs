@@ -22,5 +22,6 @@ uniform vec3 u_diffuseDirection;
 void main()
 {
     vec4 pixelColor = texture(u_texture, texCoord);
-    fragmentColor = vec4(pixelColor.xyz * u_diffuseColor.xyz * u_diffuseIntensity, pixelColor.w);
+    float diffuseFactor = dot(normalize(normal), -u_diffuseDirection);
+    fragmentColor = vec4(pixelColor.xyz * u_diffuseColor.xyz * diffuseFactor * u_diffuseIntensity, pixelColor.w);
 }

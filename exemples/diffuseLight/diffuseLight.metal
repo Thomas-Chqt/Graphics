@@ -34,10 +34,10 @@ vertex VertexOut diffuseLight_vs(
 }
 
 fragment float4 diffuseLight_fs(
-    VertexOut in                       [[stage_in]],
-    texture2d<float> u_texture         [[texture(0)]],
-    constant float4& u_diffuseColor    [[buffer(0)]],
-    constant float& u_diffuseIntensity [[buffer(1)]],
+    VertexOut in                        [[stage_in]],
+    texture2d<float> u_texture          [[texture(0)]],
+    constant float4& u_diffuseColor     [[buffer(0)]],
+    constant float& u_diffuseIntensity  [[buffer(1)]],
     constant float3& u_diffuseDirection [[buffer(2)]]
 )
 {

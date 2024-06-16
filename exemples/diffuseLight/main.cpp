@@ -21,6 +21,7 @@
 #include "Vertex.hpp"
 #include "helpers.hpp"
 #include "imgui/imgui.h"
+#include "earthObj.hpp"
 
 struct Entity
 {
@@ -39,89 +40,28 @@ struct DrawableEntity : Entity
     virtual void draw(const utils::SharedPtr<gfx::GraphicAPI>& api) const = 0;
 };
 
-struct GrassCube : DrawableEntity
+struct Earth : DrawableEntity
 {
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
-    utils::SharedPtr<gfx::IndexBuffer> indexBufferSides;
-    utils::SharedPtr<gfx::IndexBuffer> indexBufferTop;
-    utils::SharedPtr<gfx::IndexBuffer> indexBufferBottom;
-    
-    utils::SharedPtr<gfx::Texture> sideTexture;
-    utils::SharedPtr<gfx::Texture> topTexture;
-    utils::SharedPtr<gfx::Texture> bottomTexture;
+    utils::SharedPtr<gfx::Texture> texture;
 
-    GrassCube(const utils::SharedPtr<gfx::GraphicAPI>& api)
+    Earth(const utils::SharedPtr<gfx::GraphicAPI>& api)
     {
-        vertexBuffer = api->newVertexBuffer<Vertex>(
-        {
-            // Front face
-            {{ -0.5, -0.5, -0.5 }, { 0.0, 1.0 }, { 0.0, 0.0, -1.0 }},
-            {{ -0.5,  0.5, -0.5 }, { 0.0, 0.0 }, { 0.0, 0.0, -1.0 }},
-            {{  0.5,  0.5, -0.5 }, { 1.0, 0.0 }, { 0.0, 0.0, -1.0 }},
-            {{  0.5, -0.5, -0.5 }, { 1.0, 1.0 }, { 0.0, 0.0, -1.0 }},
-            
-            // Back face
-            {{ -0.5, -0.5,  0.5 }, { 0.0, 1.0 }, { 0.0, 0.0, 1.0 }},
-            {{ -0.5,  0.5,  0.5 }, { 0.0, 0.0 }, { 0.0, 0.0, 1.0 }},
-            {{  0.5,  0.5,  0.5 }, { 1.0, 0.0 }, { 0.0, 0.0, 1.0 }},
-            {{  0.5, -0.5,  0.5 }, { 1.0, 1.0 }, { 0.0, 0.0, 1.0 }},
-            
-            // Top face
-            {{ -0.5,  0.5, -0.5 }, { 0.0, 1.0 }, { 0.0, 1.0, 0.0 }},
-            {{ -0.5,  0.5,  0.5 }, { 0.0, 0.0 }, { 0.0, 1.0, 0.0 }},
-            {{  0.5,  0.5,  0.5 }, { 1.0, 0.0 }, { 0.0, 1.0, 0.0 }},
-            {{  0.5,  0.5, -0.5 }, { 1.0, 1.0 }, { 0.0, 1.0, 0.0 }},
-            
-            // Bottom face
-            {{ -0.5, -0.5, -0.5 }, { 0.0, 1.0 }, { 0.0, -1.0, 0.0 }},
-            {{ -0.5, -0.5,  0.5 }, { 0.0, 0.0 }, { 0.0, -1.0, 0.0 }},
-            {{  0.5, -0.5,  0.5 }, { 1.0, 0.0 }, { 0.0, -1.0, 0.0 }},
-            {{  0.5, -0.5, -0.5 }, { 1.0, 1.0 }, { 0.0, -1.0, 0.0 }},
-            
-            // Left face
-            {{ -0.5, -0.5,  0.5 }, { 0.0, 1.0 }, { -1.0, 0.0, 0.0 }},
-            {{ -0.5,  0.5,  0.5 }, { 0.0, 0.0 }, { -1.0, 0.0, 0.0 }},
-            {{ -0.5,  0.5, -0.5 }, { 1.0, 0.0 }, { -1.0, 0.0, 0.0 }},
-            {{ -0.5, -0.5, -0.5 }, { 1.0, 1.0 }, { -1.0, 0.0, 0.0 }},
-            
-            // Right face
-            {{  0.5, -0.5, -0.5 }, { 0.0, 1.0 }, { 1.0, 0.0, 0.0 }},
-            {{  0.5,  0.5, -0.5 }, { 0.0, 0.0 }, { 1.0, 0.0, 0.0 }},
-            {{  0.5,  0.5,  0.5 }, { 1.0, 0.0 }, { 1.0, 0.0, 0.0 }},
-            {{  0.5, -0.5,  0.5 }, { 1.0, 1.0 }, { 1.0, 0.0, 0.0 }}
-        });
-
-        indexBufferSides = api->newIndexBuffer(
-        {
-             0,  1,  2,  2,  3,  0, // Front face
-             4,  5,  6,  6,  7,  4, // Back face
-            16, 17, 18, 18, 19, 16, // Left face
-            20, 21, 22, 22, 23, 20  // Right face
-        });
-
-        indexBufferTop = api->newIndexBuffer({ 8, 9, 10, 10, 11, 8 });
-        indexBufferBottom = api->newIndexBuffer({ 12, 13, 14, 14, 15, 12 });
+        vertexBuffer = api->newVertexBuffer<Vertex>(EARTH_VRTX);
 
         graphicPipeline = makePipeline(api, "diffuseLight");
+        texture = textureFromFile(api, RESSOURCES_DIR"/earth.jpg");
 
-        sideTexture = textureFromFile(api, RESSOURCES_DIR"/mc_grass_side.jpg");
-        topTexture = textureFromFile(api, RESSOURCES_DIR"/mc_grass_top.jpg");
-        bottomTexture = textureFromFile(api, RESSOURCES_DIR"/mc_grass_bottom.jpg");
-
-        position = {0, 0, 3.5};
-        rotation = {5.7, 0.8, 0};
+        position = {0, 0, 30};
+        rotation = {PI, 0, 0};
     }
 
     void draw(const utils::SharedPtr<gfx::GraphicAPI>& api) const override
     {
         api->useVertexBuffer(vertexBuffer);
         api->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_modelMatrix"), modelMatrix());
-        api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), sideTexture);
-        api->drawIndexedVertices(indexBufferSides);
-        api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), topTexture);
-        api->drawIndexedVertices(indexBufferTop);
-        api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), bottomTexture);
-        api->drawIndexedVertices(indexBufferBottom);
+        api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), texture);
+        api->drawVertices(0, EARTH_VRTX.length());
     }
 };
 
@@ -176,7 +116,7 @@ int main()
 
 
     bool running = true;
-    GrassCube cube(graphicAPI);
+    Earth earth(graphicAPI);
     Camera camera;
     Light light;
 
@@ -226,13 +166,13 @@ int main()
 
         ImGui::Text("FPS : %f", ImGui::GetIO().Framerate);
 
-        ImGui::Text("Cube Transform :");
-        ImGui::SliderFloat("Pos X", &cube.position.x, -5, 5);
-        ImGui::SliderFloat("Pos Y", &cube.position.y, -5, 5);
-        ImGui::SliderFloat("Pos Z", &cube.position.z, -1, 10);
-        ImGui::SliderFloat("Rot X", &cube.rotation.x, 0, 2 * PI);
-        ImGui::SliderFloat("Rot Y", &cube.rotation.y, 0, 2 * PI);
-        ImGui::SliderFloat("Rot Z", &cube.rotation.z, 0, 2 * PI);
+        ImGui::Text("Earth Transform :");
+        ImGui::SliderFloat("Pos X", &earth.position.x, -5, 5);
+        ImGui::SliderFloat("Pos Y", &earth.position.y, -5, 5);
+        ImGui::SliderFloat("Pos Z", &earth.position.z, -1, 100);
+        ImGui::SliderFloat("Rot X", &earth.rotation.x, 0, 2 * PI);
+        ImGui::SliderFloat("Rot Y", &earth.rotation.y, 0, 2 * PI);
+        ImGui::SliderFloat("Rot Z", &earth.rotation.z, 0, 2 * PI);
 
         ImGui::Spacing();
 
@@ -244,7 +184,7 @@ int main()
 
         render(
             graphicAPI,
-            cube,
+            earth,
             makeProjectionMatrix(window),
             camera,
             light

@@ -21,7 +21,7 @@ uniform mat4 u_vpMatrix;
 
 void main()
 {
-    normal      = u_modelMatrix * norm;
+    normal      = (u_modelMatrix * vec4(norm, 0.0)).xyz;
     texCoord    = uv;
     gl_Position = u_vpMatrix * u_modelMatrix * vec4(pos, 1.0);
 }
