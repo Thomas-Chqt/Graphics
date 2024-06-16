@@ -45,11 +45,10 @@ struct Earth : DrawableEntity
     Earth(const utils::SharedPtr<gfx::GraphicAPI>& api)
     {
         graphicPipeline = makePipeline(api, "diffuseLight");
-        subMeshes = loadModel(api, RESSOURCES_DIR"/earth.blend");
-        subMeshes[0].texture = textureFromFile(api, RESSOURCES_DIR"/earth.jpg");
+        subMeshes = loadModel(api, RESSOURCES_DIR"/Cat.obj");
 
-        position = {0, 0, 30};
-        rotation = {PI, 0, 0};
+        position = {0, -20, 70};
+        rotation = {PI/2, 0, PI/2};
     }
 
     void draw(const utils::SharedPtr<gfx::GraphicAPI>& api) const override
@@ -58,7 +57,8 @@ struct Earth : DrawableEntity
         {
             api->useVertexBuffer(mesh.vertexBuffer);
             api->setVertexUniform(graphicPipeline->findVertexUniformIndex("u_modelMatrix"), modelMatrix());
-            api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), mesh.texture);
+            if (mesh.texture)
+                api->setFragmentTexture(graphicPipeline->findFragmentUniformIndex("u_texture"), mesh.texture);
             api->drawIndexedVertices(mesh.indexBuffer);
         }
     }

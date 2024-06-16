@@ -8,13 +8,13 @@
 include(FetchContent)
 
 if(GFX_ENABLE_METAL)
-    set(MTL_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(MTL_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
     set(MTL_SHADER_LIB "${CMAKE_CURRENT_BINARY_DIR}/MTLShaderLib.metallib")
 endif()
 if(GFX_ENABLE_OPENGL)
-    set(OPENGL_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(OPENGL_SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 endif()
-set(RESSOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(RESSOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ressources")
 
 add_executable(diffuseLight)
 

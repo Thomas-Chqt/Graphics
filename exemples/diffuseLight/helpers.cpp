@@ -10,7 +10,9 @@
 #include "helpers.hpp"
 #include "Math/Constants.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
+#include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "assimp/material.h"
 #include "assimp/mesh.h"
 #include "stb_image.h"
 #include <assimp/Importer.hpp>
@@ -59,7 +61,7 @@ math::mat4x4 makeProjectionMatrix(const utils::SharedPtr<gfx::Window>& window)
     float fov = 60 * (PI / 180.0f);
     float aspectRatio = (float)w / (float)h;
     float zNear = 0.1f;
-    float zFar = 100;
+    float zFar = 10000;
 
     float ys = 1 / std::tan(fov * 0.5);
     float xs = ys / aspectRatio;
@@ -87,8 +89,7 @@ utils::Array<SubMesh> loadModel(const utils::SharedPtr<gfx::GraphicAPI>& api, co
         aiProcess_FindInvalidData           |
         aiProcess_GenUVCoords               |
         aiProcess_FlipUVs                   |
-        aiProcess_FlipWindingOrder          |
-        aiProcess_SortByPType
+        aiProcess_FlipWindingOrder
     );
 
     if (scene == nullptr)
@@ -102,6 +103,7 @@ utils::Array<SubMesh> loadModel(const utils::SharedPtr<gfx::GraphicAPI>& api, co
 
         utils::Array<Vertex> vertices(aiMesh->mNumVertices);
         utils::Array<utils::uint32> indices(aiMesh->mNumFaces * 3);
+        utils::String textureFilePath;
 
         for(utils::uint32 vertexIndex = 0; vertexIndex < aiMesh->mNumVertices; vertexIndex++)
         {
@@ -133,8 +135,20 @@ utils::Array<SubMesh> loadModel(const utils::SharedPtr<gfx::GraphicAPI>& api, co
             indices[faceIndex * 3 + 2] = aiMesh->mFaces[faceIndex].mIndices[2];
         }
 
+        aiMaterial* aiMaterial = scene->mMaterials[aiMesh->mMaterialIndex];
+        if (aiMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+        {
+            aiString path;
+            if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) == AI_SUCCESS)
+                textureFilePath = filePath.substr(0, filePath.lastIndexOf('/')) + "/" + utils::String(path.data);
+            else
+                throw utils::RuntimeError("Failed to get the texture");
+        }
+
         output[meshIndex].vertexBuffer = api->newVertexBuffer(vertices);
         output[meshIndex].indexBuffer = api->newIndexBuffer(indices);
+        if (textureFilePath.isEmpty() == false)
+            output[meshIndex].texture = textureFromFile(api, textureFilePath);
     }
 
     return output;
