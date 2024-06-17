@@ -19,6 +19,7 @@
 #include "UtilsCPP/String.hpp"
 #include "Vertex.hpp"
 #include "helpers.hpp"
+#include <cmath>
 
 struct Entity
 {

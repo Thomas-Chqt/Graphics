@@ -107,6 +107,10 @@ if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
     target_link_libraries(Graphics PRIVATE glfw)
 endif()
 
+add_subdirectory("src/imgui")
+
+target_link_libraries(Graphics PRIVATE imgui)
+
 if (GFX_ENABLE_METAL)
     target_link_libraries(Graphics PRIVATE "-framework Metal -framework QuartzCore")
 endif()

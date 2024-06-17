@@ -11,6 +11,7 @@
 #include "Math/Constants.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "stb_image.h"
+#include <cmath>
 
 utils::SharedPtr<gfx::GraphicPipeline> makePipeline(utils::SharedPtr<gfx::GraphicAPI> api, const utils::String& shaderName)
 {

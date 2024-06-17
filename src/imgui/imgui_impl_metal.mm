@@ -500,13 +500,13 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
     if ((viewport->Flags & ImGuiViewportFlags_NoRendererClear) == 0)
         renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
     
-    MTLTextureDescriptor* depthTextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
+    MTLTextureDescriptor* depthTextureDescriptor = [[MTLTextureDescriptor alloc] init];
     depthTextureDescriptor.width = drawable.layer.drawableSize.width;
     depthTextureDescriptor.height = drawable.layer.drawableSize.height;
     depthTextureDescriptor.pixelFormat = MTLPixelFormatDepth32Float;
     depthTextureDescriptor.usage = MTLTextureUsageRenderTarget;
     depthTextureDescriptor.storageMode = MTLStorageModePrivate;
-    id<MTLTexture> depthTexture = [[drawable.layer.device newTextureWithDescriptor:depthTextureDescriptor] autorelease];
+    id<MTLTexture> depthTexture = [drawable.layer.device newTextureWithDescriptor:depthTextureDescriptor];
     
     renderPassDescriptor.depthAttachment.texture = depthTexture;
     renderPassDescriptor.depthAttachment.clearDepth = 1.0;
