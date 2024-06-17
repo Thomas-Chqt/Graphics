@@ -53,8 +53,8 @@ private:
     id<MTLRenderPipelineState> m_renderPipelineState = nullptr;
     id<MTLDepthStencilState> m_depthStencilState = nullptr;
 
-    utils::Dictionary<utils::String, utils::uint32> m_vertexUniformsIndices;
-    utils::Dictionary<utils::String, utils::uint32> m_fragmentUniformsIndices;
+    utils::Dictionary<utils::String, utils::uint64> m_vertexUniformsIndices;
+    utils::Dictionary<utils::String, utils::uint64> m_fragmentUniformsIndices;
 
 public:
     MetalGraphicPipeline& operator = (const MetalGraphicPipeline&) = delete;
