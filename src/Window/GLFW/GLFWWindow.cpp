@@ -10,7 +10,7 @@
 #include "Window/GLFW/GLFWWindow.hpp"
 #include "GLFW/glfw3.h"
 
-#include "imgui/imgui_impl_glfw.h"
+#include "imguiBackends/imgui_impl_glfw.h"
 
 namespace gfx
 {

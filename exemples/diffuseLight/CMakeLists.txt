@@ -44,7 +44,7 @@ target_compile_definitions(diffuseLight PRIVATE "RESSOURCES_DIR=\"${RESSOURCES_D
 
 target_link_libraries(diffuseLight PRIVATE Graphics)
 
-FetchContent_Declare(assimp GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG v5.4.1)
+FetchContent_Declare(assimp GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG v5.4.1 GIT_SHALLOW 1)
 set(ASSIMP_BUILD_TESTS OFF)
 set(ASSIMP_INSTALL OFF)
 FetchContent_MakeAvailable(assimp)

@@ -29,7 +29,7 @@
 #include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #ifdef GFX_IMGUI_ENABLED
-    #include "imgui/imgui_impl_opengl3.h"
+    #include "imguiBackends/imgui_impl_opengl3.h"
 #endif
 
 using utils::SharedPtr;

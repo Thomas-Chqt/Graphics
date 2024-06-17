@@ -12,7 +12,7 @@
 #include <cassert>
 #include "GL/glew.h"
 
-#include "imgui/imgui_impl_glfw.h"
+#include "imguiBackends/imgui_impl_glfw.h"
 
 namespace gfx
 {

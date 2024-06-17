@@ -37,7 +37,7 @@
 #include <cassert>
 #include <cstddef>
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_metal.h"
+#include "imguiBackends/imgui_impl_metal.h"
 #include "Graphics/Error.hpp"
 
 using utils::SharedPtr;

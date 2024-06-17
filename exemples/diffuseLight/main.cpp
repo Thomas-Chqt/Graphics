@@ -38,11 +38,11 @@ struct DrawableEntity : Entity
     virtual void draw(const utils::SharedPtr<gfx::GraphicAPI>& api) const = 0;
 };
 
-struct Earth : DrawableEntity
+struct Neko : DrawableEntity
 {
     utils::Array<SubMesh> subMeshes;
 
-    Earth(const utils::SharedPtr<gfx::GraphicAPI>& api)
+    Neko(const utils::SharedPtr<gfx::GraphicAPI>& api)
     {
         graphicPipeline = makePipeline(api, "diffuseLight");
         subMeshes = loadModel(api, RESSOURCES_DIR"/Cat.obj");
@@ -115,7 +115,7 @@ int main()
 
 
     bool running = true;
-    Earth earth(graphicAPI);
+    Neko neko(graphicAPI);
     Camera camera;
     Light light;
 
@@ -166,12 +166,12 @@ int main()
         ImGui::Text("FPS : %f", ImGui::GetIO().Framerate);
 
         ImGui::Text("Earth Transform :");
-        ImGui::SliderFloat("Pos X", &earth.position.x, -5, 5);
-        ImGui::SliderFloat("Pos Y", &earth.position.y, -5, 5);
-        ImGui::SliderFloat("Pos Z", &earth.position.z, -1, 100);
-        ImGui::SliderFloat("Rot X", &earth.rotation.x, 0, 2 * PI);
-        ImGui::SliderFloat("Rot Y", &earth.rotation.y, 0, 2 * PI);
-        ImGui::SliderFloat("Rot Z", &earth.rotation.z, 0, 2 * PI);
+        ImGui::SliderFloat("Pos X", &neko.position.x, -5, 5);
+        ImGui::SliderFloat("Pos Y", &neko.position.y, -5, 5);
+        ImGui::SliderFloat("Pos Z", &neko.position.z, -1, 100);
+        ImGui::SliderFloat("Rot X", &neko.rotation.x, 0, 2 * PI);
+        ImGui::SliderFloat("Rot Y", &neko.rotation.y, 0, 2 * PI);
+        ImGui::SliderFloat("Rot Z", &neko.rotation.z, 0, 2 * PI);
 
         ImGui::Spacing();
 
@@ -183,7 +183,7 @@ int main()
 
         render(
             graphicAPI,
-            earth,
+            neko,
             makeProjectionMatrix(window),
             camera,
             light
