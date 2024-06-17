@@ -90,12 +90,12 @@ void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 #endif
 
 #ifdef GFX_METAL_ENABLED
-void MetalGraphicAPI::initMetalShaderLib(const utils::String& path)
+void MetalGraphicAPI::initMetalShaderLib(const utils::String& path) { @autoreleasepool
 {
     NSError *error;
     NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:path encoding:NSUTF8StringEncoding] autorelease];
     m_shaderLib = [m_mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:&error];
-}
+}}
 #endif
 
 utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const
@@ -130,11 +130,11 @@ utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const utils::Share
     return SharedPtr<FrameBuffer>(new MetalFrameBuffer(colorTexture));
 }
 
-void MetalGraphicAPI::beginFrame()
+void MetalGraphicAPI::beginFrame() { @autoreleasepool
 {
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
     assert(m_commandBuffer); // TODO use throw
-}
+}}
 
 void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
 {
@@ -166,7 +166,7 @@ void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
         throw RenderCommandEncoderCreationError();
 }}
 
-void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>& frameBuffer)
+void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>& frameBuffer) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = frameBuffer.dynamicCast<MetalFrameBuffer>())
     {
@@ -187,7 +187,7 @@ void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffe
     }
     else
         throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
-}
+}}
 
 void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline) { @autoreleasepool
 {
