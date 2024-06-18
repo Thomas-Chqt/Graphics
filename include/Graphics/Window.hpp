@@ -10,10 +10,10 @@
 #ifndef WINDOW_HPP
 # define WINDOW_HPP
 
-#include "Graphics/Enums.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "UtilsCPP/Macros.hpp"
 
 namespace gfx
 {
@@ -24,15 +24,15 @@ public:
     Window(const Window&) = delete;
     Window(Window&&)      = delete;
 
-    virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
+    DEPRECATED("please use addEventCallBack") virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
+    virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id = (void*)0) = 0;
+    virtual void clearCallbacks(void* id = (void*)0) = 0;
 
     virtual void setCursorPos(int x, int y) = 0;
     virtual void setCursorVisibility(bool) = 0;
 
-    virtual void getWindowSize(utils::uint32* width, utils::uint32* height) = 0;
-    virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) = 0;
-
-    // virtual ColorPixelFormat pixelFormat() = 0;
+    virtual void getWindowSize(utils::uint32* width, utils::uint32* height) const = 0;
+    virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const = 0;
 
     virtual ~Window() = default;
 

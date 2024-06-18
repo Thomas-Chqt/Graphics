@@ -17,21 +17,6 @@
 namespace gfx
 {
 
-void GLFWOpenGLWindow::setEventCallBack(const utils::Func<void(Event&)>& cb)
-{
-    m_callback = [cb, this](Event& event)
-    {
-        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event)
-        {
-            int frameBufferW, frameBufferH;
-            ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
-            glViewport(0, 0, frameBufferW, frameBufferH);
-        });
-
-        cb(event);
-    };
-}
-
 #ifdef GFX_IMGUI_ENABLED
 void GLFWOpenGLWindow::imGuiInit()
 {

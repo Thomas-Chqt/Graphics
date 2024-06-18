@@ -25,22 +25,6 @@
 namespace gfx
 {
 
-void GLFWMetalWindow::setEventCallBack(const utils::Func<void(Event&)>& cb)
-{
-    m_callback = [cb, this](Event& event)
-    {
-        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event)
-        {
-            int frameBufferW, frameBufferH;
-            ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
-            NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
-            ((CAMetalLayer*)nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
-        });
-
-        cb(event);
-    };
-}
-
 #ifdef GFX_IMGUI_ENABLED
 void GLFWMetalWindow::imGuiInit()
 {
@@ -71,6 +55,15 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h) { @autoreleasepool
     ((CAMetalLayer*)nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
 
     setupGLFWcallback();
+
+    addEventCallBack([this](Event& event) {
+        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event) {
+            int frameBufferW, frameBufferH;
+            ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
+            NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
+            ((CAMetalLayer*)nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
+        });
+    }, this);
 }}
 
 }

@@ -13,6 +13,7 @@
 #include "GraphicAPI/Metal/MetalIndexBuffer.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Event.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
@@ -21,6 +22,7 @@
 #include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/String.hpp"
 #include <Foundation/NSString.h>
@@ -63,15 +65,23 @@ MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window) { @auto
     m_commandQueue = [m_mtlDevice newCommandQueue];
     assert(m_commandQueue); // TODO use throw
 
-    MTLTextureDescriptor* depthDextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
-    utils::uint32 winFbuffWidth, winFbuffHeight;
-    window->getFrameBufferSize(&winFbuffWidth, &winFbuffHeight);
-    depthDextureDescriptor.width = winFbuffWidth;
-    depthDextureDescriptor.height = winFbuffHeight;
-    depthDextureDescriptor.pixelFormat = MTLPixelFormatDepth32Float;
-    depthDextureDescriptor.usage = MTLTextureUsageRenderTarget;
-    depthDextureDescriptor.storageMode = MTLStorageModePrivate;
-    m_depthTexture = MetalTexture(m_mtlDevice, depthDextureDescriptor);
+    utils::Func<void(Event&)> updateDepthTexture = [this](Event& event) { @autoreleasepool {
+        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event){
+            MTLTextureDescriptor* depthDextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
+            utils::uint32 winFbuffWidth, winFbuffHeight;
+            event.window().getFrameBufferSize(&winFbuffWidth, &winFbuffHeight);
+            depthDextureDescriptor.width = winFbuffWidth;
+            depthDextureDescriptor.height = winFbuffHeight;
+            depthDextureDescriptor.pixelFormat = MTLPixelFormatDepth32Float;
+            depthDextureDescriptor.usage = MTLTextureUsageRenderTarget;
+            depthDextureDescriptor.storageMode = MTLStorageModePrivate;
+            m_depthTexture = MetalTexture(m_mtlDevice, depthDextureDescriptor);
+        });
+    }};
+
+    WindowResizeEvent windowResizeEvent(*m_window, 0, 0);
+    updateDepthTexture(windowResizeEvent);
+    m_window->addEventCallBack(updateDepthTexture, this);
 }}
 
 #ifdef GFX_IMGUI_ENABLED
@@ -329,6 +339,7 @@ MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
 
     if (m_shaderLib)
         [m_shaderLib release];
+    m_window->clearCallbacks(this);
     [m_commandQueue release];
     [m_mtlDevice release];
 }}
