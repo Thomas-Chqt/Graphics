@@ -29,7 +29,7 @@
 #include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #ifdef GFX_IMGUI_ENABLED
-    #include "imgui/imgui_impl_opengl3.h"
+    #include "imguiBackends/imgui_impl_opengl3.h"
 #endif
 
 using utils::SharedPtr;
@@ -51,6 +51,8 @@ OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window)
     m_window->makeContextCurrent();
     GLenum err = glewInit();
     assert(err == GLEW_OK);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 #ifdef GFX_IMGUI_ENABLED
@@ -122,7 +124,7 @@ void OpenGLGraphicAPI::beginOnScreenRenderPass()
     if (m_nextPassLoadAction == LoadAction::clear)
     {
         glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     m_nextTextureUnit = 0;
@@ -219,6 +221,16 @@ void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3&
     glUniformMatrix3fv(index, 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&glmat));
 }
 
+void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, float f)
+{
+    glUniform1f(index, f);
+}
+
+void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec3f& vec)
+{
+    glUniform3f(index, vec.x, vec.y, vec.z);
+}
+
 void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec)
 {
     glUniform4f(index, vec.x, vec.y, vec.z, vec.w);
@@ -234,7 +246,7 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& 
     if (SharedPtr<OpenGLIndexBuffer> glIndexBuffer = indexBuffer.dynamicCast<OpenGLIndexBuffer>())
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glIndexBuffer->indexBufferID());
-        glDrawElements(GL_TRIANGLES, glIndexBuffer->indexCount(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, (int)glIndexBuffer->indexCount(), GL_UNSIGNED_INT, 0);
         m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<IndexBuffer>(indexBuffer)));
     }
     else

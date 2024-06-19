@@ -16,25 +16,35 @@
 namespace gfx
 {
 
-utils::uint64 toMetalPixelFormat(PixelFormat pxFormat)
+utils::uint64 toMetalPixelFormat(ColorPixelFormat pxFormat)
 {
     switch (pxFormat)
     {
-    case PixelFormat::RGBA:
+    case ColorPixelFormat::RGBA:
         return MTLPixelFormatRGBA8Unorm;
-    case PixelFormat::BGRA:
+    case ColorPixelFormat::BGRA:
         return MTLPixelFormatBGRA8Unorm;
     }
 }
-PixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat)
+
+utils::uint64 toMetalPixelFormat(DepthPixelFormat pxFormat)
+{
+    switch (pxFormat)
+    {
+    case DepthPixelFormat::Depth32:
+        return MTLPixelFormatDepth32Float;
+    }
+}
+
+ColorPixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat)
 {
     switch (mtlPxFormat)
     {
     case MTLPixelFormatRGBA8Unorm:
-        return PixelFormat::RGBA;
+        return ColorPixelFormat::RGBA;
 
     case MTLPixelFormatBGRA8Unorm:
-        return PixelFormat::BGRA;
+        return ColorPixelFormat::BGRA;
 
     default:
         throw utils::RuntimeError("not implemented");

@@ -8,3 +8,4 @@ window_inheritance.drawio.svg
 build_xcode/
 build_xcode.nosync/
 .clangd
+.DS_Store

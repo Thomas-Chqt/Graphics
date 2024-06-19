@@ -9,8 +9,10 @@
 
 #include "Window/GLFW/GLFWWindow.hpp"
 #include "GLFW/glfw3.h"
-
-#include "imgui/imgui_impl_glfw.h"
+#include "Graphics/Event.hpp"
+#include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/Func.hpp"
+#include "imguiBackends/imgui_impl_glfw.h"
 
 namespace gfx
 {
@@ -27,12 +29,12 @@ void GLFWWindow::imGuiNewFrame()
 }
 #endif
 
-void GLFWWindow::getWindowSize(utils::uint32* width, utils::uint32* height)
+void GLFWWindow::getWindowSize(utils::uint32* width, utils::uint32* height) const
 {
     ::glfwGetWindowSize(m_glfwWindow, (int*)width, (int*)height);
 }
 
-void GLFWWindow::getFrameBufferSize(utils::uint32* width, utils::uint32* height)
+void GLFWWindow::getFrameBufferSize(utils::uint32* width, utils::uint32* height) const
 {
     ::glfwGetFramebufferSize(m_glfwWindow, (int*)width, (int*)height);
 }
@@ -44,37 +46,48 @@ GLFWWindow::~GLFWWindow()
 
 void GLFWWindow::setupGLFWcallback()
 {
+    using CallbackDict = utils::Dictionary<void*, utils::Array<utils::Func<void(Event&)>>>;
+
     glfwSetWindowUserPointer(m_glfwWindow, this);
 
     ::glfwSetKeyCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int key, int scancode, int action, int mods)
     {
-        utils::Func<void(Event&)> callback = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_callback;
-        Window& gfxWindow                  = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
+        Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
         if (action == GLFW_PRESS)
         {
             KeyDownEvent keyDownEvent(gfxWindow, key, false);
-            callback(keyDownEvent);
-            return;
+            for (auto& callbacks : callbackDict)
+            {
+                for (auto& callback : callbacks.val)
+                    callback(keyDownEvent);
+            }
         }
-        if (action == GLFW_REPEAT)
+        else if (action == GLFW_REPEAT)
         {
             KeyDownEvent keyDownEvent(gfxWindow, key, true);
-            callback(keyDownEvent);
-            return;
+            for (auto& callbacks : callbackDict)
+            {
+                for (auto& callback : callbacks.val)
+                    callback(keyDownEvent);
+            }
         }
-        if (action == GLFW_RELEASE)
+        else if (action == GLFW_RELEASE)
         {
             KeyUpEvent keyUpEvent(gfxWindow, key);
-            callback(keyUpEvent);
-            return;
+            for (auto& callbacks : callbackDict)
+            {
+                for (auto& callback : callbacks.val)
+                    callback(keyUpEvent);
+            }
         }
     });
 
     ::glfwSetMouseButtonCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int button, int action, int mods)
     {
-        utils::Func<void(Event&)> callback = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_callback;
-        Window& gfxWindow                  = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
+        Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
         double x, y;
         ::glfwGetCursorPos(glfwWindow, &x, &y);
@@ -82,58 +95,78 @@ void GLFWWindow::setupGLFWcallback()
         if (action == GLFW_PRESS)
         {
             MouseDownEvent mouseDownEvent(gfxWindow, (int)x, (int)y, button);
-            callback(mouseDownEvent);
-            return;
+            for (auto& callbacks : callbackDict)
+            {
+                for (auto& callback : callbacks.val)
+                    callback(mouseDownEvent);
+            }
         }
-        if (action == GLFW_RELEASE)
+        else if (action == GLFW_RELEASE)
         {
             MouseUpEvent mouseUpEvent(gfxWindow, (int)x, (int)y, button);
-            callback(mouseUpEvent);
-            return;
+            for (auto& callbacks : callbackDict)
+            {
+                for (auto& callback : callbacks.val)
+                    callback(mouseUpEvent);
+            }
         }   
     });
 
     ::glfwSetScrollCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, double xoffset, double yoffset)
     {
-        utils::Func<void(Event&)> callback = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_callback;
-        Window& gfxWindow                  = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
+        Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
         double x, y;
         ::glfwGetCursorPos(glfwWindow, &x, &y);
 
         ScrollEvent scrollEvent(gfxWindow, (int)x, (int)y, xoffset, yoffset);
-        callback(scrollEvent);
-        return;
+        for (auto& callbacks : callbackDict)
+        {
+            for (auto& callback : callbacks.val)
+                callback(scrollEvent);
+        }
     });
 
     ::glfwSetCursorPosCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, double x, double y)
     {
-        utils::Func<void(Event&)> callback = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_callback;
-        Window& gfxWindow                  = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
+        Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
         MouseMoveEvent mouseMoveEvent(gfxWindow, (int)x, (int)y);
-        callback(mouseMoveEvent);
-        return;
+        for (auto& callbacks : callbackDict)
+        {
+            for (auto& callback : callbacks.val)
+                callback(mouseMoveEvent);
+        }
     });
 
     ::glfwSetWindowSizeCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int width, int height)
     {
-        utils::Func<void(Event&)> callback = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_callback;
-        Window& gfxWindow                  = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
+        Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
         WindowResizeEvent windowResizeEvent(gfxWindow, width, height);
-        callback(windowResizeEvent);
+        for (auto& callbacks : callbackDict)
+        {
+            for (auto& callback : callbacks.val)
+                callback(windowResizeEvent);
+        }
     });
 
     ::glfwSetWindowCloseCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow)
     {
-        utils::Func<void(Event&)> callback = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_callback;
-        Window& gfxWindow                  = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
+        Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
         ::glfwSetWindowShouldClose(glfwWindow, GLFW_FALSE);
         
         WindowRequestCloseEvent windowRequestCloseEvent(gfxWindow);
-        callback(windowRequestCloseEvent);
+        for (auto& callbacks : callbackDict)
+        {
+            for (auto& callback : callbacks.val)
+                callback(windowRequestCloseEvent);
+        }
     });
 }
 

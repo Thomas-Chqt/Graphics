@@ -48,4 +48,14 @@ MetalTexture::~MetalTexture() { @autoreleasepool
         [m_mtlTexture release];
 }}
 
+MetalTexture& MetalTexture::operator = (MetalTexture&& mv)
+{
+    if (this != &mv)
+    {
+        m_mtlTexture = mv.m_mtlTexture;
+        mv.m_mtlTexture = nullptr;
+    }
+    return *this;
+}
+
 }

@@ -16,14 +16,7 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window.hpp"
-
-#ifdef GFX_METAL_ENABLED
-    #define newDefaultWindow(w, h) newMetalWindow(w, h)
-    #define newDefaultGraphicAPI(target) newMetalGraphicAPI(target)
-#else
-    #define newDefaultWindow(w, h) newOpenGLWindow(w, h)
-    #define newDefaultGraphicAPI(target) newOpenGLGraphicAPI(target)
-#endif
+#include "UtilsCPP/Macros.hpp"
 
 namespace gfx
 {
@@ -38,7 +31,9 @@ public:
     inline static Platform& shared() { return *s_shared; };
     static void terminate();
 
-    virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
+    DEPRECATED("please use addEventCallBack") virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
+    virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id = (void*)0) = 0;
+    virtual void clearCallbacks(void* id = nullptr) = 0;
 
 #ifdef GFX_METAL_ENABLED
     virtual utils::SharedPtr<Window> newMetalWindow(int w, int h) const = 0;
@@ -48,6 +43,9 @@ public:
     virtual utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const = 0;
     utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
 #endif
+
+    utils::SharedPtr<Window> newDefaultWindow(int w, int h);
+    utils::SharedPtr<GraphicAPI> newDefaultGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
 
     virtual void pollEvents() = 0;
 

@@ -26,3 +26,19 @@ endif()
 add_subdirectory(texturedSquare)
 
 add_subdirectory(offscreenRenderPass)
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(texturedCube)
+endif()
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(camera)
+endif()
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(ambiantLight)
+endif()
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(diffuseLight)
+endif()

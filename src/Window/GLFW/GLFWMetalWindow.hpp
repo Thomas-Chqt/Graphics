@@ -16,7 +16,6 @@
 #include <GLFW/glfw3.h>
 
 #include "Platform/GLFW/GLFWPlatform.hpp"
-#include "UtilsCPP/Func.hpp"
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
@@ -38,8 +37,6 @@ private:
 public:
     GLFWMetalWindow(const GLFWMetalWindow&) = delete;
     GLFWMetalWindow(GLFWMetalWindow&&)      = delete;
-
-    void setEventCallBack(const utils::Func<void(Event&)>& cb) override;
     
     #ifdef GFX_IMGUI_ENABLED
         void imGuiInit() override;

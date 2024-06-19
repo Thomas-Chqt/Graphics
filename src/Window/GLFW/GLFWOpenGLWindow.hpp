@@ -11,7 +11,6 @@
 # define GLFWOPENGLWINDOW_HPP
 
 #include "Graphics/Event.hpp"
-#include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Window/GLFW/GLFWWindow.hpp"
 #include "Window/OpenGLWindow.hpp"
@@ -29,8 +28,6 @@ private:
 public:
     GLFWOpenGLWindow(const GLFWOpenGLWindow&) = delete;
     GLFWOpenGLWindow(GLFWOpenGLWindow&&)      = delete;
-
-    void setEventCallBack(const utils::Func<void(Event&)>& cb) override;
 
     #ifdef GFX_IMGUI_ENABLED
         void imGuiInit() override;

@@ -12,8 +12,10 @@
 
 #include <GLFW/glfw3.h>
 #include "Graphics/Event.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "Window/Window_internal.hpp"
+#include "UtilsCPP/Dictionary.hpp"
 
 namespace gfx
 {
@@ -25,6 +27,10 @@ public:
     GLFWWindow(const GLFWWindow&) = delete;
     GLFWWindow(GLFWWindow&&)      = delete;
 
+    inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_eventCallbacks.get((void*)1) = { cb }; }
+    inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id = (void*)0) override { m_eventCallbacks.get(id).append(cb); }
+    inline void clearCallbacks(void* id = (void*)0) override { m_eventCallbacks.remove(id); }
+
     inline void setCursorPos(int x, int y) override { ::glfwSetCursorPos(m_glfwWindow, (double)x, (double)y); }
     inline void setCursorVisibility(bool val) override { ::glfwSetInputMode(m_glfwWindow, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN); }
 
@@ -33,8 +39,8 @@ public:
         void imGuiNewFrame() override;
     #endif
 
-    void getWindowSize(utils::uint32* width, utils::uint32* height) override;
-    void getFrameBufferSize(utils::uint32* width, utils::uint32* height) override;
+    void getWindowSize(utils::uint32* width, utils::uint32* height) const override;
+    void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const override;
     
     ~GLFWWindow();
 
@@ -42,7 +48,7 @@ protected:
     void setupGLFWcallback();
 
     ::GLFWwindow* m_glfwWindow = nullptr;
-    utils::Func<void(Event&)> m_callback;
+    utils::Dictionary<void*, utils::Array<utils::Func<void(Event&)>>> m_eventCallbacks;
 
 public:
     GLFWWindow& operator = (const GLFWWindow&) = delete;

@@ -46,11 +46,7 @@ jobs:
           
         
     runs-on: ${{ matrix.os }}
-    steps:
-      - uses: de-vri-es/setup-git-credentials@v2.1.2
-        with:
-            credentials: https://${{ github.actor }}:${{ secrets.ACCESS_TOKEN }}@github.com/
-            
+    steps:            
       - uses: actions/checkout@v4
 
       - name: Install dependencies

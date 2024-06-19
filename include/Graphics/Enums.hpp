@@ -16,18 +16,20 @@
 namespace gfx
 {
 
-enum class PixelFormat    { RGBA, BGRA };
-enum class BlendOperation { blendingOff, srcA_plus_1_minus_srcA, one_minus_srcA_plus_srcA };
-enum class Type           { FLOAT };
-enum class LoadAction     { load, clear };
+enum class ColorPixelFormat { RGBA, BGRA };
+enum class DepthPixelFormat { Depth32 };
+enum class BlendOperation   { blendingOff, srcA_plus_1_minus_srcA, one_minus_srcA_plus_srcA };
+enum class Type             { FLOAT };
+enum class LoadAction       { load, clear };
 
 #ifdef GFX_METAL_ENABLED
-    utils::uint64 toMetalPixelFormat(PixelFormat pxFormat);
-    PixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat);
+    utils::uint64 toMetalPixelFormat(ColorPixelFormat pxFormat);
+    utils::uint64 toMetalPixelFormat(DepthPixelFormat pxFormat);
+    ColorPixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat);
 #endif
 #ifdef GFX_OPENGL_ENABLED
-    utils::uint64 toOpenGLPixelFormat(PixelFormat pxFormat);
-    PixelFormat fromOpenGLPixelFormat(utils::uint64 glPxFormat);
+    utils::uint64 toOpenGLPixelFormat(ColorPixelFormat pxFormat);
+    ColorPixelFormat fromOpenGLPixelFormat(utils::uint64 glPxFormat);
 #endif
 
 }

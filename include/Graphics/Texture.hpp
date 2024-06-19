@@ -27,7 +27,7 @@ public:
     public:
         utils::uint32 width;
         utils::uint32 height;
-        gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
+        gfx::ColorPixelFormat pixelFormat = ColorPixelFormat::RGBA;
     };
 
 public:

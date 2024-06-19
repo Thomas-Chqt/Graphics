@@ -13,13 +13,16 @@
 #include "GraphicAPI/Metal/MetalIndexBuffer.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Event.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/Platform.hpp"
+#include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/String.hpp"
 #include <Foundation/NSString.h>
@@ -36,7 +39,7 @@
 #include <cassert>
 #include <cstddef>
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_metal.h"
+#include "imguiBackends/imgui_impl_metal.h"
 #include "Graphics/Error.hpp"
 
 using utils::SharedPtr;
@@ -47,7 +50,7 @@ using utils::Array;
 namespace gfx
 {
 
-MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window)
+MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window) { @autoreleasepool
 {
     if (SharedPtr<MetalWindow> mtlWindow = window.dynamicCast<MetalWindow>())
         m_window = mtlWindow;
@@ -61,7 +64,25 @@ MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window)
 
     m_commandQueue = [m_mtlDevice newCommandQueue];
     assert(m_commandQueue); // TODO use throw
-}
+
+    utils::Func<void(Event&)> updateDepthTexture = [this](Event& event) { @autoreleasepool {
+        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event){
+            MTLTextureDescriptor* depthDextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
+            utils::uint32 winFbuffWidth, winFbuffHeight;
+            event.window().getFrameBufferSize(&winFbuffWidth, &winFbuffHeight);
+            depthDextureDescriptor.width = winFbuffWidth;
+            depthDextureDescriptor.height = winFbuffHeight;
+            depthDextureDescriptor.pixelFormat = MTLPixelFormatDepth32Float;
+            depthDextureDescriptor.usage = MTLTextureUsageRenderTarget;
+            depthDextureDescriptor.storageMode = MTLStorageModePrivate;
+            m_depthTexture = MetalTexture(m_mtlDevice, depthDextureDescriptor);
+        });
+    }};
+
+    WindowResizeEvent windowResizeEvent(*m_window, 0, 0);
+    updateDepthTexture(windowResizeEvent);
+    m_window->addEventCallBack(updateDepthTexture, this);
+}}
 
 #ifdef GFX_IMGUI_ENABLED
 void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
@@ -79,12 +100,12 @@ void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 #endif
 
 #ifdef GFX_METAL_ENABLED
-void MetalGraphicAPI::initMetalShaderLib(const utils::String& path)
+void MetalGraphicAPI::initMetalShaderLib(const utils::String& path) { @autoreleasepool
 {
     NSError *error;
     NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:path encoding:NSUTF8StringEncoding] autorelease];
     m_shaderLib = [m_mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:&error];
-}
+}}
 #endif
 
 utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const
@@ -119,11 +140,11 @@ utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const utils::Share
     return SharedPtr<FrameBuffer>(new MetalFrameBuffer(colorTexture));
 }
 
-void MetalGraphicAPI::beginFrame()
+void MetalGraphicAPI::beginFrame() { @autoreleasepool
 {
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
     assert(m_commandBuffer); // TODO use throw
-}
+}}
 
 void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
 {
@@ -135,6 +156,11 @@ void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
     renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
     renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
+
+    renderPassDescriptor.depthAttachment.loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
+    renderPassDescriptor.depthAttachment.clearDepth = 1.0;
+    renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
+    renderPassDescriptor.depthAttachment.texture = m_depthTexture.mtlTexture();
 
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
@@ -150,7 +176,7 @@ void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
         throw RenderCommandEncoderCreationError();
 }}
 
-void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>& frameBuffer)
+void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>& frameBuffer) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = frameBuffer.dynamicCast<MetalFrameBuffer>())
     {
@@ -161,6 +187,8 @@ void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffe
         renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
         renderPassDescriptor.colorAttachments[0].texture = mtlFrameBuffer->mtlColorTexture()->mtlTexture();
 
+        // TODO depth for frame buffer
+
         m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
         if (!m_commandEncoder)
             throw RenderCommandEncoderCreationError();
@@ -169,13 +197,14 @@ void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffe
     }
     else
         throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
-}
+}}
 
 void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalGraphicPipeline> mtlGraphicsPipeline = graphicsPipeline.dynamicCast<MetalGraphicPipeline>())
     {
         [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
+        [m_commandEncoder setDepthStencilState:mtlGraphicsPipeline->depthStencilState()];
         m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<GraphicPipeline>(graphicsPipeline)));
     }
     else
@@ -211,6 +240,16 @@ void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec2f& v
 void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3& mat) { @autoreleasepool
 {
     [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat3x3) atIndex:index];
+}}
+
+void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, float f) { @autoreleasepool
+{
+    [m_commandEncoder setFragmentBytes:(const void *)&f length:sizeof(float) atIndex:index];
+}}
+
+void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec3f& vec) { @autoreleasepool
+{
+    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec3f) atIndex:index];
 }}
 
 void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
@@ -249,7 +288,7 @@ void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& i
         throw utils::RuntimeError("IndexBuffer is not MetalIndexBuffer");
 }}
 
-void MetalGraphicAPI::endOnScreenRenderPass()
+void MetalGraphicAPI::endOnScreenRenderPass() { @autoreleasepool
 {
     #ifdef GFX_IMGUI_ENABLED
     if (s_imguiEnabledAPI == this)
@@ -271,14 +310,14 @@ void MetalGraphicAPI::endOnScreenRenderPass()
     [m_currentDrawable release];
 
     m_renderPassObjects.clear();
-}
+}}
 
-void MetalGraphicAPI::endOffScreeRenderPass()
+void MetalGraphicAPI::endOffScreeRenderPass() { @autoreleasepool
 {
     [m_commandEncoder endEncoding];
     [m_commandEncoder release];
     m_renderPassObjects.clear();
-}
+}}
 
 void MetalGraphicAPI::endFrame() { @autoreleasepool
 {
@@ -300,6 +339,7 @@ MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
 
     if (m_shaderLib)
         [m_shaderLib release];
+    m_window->clearCallbacks(this);
     [m_commandQueue release];
     [m_mtlDevice release];
 }}

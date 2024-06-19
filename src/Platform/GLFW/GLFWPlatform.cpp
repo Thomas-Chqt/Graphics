@@ -45,10 +45,13 @@ void Platform::terminate()
 utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWMetalWindow(w, h));
-    newWindow->setEventCallBack([this](Event& event){
-        if (m_eventCallBack)
-            m_eventCallBack(event);
-    });
+    newWindow->addEventCallBack([this](Event& event) {
+        for (auto& callbacks : m_eventCallbacks)
+        {
+            for (auto& callback : callbacks.val)
+                callback(event);
+        }
+    }, (void*)this);
     return newWindow;
 }
 #endif
@@ -57,10 +60,13 @@ utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const
 utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWOpenGLWindow(w, h));
-    newWindow->setEventCallBack([this](Event& event){
-        if (m_eventCallBack)
-            m_eventCallBack(event);
-    });
+    newWindow->addEventCallBack([this](Event& event) {
+        for (auto& callbacks : m_eventCallbacks)
+        {
+            for (auto& callback : callbacks.val)
+                callback(event);
+        }
+    }, (void*)this);
     return newWindow;
 }
 #endif

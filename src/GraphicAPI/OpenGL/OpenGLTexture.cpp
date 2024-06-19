@@ -13,10 +13,8 @@
 namespace gfx
 {
 
-OpenGLTexture::OpenGLTexture(const Texture::Descriptor& desc) : m_width(desc.width), m_height(desc.height)
+OpenGLTexture::OpenGLTexture(const Texture::Descriptor& desc) : m_width(desc.width), m_height(desc.height), m_pixelFormat(desc.pixelFormat)
 {
-    m_pixelFormat = desc.pixelFormat;
-
     glGenTextures(1, &m_textureID);
     glBindTexture(GL_TEXTURE_2D, m_textureID);
 

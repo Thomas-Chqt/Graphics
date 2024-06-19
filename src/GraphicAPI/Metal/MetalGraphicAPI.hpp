@@ -10,6 +10,7 @@
 #ifndef METALGRAPHICAPI_HPP
 # define METALGRAPHICAPI_HPP
 
+#include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
@@ -83,6 +84,8 @@ public:
     void setVertexUniform(utils::uint32 index, const math::vec2f&) override;
     void setVertexUniform(utils::uint32 index, const math::mat3x3&) override;
 
+    void setFragmentUniform(utils::uint32 index, float f) override;
+    void setFragmentUniform(utils::uint32 index, const math::vec3f&) override;
     void setFragmentUniform(utils::uint32 index, const math::vec4f&) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
 
@@ -102,6 +105,7 @@ private:
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
     id<MTLLibrary> m_shaderLib = nullptr;
+    MetalTexture m_depthTexture;
 
     // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
