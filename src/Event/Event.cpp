@@ -28,15 +28,15 @@ InputEvent::InputEvent(Window& window) : WindowEvent(window)
 {
 }
 
-KeyboardEvent::KeyboardEvent(Window& window, utils::uint8 keyCode) : InputEvent(window), m_keyCode(keyCode)
+KeyboardEvent::KeyboardEvent(Window& window, int keyCode) : InputEvent(window), m_keyCode(keyCode)
 {
 }
 
-KeyDownEvent::KeyDownEvent(Window& window, utils::uint8 keyCode, bool isRepeat) : KeyboardEvent(window, keyCode), m_isRepeat(isRepeat)
+KeyDownEvent::KeyDownEvent(Window& window, int keyCode, bool isRepeat) : KeyboardEvent(window, keyCode), m_isRepeat(isRepeat)
 {
 }
 
-KeyUpEvent::KeyUpEvent(Window& window, utils::uint8 keyCode) : KeyboardEvent(window, keyCode)
+KeyUpEvent::KeyUpEvent(Window& window, int keyCode) : KeyboardEvent(window, keyCode)
 {
 }
 
@@ -52,15 +52,15 @@ MouseMoveEvent::MouseMoveEvent(Window& window, int posX, int posY) : MouseEvent(
 {
 }
 
-MouseButtonEvent::MouseButtonEvent(Window& window, int posX, int posY, utils::uint8 mouseCode) : MouseEvent(window, posX, posY), m_mouseCode(mouseCode)
+MouseButtonEvent::MouseButtonEvent(Window& window, int posX, int posY, int mouseCode) : MouseEvent(window, posX, posY), m_mouseCode(mouseCode)
 {
 }
 
-MouseDownEvent::MouseDownEvent(Window& window, int posX, int posY, utils::uint8 mouseCode) : MouseButtonEvent(window, posX, posY, mouseCode)
+MouseDownEvent::MouseDownEvent(Window& window, int posX, int posY, int mouseCode) : MouseButtonEvent(window, posX, posY, mouseCode)
 {
 }
 
-MouseUpEvent::MouseUpEvent(Window& window, int posX, int posY, utils::uint8 mouseCode) : MouseButtonEvent(window, posX, posY, mouseCode)
+MouseUpEvent::MouseUpEvent(Window& window, int posX, int posY, int mouseCode) : MouseButtonEvent(window, posX, posY, mouseCode)
 {
 }
 

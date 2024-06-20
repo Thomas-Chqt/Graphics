@@ -11,7 +11,7 @@
 # define KEYCODES_HPP
 
 #ifdef GFX_USING_GLFW
-    #define ESC_KEY   0
+    #define ESC_KEY   256
 
     #define ONE_KEY   49
     #define TWO_KEY   50
@@ -23,10 +23,10 @@
 
     #define SPACE_KEY 32
 
-    #define UP_KEY    9
-    #define LEFT_KEY  7
-    #define DOWN_KEY  8
-    #define RIGHT_KEY 6
+    #define UP_KEY    265
+    #define LEFT_KEY  263
+    #define DOWN_KEY  264
+    #define RIGHT_KEY 262
 
     #define MOUSE_L   0
     #define MOUSE_R   1

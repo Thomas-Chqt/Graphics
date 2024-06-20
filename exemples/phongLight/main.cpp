@@ -38,16 +38,16 @@ struct DrawableEntity : Entity
     virtual void draw(const utils::SharedPtr<gfx::GraphicAPI>& api) const = 0;
 };
 
-struct Teapot : DrawableEntity
+struct Cup : DrawableEntity
 {
     utils::Array<SubMesh> subMeshes;
 
-    Teapot(const utils::SharedPtr<gfx::GraphicAPI>& api)
+    Cup(const utils::SharedPtr<gfx::GraphicAPI>& api)
     {
         graphicPipeline = makePipeline(api, "phongLight");
-        subMeshes = loadModel(api, RESSOURCES_DIR"/teapot.obj");
+        subMeshes = loadModel(api, RESSOURCES_DIR"/cup.obj");
 
-        position = {0, 0, 0};
+        position = {0, -1.5, 5};
         rotation = {0, 0, 0};
     }
 
@@ -66,8 +66,8 @@ struct Camera : public Entity
 {
     Camera()
     {
-        position = {0, 150, -150};
-        rotation = {PI/5, 0, 0};
+        position = {0, 0, 0};
+        rotation = {0, 0, 0};
     }
 
     math::mat4x4 viewMatrix() const
@@ -86,7 +86,10 @@ struct Camera : public Entity
 struct Light : public Entity
 {
     math::rgba color = WHITE;
-    float intensity = 1;
+    float ambiantIntensity  = 0.5;
+    float diffuseIntensity  = 1;
+    float specularIntensity = 1;
+    float specularPower     = 1;
 };
 
 void render(
@@ -99,9 +102,15 @@ void render(
 {
     api->useGraphicsPipeline(entt.graphicPipeline);
     api->setVertexUniform(entt.graphicPipeline->findVertexUniformIndex("u_vpMatrix"), proj * camera.viewMatrix());
-    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_diffuseColor"), light.color);
-    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_diffuseIntensity"), light.intensity);
-    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_diffuseDirection"), light.forward().normalized());
+
+    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_lightColor"),        light.color.xyz());
+    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_lightDirection"),    light.forward().normalized());
+    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_ambiantIntensity"),  light.ambiantIntensity);
+    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_diffuseIntensity"),  light.diffuseIntensity);
+    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_specularIntensity"), light.specularIntensity);
+    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_specularPower"),     light.specularPower);
+    api->setFragmentUniform(entt.graphicPipeline->findFragmentUniformIndex("u_cameraPos"),         camera.position);
+
     entt.draw(api);
 }
 
@@ -119,7 +128,7 @@ int main()
 
 
     bool running = true;
-    Teapot teapot(graphicAPI);
+    Cup cup(graphicAPI);
     Camera camera;
     Light light;
 
@@ -132,30 +141,6 @@ int main()
             case ESC_KEY:
                 running = false;
                 break;
-            case W_KEY:
-                camera.position += camera.forward() * 2;
-                break;
-            case A_KEY:
-                camera.position -= camera.right() * 2;
-                break;
-            case S_KEY:
-                camera.position -= camera.forward() * 2;
-                break;
-            case D_KEY:
-                camera.position += camera.right() * 2;
-                break;
-            case UP_KEY:
-                camera.rotation.x -= 0.1;
-                break;
-            case LEFT_KEY:
-                camera.rotation.y -= 0.1;
-                break;
-            case DOWN_KEY:
-                camera.rotation.x += 0.1;
-                break;
-            case RIGHT_KEY:
-                camera.rotation.y += 0.1;
-                break;
             }
         });
     });
@@ -164,30 +149,50 @@ int main()
     {
         gfx::Platform::shared().pollEvents();
 
+        if (window->isKeyPress(W_KEY))
+            camera.position += camera.forward() * 0.2;
+        if (window->isKeyPress(A_KEY))
+            camera.position -= camera.right() * 0.2;
+        if (window->isKeyPress(S_KEY))
+            camera.position -= camera.forward() * 0.2;
+        if (window->isKeyPress(D_KEY))
+            camera.position += camera.right() * 0.2;
+        if (window->isKeyPress(UP_KEY))
+            camera.rotation.x -= 0.05;
+        if (window->isKeyPress(LEFT_KEY))
+            camera.rotation.y -= 0.05;
+        if (window->isKeyPress(DOWN_KEY))
+            camera.rotation.x += 0.05;
+        if (window->isKeyPress(RIGHT_KEY))
+            camera.rotation.y += 0.05;
+
         graphicAPI->beginFrame();
         graphicAPI->beginOnScreenRenderPass();
 
         ImGui::Text("FPS : %f", ImGui::GetIO().Framerate);
 
-        ImGui::Text("Teapot Transform :");
-        ImGui::SliderFloat("Pos X", &teapot.position.x, -100, 100);
-        ImGui::SliderFloat("Pos Y", &teapot.position.y, -100, 100);
-        ImGui::SliderFloat("Pos Z", &teapot.position.z, -100, 100);
-        ImGui::SliderFloat("Rot X", &teapot.rotation.x, 0, 2 * PI);
-        ImGui::SliderFloat("Rot Y", &teapot.rotation.y, 0, 2 * PI);
-        ImGui::SliderFloat("Rot Z", &teapot.rotation.z, 0, 2 * PI);
+        ImGui::Text("Cup Transform :");
+        ImGui::SliderFloat("Pos X", &cup.position.x, -5, 5);
+        ImGui::SliderFloat("Pos Y", &cup.position.y, -5, 5);
+        ImGui::SliderFloat("Pos Z", &cup.position.z, -5, 5);
+        ImGui::SliderFloat("Rot X", &cup.rotation.x, 0, 2 * PI);
+        ImGui::SliderFloat("Rot Y", &cup.rotation.y, 0, 2 * PI);
+        ImGui::SliderFloat("Rot Z", &cup.rotation.z, 0, 2 * PI);
 
         ImGui::Spacing();
 
         ImGui::Text("Light properties :");
         ImGui::ColorPicker4("color", (float*)&light.color);
-        ImGui::SliderFloat("Intensity", &light.intensity, 0, 1);
         ImGui::SliderFloat("Light Rot X", &light.rotation.x, 0, 2 * PI);
         ImGui::SliderFloat("Light Rot Y", &light.rotation.y, 0, 2 * PI);
+        ImGui::SliderFloat("ambiantIntensity",  &light.ambiantIntensity,  0, 2);
+        ImGui::SliderFloat("diffuseIntensity",  &light.diffuseIntensity,  0, 2);
+        ImGui::SliderFloat("specularIntensity", &light.specularIntensity, 0, 2);
+        ImGui::SliderFloat("specularPower",     &light.specularPower,     0, 100);
 
         render(
             graphicAPI,
-            teapot,
+            cup,
             makeProjectionMatrix(window),
             camera,
             light

@@ -28,6 +28,9 @@ public:
     virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id = (void*)0) = 0;
     virtual void clearCallbacks(void* id = (void*)0) = 0;
 
+    virtual bool isKeyPress(int) = 0;
+    virtual bool isMousePress(int) = 0;
+
     virtual void setCursorPos(int x, int y) = 0;
     virtual void setCursorVisibility(bool) = 0;
 
