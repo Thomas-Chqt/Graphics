@@ -5,6 +5,8 @@
 # Date: 2024/05/15 13:50:09
 # ---------------------------------------------------
 
+include(FetchContent)
+
 FetchContent_Declare(assimp GIT_REPOSITORY https://github.com/assimp/assimp.git GIT_TAG v5.4.1 GIT_SHALLOW 1)
 set(ASSIMP_BUILD_TESTS OFF)
 set(ASSIMP_INSTALL OFF)
@@ -55,4 +57,8 @@ endif()
 
 if(GFX_BUILD_IMGUI)
     add_subdirectory(phongLight)
+endif()
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(materials)
 endif()
