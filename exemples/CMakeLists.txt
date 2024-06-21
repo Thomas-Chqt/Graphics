@@ -60,5 +60,5 @@ if(GFX_BUILD_IMGUI)
 endif()
 
 if(GFX_BUILD_IMGUI)
-    add_subdirectory(materials)
+    add_subdirectory(renderer)
 endif()
