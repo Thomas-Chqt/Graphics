@@ -24,9 +24,9 @@ struct Vertex
     math::vec3f normal;
 };
 
-struct DirectionalLight
+struct PointLight
 {
-    math::vec3f direction;
+    math::vec3f position;
     math::rgb color;
     float ambiantIntensity;
     float diffuseIntensity;
@@ -38,6 +38,7 @@ struct Material
     math::rgb ambiant;
     math::rgb diffuse;
     math::rgb specular;
+    math::rgb emissive;
     float shininess;
 };
 

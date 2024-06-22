@@ -13,6 +13,8 @@
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Matrix.hpp"
+#include "ShaderDatas.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Entity.hpp"
 
@@ -21,12 +23,10 @@ class Renderer
 public:
     Renderer(const utils::SharedPtr<gfx::Window>&, const utils::SharedPtr<gfx::GraphicAPI>&);
 
-    inline void beginScene(const Camera& camera) { m_camera = &camera; }
-
-    inline void setDirectionalLight(const DirectionalLight& light) { m_directionalLight = &light; }
+    void beginScene(const Camera& camera);
+    void addPointLight(const PointLight& light);
     void render(RenderableEntity&);
-
-    inline void endScene() { m_directionalLight = nullptr; }
+    void endScene();
 
     ~Renderer();
 
@@ -37,7 +37,7 @@ private:
 
     //scene datas
     const Camera* m_camera;
-    const DirectionalLight* m_directionalLight;
+    utils::Array<PointLight> m_pointLights;
 };
 
 #endif // RENDERER_HPP

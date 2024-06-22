@@ -11,6 +11,7 @@
 #include "Graphics/Event.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Constants.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
@@ -43,33 +44,41 @@ Renderer::Renderer(const utils::SharedPtr<gfx::Window>& window, const utils::Sha
     window->addEventCallBack(updateProjectionMatrix, this);
 }
 
+void Renderer::beginScene(const Camera& camera)
+{
+    m_camera = &camera;
+}
+
+void Renderer::addPointLight(const PointLight& light)
+{
+    m_pointLights.append(light);
+}
+
 void Renderer::render(RenderableEntity& entt)
 {
     for (auto& subMesh : entt.subMeshes)
     {
-        m_api->useGraphicsPipeline(subMesh.pipeline);
-        
-        m_api->setVertexUniform(subMesh.pipeline->findVertexUniformIndex("u_modelMatrix"), entt.modelMatrix());
-        m_api->setVertexUniform(subMesh.pipeline->findVertexUniformIndex("u_vpMatrix"), m_projectionMatrix * m_camera->viewMatrix());
+        math::mat4x4 modelMatrix = entt.modelMatrix();
+        math::mat4x4 modelMavpMatrixtrix = m_projectionMatrix * m_camera->viewMatrix();
 
-        m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_cameraPos"), m_camera->position);
-        if (m_directionalLight)
-        {
-            m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_light_direction"), m_directionalLight->direction);
-            m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_light_color"), m_directionalLight->color);
-            m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_light_ambiantIntensity"), m_directionalLight->ambiantIntensity);
-            m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_light_diffuseIntensity"), m_directionalLight->diffuseIntensity);
-            m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_light_specularIntensity"), m_directionalLight->specularIntensity);
-        }
+        RenderMethod::Data renderMethodeData;
+        renderMethodeData.modelMatrix      = &modelMatrix;
+        renderMethodeData.vpMatrix         = &modelMavpMatrixtrix;
+        renderMethodeData.pointLights      = &m_pointLights;
+        renderMethodeData.cameraPos        = &m_camera->position;
+        renderMethodeData.material         = &subMesh.material;
+        renderMethodeData.diffuseTexture   = &subMesh.diffuseTexture;
 
-        m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_material_ambiant"), subMesh.material.ambiant);
-        m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_material_diffuse"), subMesh.material.diffuse);
-        m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_material_specular"), subMesh.material.specular);
-        m_api->setFragmentUniform(subMesh.pipeline->findFragmentUniformIndex("u_material_shininess"), subMesh.material.shininess);
+        subMesh.renderMethod->use(*m_api, renderMethodeData);
 
         m_api->useVertexBuffer(subMesh.vertexBuffer);
         m_api->drawIndexedVertices(subMesh.indexBuffer);
     }
+}
+
+void Renderer::endScene()
+{
+    m_pointLights.clear();
 }
 
 Renderer::~Renderer()
