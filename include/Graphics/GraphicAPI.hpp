@@ -36,6 +36,10 @@ public:
     GraphicAPI(const GraphicAPI&) = delete;
     GraphicAPI(GraphicAPI&&)      = delete;
 
+    template<typename T> inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) const { return newVertexBuffer((void*)(const T*)vertices, vertices.length(), sizeof(T), getLayout<T>()); }
+    template<typename T> inline void setFragmentUniform(const utils::String& name, const T& data) { setFragmentUniform(name, (const void*)&data, sizeof(T), getLayout<T>()); }
+    template<typename T> inline void setFragmentUniform(const utils::String& name, const utils::Array<T>& data) { setFragmentUniform(name, (const void*)data, data.length(), sizeof(T), getLayout<T>()); }
+
     #ifdef GFX_IMGUI_ENABLED
     virtual void useForImGui(ImGuiConfigFlags flags = 0) = 0;
     #endif
@@ -43,13 +47,7 @@ public:
     #ifdef GFX_METAL_ENABLED
     virtual void initMetalShaderLib(const utils::String& path) = 0;
     #endif
-
-    template<typename T>
-    inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) const
-    {
-        return newVertexBuffer((void*)(const T*)vertices, vertices.length(), sizeof(T), getLayout<T>());
-    }
-
+    
     virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout&) const = 0;
     virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const = 0;
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>&) const = 0;
@@ -67,23 +65,18 @@ public:
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
     virtual void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) = 0;
 
-    virtual void setVertexUniform(utils::uint32 index, const math::vec4f&) = 0;
-    virtual void setVertexUniform(utils::uint32 index, const math::mat4x4&) = 0;
-    virtual void setVertexUniform(utils::uint32 index, const math::vec2f&) = 0;
-    virtual void setVertexUniform(utils::uint32 index, const math::mat3x3&) = 0;
+    virtual void setVertexUniform(const utils::String& name, const math::vec4f&) = 0;
+    virtual void setVertexUniform(const utils::String& name, const math::mat4x4&) = 0;
+    virtual void setVertexUniform(const utils::String& name, const math::vec2f&) = 0;
+    virtual void setVertexUniform(const utils::String& name, const math::mat3x3&) = 0;
 
-    virtual void setFragmentUniform(utils::uint32 index, float) = 0;
-    virtual void setFragmentUniform(utils::uint32 index, const math::vec3f&) = 0;
-    virtual void setFragmentUniform(utils::uint32 index, const math::vec4f&) = 0;
-    virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) = 0;
+    virtual void setFragmentUniform(const utils::String& name, float) = 0;
+    virtual void setFragmentUniform(const utils::String& name, const math::vec3f&) = 0;
+    virtual void setFragmentUniform(const utils::String& name, const math::vec4f&) = 0;
+    virtual void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) = 0;
+    virtual void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout&) = 0;
 
-    virtual void setFragmentUniform(const GraphicPipeline&, const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) = 0;
-
-    template<typename T>
-    inline void setFragmentUniform(const GraphicPipeline& pipeline, const utils::String& name, const T& data)
-    {
-        return setFragmentUniform(pipeline, name, (const void*)&data, sizeof(T), getLayout<T>());
-    }
+    virtual void setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>&) = 0;
 
     virtual void drawVertices(utils::uint32 start, utils::uint32 count) = 0;
     virtual void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) = 0;

@@ -205,7 +205,7 @@ void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline
     {
         [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
         [m_commandEncoder setDepthStencilState:mtlGraphicsPipeline->depthStencilState()];
-        m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<GraphicPipeline>(graphicsPipeline)));
+        m_boundPipeline = graphicsPipeline;
     }
     else
         throw utils::RuntimeError("GraphicPipeline is not MetalGraphicPipeline");
@@ -222,56 +222,62 @@ void MetalGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vert
         throw utils::RuntimeError("VertexBuffer is not MetalVertexBuffer");
 }}
 
-void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
+void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::vec4f& vec) { @autoreleasepool
 {
-    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:index];
+    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat4x4& mat) { @autoreleasepool
+void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::mat4x4& mat) { @autoreleasepool
 {
-    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat4x4) atIndex:index];
+    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat4x4) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec2f& vec){ @autoreleasepool
+void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::vec2f& vec){ @autoreleasepool
 {
-    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec2f) atIndex:index];
+    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec2f) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3& mat) { @autoreleasepool
+void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::mat3x3& mat) { @autoreleasepool
 {
-    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat3x3) atIndex:index];
+    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat3x3) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, float f) { @autoreleasepool
+void MetalGraphicAPI::setFragmentUniform(const utils::String& name, float f) { @autoreleasepool
 {
-    [m_commandEncoder setFragmentBytes:(const void *)&f length:sizeof(float) atIndex:index];
+    [m_commandEncoder setFragmentBytes:(const void *)&f length:sizeof(float) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec3f& vec) { @autoreleasepool
+void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec3f& vec) { @autoreleasepool
 {
-    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec3f) atIndex:index];
+    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec3f) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec) { @autoreleasepool
+void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec4f& vec) { @autoreleasepool
 {
-    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:index];
+    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>& texture) { @autoreleasepool
+void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout) { @autoreleasepool
+{
+    (void)layout;
+    [m_commandEncoder setFragmentBytes:data length:size atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
+}}
+
+void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout& layout) { @autoreleasepool
+{
+    (void)layout;
+    [m_commandEncoder setFragmentBytes:data length:len * elementSize atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
+}}
+
+void MetalGraphicAPI::setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>& texture) { @autoreleasepool
 {
     if (utils::SharedPtr<MetalTexture> mtlTexture = texture.dynamicCast<MetalTexture>())
     {
-        [m_commandEncoder setFragmentTexture:mtlTexture->mtlTexture() atIndex:index];
+        [m_commandEncoder setFragmentTexture:mtlTexture->mtlTexture() atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
         m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<Texture>(texture)));
     }
     else
         throw utils::RuntimeError("Texture is not MetalTexture");
-}}
-
-void MetalGraphicAPI::setFragmentUniform(const GraphicPipeline& pipeline, const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout) { @autoreleasepool
-{
-    (void)layout;
-    [m_commandEncoder setFragmentBytes:data length:size atIndex:pipeline.findFragmentUniformIndex(name)];
 }}
 
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
@@ -315,6 +321,7 @@ void MetalGraphicAPI::endOnScreenRenderPass() { @autoreleasepool
     [m_commandBuffer presentDrawable:m_currentDrawable];
     [m_currentDrawable release];
 
+    m_boundPipeline.clear();
     m_renderPassObjects.clear();
 }}
 
@@ -322,6 +329,7 @@ void MetalGraphicAPI::endOffScreeRenderPass() { @autoreleasepool
 {
     [m_commandEncoder endEncoding];
     [m_commandEncoder release];
+    m_boundPipeline.clear();
     m_renderPassObjects.clear();
 }}
 

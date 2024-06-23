@@ -34,7 +34,7 @@ in vec3 fragNormal;
 out vec4 fragmentColor;
 
 uniform vec3       u_cameraPos;
-uniform PointLight u_light;
+uniform PointLight u_light[20];
 uniform Material   u_material;
 uniform sampler2D  u_diffuseTexture;
 
@@ -44,19 +44,19 @@ void main()
 
     vec3 normal = normalize(fragNormal);
 
-    vec3 ambiant = diffuseTextel.xyz * (u_light.color * u_light.ambiantIntensity);
+    vec3 ambiant = diffuseTextel.xyz * (u_light[0].color * u_light[0].ambiantIntensity);
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
 
-    vec3 lightDirection = -normalize(u_light.position - fragPos);
+    vec3 lightDirection = -normalize(u_light[0].position - fragPos);
 
     float diffuseFactor = dot(normal, -lightDirection);
     if (diffuseFactor > 0)
-        diffuse = diffuseTextel.xyz * (u_light.color * u_light.diffuseIntensity) * diffuseFactor;
+        diffuse = diffuseTextel.xyz * (u_light[0].color * u_light[0].diffuseIntensity) * diffuseFactor;
 
     float specularFactor = dot(normalize(u_cameraPos - fragPos), normalize(reflect(lightDirection, normal)));
     if (specularFactor > 0)
-        specular = u_material.specular * (u_light.color * u_light.specularIntensity) * pow(specularFactor, u_material.shininess);
+        specular = u_material.specular * (u_light[0].color * u_light[0].specularIntensity) * pow(specularFactor, u_material.shininess);
 
     fragmentColor = vec4(ambiant + diffuse + specular, diffuseTextel.w);
 }

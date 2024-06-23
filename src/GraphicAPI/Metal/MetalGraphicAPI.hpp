@@ -79,17 +79,18 @@ public:
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
 
-    void setVertexUniform(utils::uint32 index, const math::vec4f&) override;
-    void setVertexUniform(utils::uint32 index, const math::mat4x4&) override;
-    void setVertexUniform(utils::uint32 index, const math::vec2f&) override;
-    void setVertexUniform(utils::uint32 index, const math::mat3x3&) override;
+    void setVertexUniform(const utils::String& name, const math::vec4f&) override;
+    void setVertexUniform(const utils::String& name, const math::mat4x4&) override;
+    void setVertexUniform(const utils::String& name, const math::vec2f&) override;
+    void setVertexUniform(const utils::String& name, const math::mat3x3&) override;
 
-    void setFragmentUniform(utils::uint32 index, float f) override;
-    void setFragmentUniform(utils::uint32 index, const math::vec3f&) override;
-    void setFragmentUniform(utils::uint32 index, const math::vec4f&) override;
-    void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
+    void setFragmentUniform(const utils::String& name, float) override;
+    void setFragmentUniform(const utils::String& name, const math::vec3f&) override;
+    void setFragmentUniform(const utils::String& name, const math::vec4f&) override;
+    void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) override;
+    void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout&) override;
 
-    void setFragmentUniform(const GraphicPipeline&, const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) override;
+    void setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>&) override;
 
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
@@ -117,6 +118,7 @@ private:
     LoadAction m_nextPassLoadAction = LoadAction::clear; 
     math::rgba m_nextPassClearColor = BLACK;
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
+    utils::SharedPtr<GraphicPipeline> m_boundPipeline;
     utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_renderPassObjects;
 
 public:

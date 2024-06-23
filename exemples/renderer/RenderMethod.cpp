@@ -28,11 +28,11 @@ void FlatColorRenderMethod::use(gfx::GraphicAPI& api, const Data& data)
 {
     api.useGraphicsPipeline(m_pipeline);
 
-    api.setVertexUniform(m_pipeline->findVertexUniformIndex("u_modelMatrix"), *data.modelMatrix);
-    api.setVertexUniform(m_pipeline->findVertexUniformIndex("u_vpMatrix"),    *data.vpMatrix);
-    api.setFragmentUniform(m_pipeline->findFragmentUniformIndex("u_cameraPos"), *data.cameraPos);
-    api.setFragmentUniform(*m_pipeline, "u_light", (*data.pointLights)[0]);
-    api.setFragmentUniform(*m_pipeline, "u_material", *data.material);
+    api.setVertexUniform("u_modelMatrix", *data.modelMatrix);
+    api.setVertexUniform("u_vpMatrix", *data.vpMatrix);
+    api.setFragmentUniform("u_cameraPos", *data.cameraPos);
+    api.setFragmentUniform("u_light", *data.pointLights);
+    api.setFragmentUniform("u_material", *data.material);
 }
 
 LightCubeRenderMethod::LightCubeRenderMethod(const gfx::GraphicAPI& api)
@@ -54,9 +54,9 @@ void LightCubeRenderMethod::use(gfx::GraphicAPI& api, const Data& data)
 {
     api.useGraphicsPipeline(m_pipeline);
 
-    api.setVertexUniform(m_pipeline->findVertexUniformIndex("u_modelMatrix"), *data.modelMatrix);
-    api.setVertexUniform(m_pipeline->findVertexUniformIndex("u_vpMatrix"),    *data.vpMatrix);
-    api.setFragmentUniform(*m_pipeline, "u_material", *data.material);
+    api.setVertexUniform("u_modelMatrix", *data.modelMatrix);
+    api.setVertexUniform("u_vpMatrix", *data.vpMatrix);
+    api.setFragmentUniform("u_material", *data.material);
 }
 
 TexturedRenderMethod::TexturedRenderMethod(const gfx::GraphicAPI& api)
@@ -78,12 +78,12 @@ void TexturedRenderMethod::use(gfx::GraphicAPI& api, const Data& data)
 {
     api.useGraphicsPipeline(m_pipeline);
 
-    api.setVertexUniform(m_pipeline->findVertexUniformIndex("u_modelMatrix"), *data.modelMatrix);
-    api.setVertexUniform(m_pipeline->findVertexUniformIndex("u_vpMatrix"),    *data.vpMatrix);
-    api.setFragmentUniform(m_pipeline->findFragmentUniformIndex("u_cameraPos"), *data.cameraPos);
-    api.setFragmentUniform(*m_pipeline, "u_light", (*data.pointLights)[0]);
-    api.setFragmentUniform(*m_pipeline, "u_material", *data.material);
-    api.setFragmentTexture(m_pipeline->findFragmentUniformIndex("u_diffuseTexture"), *data.diffuseTexture);
+    api.setVertexUniform("u_modelMatrix", *data.modelMatrix);
+    api.setVertexUniform("u_vpMatrix", *data.vpMatrix);
+    api.setFragmentUniform("u_cameraPos", *data.cameraPos);
+    api.setFragmentUniform("u_light", *data.pointLights);
+    api.setFragmentUniform("u_material", *data.material);
+    api.setFragmentTexture("u_diffuseTexture", *data.diffuseTexture);
 }
 
 
