@@ -49,7 +49,13 @@ int main()
 
     RenderableEntity lightCube(*graphicAPI, RESSOURCES_DIR"/cube.obj");
     lightCube.scale = { 0.1, 0.1, 0.1 };
-    lightCube.subMeshes[0].renderMethod = utils::SharedPtr<RenderMethod>(new LightCubeRenderMethod(*graphicAPI));
+    lightCube.subMeshes[0].material = Material {
+        { 0.0, 0.0, 0.0 },
+        { 0.0, 0.0, 0.0 },
+        { 0.0, 0.0, 0.0 },
+        { 0.0, 0.0, 0.0 },
+        0,
+    };
 
     utils::Array<RenderableEntity> renderableEntites = {
         RenderableEntity(*graphicAPI, RESSOURCES_DIR"/cat.obj"),
@@ -112,6 +118,24 @@ int main()
                     ImGui::TreePop();
                 }
             }
+            if (ImGui::TreeNode("light cube renderable"))
+            {
+                ImGui::Text("vertex buffer: %p", (gfx::VertexBuffer*)lightCube.subMeshes[0].vertexBuffer);
+                ImGui::Text("index buffer: %p", (gfx::IndexBuffer*)lightCube.subMeshes[0].indexBuffer);
+                ImGui::Text("render method: %p", (RenderMethod*)lightCube.subMeshes[0].renderMethod);
+                if (ImGui::TreeNode("Material"))
+                {
+                    ImGui::ColorEdit3("ambiant", (float*)&lightCube.subMeshes[0].material.ambiant);
+                    ImGui::ColorEdit3("diffuse", (float*)&lightCube.subMeshes[0].material.diffuse);
+                    ImGui::ColorEdit3("specular", (float*)&lightCube.subMeshes[0].material.specular);
+                    ImGui::ColorEdit3("emissive", (float*)&lightCube.subMeshes[0].material.emissive);
+                    ImGui::DragFloat("shininess", (float*)&lightCube.subMeshes[0].material.shininess, 1, 1);
+                    ImGui::TreePop();
+                }
+                ImGui::Text("diffuse texture: %p", (gfx::Texture*)lightCube.subMeshes[0].diffuseTexture);
+                ImGui::TreePop();
+            }
+
             ImGui::Spacing();
         }
         if (ImGui::CollapsingHeader("Lights"))

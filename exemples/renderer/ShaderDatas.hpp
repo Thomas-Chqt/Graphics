@@ -35,29 +35,6 @@ struct Vertex
     }
 #endif
 
-struct PointLight
-{
-    math::vec3f position;
-    math::rgb color;
-    float ambiantIntensity;
-    float diffuseIntensity;
-    float specularIntensity;
-};
-
-#ifndef __METAL_VERSION__
-    template<>
-    inline gfx::StructLayout gfx::getLayout<PointLight>()
-    {
-        return {
-            { "position",          Type::vec3f, (void*)offsetof(PointLight, position)          },
-            { "color",             Type::vec3f, (void*)offsetof(PointLight, color)             },
-            { "ambiantIntensity",  Type::Float, (void*)offsetof(PointLight, ambiantIntensity)  },
-            { "diffuseIntensity",  Type::Float, (void*)offsetof(PointLight, diffuseIntensity)  },
-            { "specularIntensity", Type::Float, (void*)offsetof(PointLight, specularIntensity) }
-        };
-    }
-#endif
-
 struct Material
 {
     math::rgb ambiant;
@@ -77,6 +54,29 @@ struct Material
             { "specular",  Type::vec3f, (void*)offsetof(Material, specular)  },
             { "emissive",  Type::vec3f, (void*)offsetof(Material, emissive)  },
             { "shininess", Type::Float, (void*)offsetof(Material, shininess) }
+        };
+    }
+#endif
+
+struct PointLight
+{
+    math::vec3f position;
+    math::rgb color;
+    float ambiantIntensity;
+    float diffuseIntensity;
+    float specularIntensity;
+};
+
+#ifndef __METAL_VERSION__
+    template<>
+    inline gfx::StructLayout gfx::getLayout<PointLight>()
+    {
+        return {
+            { "position",          Type::vec3f, (void*)offsetof(PointLight, position)          },
+            { "color",             Type::vec3f, (void*)offsetof(PointLight, color)             },
+            { "ambiantIntensity",  Type::Float, (void*)offsetof(PointLight, ambiantIntensity)  },
+            { "diffuseIntensity",  Type::Float, (void*)offsetof(PointLight, diffuseIntensity)  },
+            { "specularIntensity", Type::Float, (void*)offsetof(PointLight, specularIntensity) }
         };
     }
 #endif

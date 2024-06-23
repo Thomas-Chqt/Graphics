@@ -52,16 +52,6 @@ public:
     ~FlatColorRenderMethod() override = default;
 };
 
-class LightCubeRenderMethod : public RenderMethod
-{
-public:
-    LightCubeRenderMethod(const gfx::GraphicAPI&);
-
-    void use(gfx::GraphicAPI&, const Data&) override;
-
-    ~LightCubeRenderMethod() override = default;
-};
-
 class TexturedRenderMethod : public RenderMethod
 {
 public:

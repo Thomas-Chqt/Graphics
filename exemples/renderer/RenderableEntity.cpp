@@ -17,7 +17,10 @@
 
 static Material makeMaterial(aiMaterial* aiMaterial)
 {
-    aiColor3D ambiant, diffuse, specular, emissive;
+    aiColor3D ambiant  = {0, 0, 0};
+    aiColor3D diffuse  = {0, 0, 0};
+    aiColor3D specular = {0, 0, 0};
+    aiColor3D emissive = {0, 0, 0};
     float shininess;
     
     aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambiant);
@@ -133,5 +136,4 @@ RenderableEntity::RenderableEntity(const gfx::GraphicAPI& api, const utils::Stri
         else
             subMeshes[meshIndex].renderMethod = utils::SharedPtr<RenderMethod>(new FlatColorRenderMethod(api));
     }
-
 }

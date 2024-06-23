@@ -35,34 +35,43 @@ vertex VertexOut simpleVertex(
     };
 }
 
+float3 computePointLight(constant PointLight& light, Material material, float3 fragPos, float3 normal, float3 cameraDir)
+{
+    float3 lightDir = normalize(light.position - fragPos);
+
+    float diffuseFactor = dot(normal, lightDir);
+    float specularFactor = dot(reflect(-lightDir, normal), cameraDir);
+
+    float3 ambiant  = material.ambiant  * light.color * light.ambiantIntensity;
+    float3 diffuse  = material.diffuse  * light.color * light.diffuseIntensity * max(diffuseFactor, 0.0f);
+    float3 specular = material.specular * light.color * light.specularIntensity * (specularFactor > 0.0f ? pow(specularFactor, material.shininess) : 0.0f);
+    
+    float3 emissive = material.emissive;
+
+    return ambiant + diffuse + specular + emissive;
+}
+
+float4 computePixelColor(VertexOut in,
+    constant float3& u_cameraPos,
+    constant PointLight& u_light,
+    Material u_material         
+)
+{
+    float3 normal = normalize(in.normal);
+    float3 cameraDir = normalize(u_cameraPos - in.pos);
+
+    float3 fragmentColor = computePointLight(u_light, u_material, in.pos, normal, cameraDir);
+
+    return float4(fragmentColor, 1.0);
+}
+
 fragment float4 flatColor_fs(VertexOut in [[stage_in]],
     constant float3& u_cameraPos  [[buffer(1)]],
     constant PointLight& u_light  [[buffer(2)]],
     constant Material& u_material [[buffer(3)]]
 )
 {
-    float3 normal = normalize(in.normal);
-
-    float3 ambiant = u_material.ambiant * (u_light.color * u_light.ambiantIntensity);
-    float3 diffuse = float3(0.0);
-    float3 specular = float3(0.0);
-
-    float3 lightDirection = -normalize(u_light.position - in.pos);
-
-    float diffuseFactor = dot(normal, -lightDirection);
-    if (diffuseFactor > 0)
-        diffuse = u_material.diffuse * (u_light.color * u_light.diffuseIntensity) * diffuseFactor;
-
-    float specularFactor = dot(normalize(u_cameraPos - in.pos), normalize(reflect(lightDirection, normal)));
-    if (specularFactor > 0)
-        specular = u_material.specular * (u_light.color * u_light.specularIntensity) * pow(specularFactor, u_material.shininess);
-
-    return float4(ambiant + diffuse + specular, 1.0);
-}
-
-fragment float4 lightCube_fs(VertexOut in [[stage_in]], constant Material& u_material [[buffer(1)]])
-{
-    return float4(u_material.emissive, 1.0);
+    return computePixelColor(in, u_cameraPos, u_light, u_material);
 }
 
 fragment float4 textured_fs(VertexOut in [[stage_in]],
@@ -75,21 +84,9 @@ fragment float4 textured_fs(VertexOut in [[stage_in]],
     constexpr metal::sampler textureSampler(metal::mag_filter::nearest, metal::min_filter::nearest);
     float4 diffuseTextel = u_diffuseTexture.sample(textureSampler, in.uv);
 
-    float3 normal = normalize(in.normal);
+    Material newMaterial = u_material;
+    newMaterial.diffuse = diffuseTextel.xyz;
+    newMaterial.ambiant = diffuseTextel.xyz;
 
-    float3 ambiant = diffuseTextel.xyz * (u_light.color * u_light.ambiantIntensity);
-    float3 diffuse = float3(0.0);
-    float3 specular = float3(0.0);
-
-    float3 lightDirection = -normalize(u_light.position - in.pos);
-
-    float diffuseFactor = dot(normal, -lightDirection);
-    if (diffuseFactor > 0)
-        diffuse = diffuseTextel.xyz * (u_light.color * u_light.diffuseIntensity) * diffuseFactor;
-
-    float specularFactor = dot(normalize(u_cameraPos - in.pos), normalize(reflect(lightDirection, normal)));
-    if (specularFactor > 0)
-        specular = u_material.specular * (u_light.color * u_light.specularIntensity) * pow(specularFactor, u_material.shininess);
-
-    return float4(ambiant + diffuse + specular, diffuseTextel.w);
+    return computePixelColor(in, u_cameraPos, u_light, newMaterial);
 }
