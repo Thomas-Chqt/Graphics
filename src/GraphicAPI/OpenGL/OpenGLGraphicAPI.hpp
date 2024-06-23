@@ -71,6 +71,8 @@ public:
     void setFragmentUniform(utils::uint32 index, const math::vec4f&) override;
     void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) override;
     
+    void setFragmentUniform(const GraphicPipeline&, const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) override;
+    
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
 

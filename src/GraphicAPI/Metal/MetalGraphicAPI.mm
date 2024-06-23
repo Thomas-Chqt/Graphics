@@ -268,6 +268,12 @@ void MetalGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::Share
         throw utils::RuntimeError("Texture is not MetalTexture");
 }}
 
+void MetalGraphicAPI::setFragmentUniform(const GraphicPipeline& pipeline, const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout) { @autoreleasepool
+{
+    (void)layout;
+    [m_commandEncoder setFragmentBytes:data length:size atIndex:pipeline.findFragmentUniformIndex(name)];
+}}
+
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
 {
     [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];

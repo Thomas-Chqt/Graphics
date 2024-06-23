@@ -50,7 +50,7 @@ public:
         return newVertexBuffer((void*)(const T*)vertices, vertices.length(), sizeof(T), getLayout<T>());
     }
 
-    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const = 0;
+    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout&) const = 0;
     virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const = 0;
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>&) const = 0;
     virtual utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const = 0;
@@ -76,6 +76,14 @@ public:
     virtual void setFragmentUniform(utils::uint32 index, const math::vec3f&) = 0;
     virtual void setFragmentUniform(utils::uint32 index, const math::vec4f&) = 0;
     virtual void setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>&) = 0;
+
+    virtual void setFragmentUniform(const GraphicPipeline&, const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) = 0;
+
+    template<typename T>
+    inline void setFragmentUniform(const GraphicPipeline& pipeline, const utils::String& name, const T& data)
+    {
+        return setFragmentUniform(pipeline, name, (const void*)&data, sizeof(T), getLayout<T>());
+    }
 
     virtual void drawVertices(utils::uint32 start, utils::uint32 count) = 0;
     virtual void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) = 0;

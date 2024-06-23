@@ -8,7 +8,6 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLVertexBuffer.hpp"
-#include "Graphics/Enums.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
 
@@ -17,15 +16,6 @@ using utils::uint32;
 
 namespace gfx
 {
-
-static GLenum convertType(gfx::Type type)
-{
-    switch (type)
-    {
-    case gfx::Type::FLOAT:
-        return GL_FLOAT;
-    }
-}
 
 OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout)
 {
@@ -41,7 +31,18 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, utils::uint64 count, utils::u
     {
         const auto& el = layout[i];
         glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i, el.count, convertType(el.type), GL_FALSE, size, el.offset);
+        switch (el.type)
+        {
+        case Type::Float:
+            glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, size, el.offset);
+            break;
+        case Type::vec2f:
+            glVertexAttribPointer(i, 2, GL_FLOAT, GL_FALSE, size, el.offset);
+            break;
+        case Type::vec3f:
+            glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, size, el.offset);
+            break;
+        }
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -28,9 +28,9 @@ struct Vertex
     gfx::StructLayout gfx::getLayout<Vertex>()
     {
         return {
-            { 3, Type::FLOAT, (void*)offsetof(Vertex, pos)    },
-            { 2, Type::FLOAT, (void*)offsetof(Vertex, uv)     },
-            { 3, Type::FLOAT, (void*)offsetof(Vertex, normal) }
+            { "pos", Type::vec3f, (void*)0 },
+            { "uv", Type::vec2f, (void*)offsetof(Vertex, uv) },
+            { "normal", Type::vec3f, (void*)offsetof(Vertex, normal) }
         };
     }
 #endif

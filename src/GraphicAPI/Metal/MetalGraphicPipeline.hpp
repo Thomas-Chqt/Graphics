@@ -41,8 +41,8 @@ public:
 
     MetalGraphicPipeline(id<MTLDevice>, id<MTLLibrary>, const GraphicPipeline::Descriptor&);
 
-    inline utils::uint32 findVertexUniformIndex(const utils::String& name) override { return (utils::uint32)m_vertexUniformsIndices[name]; }
-    inline utils::uint32 findFragmentUniformIndex(const utils::String& name) override { return (utils::uint32)m_fragmentUniformsIndices[name]; }
+    inline utils::uint32 findVertexUniformIndex(const utils::String& name) const override { return (utils::uint32)m_vertexUniformsIndices[name]; }
+    inline utils::uint32 findFragmentUniformIndex(const utils::String& name) const override { return (utils::uint32)m_fragmentUniformsIndices[name]; }
     
     const id<MTLRenderPipelineState>& renderPipelineState() { return m_renderPipelineState; };
     const id<MTLDepthStencilState>& depthStencilState() { return m_depthStencilState; };

@@ -9,19 +9,24 @@
 
 #version 410 core
 
+struct Material
+{
+    vec3 ambiant;
+    vec3 diffuse;
+    vec3 specular;
+    vec3 emissive;
+    float shininess;
+};
+
 in vec3 fragPos;
 in vec2 fragUv;
 in vec3 fragNormal;
 
 out vec4 fragmentColor;
 
-uniform vec3  u_material_ambiant;
-uniform vec3  u_material_diffuse;
-uniform vec3  u_material_specular;
-uniform vec3  u_material_emissive;
-uniform float u_material_shininess;
+uniform Material   u_material;
 
 void main()
 {
-    fragmentColor = vec4(u_material_emissive, 1.0);
+    fragmentColor = vec4(u_material.emissive, 1.0);
 }

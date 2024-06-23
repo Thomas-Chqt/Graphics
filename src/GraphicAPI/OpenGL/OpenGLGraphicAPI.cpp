@@ -18,6 +18,7 @@
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "Graphics/VertexBuffer.hpp"
+#include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -236,6 +237,38 @@ void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f
     glUniform4f(index, vec.x, vec.y, vec.z, vec.w);
 }
 
+void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>& texture)
+{
+    if (SharedPtr<OpenGLTexture> glTexture = texture.dynamicCast<OpenGLTexture>())
+    {
+        glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit);
+        glUniform1i(index, m_nextTextureUnit++);
+        glBindTexture(GL_TEXTURE_2D, glTexture->textureID());
+        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<Texture>(texture)));
+    }
+    else
+        throw utils::RuntimeError("Texture is not OpenGLTexture");
+}
+
+void OpenGLGraphicAPI::setFragmentUniform(const GraphicPipeline& pipeline, const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout)
+{
+    for (auto element : layout)
+    {
+        switch (element.type)
+        {
+        case Type::Float:
+            setFragmentUniform(pipeline.findFragmentUniformIndex(name + "." + element.name), *((float*)((char*)data + (utils::uint64)element.offset)));
+            break;
+        case Type::vec2f:
+            // setFragmentUniform(pipeline.findFragmentUniformIndex(name + "." + element.name), *((math::vec2f*)data));
+            break;
+        case Type::vec3f:
+            setFragmentUniform(pipeline.findFragmentUniformIndex(name + "." + element.name), *((math::vec3f*)((char*)data + (utils::uint64)element.offset)));
+            break;
+        }
+    }
+}
+
 void OpenGLGraphicAPI::drawVertices(uint32 start, uint32 count)
 {
     glDrawArrays(GL_TRIANGLES, start, count);
@@ -251,19 +284,6 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& 
     }
     else
         throw utils::RuntimeError("IndexBuffer is not OpenGLIndexBuffer");
-}
-
-void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>& texture)
-{
-    if (SharedPtr<OpenGLTexture> glTexture = texture.dynamicCast<OpenGLTexture>())
-    {
-        glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit);
-        glUniform1i(index, m_nextTextureUnit++);
-        glBindTexture(GL_TEXTURE_2D, glTexture->textureID());
-        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<Texture>(texture)));
-    }
-    else
-        throw utils::RuntimeError("Texture is not OpenGLTexture");
 }
 
 void OpenGLGraphicAPI::endOnScreenRenderPass()

@@ -24,8 +24,8 @@ template<>
 gfx::StructLayout gfx::getLayout<Vertex>()
 {
     return {
-        { 2, Type::FLOAT, (void*)0 },
-        { 2, Type::FLOAT, (void*)offsetof(Vertex, uv) },
+        { "pos", Type::vec2f, (void*)0 },
+        { "uv", Type::vec2f, (void*)offsetof(Vertex, uv) },
     };
 }
 

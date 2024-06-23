@@ -27,7 +27,7 @@ template<>
 gfx::StructLayout gfx::getLayout<Vertex>()
 {
     return {
-        { 3, Type::FLOAT, (void*)0 },
+        { "", Type::vec3f, (void*)0 },
     };
 }
 

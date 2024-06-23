@@ -26,8 +26,8 @@ public:
 
     OpenGLGraphicPipeline(const GraphicPipeline::Descriptor&);
 
-    utils::uint32 findVertexUniformIndex(const utils::String& name) override;
-    utils::uint32 findFragmentUniformIndex(const utils::String& name) override;
+    utils::uint32 findVertexUniformIndex(const utils::String& name) const override;
+    utils::uint32 findFragmentUniformIndex(const utils::String& name) const override;
 
     inline GLuint shaderProgramID() { return m_shaderProgramID; }
     inline BlendOperation blendOperation() { return m_blendOperation; }
