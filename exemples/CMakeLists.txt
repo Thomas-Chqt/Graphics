@@ -21,45 +21,11 @@ set_target_properties(assimp PROPERTIES FOLDER "dependencies")
 
 add_subdirectory(triangle)
 
-add_subdirectory(setClearColor)
-
 if(GFX_BUILD_IMGUI)
     add_subdirectory(imguiDemo)
 endif()
 
-add_subdirectory(indexedShape)
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(fragmentUniform)
-endif()
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(flatColorCube)
-endif()
-
-add_subdirectory(texturedSquare)
-
 add_subdirectory(offscreenRenderPass)
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(texturedCube)
-endif()
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(camera)
-endif()
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(ambiantLight)
-endif()
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(diffuseLight)
-endif()
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(phongLight)
-endif()
 
 if(GFX_BUILD_IMGUI)
     add_subdirectory(renderer)
