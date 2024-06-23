@@ -16,6 +16,7 @@
 #include "RenderMethod.hpp"
 #include "Renderer.hpp"
 #include "ShaderDatas.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "imgui/imgui.h"
 
@@ -38,13 +39,6 @@ int main()
 
     Camera camera;
     
-    RenderableEntity cat(*graphicAPI, RESSOURCES_DIR"/cat.obj");
-    cat.position = { 0.0, -1.5, 7.0 };
-    cat.rotation = { 0.0, PI/2, 0.0 };
-
-    RenderableEntity cup(*graphicAPI, RESSOURCES_DIR"/cup.obj");
-    cup.position = { 3.5, -1.5, 7.0 };
-
     PointLight pointLight = {
         { 3.0, 2.5, 7.0 },  // position
         { 1.0, 1.0, 1.0 },  // color
@@ -56,6 +50,16 @@ int main()
     RenderableEntity lightCube(*graphicAPI, RESSOURCES_DIR"/cube.obj");
     lightCube.scale = { 0.1, 0.1, 0.1 };
     lightCube.subMeshes[0].renderMethod = utils::SharedPtr<RenderMethod>(new LightCubeRenderMethod(*graphicAPI));
+
+    utils::Array<RenderableEntity> renderableEntites = {
+        RenderableEntity(*graphicAPI, RESSOURCES_DIR"/cat.obj"),
+        RenderableEntity(*graphicAPI, RESSOURCES_DIR"/cup.obj"),
+    };
+
+    renderableEntites[0].position = { 0.0, -1.5, 7.0 };
+    renderableEntites[0].rotation = { 0.0, PI/2, 0.0 };
+
+    renderableEntites[1].position = { 3.5, -1.5, 7.0 };
 
     while (running)
     {
@@ -75,69 +79,38 @@ int main()
 
         if (ImGui::CollapsingHeader("Renderable Entities"))
         {
-            if (ImGui::TreeNode("Cat"))
+            for (auto& entt : renderableEntites)
             {
-                ImGui::DragFloat3("position", (float*)&cat.position, 0.01);
-                ImGui::DragFloat3("rotation", (float*)&cat.rotation, 0.01);
-                if (ImGui::TreeNode("Sub meshes"))
+                if (ImGui::TreeNode(&entt, "Entity %p", &entt))
                 {
-                    int i = 0;
-                    for (auto& subMesh : cat.subMeshes)
+                    ImGui::DragFloat3("position", (float*)&entt.position, 0.01);
+                    ImGui::DragFloat3("rotation", (float*)&entt.rotation, 0.01);
+                    if (ImGui::TreeNode("Sub meshes"))
                     {
-                        if (ImGui::TreeNode(&subMesh, "Sub meshes %d", i))
+                        for (auto& subMesh : entt.subMeshes)
                         {
-                            ImGui::Text("vertex buffer: %p", (gfx::VertexBuffer*)subMesh.vertexBuffer);
-                            ImGui::Text("index buffer: %p", (gfx::IndexBuffer*)subMesh.indexBuffer);
-                            ImGui::Text("render method: %p", (RenderMethod*)subMesh.renderMethod);
-                            if (ImGui::TreeNode("Material"))
+                            if (ImGui::TreeNode(&subMesh, "Sub meshes %p", &subMesh))
                             {
-                                ImGui::ColorEdit3("ambiant", (float*)&subMesh.material.ambiant);
-                                ImGui::ColorEdit3("diffuse", (float*)&subMesh.material.diffuse);
-                                ImGui::ColorEdit3("specular", (float*)&subMesh.material.specular);
-                                ImGui::ColorEdit3("emissive", (float*)&subMesh.material.emissive);
-                                ImGui::DragFloat("shininess", (float*)&subMesh.material.shininess, 1, 1);
+                                ImGui::Text("vertex buffer: %p", (gfx::VertexBuffer*)subMesh.vertexBuffer);
+                                ImGui::Text("index buffer: %p", (gfx::IndexBuffer*)subMesh.indexBuffer);
+                                ImGui::Text("render method: %p", (RenderMethod*)subMesh.renderMethod);
+                                if (ImGui::TreeNode("Material"))
+                                {
+                                    ImGui::ColorEdit3("ambiant", (float*)&subMesh.material.ambiant);
+                                    ImGui::ColorEdit3("diffuse", (float*)&subMesh.material.diffuse);
+                                    ImGui::ColorEdit3("specular", (float*)&subMesh.material.specular);
+                                    ImGui::ColorEdit3("emissive", (float*)&subMesh.material.emissive);
+                                    ImGui::DragFloat("shininess", (float*)&subMesh.material.shininess, 1, 1);
+                                    ImGui::TreePop();
+                                }
+                                ImGui::Text("diffuse texture: %p", (gfx::Texture*)subMesh.diffuseTexture);
                                 ImGui::TreePop();
                             }
-                            ImGui::Text("diffuse texture: %p", (gfx::Texture*)subMesh.diffuseTexture);
-                            ImGui::TreePop();
                         }
-                        i++;
+                        ImGui::TreePop();
                     }
                     ImGui::TreePop();
                 }
-                ImGui::TreePop();
-            }
-            if (ImGui::TreeNode("Cup"))
-            {
-                ImGui::DragFloat3("position", (float*)&cup.position, 0.01);
-                ImGui::DragFloat3("rotation", (float*)&cup.rotation, 0.01);
-                if (ImGui::TreeNode("Sub meshes"))
-                {
-                    int i = 0;
-                    for (auto& subMesh : cup.subMeshes)
-                    {
-                        if (ImGui::TreeNode(&subMesh, "Sub meshes %d", i))
-                        {
-                            ImGui::Text("vertex buffer: %p", (gfx::VertexBuffer*)subMesh.vertexBuffer);
-                            ImGui::Text("index buffer: %p", (gfx::IndexBuffer*)subMesh.indexBuffer);
-                            ImGui::Text("render method: %p", (RenderMethod*)subMesh.renderMethod);
-                            if (ImGui::TreeNode("Material"))
-                            {
-                                ImGui::ColorEdit3("ambiant", (float*)&subMesh.material.ambiant);
-                                ImGui::ColorEdit3("diffuse", (float*)&subMesh.material.diffuse);
-                                ImGui::ColorEdit3("specular", (float*)&subMesh.material.specular);
-                                ImGui::ColorEdit3("emissive", (float*)&subMesh.material.emissive);
-                                ImGui::DragFloat("shininess", (float*)&subMesh.material.shininess, 1, 1);
-                                ImGui::TreePop();
-                            }
-                            ImGui::Text("diffuse texture: %p", (gfx::Texture*)subMesh.diffuseTexture);
-                            ImGui::TreePop();
-                        }
-                        i++;
-                    }
-                    ImGui::TreePop();
-                }
-                ImGui::TreePop();
             }
             ImGui::Spacing();
         }
@@ -161,8 +134,8 @@ int main()
 
         renderer.addPointLight(pointLight);
 
-        renderer.render(cat);
-        renderer.render(cup);
+        for (auto& entt : renderableEntites)
+            renderer.render(entt);
         renderer.render(lightCube);
 
         renderer.endScene();
