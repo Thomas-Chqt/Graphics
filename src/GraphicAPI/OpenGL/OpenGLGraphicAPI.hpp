@@ -44,7 +44,7 @@ public:
     inline void initMetalShaderLib(const utils::String& path) override {}
     #endif
 
-    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const override;
+    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout&) const override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;

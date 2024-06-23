@@ -12,6 +12,7 @@
 
 #include "GraphicPipeline.hpp"
 #include "Graphics/FrameBuffer.hpp"
+#include "Graphics/StructLayout.hpp"
 #include "Graphics/Texture.hpp"
 #include "IndexBuffer.hpp"
 #include "Math/Matrix.hpp"
@@ -46,10 +47,10 @@ public:
     template<typename T>
     inline utils::SharedPtr<VertexBuffer> newVertexBuffer(const utils::Array<T>& vertices) const
     {
-        return newVertexBuffer((void*)(const T*)vertices, vertices.length(), sizeof(T), VertexBuffer::getLayout<T>());
+        return newVertexBuffer((void*)(const T*)vertices, vertices.length(), sizeof(T), getLayout<T>());
     }
 
-    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const = 0;
+    virtual utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const = 0;
     virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const = 0;
     virtual utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>&) const = 0;
     virtual utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const = 0;

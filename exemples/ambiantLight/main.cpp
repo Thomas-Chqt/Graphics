@@ -179,7 +179,7 @@ int main()
     Camera camera;
     Light light;
 
-    window->setEventCallBack([&](gfx::Event& event)
+    window->addEventCallBack([&](gfx::Event& event)
     {
         event.dispatch<gfx::KeyDownEvent>([&](gfx::KeyDownEvent& event)
         {

@@ -28,11 +28,11 @@
 #include <map>
 
 template<>
-utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+gfx::StructLayout gfx::getLayout<Vertex>()
 {
     return {
-        { 3, Type::FLOAT, false, sizeof(Vertex), (void*)0 },
-        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, uv) },
+        { 3, Type::FLOAT, (void*)0 },
+        { 2, Type::FLOAT, (void*)offsetof(Vertex, uv) },
     };
 }
 
@@ -215,7 +215,7 @@ int main()
 
     bool running = true;
 
-    window->setEventCallBack([&](gfx::Event& event)
+    window->addEventCallBack([&](gfx::Event& event)
     {
         event.dispatch<gfx::KeyDownEvent>([&](gfx::KeyDownEvent& event)
         {

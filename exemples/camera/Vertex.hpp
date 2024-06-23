@@ -13,8 +13,7 @@
 #include "Math/Vector.hpp"
 
 #ifndef __METAL_VERSION__
-    #include "Graphics/VertexBuffer.hpp"
-    #include "UtilsCPP/Array.hpp"
+    #include "Graphics/StructLayout.hpp"
 #endif
 
 struct Vertex
@@ -25,11 +24,11 @@ struct Vertex
 
 #ifndef __METAL_VERSION__
     template<>
-    inline utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+    gfx::StructLayout gfx::getLayout<Vertex>()
     {
         return {
-            { 3, Type::FLOAT, false, sizeof(Vertex), (void*)0 },
-            { 2, Type::FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, uv) },
+            { 3, Type::FLOAT, (void*)0 },
+            { 2, Type::FLOAT, (void*)offsetof(Vertex, uv) },
         };
     }
 #endif

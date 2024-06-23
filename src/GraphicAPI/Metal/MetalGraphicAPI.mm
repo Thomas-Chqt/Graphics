@@ -108,10 +108,10 @@ void MetalGraphicAPI::initMetalShaderLib(const utils::String& path) { @autorelea
 }}
 #endif
 
-utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const
+utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const
 {
     (void)layout;
-    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, count * vertexSize));
+    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, count * size));
 }
 
 SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& descriptor) const { @autoreleasepool

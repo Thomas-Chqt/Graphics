@@ -75,9 +75,9 @@ void OpenGLGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 }
 #endif
 
-SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const
+SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const
 {
-    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, count * vertexSize, layout));
+    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, count, size, layout));
 }
 
 SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& desc) const

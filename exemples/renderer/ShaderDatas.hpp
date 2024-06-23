@@ -13,8 +13,7 @@
 #include "Math/Vector.hpp"
 
 #ifndef __METAL_VERSION__
-    #include "Graphics/VertexBuffer.hpp"
-    #include "UtilsCPP/Array.hpp"
+    #include "Graphics/StructLayout.hpp"
 #endif
 
 struct Vertex
@@ -44,12 +43,12 @@ struct Material
 
 #ifndef __METAL_VERSION__
     template<>
-    inline utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+    inline gfx::StructLayout gfx::getLayout<Vertex>()
     {
         return {
-            { 3, Type::FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, pos)    },
-            { 2, Type::FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, uv)     },
-            { 3, Type::FLOAT, false, sizeof(Vertex), (void*)offsetof(Vertex, normal) }
+            { 3, Type::FLOAT, (void*)offsetof(Vertex, pos)    },
+            { 2, Type::FLOAT, (void*)offsetof(Vertex, uv)     },
+            { 3, Type::FLOAT, (void*)offsetof(Vertex, normal) }
         };
     }
 #endif

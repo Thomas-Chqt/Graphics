@@ -27,7 +27,7 @@ static GLenum convertType(gfx::Type type)
     }
 }
 
-OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint64 size, const utils::Array<VertexBuffer::LayoutElement>& layout)
+OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout)
 {
     glGenVertexArrays(1, &m_vertexArrayID);
     glGenBuffers(1, &m_vertexBufferID);
@@ -35,13 +35,13 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint64 size, const utils::Arr
     glBindVertexArray(m_vertexArrayID);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, count * size, data, GL_STATIC_DRAW);
 
     for (uint32 i = 0; i < layout.length(); i++)
     {
-        const VertexBuffer::LayoutElement& el = layout[i];
+        const auto& el = layout[i];
         glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i, el.size, convertType(el.type), el.normalized, el.stride, el.pointer);
+        glVertexAttribPointer(i, el.count, convertType(el.type), GL_FALSE, size, el.offset);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);

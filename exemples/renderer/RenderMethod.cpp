@@ -17,8 +17,8 @@ FlatColorRenderMethod::FlatColorRenderMethod(const gfx::GraphicAPI& api)
         graphicPipelineDescriptor.metalFSFunction = "flatColor_fs";
     #endif 
     #if GFX_OPENGL_ENABLED
-        // graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColor.vs");
-        // graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColor.fs");
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/simpleVertex.vs");
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColor.fs");
     #endif
 
     m_pipeline = api.newGraphicsPipeline(graphicPipelineDescriptor);
@@ -54,8 +54,8 @@ LightCubeRenderMethod::LightCubeRenderMethod(const gfx::GraphicAPI& api)
         graphicPipelineDescriptor.metalFSFunction = "lightCube_fs";
     #endif 
     #if GFX_OPENGL_ENABLED
-        // graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColor.vs");
-        // graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColor.fs");
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/simpleVertex.vs");
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/lightCube.fs");
     #endif
 
     m_pipeline = api.newGraphicsPipeline(graphicPipelineDescriptor);
@@ -83,8 +83,8 @@ TexturedRenderMethod::TexturedRenderMethod(const gfx::GraphicAPI& api)
         graphicPipelineDescriptor.metalFSFunction = "textured_fs";
     #endif 
     #if GFX_OPENGL_ENABLED
-        // graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColor.vs");
-        // graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/flatColor.fs");
+        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/simpleVertex.vs");
+        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/textured.fs");
     #endif
 
     m_pipeline = api.newGraphicsPipeline(graphicPipelineDescriptor);
