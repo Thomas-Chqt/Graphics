@@ -19,7 +19,7 @@ namespace gfx
 enum class ColorPixelFormat { RGBA, BGRA };
 enum class DepthPixelFormat { Depth32 };
 enum class BlendOperation   { blendingOff, srcA_plus_1_minus_srcA, one_minus_srcA_plus_srcA };
-enum class Type             { Float, vec2f, vec3f };
+enum class Type             { Uint32, Float, vec2f, vec3f };
 enum class LoadAction       { load, clear };
 
 #ifdef GFX_METAL_ENABLED

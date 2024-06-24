@@ -66,6 +66,7 @@ public:
     void setVertexUniform(const utils::String& name, const math::vec2f&) override;
     void setVertexUniform(const utils::String& name, const math::mat3x3&) override;
 
+    void setFragmentUniform(const utils::String& name, utils::uint32) override;
     void setFragmentUniform(const utils::String& name, float) override;
     void setFragmentUniform(const utils::String& name, const math::vec3f&) override;
     void setFragmentUniform(const utils::String& name, const math::vec4f&) override;

@@ -10,15 +10,9 @@
 #ifndef ENTITY_HPP
 # define ENTITY_HPP
 
-#include "Graphics/IndexBuffer.hpp"
-#include "Graphics/Texture.hpp"
-#include "Graphics/VertexBuffer.hpp"
 #include "Math/Vector.hpp"
 #include "Math/Matrix.hpp"
-#include "RenderMethod.hpp"
-#include "ShaderDatas.hpp"
-#include "UtilsCPP/Array.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
+#include "MeshLibrary.hpp"
 
 struct Entity
 {
@@ -50,18 +44,8 @@ struct Camera : public Entity
 
 struct RenderableEntity : public Entity
 {
-    RenderableEntity(const gfx::GraphicAPI& api, const utils::String& filePath);
-
-    struct SubMesh
-    {
-        utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
-        utils::SharedPtr<gfx::IndexBuffer> indexBuffer;
-        utils::SharedPtr<RenderMethod> renderMethod;
-        Material material;
-        utils::SharedPtr<gfx::Texture> diffuseTexture;
-    };
-
-    utils::Array<SubMesh> subMeshes;
+    inline RenderableEntity(const Mesh& m) : mesh(m) {}
+    Mesh mesh;
 };
 
 #endif // ENTITY_HPP

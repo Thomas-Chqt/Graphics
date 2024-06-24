@@ -70,6 +70,7 @@ public:
     virtual void setVertexUniform(const utils::String& name, const math::vec2f&) = 0;
     virtual void setVertexUniform(const utils::String& name, const math::mat3x3&) = 0;
 
+    virtual void setFragmentUniform(const utils::String& name, utils::uint32) = 0;
     virtual void setFragmentUniform(const utils::String& name, float) = 0;
     virtual void setFragmentUniform(const utils::String& name, const math::vec3f&) = 0;
     virtual void setFragmentUniform(const utils::String& name, const math::vec4f&) = 0;

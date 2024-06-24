@@ -51,7 +51,8 @@ if(GFX_ENABLE_METAL)
     set_target_properties(MTLShaderLib_renderer PROPERTIES FOLDER "exemples/renderer")
 
     file(GLOB MTL_SHADER_LIB_SRCS "${MTL_SHADER_DIR}/*.metal")
-    target_sources(MTLShaderLib_renderer PRIVATE ${MTL_SHADER_LIB_SRCS})
+    file(GLOB MTL_SHADER_LIB_HEAD "${MTL_SHADER_DIR}/*.metal.h")
+    target_sources(MTLShaderLib_renderer PRIVATE ${MTL_SHADER_LIB_SRCS} ${MTL_SHADER_LIB_HEAD})
 
     add_dependencies(renderer MTLShaderLib_renderer)
     
@@ -61,6 +62,8 @@ if(GFX_ENABLE_METAL)
         list(APPEND MTL_SHADER_BUILD_FLAGS "-I${dir}")
     endforeach()
     list(APPEND MTL_SHADER_BUILD_FLAGS "-I${CMAKE_SOURCE_DIR}/dependencies/Math/include")
+    list(APPEND MTL_SHADER_BUILD_FLAGS "-I${MTL_SHADER_DIR}")
+    list(APPEND MTL_SHADER_BUILD_FLAGS "-I${CMAKE_SOURCE_DIR}/dependencies/UtilsCPP/include")
 
     if(CMAKE_GENERATOR STREQUAL "Xcode")
         list(APPEND MTL_SHADER_BUILD_FLAGS "-gline-tables-only" "-frecord-sources")
@@ -75,5 +78,5 @@ if(GFX_ENABLE_METAL)
         list(APPEND MTL_SHADER_LIB_AIRS "${air}")
     endforeach()
 
-    add_custom_command(OUTPUT ${MTL_SHADER_LIB} COMMAND ${XCRUN_PATH} -sdk macosx metallib ${MTL_SHADER_LINK_FLAGS} -o ${MTL_SHADER_LIB} "${MTL_SHADER_LIB_AIRS}" DEPENDS "${MTL_SHADER_LIB_AIRS}")
+    add_custom_command(OUTPUT ${MTL_SHADER_LIB} COMMAND ${XCRUN_PATH} -sdk macosx metallib ${MTL_SHADER_LINK_FLAGS} -o ${MTL_SHADER_LIB} ${MTL_SHADER_LIB_AIRS} DEPENDS ${MTL_SHADER_LIB_AIRS})
 endif()

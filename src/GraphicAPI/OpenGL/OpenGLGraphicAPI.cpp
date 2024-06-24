@@ -222,6 +222,11 @@ void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::m
     glUniformMatrix3fv(m_boundPipeline->findVertexUniformIndex(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&glmat));
 }
 
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, utils::uint32 val)
+{
+    glUniform1ui(m_boundPipeline->findFragmentUniformIndex(name), val);
+}
+
 void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, float f)
 {
     glUniform1f(m_boundPipeline->findFragmentUniformIndex(name), f);
@@ -251,6 +256,9 @@ void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void*
             break;
         case Type::vec3f:
             setFragmentUniform(name + "." + element.name, *((math::vec3f*)((char*)data + (utils::uint64)element.offset)));
+            break;
+        case Type::Uint32:
+            setFragmentUniform(name + "." + element.name, *((utils::uint32*)((char*)data + (utils::uint64)element.offset)));
             break;
         }
     }
