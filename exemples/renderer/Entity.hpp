@@ -42,10 +42,19 @@ struct Camera : public Entity
     }
 };
 
+struct PointLight : public Entity
+{
+    math::rgb color;
+    float     ambiantIntensity;
+    float     diffuseIntensity;
+    float     specularIntensity;
+};
+
 struct RenderableEntity : public Entity
 {
     inline RenderableEntity(const Mesh& m) : mesh(m) {}
     Mesh mesh;
 };
+
 
 #endif // ENTITY_HPP

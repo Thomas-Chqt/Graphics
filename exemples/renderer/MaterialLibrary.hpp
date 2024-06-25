@@ -12,51 +12,26 @@
 
 #include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
-#include "ShaderDatas.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "assimp/material.h"
 
-class Material
+struct Material
 {
-public:
-    Material();
-    Material(aiMaterial*);
+    utils::String name;
 
-    inline const utils::String& name() { return m_name; }
-    inline void setName(const utils::String& name) { m_name = name; }
-
-    inline math::rgb diffuseColor() { return m_diffuseColor; };
-    void setDiffuseColor(math::rgb);
-
-    inline utils::SharedPtr<gfx::Texture> diffuseTexture() { return m_diffuseTexture; };
-    void setDiffuseTexture(utils::SharedPtr<gfx::Texture>);
-
-    inline math::rgb specularColor() { return m_specularColor; }
-    inline void setSpecularColor(math::rgb color) { m_specularColor = color; }
-
-    inline math::rgb emissiveColor() { return m_emissiveColor; }
-    inline void setEmissiveColor(math::rgb color) { m_emissiveColor = color; }
-
-    inline float shininess() { return m_shininess; }
-    inline void setShininess(float f) { m_shininess = f; }
-
-    shaderData::Material getShaderMaterial();
-
-    ~Material();
-
-private:
-    utils::String m_name;
-
-    bool m_useDiffuseTexture;
-    math::rgb m_diffuseColor;
-    utils::SharedPtr<gfx::Texture> m_diffuseTexture;
-
-    math::rgb m_specularColor;
-    math::rgb m_emissiveColor;
-    float m_shininess;
+    math::rgb baseColor = WHITE3;
+    utils::SharedPtr<gfx::Texture> baseTexture;
+    
+    math::rgb specularColor;
+    utils::SharedPtr<gfx::Texture> specularTexture;
+    
+    math::rgb emissiveColor;
+    utils::SharedPtr<gfx::Texture> emissiveTexture;
+    
+    float shininess = 1.0f;
 };
 
 class MaterialLibrary
