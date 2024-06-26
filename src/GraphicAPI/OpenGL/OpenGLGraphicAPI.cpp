@@ -267,7 +267,7 @@ void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void*
 void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout& layout)
 {
     for (utils::uint32 i = 0; i < len; i++)
-        setFragmentUniform(name + "[" + utils::String::fromUInt(i) + "]", ((char*)data) + i * len, elementSize, layout);
+        setFragmentUniform(name + "[" + utils::String::fromUInt(i) + "]", ((char*)data) + i * elementSize, elementSize, layout);
 }
 
 void OpenGLGraphicAPI::setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>& texture)

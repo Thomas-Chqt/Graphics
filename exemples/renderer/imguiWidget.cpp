@@ -27,7 +27,8 @@ void editWidget(SubMesh& submesh)
     {
         for (auto& material : MaterialLibrary::shared())
         {
-            ImGui::Text(material->name);
+            if (ImGui::Button(material->name))
+                submesh.material = material;
         }
         ImGui::EndPopup();
     }
