@@ -14,6 +14,7 @@
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "MaterialLibrary.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -24,12 +25,8 @@ struct SubMesh
 {
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
     utils::SharedPtr<gfx::IndexBuffer> indexBuffer;
+    utils::SharedPtr<IRenderMethod> renderMethod;
     utils::SharedPtr<Material> material;
-
-    inline void showImgui()
-    {
-
-    };
 };
 
 struct Mesh

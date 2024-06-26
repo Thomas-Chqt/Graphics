@@ -14,58 +14,13 @@
 #include "Math/Constants.hpp"
 #include "Math/Vector.hpp"
 #include "MeshLibrary.hpp"
+#include "RenderMethod.hpp"
 #include "Renderer.hpp"
-#include "ShaderDatas.hpp"
 #include "TextureLibrary.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "imgui/imgui.h"
-
-void showImguiEdit(Material& material)
-{
-    // ImGui::ColorEdit3("diffuse", (float*)&subMesh.material.diffuse);
-
-    math::rgb specularColor = material.specularColor();
-    ImGui::ColorEdit3("specular", (float*)&specularColor);
-    material.setSpecularColor(specularColor);
-
-    math::rgb emissiveColor = material.emissiveColor();
-    ImGui::ColorEdit3("emissive", (float*)&emissiveColor);
-    material.setEmissiveColor(emissiveColor);
-
-    float shininess = material.shininess();
-    ImGui::DragFloat("shininess", (float*)&shininess, 1, 1);
-    material.setShininess(shininess);
-}
-
-void showImguiEdit(SubMesh& subMesh)
-{
-    showImguiEdit(*subMesh.material);
-}
-
-void showImguiEdit(Mesh& mesh)
-{    
-    if (ImGui::TreeNode("Sub meshes"))
-    {
-        for (auto& subMesh : mesh.subMeshes)
-        {
-            showImguiEdit(subMesh);
-        }
-        ImGui::TreePop();
-    }
-}
-
-void showImguiEdit(RenderableEntity& entt)
-{
-    ImGui::DragFloat3("position", (float*)&entt.position, 0.01);
-    ImGui::DragFloat3("rotation", (float*)&entt.rotation, 0.01);
-    showImguiEdit(entt.mesh);
-}
-
-void showImguiEdit(shaderData::PointLight& entt)
-{
-    ImGui::DragFloat3("position", (float*)&entt.position, 0.01);
-}
+#include "imguiWidget.hpp"
 
 int main()
 {
@@ -87,37 +42,42 @@ int main()
     MeshLibrary::init(graphicAPI);
 
     Renderer renderer(window, graphicAPI);
+    utils::Array<Entity*> entities;
+    utils::Array<RenderableEntity*> renderableEntites;
 
     Camera camera;
+    entities.append(&camera);
     
-    shaderData::PointLight pointLight = {
-        { 3.0, 2.5, 7.0 },  // position
-        { 1.0, 1.0, 1.0 },  // color
-        0.25,               // ambiantIntensity
-        0.5,                // diffuseIntensity
-        0.5,                // specularIntensity
-    };
+    PointLight pointLight;
+    pointLight.position = { 3.0, 2.5, 7.0 };
+    pointLight.color = WHITE3;
+    pointLight.ambiantIntensity = 0.25f;
+    pointLight.diffuseIntensity = 0.5f;
+    pointLight.specularIntensity = 0.5f;
+    entities.append(&pointLight);
 
     RenderableEntity lightCube(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cube.obj"));
     lightCube.scale = { 0.1, 0.1, 0.1 };
+    lightCube.mesh.subMeshes[0].renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(graphicAPI));
     lightCube.mesh.subMeshes[0].material = MaterialLibrary::shared().newEmptyMaterial();
-    lightCube.mesh.subMeshes[0].material->setDiffuseColor(BLACK3);
-    lightCube.mesh.subMeshes[0].material->setSpecularColor(BLACK3);
-    lightCube.mesh.subMeshes[0].material->setEmissiveColor(WHITE3);
-    lightCube.mesh.subMeshes[0].material->setShininess(0);
-    
+    lightCube.mesh.subMeshes[0].material->baseColor = BLACK3;
+    lightCube.mesh.subMeshes[0].material->specularColor = BLACK3;
+    lightCube.mesh.subMeshes[0].material->emissiveColor = WHITE3;
+    lightCube.mesh.subMeshes[0].material->shininess = 0.0f;
+    renderableEntites.append(&lightCube);
 
-    utils::Array<RenderableEntity> renderableEntites;
+    RenderableEntity cat(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cat.obj"));
+    cat.position = { 0.0, -1.5, 7.0 };
+    cat.rotation = { 0.0, PI/2, 0.0 };
+    entities.append(&cat);
+    renderableEntites.append(&cat);
 
-    renderableEntites.append((RenderableEntity)(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cat.obj")));
-    renderableEntites.last().position = { 0.0, -1.5, 7.0 };
-    renderableEntites.last().rotation = { 0.0, PI/2, 0.0 };
+    RenderableEntity cup(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cup.obj"));
+    cup.position = { 3.5, -1.5, 7.0 };
+    entities.append(&cup);
+    renderableEntites.append(&cup);
 
-    renderableEntites.append((RenderableEntity)(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cup.obj")));
-    renderableEntites.last().position = { 3.5, -1.5, 7.0 };
-
-    RenderableEntity* selectedEntt = nullptr;
-    shaderData::PointLight* selectedPointLight = nullptr;
+    Entity* selectedEntt = nullptr;
     
     while (running)
     {
@@ -139,51 +99,33 @@ int main()
         {
             if (ImGui::BeginChild("Entities", ImVec2(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 8), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY))
             {
-                for (auto& entt : renderableEntites)
+                for (auto& entt : entities)
                 {
                     char buf[32];
-                    sprintf(buf, "Entity %p", &entt);
-                    if (ImGui::Selectable(buf, selectedEntt == &entt))
-                        selectedEntt = &entt;
+                    sprintf(buf, "Entity %p", entt);
+                    if (ImGui::Selectable(buf, selectedEntt == entt))
+                        selectedEntt = entt;
                 }
-            }
-            ImGui::EndChild();
-        }
-        ImGui::SeparatorText("Point Lights");
-        {
-            if (ImGui::BeginChild("Point Lights", ImVec2(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 8), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY))
-            {
-                char buf[32];
-                sprintf(buf, "Light %p", &pointLight);
-                if (ImGui::Selectable(buf, selectedPointLight == &pointLight))
-                    selectedPointLight = &pointLight;
             }
             ImGui::EndChild();
         }
         ImGui::SeparatorText("Selected Entity");
         {
             if(selectedEntt)
-                showImguiEdit(*selectedEntt);
+                editWidget(*selectedEntt);
             else
                 ImGui::Text("No entity selected");
         }
-        ImGui::SeparatorText("Selected Point Light");
-        {
-            if(selectedPointLight)
-                showImguiEdit(*selectedPointLight);
-            else
-                ImGui::Text("No light selected");
-        }
 
         lightCube.position = pointLight.position;
-        lightCube.mesh.subMeshes[0].material->setEmissiveColor((pointLight.color * pointLight.ambiantIntensity) + (pointLight.color * pointLight.diffuseIntensity) + (pointLight.color * pointLight.specularIntensity));
+        lightCube.mesh.subMeshes[0].material->emissiveColor = (pointLight.color * pointLight.ambiantIntensity) + (pointLight.color * pointLight.diffuseIntensity) + (pointLight.color * pointLight.specularIntensity);
 
         renderer.beginScene(camera);
 
         renderer.addPointLight(pointLight);
 
         for (auto& entt : renderableEntites)
-            renderer.render(entt);
+            renderer.render(*entt);
         renderer.render(lightCube);
 
         renderer.endScene();

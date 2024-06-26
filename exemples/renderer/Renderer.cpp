@@ -11,7 +11,7 @@
 #include "Graphics/Event.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Constants.hpp"
-#include "ShaderDatas.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
@@ -42,18 +42,6 @@ Renderer::Renderer(const utils::SharedPtr<gfx::Window>& window, const utils::Sha
     gfx::WindowResizeEvent ev(*window, w, h);
     updateProjectionMatrix(ev);
     window->addEventCallBack(updateProjectionMatrix, this);
-
-    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
-    #ifdef GFX_METAL_ENABLED
-        graphicPipelineDescriptor.metalVSFunction = "universal_vs";
-        graphicPipelineDescriptor.metalFSFunction = "universal_fs";
-    #endif 
-    #if GFX_OPENGL_ENABLED
-        graphicPipelineDescriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/universal.vs");
-        graphicPipelineDescriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/universal.fs");
-    #endif
-
-    m_universalPipeline = api->newGraphicsPipeline(graphicPipelineDescriptor);
 }
 
 void Renderer::beginScene(const Camera& camera)
@@ -61,9 +49,9 @@ void Renderer::beginScene(const Camera& camera)
     m_camera = &camera;
 }
 
-void Renderer::addPointLight(const shaderData::PointLight& light)
+void Renderer::addPointLight(const PointLight& light)
 {
-    m_pointLights.append(light);
+    m_pointLights.append(&light);
 }
 
 void Renderer::render(RenderableEntity& entt)
@@ -71,21 +59,17 @@ void Renderer::render(RenderableEntity& entt)
     for (auto& subMesh : entt.mesh.subMeshes)
     {
         math::mat4x4 modelMatrix = entt.modelMatrix();
-        math::mat4x4 modelMavpMatrixtrix = m_projectionMatrix * m_camera->viewMatrix();
+        math::mat4x4 vpMatrix = m_projectionMatrix * m_camera->viewMatrix();
 
-        m_api->useGraphicsPipeline(m_universalPipeline);
+        IRenderMethod::Uniforms uniforms = {
+            modelMatrix,
+            vpMatrix,
+            m_camera->position,
+            m_pointLights,
+            *subMesh.material
+        };
+        subMesh.renderMethod->use(uniforms);
         m_api->useVertexBuffer(subMesh.vertexBuffer);
-
-        m_api->setVertexUniform("u_modelMatrix",   entt.modelMatrix());
-        m_api->setVertexUniform("u_vpMatrix",      m_projectionMatrix * m_camera->viewMatrix());
-        m_api->setFragmentUniform("u_cameraPos",   m_camera->position);
-        m_api->setFragmentUniform("u_pointLights", m_pointLights);
-
-        shaderData::Material material = subMesh.material->getShaderMaterial();
-        m_api->setFragmentUniform("u_material", material);
-        if (material.useDiffuseMap)
-            m_api->setFragmentTexture("u_diffuseTexture", subMesh.material->diffuseTexture());
-
         m_api->drawIndexedVertices(subMesh.indexBuffer);
     }
 }

@@ -25,6 +25,8 @@ struct Entity
     inline math::vec3f right()   const { return (math::mat4x4::rotation({0, rotation.y, 0}) * math::mat4x4::rotation({rotation.x, 0, 0}) * math::vec4f({1, 0, 0, 1})).xyz().normalized(); }
     inline math::vec3f up()      const { return (math::mat4x4::rotation({0, rotation.y, 0}) * math::mat4x4::rotation({rotation.x, 0, 0}) * math::vec4f({0, 1, 0, 1})).xyz().normalized(); }
     inline math::vec3f forward() const { return (math::mat4x4::rotation({0, rotation.y, 0}) * math::mat4x4::rotation({rotation.x, 0, 0}) * math::vec4f({0, 0, 1, 1})).xyz().normalized(); }
+
+    virtual ~Entity() = default;
 };
 
 struct Camera : public Entity
@@ -40,6 +42,8 @@ struct Camera : public Entity
             fo.x, fo.y, fo.z, -dot(fo, position),
                0,    0,    0,                  1);
     }
+
+    ~Camera() override = default;
 };
 
 struct PointLight : public Entity
@@ -48,12 +52,16 @@ struct PointLight : public Entity
     float     ambiantIntensity;
     float     diffuseIntensity;
     float     specularIntensity;
+
+    ~PointLight() override = default;
 };
 
 struct RenderableEntity : public Entity
 {
     inline RenderableEntity(const Mesh& m) : mesh(m) {}
     Mesh mesh;
+    
+    ~RenderableEntity() override = default;
 };
 
 

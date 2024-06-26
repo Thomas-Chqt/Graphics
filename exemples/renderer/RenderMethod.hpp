@@ -10,7 +10,6 @@
 #ifndef RENDERMETHOD_HPP
 # define RENDERMETHOD_HPP
 
-#include "Entity.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "MaterialLibrary.hpp"
@@ -19,34 +18,56 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
-enum class VertexShader { universal3D };
-enum class FragmentShader { baseTexture };
+enum class Shader { universal3D, baseTexture, baseColor };
+
+class PointLight;
 
 class IRenderMethod
 {
 public:
-    struct Data
+    struct Uniforms
     {
-        const math::mat4x4*             modelMatrix = nullptr;
-        const math::mat4x4*             vpMatrix    = nullptr;
-        const math::vec3f*              cameraPos   = nullptr;
-        const utils::Array<PointLight>* pointLights = nullptr;
-        const Material*                 material    = nullptr;
+        const math::mat4x4&                    modelMatrix;
+        const math::mat4x4&                    vpMatrix;
+        const math::vec3f&                     cameraPos;
+        const utils::Array<const PointLight*>& pointLights;
+        const Material&                        material;
     };
 
 public:
-    virtual void use(const Data&) = 0;
+    virtual void use(const Uniforms&) = 0;
+    virtual ~IRenderMethod() = default;
+
+protected:
+    IRenderMethod() = default;
 };
 
-template<VertexShader VS, FragmentShader FS>
+template<Shader S>
+void addToDescriptor(gfx::GraphicPipeline::Descriptor&);
+
+template<Shader S>
+void setUniforms(gfx::GraphicAPI&, const IRenderMethod::Uniforms&);
+
+template<Shader VS, Shader FS>
 class RenderMethod : public IRenderMethod
 {
 public:
-    RenderMethod(const utils::SharedPtr<gfx::GraphicAPI>&);
+    RenderMethod(const utils::SharedPtr<gfx::GraphicAPI>& api) : m_graphicAPI(api)
+    {
+        gfx::GraphicPipeline::Descriptor descriptor;
+        addToDescriptor<VS>(descriptor);
+        addToDescriptor<FS>(descriptor);
+        m_graphicPipeline = m_graphicAPI->newGraphicsPipeline(descriptor);
+    }
 
-    void use(const Data&) override;
+    void use(const Uniforms& uniforms) override
+    {
+        m_graphicAPI->useGraphicsPipeline(m_graphicPipeline);
+        setUniforms<VS>(*m_graphicAPI, uniforms);
+        setUniforms<FS>(*m_graphicAPI, uniforms);
+    }
 
-    ~RenderMethod() = default;
+    ~RenderMethod() override = default;
 
 private:
     utils::SharedPtr<gfx::GraphicAPI> m_graphicAPI;

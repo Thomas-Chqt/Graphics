@@ -9,12 +9,22 @@
 
 #include "MeshLibrary.hpp"
 #include "MaterialLibrary.hpp"
-#include "ShaderDatas.hpp"
+#include "ShaderStructs.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/String.hpp"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
+
+template<>
+gfx::StructLayout gfx::getLayout<shaderStruct::Vertex>()
+{
+    return {
+        { "pos",    Type::vec3f, (void*)offsetof(shaderStruct::Vertex, pos)    },
+        { "uv",     Type::vec2f, (void*)offsetof(shaderStruct::Vertex, uv)     },
+        { "normal", Type::vec3f, (void*)offsetof(shaderStruct::Vertex, normal) }
+    };
+}
 
 utils::UniquePtr<MeshLibrary> MeshLibrary::s_instance;
 
@@ -56,7 +66,7 @@ Mesh MeshLibrary::meshFromFile(const utils::String& filePath)
     {
         aiMesh* aiMesh = scene->mMeshes[meshIndex]; 
 
-        utils::Array<shaderData::Vertex> vertices(aiMesh->mNumVertices);
+        utils::Array<shaderStruct::Vertex> vertices(aiMesh->mNumVertices);
         utils::Array<utils::uint32> indices(aiMesh->mNumFaces * 3);
 
         for(utils::uint32 vertexIndex = 0; vertexIndex < aiMesh->mNumVertices; vertexIndex++)
@@ -93,6 +103,10 @@ Mesh MeshLibrary::meshFromFile(const utils::String& filePath)
         newMesh.subMeshes[meshIndex].vertexBuffer = m_api->newVertexBuffer(vertices);
         newMesh.subMeshes[meshIndex].indexBuffer = m_api->newIndexBuffer(indices);
         newMesh.subMeshes[meshIndex].material = MaterialLibrary::shared().materialFromAiMaterial(scene->mMaterials[aiMesh->mMaterialIndex]);
+        if (newMesh.subMeshes[meshIndex].material->baseTexture)
+            newMesh.subMeshes[meshIndex].renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseTexture>(m_api));
+        else
+            newMesh.subMeshes[meshIndex].renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
     }
 
     m_meshes.insert(filePath, newMesh);

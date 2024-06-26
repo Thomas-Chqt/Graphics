@@ -11,10 +11,8 @@
 # define RENDERER_HPP
 
 #include "Graphics/GraphicAPI.hpp"
-#include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Matrix.hpp"
-#include "ShaderDatas.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Entity.hpp"
@@ -25,7 +23,7 @@ public:
     Renderer(const utils::SharedPtr<gfx::Window>&, const utils::SharedPtr<gfx::GraphicAPI>&);
 
     void beginScene(const Camera& camera);
-    void addPointLight(const shaderData::PointLight& light);
+    void addPointLight(const PointLight& light);
     void render(RenderableEntity&);
     void endScene();
 
@@ -35,11 +33,10 @@ private:
     utils::SharedPtr<gfx::Window> m_window;
     utils::SharedPtr<gfx::GraphicAPI> m_api;
     math::mat4x4 m_projectionMatrix;
-    utils::SharedPtr<gfx::GraphicPipeline> m_universalPipeline;
 
     //scene datas
     const Camera* m_camera;
-    utils::Array<shaderData::PointLight> m_pointLights;
+    utils::Array<const PointLight*> m_pointLights;
 };
 
 #endif // RENDERER_HPP
