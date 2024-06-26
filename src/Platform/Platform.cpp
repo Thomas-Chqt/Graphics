@@ -27,7 +27,6 @@ namespace gfx
 #ifdef GFX_METAL_ENABLED
 utils::SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const
 {
-    std::cout << "Creating MetalGraphicAPI" << std::endl;
     return utils::SharedPtr<GraphicAPI>(new MetalGraphicAPI(renderTarget));
 }
 #endif
@@ -35,7 +34,6 @@ utils::SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const utils::SharedPtr
 #ifdef GFX_OPENGL_ENABLED
 utils::SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const
 {
-    std::cout << "Creating OpenGLGraphicAPI" << std::endl;
     return utils::SharedPtr<GraphicAPI>(new OpenGLGraphicAPI(renderTarget));
 }
 #endif
@@ -49,7 +47,7 @@ utils::SharedPtr<Window> Platform::newDefaultWindow(int w, int h)
     #else
         if (const char* val = std::getenv("GFX_USED_API"))
         {
-            if (utils::String(std::getenv("GFX_USED_API")) == utils::String("OPENGL"))
+            if (utils::String(std::getenv("GFX_USED_API")) == utils::String("OPENGL"))   
                 return newOpenGLWindow(w, h);
         }
         return newMetalWindow(w, h);
@@ -65,8 +63,16 @@ utils::SharedPtr<GraphicAPI> Platform::newDefaultGraphicAPI(const utils::SharedP
     #else
         if (const char* val = std::getenv("GFX_USED_API"))
         {
-            if (utils::String(std::getenv("GFX_USED_API")) == utils::String("OPENGL"))
-               return newOpenGLGraphicAPI(renderTarget);
+            if (utils::String(val) == utils::String("OPENGL"))
+            {
+                std::cout << "Creating OpenGLGraphicAPI" << std::endl;
+                return newOpenGLGraphicAPI(renderTarget);
+            }
+            if (utils::String(val) == utils::String("METAL"))
+            {
+                std::cout << "Creating MetalGraphicAPI" << std::endl;
+                return newOpenGLGraphicAPI(renderTarget);
+            }
         }
         return newMetalGraphicAPI(renderTarget);
     #endif

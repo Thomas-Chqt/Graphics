@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------
- * universal.vs
+ * universal3D.vs
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
  * Date: 2024/06/24 13:26:35

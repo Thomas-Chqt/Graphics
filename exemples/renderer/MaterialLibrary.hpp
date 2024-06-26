@@ -37,6 +37,9 @@ struct Material
 class MaterialLibrary
 {
 public:
+    using Iterator = utils::Array<utils::SharedPtr<Material>>::Iterator;
+
+public:
     MaterialLibrary(const MaterialLibrary&) = delete;
     MaterialLibrary(MaterialLibrary&&)      = delete;
 
@@ -46,6 +49,9 @@ public:
 
     const utils::SharedPtr<Material>& newEmptyMaterial();
     const utils::SharedPtr<Material>& materialFromAiMaterial(aiMaterial*);
+
+    inline Iterator begin() { return m_materials.begin(); }
+    inline Iterator end() { return m_materials.end(); }
 
     ~MaterialLibrary() = default;
 

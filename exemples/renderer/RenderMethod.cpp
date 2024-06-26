@@ -11,6 +11,7 @@
 #include "ShaderStructs.hpp"
 #include "Entity.hpp"
 #include "MaterialLibrary.hpp"
+#include "UtilsCPP/Types.hpp"
 
 template<>
 gfx::StructLayout gfx::getLayout<shaderStruct::PointLight>()
@@ -63,7 +64,7 @@ void addToDescriptor<Shader::baseTexture>(gfx::GraphicPipeline::Descriptor& desc
         descriptor.metalFSFunction = "baseTexture_fs";
     #endif 
     #if GFX_OPENGL_ENABLED
-        descriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/baseTexture.vs");
+        descriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/baseTexture.fs");
     #endif
 }
 
@@ -74,7 +75,7 @@ void addToDescriptor<Shader::baseColor>(gfx::GraphicPipeline::Descriptor& descri
         descriptor.metalFSFunction = "baseColor_fs";
     #endif 
     #if GFX_OPENGL_ENABLED
-        descriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/baseColor.vs");
+        descriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/baseColor.fs");
     #endif
 }
 
@@ -108,7 +109,8 @@ void setUniforms<Shader::baseTexture>(gfx::GraphicAPI& api, const IRenderMethod:
     material.shininess = uniforms.material.shininess;
 
     api.setFragmentUniform("u_cameraPos", uniforms.cameraPos);
-    api.setFragmentUniform("u_lights", lights);
+    api.setFragmentUniform("u_pointLights", lights);
+    api.setFragmentUniform("u_pointLightsCount", (utils::uint32)lights.length());
     api.setFragmentUniform("u_material", material);
 
     if (uniforms.material.baseTexture)
@@ -139,6 +141,7 @@ void setUniforms<Shader::baseColor>(gfx::GraphicAPI& api, const IRenderMethod::U
     material.shininess = uniforms.material.shininess;
 
     api.setFragmentUniform("u_cameraPos", uniforms.cameraPos);
-    api.setFragmentUniform("u_lights", lights);
+    api.setFragmentUniform("u_pointLights", lights);
+    api.setFragmentUniform("u_pointLightsCount", (utils::uint32)lights.length());
     api.setFragmentUniform("u_material", material);
 }

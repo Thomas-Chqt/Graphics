@@ -13,9 +13,12 @@
 #include "Math/Vector.hpp"
 #include "Math/Matrix.hpp"
 #include "MeshLibrary.hpp"
+#include "UtilsCPP/String.hpp"
 
 struct Entity
 {
+    utils::String name;
+    
     math::vec3f position = { 0.0, 0.0, 0.0 };
     math::vec3f rotation = { 0.0, 0.0, 0.0 };
     math::vec3f scale    = { 1.0, 1.0, 1.0 };

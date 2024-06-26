@@ -9,6 +9,8 @@
 
 #include "imguiWidget.hpp"
 #include "Entity.hpp"
+#include "MaterialLibrary.hpp"
+#include <cstring>
 #include <imgui/imgui.h>
 
 void editWidget(Material& material)
@@ -21,10 +23,22 @@ void editWidget(Material& material)
 
 void editWidget(SubMesh& submesh)
 {
+    if (ImGui::BeginPopupContextItem("material selection popup"))
+    {
+        for (auto& material : MaterialLibrary::shared())
+        {
+            ImGui::Text(material->name);
+        }
+        ImGui::EndPopup();
+    }
+
     ImGui::Text("vertexBuffer: %p", (void*)submesh.vertexBuffer);
     ImGui::Text("indexBuffer: %p",  (void*)submesh.indexBuffer);
     ImGui::Text("renderMethod: %p", (void*)submesh.renderMethod);
     ImGui::Text("Material");
+    ImGui::SameLine();
+    if(ImGui::Button("change"))
+        ImGui::OpenPopup("material selection popup");
     ImGui::Indent(10);
         editWidget(*submesh.material);
     ImGui::Unindent(10);
@@ -47,6 +61,11 @@ void editWidget(Mesh& mesh)
 
 void editWidget(Entity& entt)
 {
+    char buff[32];
+    strncpy(buff, entt.name, 32); 
+    ImGui::InputText("Name", buff, 32);
+    entt.name = buff;
+
     ImGui::DragFloat3("position", (float*)&entt.position, 0.01);
     ImGui::DragFloat3("rotation", (float*)&entt.rotation, 0.01);
 

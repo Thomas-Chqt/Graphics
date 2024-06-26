@@ -62,8 +62,9 @@ float3 computePointLight(constant PointLight& light, const thread Fragment& frag
 
 fragment float4 baseTexture_fs(VertexOut in [[stage_in]],
     constant float3& u_cameraPos               [[buffer(1)]],
-    constant PointLight* u_lights              [[buffer(2)]],
-    constant baseTexture::Material& u_material [[buffer(3)]],
+    constant PointLight* u_pointLights         [[buffer(2)]],
+    constant uint& u_pointLightsCount          [[buffer(3)]],
+    constant baseTexture::Material& u_material [[buffer(4)]],
     texture2d<float> u_diffuseTexture          [[texture(0)]]
 )
 {
@@ -83,15 +84,18 @@ fragment float4 baseTexture_fs(VertexOut in [[stage_in]],
 
     float3 cameraDir = normalize(u_cameraPos - in.pos);
 
-    float3 output = computePointLight(u_lights[0], fragInfos, cameraDir);
+    float3 output = float3(0.0f, 0.0f, 0.0f);
+    for(uint i = 0; i < u_pointLightsCount; i++)
+        output += computePointLight(u_pointLights[i], fragInfos, cameraDir);
 
     return float4(output, baseColor.w);
 }
 
 fragment float4 baseColor_fs(VertexOut in [[stage_in]],
     constant float3& u_cameraPos             [[buffer(1)]],
-    constant PointLight* u_lights            [[buffer(2)]],
-    constant baseColor::Material& u_material [[buffer(3)]]
+    constant PointLight* u_pointLights       [[buffer(2)]],
+    constant uint& u_pointLightsCount        [[buffer(3)]],
+    constant baseColor::Material& u_material [[buffer(4)]]
 )
 {
     Fragment fragInfos = {
@@ -106,7 +110,9 @@ fragment float4 baseColor_fs(VertexOut in [[stage_in]],
 
     float3 cameraDir = normalize(u_cameraPos - in.pos);
 
-    float3 output = computePointLight(u_lights[0], fragInfos, cameraDir);
+    float3 output = float3(0.0f, 0.0f, 0.0f);
+    for(uint i = 0; i < u_pointLightsCount; i++)
+        output += computePointLight(u_pointLights[i], fragInfos, cameraDir);
 
     return float4(output, 1.0f);
 }

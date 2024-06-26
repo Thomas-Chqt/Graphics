@@ -33,6 +33,9 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, utils::uint64 count, utils::u
         glEnableVertexAttribArray(i);
         switch (el.type)
         {
+        case Type::Uint32:
+            glVertexAttribPointer(i, 1, GL_UNSIGNED_INT, GL_FALSE, size, el.offset);
+            break;
         case Type::Float:
             glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, size, el.offset);
             break;
