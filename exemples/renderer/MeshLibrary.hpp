@@ -14,50 +14,67 @@
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "MaterialLibrary.hpp"
+#include "Math/Matrix.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 
-struct SubMesh
+struct Mesh
 {
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
     utils::SharedPtr<gfx::IndexBuffer> indexBuffer;
     utils::SharedPtr<Material> material;
 };
 
-struct Mesh
+struct SubModel
 {
     utils::String name;
-    utils::Array<SubMesh> subMeshes;
+
+    math::mat4x4 defaultMat;
+    math::vec3f position = { 0.0, 0.0, 0.0 };
+    math::vec3f rotation = { 0.0, 0.0, 0.0 };
+    math::vec3f scale    = { 1.0, 1.0, 1.0 };
+    
+    utils::Array<Mesh> meshes;
+    utils::Array<SubModel> subModels;
+
+    inline math::mat4x4 modelMatrix() const { return math::mat4x4::translation(position) * math::mat4x4::rotation(rotation) * math::mat4x4::scale(scale) * defaultMat; }
 };
 
-class MeshLibrary
+struct Model
+{
+    utils::String name;
+    utils::Array<Mesh> meshes;
+    utils::Array<SubModel> subModels;
+};
+
+class ModelLibrary
 {
 public:
-    MeshLibrary(const MeshLibrary&) = delete;
-    MeshLibrary(MeshLibrary&&)      = delete;
+    ModelLibrary(const ModelLibrary&) = delete;
+    ModelLibrary(ModelLibrary&&)      = delete;
 
-    static inline void init(const utils::SharedPtr<gfx::GraphicAPI>& api) { s_instance = utils::UniquePtr<MeshLibrary>(new MeshLibrary(api)); }
-    static inline MeshLibrary& shared() { return *s_instance; }
+    static inline void init(const utils::SharedPtr<gfx::GraphicAPI>& api) { s_instance = utils::UniquePtr<ModelLibrary>(new ModelLibrary(api)); }
+    static inline ModelLibrary& shared() { return *s_instance; }
     static inline void terminate() { s_instance.clear(); }
 
-    Mesh meshFromFile(const utils::String& filePath);
+    Model modelFromFile(const utils::String& filePath);
 
-    ~MeshLibrary() = default;
+    ~ModelLibrary() = default;
 
 private:
-    MeshLibrary(const utils::SharedPtr<gfx::GraphicAPI>& api);
+    ModelLibrary(const utils::SharedPtr<gfx::GraphicAPI>& api);
 
-    static utils::UniquePtr<MeshLibrary> s_instance;
+    static utils::UniquePtr<ModelLibrary> s_instance;
 
     utils::SharedPtr<gfx::GraphicAPI> m_api;
-    utils::Dictionary<utils::String, Mesh> m_meshes;
+    utils::Dictionary<utils::String, Model> m_models;
 
 public:
-    MeshLibrary& operator = (const MeshLibrary&) = delete;
-    MeshLibrary& operator = (MeshLibrary&&)      = delete;
+    ModelLibrary& operator = (const ModelLibrary&) = delete;
+    ModelLibrary& operator = (ModelLibrary&&)      = delete;
 
 };
 

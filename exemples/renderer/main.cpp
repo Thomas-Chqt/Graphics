@@ -39,7 +39,7 @@ int main()
 
     TextureLibrary::init(graphicAPI);
     MaterialLibrary::init(graphicAPI);
-    MeshLibrary::init(graphicAPI);
+    ModelLibrary::init(graphicAPI);
 
     Renderer renderer(window, graphicAPI);
     utils::Array<Entity*> entities;
@@ -47,11 +47,12 @@ int main()
 
     Camera camera;
     camera.name = "camera";
+    camera.position = { 8, 2, -70 };
     entities.append(&camera);
     
     PointLight pointLight;
     pointLight.name = "Light 1";
-    pointLight.position = { 3.5, 2.5, 7.0 };;
+    pointLight.position = { 20, 15, 7 };
     pointLight.color = WHITE3;
     pointLight.ambiantIntensity = 0.1f;
     pointLight.diffuseIntensity = 0.5f;
@@ -60,41 +61,47 @@ int main()
 
     PointLight pointLight2;
     pointLight2.name = "Light 2";
-    pointLight2.position = { 0.0, 2.5, 7.0 };
+    pointLight2.position = { 10, 15, -36 };
     pointLight2.color = WHITE3;
     pointLight2.ambiantIntensity = 0.1f;
     pointLight2.diffuseIntensity = 0.5f;
     pointLight2.specularIntensity = 0.5f;
     entities.append(&pointLight2);
 
-    RenderableEntity lightCube(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cube.obj"));
+    RenderableEntity lightCube(ModelLibrary::shared().modelFromFile(RESSOURCES_DIR"/cube/cube.obj"));
     lightCube.scale = { 0.1, 0.1, 0.1 };
-    lightCube.mesh.subMeshes[0].material = MaterialLibrary::shared().newEmptyMaterial();
-    lightCube.mesh.subMeshes[0].material->baseColor = BLACK3;
-    lightCube.mesh.subMeshes[0].material->specularColor = BLACK3;
-    lightCube.mesh.subMeshes[0].material->shininess = 0.0f;
+    lightCube.model.subModels[0].meshes[0].material = MaterialLibrary::shared().newEmptyMaterial();
+    lightCube.model.subModels[0].meshes[0].material->baseColor = BLACK3;
+    lightCube.model.subModels[0].meshes[0].material->specularColor = BLACK3;
+    lightCube.model.subModels[0].meshes[0].material->shininess = 0.0f;
     renderableEntites.append(&lightCube);
 
-    RenderableEntity lightCube2(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cube.obj"));
+    RenderableEntity lightCube2(ModelLibrary::shared().modelFromFile(RESSOURCES_DIR"/cube/cube.obj"));
     lightCube2.scale = { 0.1, 0.1, 0.1 };
-    lightCube2.mesh.subMeshes[0].material = MaterialLibrary::shared().newEmptyMaterial();
-    lightCube2.mesh.subMeshes[0].material->baseColor = BLACK3;
-    lightCube2.mesh.subMeshes[0].material->specularColor = BLACK3;
-    lightCube2.mesh.subMeshes[0].material->shininess = 0.0f;
+    lightCube2.model.subModels[0].meshes[0].material = MaterialLibrary::shared().newEmptyMaterial();
+    lightCube2.model.subModels[0].meshes[0].material->baseColor = BLACK3;
+    lightCube2.model.subModels[0].meshes[0].material->specularColor = BLACK3;
+    lightCube2.model.subModels[0].meshes[0].material->shininess = 0.0f;
     renderableEntites.append(&lightCube2);
 
-    RenderableEntity cat(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cat.obj"));
-    cat.name = "cat";
-    cat.position = { 0.0, -1.5, 7.0 };
-    cat.rotation = { 0.0, PI/2, 0.0 };
-    entities.append(&cat);
-    renderableEntites.append(&cat);
+    // RenderableEntity cat(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cat/cat.obj"));
+    // cat.name = "cat";
+    // cat.position = { 0.0, -1.5, 7.0 };
+    // cat.rotation = { 0.0, PI/2, 0.0 };
+    // entities.append(&cat);
+    // renderableEntites.append(&cat);
 
-    RenderableEntity cup(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cup.obj"));
-    cup.name = "cup";
-    cup.position = { 3.5, -1.5, 7.0 };
-    entities.append(&cup);
-    renderableEntites.append(&cup);
+    // RenderableEntity cup(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cup/cup.obj"));
+    // cup.name = "cup";
+    // cup.position = { 3.5, -1.5, 7.0 };
+    // entities.append(&cup);
+    // renderableEntites.append(&cup);
+
+    RenderableEntity after(ModelLibrary::shared().modelFromFile(RESSOURCES_DIR"/after_the_rain/scene.gltf"));
+    after.name = "city";
+    after.rotation.x = PI/2;
+    entities.append(&after);
+    renderableEntites.append(&after);
 
     Entity* selectedEntt = nullptr;
     
@@ -135,10 +142,10 @@ int main()
         }
 
         lightCube.position = pointLight.position;
-        lightCube.mesh.subMeshes[0].material->emissiveColor = (pointLight.color * pointLight.ambiantIntensity) + (pointLight.color * pointLight.diffuseIntensity) + (pointLight.color * pointLight.specularIntensity);
+        lightCube.model.subModels[0].meshes[0].material->emissiveColor = (pointLight.color * pointLight.ambiantIntensity) + (pointLight.color * pointLight.diffuseIntensity) + (pointLight.color * pointLight.specularIntensity);
 
         lightCube2.position = pointLight2.position;
-        lightCube2.mesh.subMeshes[0].material->emissiveColor = (pointLight2.color * pointLight2.ambiantIntensity) + (pointLight2.color * pointLight2.diffuseIntensity) + (pointLight2.color * pointLight2.specularIntensity);
+        lightCube2.model.subModels[0].meshes[0].material->emissiveColor = (pointLight2.color * pointLight2.ambiantIntensity) + (pointLight2.color * pointLight2.diffuseIntensity) + (pointLight2.color * pointLight2.specularIntensity);
 
         renderer.beginScene(camera);
 
@@ -154,7 +161,7 @@ int main()
         graphicAPI->endFrame();
     }
 
-    MeshLibrary::terminate();
+    ModelLibrary::terminate();
     MaterialLibrary::terminate();
     TextureLibrary::terminate();
     

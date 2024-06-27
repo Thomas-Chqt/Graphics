@@ -15,8 +15,8 @@
 #include "MeshLibrary.hpp"
 
 void editWidget(Material&);
-void editWidget(SubMesh&);
-void editWidget(Mesh&);
+void editWidget(SubModel&);
+void editWidget(Model&);
 void editWidget(Entity&);
 
 #endif // IMGUIWIDGET_HPP

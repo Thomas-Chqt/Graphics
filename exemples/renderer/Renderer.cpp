@@ -56,22 +56,48 @@ void Renderer::addPointLight(const PointLight& light)
 
 void Renderer::render(RenderableEntity& entt)
 {
-    for (auto& subMesh : entt.mesh.subMeshes)
-    {
-        math::mat4x4 modelMatrix = entt.modelMatrix();
-        math::mat4x4 vpMatrix = m_projectionMatrix * m_camera->viewMatrix();
+    math::mat4x4 vpMatrix = m_projectionMatrix * m_camera->viewMatrix();
 
+    utils::Func<void(math::mat4x4, SubModel&)> renderSubModel = [&](math::mat4x4 topMatrix, SubModel& subModel)
+    {
+        math::mat4x4 modelMatrix = topMatrix * subModel.modelMatrix();
+
+        for (auto& mesh : subModel.meshes)
+        {
+            IRenderMethod::Uniforms uniforms = {
+                modelMatrix,
+                vpMatrix,
+                m_camera->position,
+                m_pointLights,
+                *mesh.material
+            };
+            mesh.material->renderMethod->use(uniforms);
+            m_api->useVertexBuffer(mesh.vertexBuffer);
+            m_api->drawIndexedVertices(mesh.indexBuffer);
+        }
+
+        for (auto& subModel : subModel.subModels)
+            renderSubModel(modelMatrix, subModel);
+    };
+
+    math::mat4x4 modelMatrix = entt.modelMatrix();
+    
+    for (auto& mesh : entt.model.meshes)
+    {
         IRenderMethod::Uniforms uniforms = {
             modelMatrix,
             vpMatrix,
             m_camera->position,
             m_pointLights,
-            *subMesh.material
+            *mesh.material
         };
-        subMesh.material->renderMethod->use(uniforms);
-        m_api->useVertexBuffer(subMesh.vertexBuffer);
-        m_api->drawIndexedVertices(subMesh.indexBuffer);
+        mesh.material->renderMethod->use(uniforms);
+        m_api->useVertexBuffer(mesh.vertexBuffer);
+        m_api->drawIndexedVertices(mesh.indexBuffer);
     }
+
+    for (auto& subModel : entt.model.subModels)
+        renderSubModel(modelMatrix, subModel);
 }
 
 void Renderer::endScene()

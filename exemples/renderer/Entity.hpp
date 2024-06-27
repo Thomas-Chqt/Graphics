@@ -61,8 +61,8 @@ struct PointLight : public Entity
 
 struct RenderableEntity : public Entity
 {
-    inline RenderableEntity(const Mesh& m) : mesh(m) {}
-    Mesh mesh;
+    inline RenderableEntity(const Model& m) : model(m) {}
+    Model model;
     
     ~RenderableEntity() override = default;
 };

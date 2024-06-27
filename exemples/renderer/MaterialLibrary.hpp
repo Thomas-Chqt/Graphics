@@ -13,7 +13,7 @@
 #include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "RenderMethod.hpp"
-#include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
@@ -40,7 +40,7 @@ struct Material
 class MaterialLibrary
 {
 public:
-    using Iterator = utils::Array<utils::SharedPtr<Material>>::Iterator;
+    using Iterator = utils::Dictionary<utils::String, utils::SharedPtr<Material>>::Iterator;
 
 public:
     MaterialLibrary(const MaterialLibrary&) = delete;
@@ -51,7 +51,7 @@ public:
     static inline void terminate() { s_instance.clear(); }
 
     const utils::SharedPtr<Material>& newEmptyMaterial();
-    const utils::SharedPtr<Material>& materialFromAiMaterial(aiMaterial*);
+    const utils::SharedPtr<Material>& materialFromAiMaterial(aiMaterial*, const utils::String& baseDir);
 
     inline Iterator begin() { return m_materials.begin(); }
     inline Iterator end() { return m_materials.end(); }
@@ -64,7 +64,7 @@ private:
     static utils::UniquePtr<MaterialLibrary> s_instance;
 
     utils::SharedPtr<gfx::GraphicAPI> m_api;
-    utils::Array<utils::SharedPtr<Material>> m_materials;
+    utils::Dictionary<utils::String, utils::SharedPtr<Material>> m_materials;
 
 public:
     MaterialLibrary& operator = (const MaterialLibrary&) = delete;
