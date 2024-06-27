@@ -21,12 +21,13 @@ const utils::SharedPtr<Material>& MaterialLibrary::newEmptyMaterial()
 {
     m_materials.append(utils::SharedPtr<Material>(new Material()));
     m_materials.last()->name = "material " + utils::String::fromUInt(m_materials.length());
+    m_materials.last()->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
     return m_materials.last();
 }
 
 const utils::SharedPtr<Material>& MaterialLibrary::materialFromAiMaterial(aiMaterial* aiMaterial)
 {
-    newEmptyMaterial();
+    m_materials.append(utils::SharedPtr<Material>(new Material()));
     Material& newMaterial = *m_materials.last();
 
     if (utils::String(aiMaterial->GetName().C_Str()).isEmpty() == false)
@@ -34,6 +35,7 @@ const utils::SharedPtr<Material>& MaterialLibrary::materialFromAiMaterial(aiMate
 
     if (aiMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
     {
+        newMaterial.renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseTexture>(m_api));
         aiString path;
         if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) != AI_SUCCESS)
             throw utils::RuntimeError("Failed to get aiTextureType_DIFFUSE for idx 0");
@@ -41,6 +43,7 @@ const utils::SharedPtr<Material>& MaterialLibrary::materialFromAiMaterial(aiMate
     }
     else
     {
+        newMaterial.renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
         aiColor3D diffuse  = {1, 1, 1};
         aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
         newMaterial.baseColor = { diffuse.r, diffuse.g, diffuse.b };
@@ -57,4 +60,8 @@ const utils::SharedPtr<Material>& MaterialLibrary::materialFromAiMaterial(aiMate
     aiMaterial->Get(AI_MATKEY_SHININESS, newMaterial.shininess);
 
     return m_materials.last();
+}
+
+MaterialLibrary::MaterialLibrary(const utils::SharedPtr<gfx::GraphicAPI>& api) : m_api(api)
+{
 }

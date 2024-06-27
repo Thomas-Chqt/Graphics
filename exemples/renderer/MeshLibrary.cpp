@@ -103,10 +103,6 @@ Mesh MeshLibrary::meshFromFile(const utils::String& filePath)
         newMesh.subMeshes[meshIndex].vertexBuffer = m_api->newVertexBuffer(vertices);
         newMesh.subMeshes[meshIndex].indexBuffer = m_api->newIndexBuffer(indices);
         newMesh.subMeshes[meshIndex].material = MaterialLibrary::shared().materialFromAiMaterial(scene->mMaterials[aiMesh->mMaterialIndex]);
-        if (newMesh.subMeshes[meshIndex].material->baseTexture)
-            newMesh.subMeshes[meshIndex].renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseTexture>(m_api));
-        else
-            newMesh.subMeshes[meshIndex].renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
     }
 
     m_meshes.insert(filePath, newMesh);

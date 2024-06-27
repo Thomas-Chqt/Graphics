@@ -12,7 +12,6 @@
 
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "MaterialLibrary.hpp"
 #include "Math/Matrix.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
@@ -21,6 +20,7 @@
 enum class Shader { universal3D, baseTexture, baseColor };
 
 class PointLight;
+class Material;
 
 class IRenderMethod
 {

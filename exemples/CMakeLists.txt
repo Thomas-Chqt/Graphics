@@ -19,13 +19,17 @@ set(ASSIMP_BUILD_OBJ_IMPORTER ON)
 FetchContent_MakeAvailable(assimp)
 set_target_properties(assimp PROPERTIES FOLDER "dependencies")
 
-add_subdirectory(triangle)
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(triangle)
+endif()
 
 if(GFX_BUILD_IMGUI)
     add_subdirectory(imguiDemo)
 endif()
 
-add_subdirectory(offscreenRenderPass)
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(offscreenRenderPass)
+endif()
 
 if(GFX_BUILD_IMGUI)
     add_subdirectory(renderer)

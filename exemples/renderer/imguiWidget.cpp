@@ -15,6 +15,7 @@
 
 void editWidget(Material& material)
 {
+    ImGui::Text("renderMethod: %p",    (void*)material.renderMethod);
     ImGui::ColorEdit3("baseColor",     (float*)&material.baseColor);
     ImGui::ColorEdit3("specularColor", (float*)&material.specularColor);
     ImGui::ColorEdit3("emissiveColor", (float*)&material.emissiveColor);
@@ -32,11 +33,9 @@ void editWidget(SubMesh& submesh)
         }
         ImGui::EndPopup();
     }
-
     ImGui::Text("vertexBuffer: %p", (void*)submesh.vertexBuffer);
     ImGui::Text("indexBuffer: %p",  (void*)submesh.indexBuffer);
-    ImGui::Text("renderMethod: %p", (void*)submesh.renderMethod);
-    ImGui::Text("Material");
+    ImGui::Text("Material: %s", (char*)submesh.material->name);
     ImGui::SameLine();
     if(ImGui::Button("change"))
         ImGui::OpenPopup("material selection popup");

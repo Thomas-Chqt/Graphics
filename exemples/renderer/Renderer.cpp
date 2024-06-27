@@ -68,7 +68,7 @@ void Renderer::render(RenderableEntity& entt)
             m_pointLights,
             *subMesh.material
         };
-        subMesh.renderMethod->use(uniforms);
+        subMesh.material->renderMethod->use(uniforms);
         m_api->useVertexBuffer(subMesh.vertexBuffer);
         m_api->drawIndexedVertices(subMesh.indexBuffer);
     }

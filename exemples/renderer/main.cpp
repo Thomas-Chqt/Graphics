@@ -38,7 +38,7 @@ int main()
     graphicAPI->useForImGui(ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable);
 
     TextureLibrary::init(graphicAPI);
-    MaterialLibrary::init();
+    MaterialLibrary::init(graphicAPI);
     MeshLibrary::init(graphicAPI);
 
     Renderer renderer(window, graphicAPI);
@@ -69,21 +69,17 @@ int main()
 
     RenderableEntity lightCube(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cube.obj"));
     lightCube.scale = { 0.1, 0.1, 0.1 };
-    lightCube.mesh.subMeshes[0].renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(graphicAPI));
     lightCube.mesh.subMeshes[0].material = MaterialLibrary::shared().newEmptyMaterial();
     lightCube.mesh.subMeshes[0].material->baseColor = BLACK3;
     lightCube.mesh.subMeshes[0].material->specularColor = BLACK3;
-    lightCube.mesh.subMeshes[0].material->emissiveColor = WHITE3;
     lightCube.mesh.subMeshes[0].material->shininess = 0.0f;
     renderableEntites.append(&lightCube);
 
     RenderableEntity lightCube2(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cube.obj"));
     lightCube2.scale = { 0.1, 0.1, 0.1 };
-    lightCube2.mesh.subMeshes[0].renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(graphicAPI));
     lightCube2.mesh.subMeshes[0].material = MaterialLibrary::shared().newEmptyMaterial();
     lightCube2.mesh.subMeshes[0].material->baseColor = BLACK3;
     lightCube2.mesh.subMeshes[0].material->specularColor = BLACK3;
-    lightCube2.mesh.subMeshes[0].material->emissiveColor = RED3;
     lightCube2.mesh.subMeshes[0].material->shininess = 0.0f;
     renderableEntites.append(&lightCube2);
 

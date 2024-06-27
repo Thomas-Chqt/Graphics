@@ -12,6 +12,7 @@
 
 #include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
@@ -21,6 +22,8 @@
 struct Material
 {
     utils::String name;
+
+    utils::SharedPtr<IRenderMethod> renderMethod;
 
     math::rgb baseColor = WHITE3;
     utils::SharedPtr<gfx::Texture> baseTexture;
@@ -43,7 +46,7 @@ public:
     MaterialLibrary(const MaterialLibrary&) = delete;
     MaterialLibrary(MaterialLibrary&&)      = delete;
 
-    static inline void init() { s_instance = utils::UniquePtr<MaterialLibrary>(new MaterialLibrary()); }
+    static inline void init(const utils::SharedPtr<gfx::GraphicAPI>& api) { s_instance = utils::UniquePtr<MaterialLibrary>(new MaterialLibrary(api)); }
     static inline MaterialLibrary& shared() { return *s_instance; }
     static inline void terminate() { s_instance.clear(); }
 
@@ -56,10 +59,11 @@ public:
     ~MaterialLibrary() = default;
 
 private:
-    MaterialLibrary() = default;
+    MaterialLibrary(const utils::SharedPtr<gfx::GraphicAPI>& api);
 
     static utils::UniquePtr<MaterialLibrary> s_instance;
 
+    utils::SharedPtr<gfx::GraphicAPI> m_api;
     utils::Array<utils::SharedPtr<Material>> m_materials;
 
 public:
