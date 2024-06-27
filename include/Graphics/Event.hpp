@@ -13,7 +13,6 @@
 #include <ostream>
 
 #include "UtilsCPP/Func.hpp"
-#include "UtilsCPP/Types.hpp"
 
 namespace gfx
 {
@@ -164,18 +163,18 @@ public:
     KeyboardEvent(const KeyboardEvent&) = delete;
     KeyboardEvent(KeyboardEvent&&)      = delete;
 
-    inline utils::uint8 keyCode() const { return m_keyCode; }
+    inline int keyCode() const { return m_keyCode; }
 
     virtual ~KeyboardEvent() override = default;
 
 protected:
-    KeyboardEvent(Window& window, utils::uint8 keyCode);
+    KeyboardEvent(Window& window, int keyCode);
 
 private:
     virtual std::ostream& print(std::ostream& os) const override = 0;
 
 protected:
-    utils::uint8 m_keyCode;
+    int m_keyCode;
 
 public:
     KeyboardEvent& operator = (const KeyboardEvent&) = delete;
@@ -189,7 +188,7 @@ public:
     KeyDownEvent(const KeyDownEvent&) = delete;
     KeyDownEvent(KeyDownEvent&&)      = delete;
 
-    KeyDownEvent(Window& window, utils::uint8 keyCode, bool isRepeat);
+    KeyDownEvent(Window& window, int keyCode, bool isRepeat);
 
     inline bool isRepeat() const { return m_isRepeat; }
 
@@ -212,7 +211,7 @@ public:
     KeyUpEvent(const KeyUpEvent&) = delete;
     KeyUpEvent(KeyUpEvent&&)      = delete;
 
-    KeyUpEvent(Window& window, utils::uint8 keyCode);
+    KeyUpEvent(Window& window, int keyCode);
 
     ~KeyUpEvent() override = default;
 
@@ -303,14 +302,14 @@ public:
     MouseButtonEvent(const MouseButtonEvent&) = delete;
     MouseButtonEvent(MouseButtonEvent&&)      = delete;
 
-    inline utils::uint8 mouseCode() const { return m_mouseCode; }
+    inline int mouseCode() const { return m_mouseCode; }
 
     virtual ~MouseButtonEvent() = default;
 
 protected:
-    MouseButtonEvent(Window& window, int posX, int posY, utils::uint8 mouseCode);
+    MouseButtonEvent(Window& window, int posX, int posY, int mouseCode);
 
-    utils::uint8 m_mouseCode;
+    int m_mouseCode;
 
 private:
     virtual std::ostream& print(std::ostream& os) const override = 0;
@@ -328,7 +327,7 @@ public:
     MouseDownEvent(const MouseDownEvent&) = delete;
     MouseDownEvent(MouseDownEvent&&)      = delete;
 
-    MouseDownEvent(Window& window, int posX, int posY, utils::uint8 mouseCode);
+    MouseDownEvent(Window& window, int posX, int posY, int mouseCode);
 
     virtual ~MouseDownEvent() = default;
 
@@ -347,7 +346,7 @@ public:
     MouseUpEvent(const MouseUpEvent&) = delete;
     MouseUpEvent(MouseUpEvent&&)      = delete;
 
-    MouseUpEvent(Window& window, int posX, int posY, utils::uint8 mouseCode);
+    MouseUpEvent(Window& window, int posX, int posY, int mouseCode);
 
     virtual ~MouseUpEvent() = default;
 

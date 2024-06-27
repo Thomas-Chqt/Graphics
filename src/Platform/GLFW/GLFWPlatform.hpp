@@ -29,7 +29,6 @@ public:
     GLFWPlatform(const GLFWPlatform&) = delete;
     GLFWPlatform(GLFWPlatform&&)      = delete;
 
-    inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_eventCallbacks.get((void*)1) = { cb }; }
     inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id = (void*)0) override { m_eventCallbacks.get(id).append(cb); }
     inline void clearCallbacks(void* id) override { m_eventCallbacks.remove(id); }
 

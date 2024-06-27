@@ -61,12 +61,12 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(const GraphicPipeline::Descriptor& 
     glDeleteShader(fragmentShaderID);
 }
 
-uint32 OpenGLGraphicPipeline::findVertexUniformIndex(const String& name)
+uint32 OpenGLGraphicPipeline::findVertexUniformIndex(const String& name) const
 {
     return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
 }
 
-uint32 OpenGLGraphicPipeline::findFragmentUniformIndex(const String& name)
+uint32 OpenGLGraphicPipeline::findFragmentUniformIndex(const String& name) const
 {
     return (uint32)glGetUniformLocation(m_shaderProgramID, (const char*)name);
 }

@@ -12,7 +12,10 @@
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
+
+#ifdef GFX_IMGUI_ENABLED
 #include "imguiBackends/imgui_impl_glfw.h"
+#endif
 
 namespace gfx
 {

@@ -16,7 +16,6 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window.hpp"
-#include "UtilsCPP/Macros.hpp"
 
 namespace gfx
 {
@@ -31,7 +30,6 @@ public:
     inline static Platform& shared() { return *s_shared; };
     static void terminate();
 
-    DEPRECATED("please use addEventCallBack") virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
     virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id = (void*)0) = 0;
     virtual void clearCallbacks(void* id = nullptr) = 0;
 

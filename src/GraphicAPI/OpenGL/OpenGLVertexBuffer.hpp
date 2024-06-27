@@ -10,6 +10,7 @@
 #ifndef OPENGLVERTEXBUFFER_HPP
 # define OPENGLVERTEXBUFFER_HPP
 
+#include "Graphics/StructLayout.hpp"
 #include "Graphics/VertexBuffer.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
@@ -24,7 +25,7 @@ public:
     OpenGLVertexBuffer(const OpenGLVertexBuffer&) = delete;
     OpenGLVertexBuffer(OpenGLVertexBuffer&&)      = delete;
 
-    OpenGLVertexBuffer(void* data, utils::uint64 size, const utils::Array<VertexBuffer::LayoutElement>& layout);
+    OpenGLVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout&);
 
     inline GLuint vertexArrayID() { return m_vertexArrayID; }
     

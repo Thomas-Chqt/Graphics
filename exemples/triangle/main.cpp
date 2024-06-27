@@ -21,10 +21,10 @@
 #include "Vertex.hpp"
 
 template<>
-utils::Array<gfx::VertexBuffer::LayoutElement> gfx::VertexBuffer::getLayout<Vertex>()
+gfx::StructLayout gfx::getLayout<Vertex>()
 {
     return {
-        { 2, Type::FLOAT, false, sizeof(Vertex), (void*)0 }
+        { "", Type::vec2f, (void*)0 }
     };
 }
 
@@ -66,7 +66,7 @@ int main()
 
     bool running = true;
 
-    window->setEventCallBack([&](gfx::Event& event)
+    window->addEventCallBack([&](gfx::Event& event)
     {
         event.dispatch<gfx::KeyDownEvent>([&](gfx::KeyDownEvent& event)
         {

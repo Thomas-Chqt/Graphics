@@ -13,7 +13,6 @@
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "UtilsCPP/Macros.hpp"
 
 namespace gfx
 {
@@ -24,9 +23,11 @@ public:
     Window(const Window&) = delete;
     Window(Window&&)      = delete;
 
-    DEPRECATED("please use addEventCallBack") virtual void setEventCallBack(const utils::Func<void(Event&)>&) = 0;
     virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id = (void*)0) = 0;
     virtual void clearCallbacks(void* id = (void*)0) = 0;
+
+    virtual bool isKeyPress(int) = 0;
+    virtual bool isMousePress(int) = 0;
 
     virtual void setCursorPos(int x, int y) = 0;
     virtual void setCursorVisibility(bool) = 0;

@@ -8,7 +8,6 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLVertexBuffer.hpp"
-#include "Graphics/Enums.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
 
@@ -18,16 +17,7 @@ using utils::uint32;
 namespace gfx
 {
 
-static GLenum convertType(gfx::Type type)
-{
-    switch (type)
-    {
-    case gfx::Type::FLOAT:
-        return GL_FLOAT;
-    }
-}
-
-OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint64 size, const utils::Array<VertexBuffer::LayoutElement>& layout)
+OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout)
 {
     glGenVertexArrays(1, &m_vertexArrayID);
     glGenBuffers(1, &m_vertexBufferID);
@@ -35,13 +25,27 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(void* data, uint64 size, const utils::Arr
     glBindVertexArray(m_vertexArrayID);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_vertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, count * size, data, GL_STATIC_DRAW);
 
     for (uint32 i = 0; i < layout.length(); i++)
     {
-        const VertexBuffer::LayoutElement& el = layout[i];
+        const auto& el = layout[i];
         glEnableVertexAttribArray(i);
-        glVertexAttribPointer(i, el.size, convertType(el.type), el.normalized, el.stride, el.pointer);
+        switch (el.type)
+        {
+        case Type::Uint32:
+            glVertexAttribPointer(i, 1, GL_UNSIGNED_INT, GL_FALSE, size, el.offset);
+            break;
+        case Type::Float:
+            glVertexAttribPointer(i, 1, GL_FLOAT, GL_FALSE, size, el.offset);
+            break;
+        case Type::vec2f:
+            glVertexAttribPointer(i, 2, GL_FLOAT, GL_FALSE, size, el.offset);
+            break;
+        case Type::vec3f:
+            glVertexAttribPointer(i, 3, GL_FLOAT, GL_FALSE, size, el.offset);
+            break;
+        }
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);

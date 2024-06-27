@@ -27,9 +27,11 @@ public:
     GLFWWindow(const GLFWWindow&) = delete;
     GLFWWindow(GLFWWindow&&)      = delete;
 
-    inline void setEventCallBack(const utils::Func<void(Event&)>& cb) override { m_eventCallbacks.get((void*)1) = { cb }; }
     inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id = (void*)0) override { m_eventCallbacks.get(id).append(cb); }
     inline void clearCallbacks(void* id = (void*)0) override { m_eventCallbacks.remove(id); }
+
+    inline bool isKeyPress(int key) override { return ::glfwGetKey(m_glfwWindow, key) == GLFW_PRESS; }
+    inline bool isMousePress(int button) override { return ::glfwGetMouseButton(m_glfwWindow, button) == GLFW_PRESS; }
 
     inline void setCursorPos(int x, int y) override { ::glfwSetCursorPos(m_glfwWindow, (double)x, (double)y); }
     inline void setCursorVisibility(bool val) override { ::glfwSetInputMode(m_glfwWindow, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN); }

@@ -38,8 +38,8 @@ public:
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline(GraphicPipeline&&)      = delete;
 
-    virtual utils::uint32 findVertexUniformIndex(const utils::String& name) = 0;
-    virtual utils::uint32 findFragmentUniformIndex(const utils::String& name) = 0;
+    virtual utils::uint32 findVertexUniformIndex(const utils::String& name) const = 0;
+    virtual utils::uint32 findFragmentUniformIndex(const utils::String& name) const = 0;
 
     virtual ~GraphicPipeline() = default;
 

@@ -80,8 +80,8 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
     if (!m_renderPipelineState)
         throw MTLRenderPipelineStateCreationError();
 
-    auto vertexBindings = reflection.vertexArguments;
-    auto fragmentBindings = reflection.fragmentArguments;
+    auto vertexBindings = reflection.vertexBindings;
+    auto fragmentBindings = reflection.fragmentBindings;
 
     for (uint32 i = 0; i < vertexBindings.count; i++)
         m_vertexUniformsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);

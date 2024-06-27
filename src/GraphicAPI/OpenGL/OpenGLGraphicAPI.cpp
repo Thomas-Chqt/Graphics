@@ -18,6 +18,7 @@
 #include "Graphics/IndexBuffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "Graphics/VertexBuffer.hpp"
+#include "Math/Vector.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -75,9 +76,9 @@ void OpenGLGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 }
 #endif
 
-SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 vertexSize, const utils::Array<VertexBuffer::LayoutElement>& layout) const
+SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const
 {
-    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, count * vertexSize, layout));
+    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, count, size, layout));
 }
 
 SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& desc) const
@@ -155,7 +156,7 @@ void OpenGLGraphicAPI::useGraphicsPipeline(const SharedPtr<GraphicPipeline>& gra
     if (utils::SharedPtr<OpenGLGraphicPipeline> glGraphicsPipeline = graphicsPipeline.dynamicCast<OpenGLGraphicPipeline>())
     {
         glUseProgram(glGraphicsPipeline->shaderProgramID());
-        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<GraphicPipeline>(graphicsPipeline)));
+        m_boundPipeline = graphicsPipeline;
         if (glGraphicsPipeline->blendOperation() != BlendOperation::blendingOff)
         {
             glEnable(GL_BLEND);
@@ -195,22 +196,22 @@ void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& ver
         throw utils::RuntimeError("VertexBuffer is not OpenGLVertexBuffer");
 }
 
-void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec4f& vec)
+void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::vec4f& vec)
 {
-    glUniform4f(index, vec.x, vec.y, vec.z, vec.w);
+    glUniform4f(m_boundPipeline->findVertexUniformIndex(name), vec.x, vec.y, vec.z, vec.w);
 }
 
-void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat4x4& mat)
+void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::mat4x4& mat)
 {
-    glUniformMatrix4fv(index, 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&mat));
+    glUniformMatrix4fv(m_boundPipeline->findVertexUniformIndex(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&mat));
 }
 
-void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::vec2f& vec)
+void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::vec2f& vec)
 {
-    glUniform2f(index, vec.x, vec.y);
+    glUniform2f(m_boundPipeline->findVertexUniformIndex(name), vec.x, vec.y);
 }
 
-void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3& mat)
+void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::mat3x3& mat)
 {
     float glmat[] = {
         mat[0].x, mat[0].y, mat[0].z,
@@ -218,22 +219,68 @@ void OpenGLGraphicAPI::setVertexUniform(utils::uint32 index, const math::mat3x3&
         mat[2].x, mat[2].y, mat[2].z
     };
 
-    glUniformMatrix3fv(index, 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&glmat));
+    glUniformMatrix3fv(m_boundPipeline->findVertexUniformIndex(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&glmat));
 }
 
-void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, float f)
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, utils::uint32 val)
 {
-    glUniform1f(index, f);
+    glUniform1ui(m_boundPipeline->findFragmentUniformIndex(name), val);
 }
 
-void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec3f& vec)
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, float f)
 {
-    glUniform3f(index, vec.x, vec.y, vec.z);
+    glUniform1f(m_boundPipeline->findFragmentUniformIndex(name), f);
 }
 
-void OpenGLGraphicAPI::setFragmentUniform(utils::uint32 index, const math::vec4f& vec)
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec3f& vec)
 {
-    glUniform4f(index, vec.x, vec.y, vec.z, vec.w);
+    glUniform3f(m_boundPipeline->findFragmentUniformIndex(name), vec.x, vec.y, vec.z);
+}
+
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec4f& vec)
+{
+    glUniform4f(m_boundPipeline->findFragmentUniformIndex(name), vec.x, vec.y, vec.z, vec.w);
+}
+
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout)
+{
+    for (auto element : layout)
+    {
+        switch (element.type)
+        {
+        case Type::Float:
+            setFragmentUniform(name + "." + element.name, *((float*)((char*)data + (utils::uint64)element.offset)));
+            break;
+        case Type::vec2f:
+            // setFragmentUniform(pipeline.findFragmentUniformIndex(name + "." + element.name), *((math::vec2f*)data));
+            break;
+        case Type::vec3f:
+            setFragmentUniform(name + "." + element.name, *((math::vec3f*)((char*)data + (utils::uint64)element.offset)));
+            break;
+        case Type::Uint32:
+            setFragmentUniform(name + "." + element.name, *((utils::uint32*)((char*)data + (utils::uint64)element.offset)));
+            break;
+        }
+    }
+}
+
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout& layout)
+{
+    for (utils::uint32 i = 0; i < len; i++)
+        setFragmentUniform(name + "[" + utils::String::fromUInt(i) + "]", ((char*)data) + i * elementSize, elementSize, layout);
+}
+
+void OpenGLGraphicAPI::setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>& texture)
+{
+    if (SharedPtr<OpenGLTexture> glTexture = texture.dynamicCast<OpenGLTexture>())
+    {
+        glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit);
+        glUniform1i(m_boundPipeline->findFragmentUniformIndex(name), m_nextTextureUnit++);
+        glBindTexture(GL_TEXTURE_2D, glTexture->textureID());
+        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<Texture>(texture)));
+    }
+    else
+        throw utils::RuntimeError("Texture is not OpenGLTexture");
 }
 
 void OpenGLGraphicAPI::drawVertices(uint32 start, uint32 count)
@@ -253,26 +300,15 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& 
         throw utils::RuntimeError("IndexBuffer is not OpenGLIndexBuffer");
 }
 
-void OpenGLGraphicAPI::setFragmentTexture(utils::uint32 index, const utils::SharedPtr<Texture>& texture)
-{
-    if (SharedPtr<OpenGLTexture> glTexture = texture.dynamicCast<OpenGLTexture>())
-    {
-        glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit);
-        glUniform1i(index, m_nextTextureUnit++);
-        glBindTexture(GL_TEXTURE_2D, glTexture->textureID());
-        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<Texture>(texture)));
-    }
-    else
-        throw utils::RuntimeError("Texture is not OpenGLTexture");
-}
-
 void OpenGLGraphicAPI::endOnScreenRenderPass()
 {
+    m_boundPipeline.clear();
     m_passObjects.clear();
 }
 
 void OpenGLGraphicAPI::endOffScreeRenderPass()
 {
+    m_boundPipeline.clear();
     m_passObjects.clear();
 }
 

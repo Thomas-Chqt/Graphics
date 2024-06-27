@@ -29,7 +29,7 @@ int main()
 
     bool running = true;
 
-    window->setEventCallBack([&](gfx::Event& event)
+    window->addEventCallBack([&](gfx::Event& event)
     {
         event.dispatch<gfx::KeyDownEvent>([&](gfx::KeyDownEvent& event)
         {
