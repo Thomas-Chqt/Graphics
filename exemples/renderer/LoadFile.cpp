@@ -1,26 +1,23 @@
 /*
  * ---------------------------------------------------
- * MeshLibrary.cpp
+ * LoadFile.cpp
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/06/24 15:11:52
+ * Date: 2024/06/29 11:05:04
  * ---------------------------------------------------
  */
 
-#include "MeshLibrary.hpp"
-#include "MaterialLibrary.hpp"
-#include "Math/Matrix.hpp"
+#include "Entity.hpp"
+#include "Graphics/GraphicAPI.hpp"
 #include "ShaderStructs.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
-#include "assimp/vector3.h"
 
 template<>
 gfx::StructLayout gfx::getLayout<shaderStruct::Vertex>()
@@ -32,17 +29,9 @@ gfx::StructLayout gfx::getLayout<shaderStruct::Vertex>()
     };
 }
 
-utils::UniquePtr<ModelLibrary> ModelLibrary::s_instance;
 
-ModelLibrary::ModelLibrary(const utils::SharedPtr<gfx::GraphicAPI>& api) : m_api(api)
+utils::Array<RenderableEntity> loadFile(gfx::GraphicAPI& api, const utils::String& filePath)
 {
-}
-
-Model ModelLibrary::modelFromFile(const utils::String& filePath)
-{
-    if (m_models.contain(filePath))
-        return m_models[filePath];
-
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(filePath,
@@ -50,25 +39,20 @@ Model ModelLibrary::modelFromFile(const utils::String& filePath)
         aiProcess_MakeLeftHanded            |
         aiProcess_Triangulate               |
         aiProcess_GenSmoothNormals          |
-        // aiProcess_PreTransformVertices      |
-        // aiProcess_ValidateDataStructure     |
-        // aiProcess_RemoveRedundantMaterials  |
         aiProcess_FixInfacingNormals        |
-        // aiProcess_FindInvalidData           |
-        // aiProcess_GenUVCoords               |
         aiProcess_FlipUVs                   |
         aiProcess_FlipWindingOrder
     );
-
+    
     if (scene == nullptr)
         throw utils::RuntimeError("fail to load the model using assimp");
-    
+
     utils::Array<utils::SharedPtr<Material>> allMaterial;
-    utils::Array<Mesh> allMeshes;
+    utils::Array<RenderableEntity::Mesh> allMeshes;
 
     for (utils::uint32 i = 0; i < scene->mNumMaterials; i++)
         allMaterial.append(MaterialLibrary::shared().materialFromAiMaterial(scene->mMaterials[i], filePath.substr(0, filePath.lastIndexOf('/'))));
-
+    
     for(utils::uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++)
     {
         aiMesh* aiMesh = scene->mMeshes[meshIndex]; 
@@ -108,19 +92,29 @@ Model ModelLibrary::modelFromFile(const utils::String& filePath)
         }
 
         allMeshes.append({
-            m_api->newVertexBuffer(vertices),
-            m_api->newIndexBuffer(indices),
+            api.newVertexBuffer(vertices),
+            api.newIndexBuffer(indices),
             allMaterial[aiMesh->mMaterialIndex]
         });
     }
 
-    utils::Func<SubModel(aiNode* aiNode)> subModelFromNode = [&](aiNode* aiNode)
-    {
-        SubModel newSubModel;
+    utils::Func<utils::uint32(aiNode*)> countNodes = [&](aiNode* aiNode) -> int {
+        utils::uint32 count = 1;
+        for (utils::uint32 i = 0; i < aiNode->mNumChildren; i++)
+            count += countNodes(aiNode->mChildren[i]);
+        return count;
+    };
 
-        newSubModel.name = aiNode->mName.C_Str();
+    utils::Array<RenderableEntity> output;
+    output.setCapacity(countNodes(scene->mRootNode));
 
-        newSubModel.defaultMat = math::mat4x4(
+    utils::Func<RenderableEntity*(aiNode*, RenderableEntity*)> addEntity = [&](aiNode* aiNode, RenderableEntity* parent) -> RenderableEntity* {
+        output.append(RenderableEntity());
+        RenderableEntity& newRenderableEntity = output.last();
+
+        newRenderableEntity.name = aiNode->mName.C_Str();
+
+        newRenderableEntity.baseMat = math::mat4x4(
             aiNode->mTransformation.a1, aiNode->mTransformation.a2, aiNode->mTransformation.a3, aiNode->mTransformation.a4,
             aiNode->mTransformation.b1, aiNode->mTransformation.b2, aiNode->mTransformation.b3, aiNode->mTransformation.b4,
             aiNode->mTransformation.c1, aiNode->mTransformation.c2, aiNode->mTransformation.c3, aiNode->mTransformation.c4,
@@ -128,24 +122,17 @@ Model ModelLibrary::modelFromFile(const utils::String& filePath)
         );
 
         for (utils::uint32 i = 0; i < aiNode->mNumMeshes; i++)
-            newSubModel.meshes.append(allMeshes[aiNode->mMeshes[i]]);
+            newRenderableEntity.meshes.append(allMeshes[aiNode->mMeshes[i]]);
+
+        newRenderableEntity.parentEntity = parent;
 
         for (utils::uint32 i = 0; i < aiNode->mNumChildren; i++)
-            newSubModel.subModels.append(subModelFromNode(aiNode->mChildren[i]));
+            newRenderableEntity.subEntities.append(addEntity(aiNode->mChildren[i], &newRenderableEntity));
 
-        return newSubModel;
+        return &newRenderableEntity;
     };
 
-    Model newModel;
+    addEntity(scene->mRootNode, nullptr);
 
-    newModel.name = scene->mRootNode->mName.C_Str();
-
-    for (utils::uint32 i = 0; i < scene->mRootNode->mNumMeshes; i++)
-        newModel.meshes.append(allMeshes[scene->mRootNode->mMeshes[i]]);
-
-    for (utils::uint32 i = 0; i < scene->mRootNode->mNumChildren; i++)
-        newModel.subModels.append(subModelFromNode(scene->mRootNode->mChildren[i]));
-    
-    m_models.insert(filePath, newModel);
-    return newModel;
+    return output;
 }

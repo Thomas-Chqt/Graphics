@@ -12,11 +12,10 @@
 
 #include "Entity.hpp"
 #include "MaterialLibrary.hpp"
-#include "MeshLibrary.hpp"
 
 void editWidget(Material&);
-void editWidget(SubModel&);
-void editWidget(Model&);
+void editWidget(RenderableEntity::Mesh&);
 void editWidget(Entity&);
+void enttSelect(Entity& entt, Entity*& selectedEntt);
 
 #endif // IMGUIWIDGET_HPP

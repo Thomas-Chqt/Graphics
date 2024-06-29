@@ -25,17 +25,15 @@ class Material;
 class IRenderMethod
 {
 public:
-    struct Uniforms
-    {
-        const math::mat4x4&                    modelMatrix;
-        const math::mat4x4&                    vpMatrix;
-        const math::vec3f&                     cameraPos;
-        const utils::Array<const PointLight*>& pointLights;
-        const Material&                        material;
-    };
+    virtual void use() = 0;
 
-public:
-    virtual void use(const Uniforms&) = 0;
+    virtual void setVpMatrix(const math::mat4x4&) = 0;
+    virtual void setModelMatrix(const math::mat4x4&) = 0;
+    virtual void setCameraPos(const math::vec3f&) = 0;
+    virtual void setPointLights(const utils::Array<const PointLight*>&) = 0;
+    virtual void setMaterial(const Material&) = 0;
+
+
     virtual ~IRenderMethod() = default;
 
 protected:
@@ -46,7 +44,19 @@ template<Shader S>
 void addToDescriptor(gfx::GraphicPipeline::Descriptor&);
 
 template<Shader S>
-void setUniforms(gfx::GraphicAPI&, const IRenderMethod::Uniforms&);
+void setVpMatrix(gfx::GraphicAPI&, const math::mat4x4&);
+
+template<Shader S>
+void setModelMatrix(gfx::GraphicAPI&, const math::mat4x4&);
+
+template<Shader S>
+void setCameraPos(gfx::GraphicAPI&, const math::vec3f&);
+
+template<Shader S>
+void setPointLights(gfx::GraphicAPI&, const utils::Array<const PointLight*>&);
+
+template<Shader S>
+void setMaterial(gfx::GraphicAPI&, const Material&);
 
 template<Shader VS, Shader FS>
 class RenderMethod : public IRenderMethod
@@ -65,6 +75,31 @@ public:
         m_graphicAPI->useGraphicsPipeline(m_graphicPipeline);
         setUniforms<VS>(*m_graphicAPI, uniforms);
         setUniforms<FS>(*m_graphicAPI, uniforms);
+    }
+
+    void setVpMatrix(const math::mat4x4&) override
+    {
+
+    }
+
+    void setModelMatrix(const math::mat4x4&) override
+    {
+
+    }
+
+    void setCameraPos(const math::vec3f&) override
+    {
+
+    }
+
+    void setPointLights(const utils::Array<const PointLight*>&) override
+    {
+
+    }
+
+    void setMaterial(const Material&) override
+    {
+
     }
 
     ~RenderMethod() override = default;

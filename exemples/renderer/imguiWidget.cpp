@@ -17,21 +17,18 @@
 
 void editWidget(Material& material)
 {
-    ImGui::Text("renderMethod: %p", (void*)material.renderMethod);
+    ImGui::Text("renderMethod: %p",    (void*)material.renderMethod);
+    ImGui::Text("baseTexture: %p",     (void*)material.baseTexture);
+    ImGui::Text("specularTexture: %p", (void*)material.specularTexture);
+    ImGui::Text("emissiveTexture: %p", (void*)material.emissiveTexture);
 
     ImGui::ColorEdit3("baseColor##"     + utils::String::fromUInt((utils::uint64)&material), (float*)&material.baseColor);
-    ImGui::Text("baseTexture: %p", (void*)material.baseTexture);
-
     ImGui::ColorEdit3("specularColor##" + utils::String::fromUInt((utils::uint64)&material), (float*)&material.specularColor);
-    ImGui::Text("specularTexture: %p", (void*)material.specularTexture);
-    
     ImGui::ColorEdit3("emissiveColor##" + utils::String::fromUInt((utils::uint64)&material), (float*)&material.emissiveColor);
-    ImGui::Text("emissiveTexture: %p", (void*)material.emissiveTexture);
-    
     ImGui::DragFloat("shininess##"      + utils::String::fromUInt((utils::uint64)&material), (float*)&material.shininess, 1, 1);
 }
 
-void editWidget(Mesh& mesh)
+void editWidget(RenderableEntity::Mesh& mesh)
 {
     if (ImGui::BeginPopupContextItem("material selection popup##" + utils::String::fromUInt((utils::uint64)&mesh)))
     {
@@ -53,48 +50,6 @@ void editWidget(Mesh& mesh)
     ImGui::Unindent(10);
 };
 
-void editWidget(SubModel& submodel)
-{
-    ImGui::Text("Name: %s", (char*)submodel.name);
-
-    ImGui::DragFloat3("position##" + utils::String::fromUInt((utils::uint64)&submodel), (float*)&submodel.position, 0.01);
-    ImGui::DragFloat3("rotation##" + utils::String::fromUInt((utils::uint64)&submodel), (float*)&submodel.rotation, 0.01);
-    ImGui::DragFloat3("scale##"    + utils::String::fromUInt((utils::uint64)&submodel), (float*)&submodel.scale,    0.01);
-    
-    if (ImGui::TreeNode("Meshes##" + utils::String::fromUInt((utils::uint64)&submodel)))
-    {
-        for (auto& subMesh : submodel.meshes)
-            editWidget(subMesh);
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNode("Sub Models##" + utils::String::fromUInt((utils::uint64)&submodel)))
-    {
-        for (auto& subModel : submodel.subModels)
-            editWidget(subModel);
-        ImGui::TreePop();
-    }
-}
-
-void editWidget(Model& model)
-{
-    ImGui::Text("Name: %s", (char*)model.name);
-    
-    if (ImGui::TreeNode("Meshes##" + utils::String::fromUInt((utils::uint64)&model)))
-    {
-        for (auto& subMesh : model.meshes)
-            editWidget(subMesh);
-        ImGui::TreePop();
-    }
-    
-    if (ImGui::TreeNode("Sub Models##" + utils::String::fromUInt((utils::uint64)&model)))
-    {
-        for (auto& subModel : model.subModels)
-            editWidget(subModel);
-        ImGui::TreePop();
-    }
-}
-
 void editWidget(Entity& entt)
 {
     char buff[32];
@@ -115,6 +70,28 @@ void editWidget(Entity& entt)
     }
     else if (RenderableEntity* renderableEntity = dynamic_cast<RenderableEntity*>(&entt))
     {
-        editWidget(renderableEntity->model);
+        for (auto& mesh : renderableEntity->meshes)
+            editWidget(mesh);
+    }
+}
+
+void enttSelect(Entity& entt, Entity*& selectedEntt)
+{
+    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+    if (selectedEntt == &entt)
+        node_flags |= ImGuiTreeNodeFlags_Selected;
+
+    if (entt.subEntities.isEmpty())
+        node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    bool node_open = ImGui::TreeNodeEx(&entt, node_flags, "%s", entt.name.isEmpty() ? "No name" : (char*)entt.name);
+    if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+        selectedEntt = &entt;
+    if (entt.subEntities.isEmpty() == false && node_open)
+    {
+        for (auto& subEntt : entt.subEntities)
+            enttSelect(*subEntt, selectedEntt);
+        ImGui::TreePop();
     }
 }

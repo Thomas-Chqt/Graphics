@@ -8,10 +8,13 @@
  */
 
 #include "Renderer.hpp"
+#include "Entity.hpp"
 #include "Graphics/Event.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Constants.hpp"
+#include "Math/Matrix.hpp"
 #include "RenderMethod.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
@@ -44,7 +47,11 @@ Renderer::Renderer(const utils::SharedPtr<gfx::Window>& window, const utils::Sha
     window->addEventCallBack(updateProjectionMatrix, this);
 }
 
-void Renderer::beginScene(const Camera& camera)
+void Renderer::beginScene()
+{
+}
+
+void Renderer::setCamera(const Camera& camera)
 {
     m_camera = &camera;
 }
@@ -54,54 +61,57 @@ void Renderer::addPointLight(const PointLight& light)
     m_pointLights.append(&light);
 }
 
-void Renderer::render(RenderableEntity& entt)
+void Renderer::addRenderableEntity(const RenderableEntity& entt)
 {
-    math::mat4x4 vpMatrix = m_projectionMatrix * m_camera->viewMatrix();
-
-    utils::Func<void(math::mat4x4, SubModel&)> renderSubModel = [&](math::mat4x4 topMatrix, SubModel& subModel)
-    {
-        math::mat4x4 modelMatrix = topMatrix * subModel.modelMatrix();
-
-        for (auto& mesh : subModel.meshes)
+    utils::Func<void(math::mat4x4, const RenderableEntity&)> recurse = [&](math::mat4x4 parentModelMatrix, const RenderableEntity& entity) {
+        math::mat4x4 modelMatrix = parentModelMatrix * entity.modelMatrix();
+        for (auto mesh : entity.meshes)
         {
-            IRenderMethod::Uniforms uniforms = {
+            m_renderables.get(mesh.material, utils::Array<Renderable>()).append({
                 modelMatrix,
-                vpMatrix,
-                m_camera->position,
-                m_pointLights,
-                *mesh.material
-            };
-            mesh.material->renderMethod->use(uniforms);
-            m_api->useVertexBuffer(mesh.vertexBuffer);
-            m_api->drawIndexedVertices(mesh.indexBuffer);
+                mesh.vertexBuffer,
+                mesh.indexBuffer,
+                mesh.material
+            });
         }
-
-        for (auto& subModel : subModel.subModels)
-            renderSubModel(modelMatrix, subModel);
+        for (Entity* child : entity.subEntities)
+        {
+            if (RenderableEntity* rEntt = dynamic_cast<RenderableEntity*>(child))
+                recurse(modelMatrix, *rEntt);
+        }
     };
-
-    math::mat4x4 modelMatrix = entt.modelMatrix();
-    
-    for (auto& mesh : entt.model.meshes)
-    {
-        IRenderMethod::Uniforms uniforms = {
-            modelMatrix,
-            vpMatrix,
-            m_camera->position,
-            m_pointLights,
-            *mesh.material
-        };
-        mesh.material->renderMethod->use(uniforms);
-        m_api->useVertexBuffer(mesh.vertexBuffer);
-        m_api->drawIndexedVertices(mesh.indexBuffer);
-    }
-
-    for (auto& subModel : entt.model.subModels)
-        renderSubModel(modelMatrix, subModel);
+    recurse(math::mat4x4(1.0f), entt);
 }
 
 void Renderer::endScene()
 {
+    m_api->beginFrame();
+    m_api->beginOnScreenRenderPass();
+
+    math::mat4x4 vpMatrix = m_projectionMatrix * m_camera->viewMatrix();
+
+    for (auto& renderables : m_renderables)
+    {
+        for (auto& renderable : renderables.val) {
+            IRenderMethod::Uniforms uniforms = {
+                renderable.modelMatrix,
+                vpMatrix,
+                m_camera->position,
+                m_pointLights,
+                *renderable.material
+            };
+            renderable.material->renderMethod->use(uniforms);
+            m_api->useVertexBuffer(renderable.vertexBuffer);
+            m_api->drawIndexedVertices(renderable.indexBuffer);
+        }
+    }
+
+    m_imguiCalls();
+
+    m_api->endOnScreenRenderPass();
+    m_api->endFrame();
+
+    m_renderables.clear();
     m_pointLights.clear();
 }
 
