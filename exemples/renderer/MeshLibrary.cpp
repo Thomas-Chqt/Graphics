@@ -120,12 +120,6 @@ Model ModelLibrary::modelFromFile(const utils::String& filePath)
 
         newSubModel.name = aiNode->mName.C_Str();
 
-        // aiVector3D pos, rot, sca;
-        // aiNode->mTransformation.Decompose(sca, rot, pos);
-        // newSubModel.position = { pos.x, pos.y, pos.z };
-        // newSubModel.rotation = { rot.x, rot.y, rot.z };
-        // newSubModel.scale    = { sca.x, sca.y, sca.z };
-
         newSubModel.defaultMat = math::mat4x4(
             aiNode->mTransformation.a1, aiNode->mTransformation.a2, aiNode->mTransformation.a3, aiNode->mTransformation.a4,
             aiNode->mTransformation.b1, aiNode->mTransformation.b2, aiNode->mTransformation.b3, aiNode->mTransformation.b4,

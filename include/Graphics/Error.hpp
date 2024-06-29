@@ -12,6 +12,7 @@
 
 #include "UtilsCPP/Error.hpp"
 #include "UtilsCPP/String.hpp"
+#include "UtilsCPP/Types.hpp"
 
 #define ERR_DESC inline const char* description() const override
 
@@ -81,6 +82,24 @@ private:
     utils::String m_description;
 };
 
+struct OpenGLCallError : public OpenGLError
+{
+public:
+    inline OpenGLCallError(utils::uint32 code) : m_code(code)
+    {
+        switch (m_code)
+        {
+        default:
+            m_description = utils::String::fromUInt(m_code);
+        }        
+    }
+    
+    ERR_DESC { return m_description; }
+
+private:
+    utils::String m_description;
+    utils::uint32 m_code;
+};
 #endif
 
 }

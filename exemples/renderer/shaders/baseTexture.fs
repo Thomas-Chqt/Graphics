@@ -60,5 +60,5 @@ void main()
 
     fragmentColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
     for(uint i = 0; i < u_pointLightsCount; i++)
-        fragmentColor += vec4(computePointLight(i, normal, cameraDir, diffuseTexel.xyz), 1.0);
+        fragmentColor += vec4(computePointLight(i, normal, cameraDir, diffuseTexel.xyz), diffuseTexel.w);
 }

@@ -84,19 +84,6 @@ int main()
     lightCube2.model.subModels[0].meshes[0].material->shininess = 0.0f;
     renderableEntites.append(&lightCube2);
 
-    // RenderableEntity cat(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cat/cat.obj"));
-    // cat.name = "cat";
-    // cat.position = { 0.0, -1.5, 7.0 };
-    // cat.rotation = { 0.0, PI/2, 0.0 };
-    // entities.append(&cat);
-    // renderableEntites.append(&cat);
-
-    // RenderableEntity cup(MeshLibrary::shared().meshFromFile(RESSOURCES_DIR"/cup/cup.obj"));
-    // cup.name = "cup";
-    // cup.position = { 3.5, -1.5, 7.0 };
-    // entities.append(&cup);
-    // renderableEntites.append(&cup);
-
     RenderableEntity after(ModelLibrary::shared().modelFromFile(RESSOURCES_DIR"/after_the_rain/scene.gltf"));
     after.name = "city";
     after.rotation.x = PI/2;
@@ -104,7 +91,7 @@ int main()
     renderableEntites.append(&after);
 
     Entity* selectedEntt = nullptr;
-    
+
     while (running)
     {
         gfx::Platform::shared().pollEvents();
@@ -121,24 +108,35 @@ int main()
         graphicAPI->beginFrame();
         graphicAPI->beginOnScreenRenderPass();
 
-        ImGui::SeparatorText("Entities");
+        if (ImGui::Begin("Imgui", NULL, ImGuiWindowFlags_MenuBar))
         {
-            if (ImGui::BeginChild("Entities", ImVec2(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 8), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY))
+            if (ImGui::BeginMenuBar())
             {
-                for (auto& entt : entities)
-                {
-                    if (ImGui::Selectable(entt->name.isEmpty() ? "No name" : entt->name, selectedEntt == entt))
-                        selectedEntt = entt;
-                }
+                ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+                ImGui::EndMenuBar();
             }
-            ImGui::EndChild();
-        }
-        ImGui::SeparatorText("Selected Entity");
-        {
-            if(selectedEntt)
-                editWidget(*selectedEntt);
-            else
-                ImGui::Text("No entity selected");
+
+            ImGui::SeparatorText("Entities");
+            {
+                if (ImGui::BeginChild("Entities", ImVec2(-FLT_MIN, ImGui::GetTextLineHeightWithSpacing() * 8), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY))
+                {
+                    for (auto& entt : entities)
+                    {
+                        if (ImGui::Selectable(entt->name.isEmpty() ? "No name" : entt->name, selectedEntt == entt))
+                            selectedEntt = entt;
+                    }
+                }
+                ImGui::EndChild();
+            }
+            ImGui::SeparatorText("Selected Entity");
+            {
+                if(selectedEntt)
+                    editWidget(*selectedEntt);
+                else
+                    ImGui::Text("No entity selected");
+            }
+
+            ImGui::End();
         }
 
         lightCube.position = pointLight.position;
