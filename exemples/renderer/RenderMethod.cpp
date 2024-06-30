@@ -7,7 +7,7 @@
  * ---------------------------------------------------
  */
 
-#include "RenderMethod.hpp"
+#include "RenderMethodLibrary.hpp"
 #include "ShaderStructs.hpp"
 #include "Entity.hpp"
 #include "MaterialLibrary.hpp"
@@ -78,6 +78,15 @@ void addToDescriptor<Shader::baseColor>(gfx::GraphicPipeline::Descriptor& descri
         descriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/baseColor.fs");
     #endif
 }
+
+template<>
+void setVpMatrix<Shader::universal3D>(gfx::GraphicAPI& api, const math::mat4x4& mat)
+{
+    api.setVertexUniform("u_vpMatrix", mat);
+}
+
+
+
 
 template<>
 void setUniforms<Shader::universal3D>(gfx::GraphicAPI& api, const IRenderMethod::Uniforms& uniforms)

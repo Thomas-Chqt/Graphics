@@ -25,9 +25,6 @@ struct Entity
 
     utils::String name;
 
-    Entity* parentEntity = nullptr;
-    utils::Array<Entity*> subEntities;
-    
     math::mat4x4 baseMat = math::mat4x4(1.0f);
     math::vec3f position = { 0.0, 0.0, 0.0 };
     math::vec3f rotation = { 0.0, 0.0, 0.0 };
@@ -66,6 +63,7 @@ struct RenderableEntity : public Entity
         utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
         utils::SharedPtr<gfx::IndexBuffer> indexBuffer;
         utils::SharedPtr<Material> material;
+        math::mat4x4 modelMatrix;
     };
 
     utils::Array<Mesh> meshes;

@@ -13,7 +13,6 @@
 #include "Graphics/Window.hpp"
 #include "Math/Constants.hpp"
 #include "Math/Matrix.hpp"
-#include "RenderMethod.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"

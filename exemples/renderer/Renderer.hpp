@@ -22,15 +22,6 @@
 
 class Renderer
 {
-private:
-    struct Renderable
-    {
-        math::mat4x4 modelMatrix;
-        utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
-        utils::SharedPtr<gfx::IndexBuffer> indexBuffer;
-        utils::SharedPtr<Material> material;
-    };
-
 public:
     Renderer(const utils::SharedPtr<gfx::Window>&, const utils::SharedPtr<gfx::GraphicAPI>&);
 
@@ -38,7 +29,7 @@ public:
     inline void setImgui(const utils::Func<void()>& f) { m_imguiCalls = f; }
     void setCamera(const Camera&);
     void addPointLight(const PointLight&);
-    void addRenderableEntity(const RenderableEntity&);
+    void addRenderable(const RenderableEntity&);
     void endScene();
 
     ~Renderer();

@@ -65,7 +65,7 @@ int main()
     pointLight2.specularIntensity = 0.5f;
     entities.append(&pointLight2);
 
-    utils::Array<RenderableEntity> after_the_rain = loadFile(*graphicAPI, RESSOURCES_DIR"/after_the_rain/scene.gltf");
+    utils::Array<RenderableEntity> after_the_rain = loadMesh(*graphicAPI, RESSOURCES_DIR"/after_the_rain/scene.gltf");
     for (auto& entt : after_the_rain)
         entities.append(&entt);
 

@@ -12,18 +12,14 @@
 
 #include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
-#include "RenderMethod.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
-#include "assimp/material.h"
 
 struct Material
 {
     utils::String name;
-
-    utils::SharedPtr<IRenderMethod> renderMethod;
 
     math::rgb baseColor = WHITE3;
     utils::SharedPtr<gfx::Texture> baseTexture;
@@ -40,30 +36,24 @@ struct Material
 class MaterialLibrary
 {
 public:
-    using Iterator = utils::Dictionary<utils::String, utils::SharedPtr<Material>>::Iterator;
-
-public:
     MaterialLibrary(const MaterialLibrary&) = delete;
     MaterialLibrary(MaterialLibrary&&)      = delete;
 
-    static inline void init(const utils::SharedPtr<gfx::GraphicAPI>& api) { s_instance = utils::UniquePtr<MaterialLibrary>(new MaterialLibrary(api)); }
+    static inline void init() { s_instance = utils::UniquePtr<MaterialLibrary>(new MaterialLibrary()); }
     static inline MaterialLibrary& shared() { return *s_instance; }
     static inline void terminate() { s_instance.clear(); }
 
-    const utils::SharedPtr<Material>& newEmptyMaterial();
-    const utils::SharedPtr<Material>& materialFromAiMaterial(aiMaterial*, const utils::String& baseDir);
-
-    inline Iterator begin() { return m_materials.begin(); }
-    inline Iterator end() { return m_materials.end(); }
+    inline utils::SharedPtr<Material>& newMaterial(const utils::String& name) { m_materials.insert(name, utils::SharedPtr<Material>()); return m_materials[name]; }
+    inline bool contain(const utils::String& name) { return m_materials.contain(name); }
+    inline utils::SharedPtr<Material>& getMaterial(const utils::String& name) { return m_materials[name]; }
 
     ~MaterialLibrary() = default;
 
 private:
-    MaterialLibrary(const utils::SharedPtr<gfx::GraphicAPI>& api);
+    MaterialLibrary() = default;
 
     static utils::UniquePtr<MaterialLibrary> s_instance;
 
-    utils::SharedPtr<gfx::GraphicAPI> m_api;
     utils::Dictionary<utils::String, utils::SharedPtr<Material>> m_materials;
 
 public:
