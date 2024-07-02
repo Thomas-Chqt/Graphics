@@ -167,7 +167,7 @@ Mesh AssetManager::mesh(const utils::String& filePath)
 
         allMeshes.append({
             aiMesh->mName.C_Str(),
-            math::mat4x4(),
+            math::mat4x4(1.0f),
             m_api->newVertexBuffer(vertices),
             m_api->newIndexBuffer(indices),
             allMaterial[aiMesh->mMaterialIndex],

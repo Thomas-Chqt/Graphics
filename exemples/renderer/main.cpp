@@ -160,9 +160,8 @@ int main()
                     }
                 }
             }
-
-            ImGui::End();
         }
+        ImGui::End();
     });
     
     while (running)
