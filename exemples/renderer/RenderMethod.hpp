@@ -13,7 +13,8 @@
 #include "Graphics/GraphicAPI.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
-enum class Shader { universal3D, baseTexture, baseColor };
+enum class VertexShader { universal3D };
+enum class FragmentShader { universal, baseColor, baseTexture };
 
 class PointLight;
 class Material;
@@ -35,22 +36,70 @@ protected:
     IRenderMethod() = default;
 };
 
-template<Shader VS, Shader FS>
+template<VertexShader VS> void addToDescriptor(gfx::GraphicPipeline::Descriptor&);
+template<FragmentShader VS> void addToDescriptor(gfx::GraphicPipeline::Descriptor&);
+
+template<VertexShader VS> void setVpMatrix(gfx::GraphicAPI&, const math::mat4x4&) {}
+template<FragmentShader FS> void setVpMatrix(gfx::GraphicAPI&, const math::mat4x4&) {}
+
+template<VertexShader VS> void setModelMatrix(gfx::GraphicAPI&, const math::mat4x4&) {}
+template<FragmentShader FS> void setModelMatrix(gfx::GraphicAPI&, const math::mat4x4&) {}
+
+template<VertexShader VS> void setCameraPos(gfx::GraphicAPI&, const math::vec3f&) {}
+template<FragmentShader FS> void setCameraPos(gfx::GraphicAPI&, const math::vec3f&) {}
+
+template<VertexShader VS> void setPointLights(gfx::GraphicAPI&, const utils::Array<const PointLight*>&) {}
+template<FragmentShader FS> void setPointLights(gfx::GraphicAPI&, const utils::Array<const PointLight*>&) {}
+
+template<VertexShader VS> void setMaterial(gfx::GraphicAPI&, const Material&) {}
+template<FragmentShader FS> void setMaterial(gfx::GraphicAPI&, const Material&) {}
+
+template<VertexShader VS, FragmentShader FS>
 class RenderMethod : public IRenderMethod
 {
 public:
-    RenderMethod(const utils::SharedPtr<gfx::GraphicAPI>& api);
+    RenderMethod(const utils::SharedPtr<gfx::GraphicAPI>& api) : m_graphicAPI(api)
+    {
+        gfx::GraphicPipeline::Descriptor descriptor;
+        addToDescriptor<VS>(descriptor);
+        addToDescriptor<FS>(descriptor);
+        m_graphicPipeline = m_graphicAPI->newGraphicsPipeline(descriptor);
+    }
 
     void use() override
     {
         m_graphicAPI->useGraphicsPipeline(m_graphicPipeline);
     }
 
-    void setVpMatrix(const math::mat4x4&) override;
-    void setModelMatrix(const math::mat4x4&) override;
-    void setCameraPos(const math::vec3f&) override;
-    void setPointLights(const utils::Array<const PointLight*>&) override;
-    void setMaterial(const Material&) override;
+    void setVpMatrix(const math::mat4x4& mat) override
+    {
+        ::setVpMatrix<VS>(*m_graphicAPI, mat);
+        ::setVpMatrix<FS>(*m_graphicAPI, mat);
+    }
+
+    void setModelMatrix(const math::mat4x4& mat) override
+    {
+        ::setModelMatrix<VS>(*m_graphicAPI, mat);
+        ::setModelMatrix<FS>(*m_graphicAPI, mat);
+    }
+
+    void setCameraPos(const math::vec3f& vec) override
+    {
+        ::setCameraPos<VS>(*m_graphicAPI, vec);
+        ::setCameraPos<FS>(*m_graphicAPI, vec);
+    }
+
+    void setPointLights(const utils::Array<const PointLight*>& lights) override
+    {
+        ::setPointLights<VS>(*m_graphicAPI, lights);
+        ::setPointLights<FS>(*m_graphicAPI, lights);
+    };
+
+    void setMaterial(const Material& mat) override
+    {
+        ::setMaterial<VS>(*m_graphicAPI, mat);
+        ::setMaterial<FS>(*m_graphicAPI, mat);
+    }
 
     ~RenderMethod() override = default;
 

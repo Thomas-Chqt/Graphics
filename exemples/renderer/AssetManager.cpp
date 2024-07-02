@@ -15,6 +15,7 @@
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "assimp/Importer.hpp"
+#include "assimp/material.h"
 #include "assimp/scene.h"
 #include "stb_image.h"
 #include "assimp/postprocess.h"
@@ -83,32 +84,62 @@ utils::SharedPtr<Material> AssetManager::material(aiMaterial* aiMaterial, const 
 
     newMaterial->name = utils::String(aiMaterial->GetName().C_Str());
 
+    aiColor3D ambientColor  = { 1, 1, 1 };
+    aiColor3D diffuseColor  = { 1, 1, 1 };
+    aiColor3D specularColor = { 0, 0, 0 };
+    aiColor3D emissiveColor = { 0, 0, 0 };
+
+    aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor);
+    newMaterial->ambientColor  = { ambientColor.r,  ambientColor.g,  ambientColor.b  };
+
+    aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, diffuseColor);
+    newMaterial->diffuseColor  = { diffuseColor.r,  diffuseColor.g,  diffuseColor.b  };
+
+    aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, specularColor);
+    newMaterial->specularColor = { specularColor.r, specularColor.g, specularColor.b };
+
+    aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, emissiveColor);
+    newMaterial->emissiveColor = { emissiveColor.r, emissiveColor.g, emissiveColor.b };
+
+    aiMaterial->Get(AI_MATKEY_SHININESS, newMaterial->shininess);
+
+    if (aiMaterial->GetTextureCount(aiTextureType_AMBIENT) > 0)
+    {
+        aiString path;
+        if (aiMaterial->GetTexture(aiTextureType_AMBIENT, 0, &path) != AI_SUCCESS)
+            throw utils::RuntimeError("Failed to get aiTextureType_AMBIENT for idx 0");
+        newMaterial->ambientTexture = texture(baseDir + "/" + utils::String(path.C_Str()));
+    }
     if (aiMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
     {
-        // newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseTexture>(m_api));
-        newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
         aiString path;
         if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) != AI_SUCCESS)
             throw utils::RuntimeError("Failed to get aiTextureType_DIFFUSE for idx 0");
-        // newMaterial->baseTexture = texture(baseDir + "/" + utils::String(path.C_Str()));
+        newMaterial->diffuseTexture = texture(baseDir + "/" + utils::String(path.C_Str()));
     }
-    else
+    if (aiMaterial->GetTextureCount(aiTextureType_SPECULAR) > 0)
     {
-        newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
-        aiColor3D diffuse  = {1, 1, 1};
-        aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-        newMaterial->baseColor = { diffuse.r, diffuse.g, diffuse.b };
+        aiString path;
+        if (aiMaterial->GetTexture(aiTextureType_SPECULAR, 0, &path) != AI_SUCCESS)
+            throw utils::RuntimeError("Failed to get aiTextureType_SPECULAR for idx 0");
+        newMaterial->specularTexture = texture(baseDir + "/" + utils::String(path.C_Str()));
     }
-
-    aiColor3D specular = {0, 0, 0};
-    aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
-    newMaterial->specularColor = { specular.r, specular.g, specular.b };
-
-    aiColor3D emissive = {0, 0, 0};
-    aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
-    newMaterial->emissiveColor = { emissive.r, emissive.g, emissive.b };
-
-    aiMaterial->Get(AI_MATKEY_SHININESS, newMaterial->shininess);
+    if (aiMaterial->GetTextureCount(aiTextureType_EMISSIVE) > 0)
+    {
+        aiString path;
+        if (aiMaterial->GetTexture(aiTextureType_EMISSIVE, 0, &path) != AI_SUCCESS)
+            throw utils::RuntimeError("Failed to get aiTextureType_EMISSIVE for idx 0");
+        newMaterial->emissiveTexture = texture(baseDir + "/" + utils::String(path.C_Str()));
+    }
+    if (aiMaterial->GetTextureCount(aiTextureType_SHININESS) > 0)
+    {
+        aiString path;
+        if (aiMaterial->GetTexture(aiTextureType_EMISSIVE, 0, &path) != AI_SUCCESS)
+            throw utils::RuntimeError("Failed to get aiTextureType_EMISSIVE for idx 0");
+        newMaterial->emissiveTexture = texture(baseDir + "/" + utils::String(path.C_Str()));
+    }
+    
+    newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<VertexShader::universal3D, FragmentShader::universal>(m_api));
 
     return newMaterial;
 }
@@ -180,6 +211,9 @@ Mesh AssetManager::mesh(const utils::String& filePath)
     utils::Func<Mesh(aiNode*)> meshFromNode = [&](aiNode* aiNode) {
         Mesh newMesh;
 
+        if (aiNode->mNumMeshes == 1)
+            newMesh = allMeshes[aiNode->mMeshes[0]];
+
         newMesh.name = aiNode->mName.C_Str();
         
         newMesh.modelMatrix = math::mat4x4(
@@ -189,7 +223,7 @@ Mesh AssetManager::mesh(const utils::String& filePath)
             aiNode->mTransformation.d1, aiNode->mTransformation.d2, aiNode->mTransformation.d3, aiNode->mTransformation.d4
         );
 
-        for (utils::uint32 i = 0; i < aiNode->mNumMeshes; i++)
+        for (utils::uint32 i = 0; aiNode->mNumMeshes > 1 && i < aiNode->mNumMeshes; i++)
             newMesh.childs.append(allMeshes[aiNode->mMeshes[i]]);
 
         for (utils::uint32 i = 0; i < aiNode->mNumChildren; i++)

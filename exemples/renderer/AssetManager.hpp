@@ -29,8 +29,11 @@ struct Material
 
     utils::SharedPtr<IRenderMethod> renderMethod;
 
-    math::rgb baseColor = WHITE3;
-    utils::SharedPtr<gfx::Texture> baseTexture;
+    math::rgb ambientColor = WHITE3;
+    utils::SharedPtr<gfx::Texture> ambientTexture;
+
+    math::rgb diffuseColor = WHITE3;
+    utils::SharedPtr<gfx::Texture> diffuseTexture;
     
     math::rgb specularColor;
     utils::SharedPtr<gfx::Texture> specularTexture;
@@ -39,6 +42,7 @@ struct Material
     utils::SharedPtr<gfx::Texture> emissiveTexture;
     
     float shininess = 1.0f;
+    utils::SharedPtr<gfx::Texture> shininessTexture;
 };
 
 struct Mesh

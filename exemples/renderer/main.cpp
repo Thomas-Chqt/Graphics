@@ -41,6 +41,7 @@ int main()
 
     Camera camera;
     camera.name = "camera";
+    camera.position = { 7, 2, -70 };
     entities.append(&camera);
     
     PointLight pointLight;
@@ -66,10 +67,13 @@ int main()
     city.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/after_the_rain/scene.gltf");
     entities.append(&city);
 
-    RenderableEntity cat;
-    cat.name = "cat";
-    cat.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cat/cat.obj");
-    entities.append(&cat);
+    // RenderableEntity cat;
+    // cat.name = "cat";
+    // cat.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cat/cat.obj");
+    // cat.position = {10, 0, -60};
+    // cat.rotation = {0, 3.5, 0};
+    // cat.scale = { 0.2, 0.2, 0.2 };
+    // entities.append(&cat);
 
     renderer.UI([&](){
         static Entity* selectedEntt = nullptr;
@@ -148,14 +152,16 @@ int main()
                 {
                     if (selectedMesh->material)
                     {
-                        ImGui::Text("renderMethod: %p",    (void*)selectedMesh->material->renderMethod);
-                        ImGui::Text("baseTexture: %p",     (void*)selectedMesh->material->baseTexture);
+                        ImGui::Text("ambientTexture: %p",  (void*)selectedMesh->material->ambientTexture);
+                        ImGui::Text("diffuseTexture: %p",  (void*)selectedMesh->material->diffuseTexture);
                         ImGui::Text("specularTexture: %p", (void*)selectedMesh->material->specularTexture);
                         ImGui::Text("emissiveTexture: %p", (void*)selectedMesh->material->emissiveTexture);
 
-                        ImGui::ColorEdit3("baseColor" ,    (float*)&selectedMesh->material->baseColor);
+                        ImGui::ColorEdit3("ambientColor" , (float*)&selectedMesh->material->ambientColor);
+                        ImGui::ColorEdit3("diffuseColor" , (float*)&selectedMesh->material->diffuseColor);
                         ImGui::ColorEdit3("specularColor", (float*)&selectedMesh->material->specularColor);
                         ImGui::ColorEdit3("emissiveColor", (float*)&selectedMesh->material->emissiveColor);
+                        
                         ImGui::DragFloat("shininess" ,     (float*)&selectedMesh->material->shininess, 1, 1);
                     }
                 }
