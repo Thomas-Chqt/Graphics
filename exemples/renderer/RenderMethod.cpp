@@ -7,11 +7,10 @@
  * ---------------------------------------------------
  */
 
-#include "RenderMethodLibrary.hpp"
-#include "ShaderStructs.hpp"
+#include "RenderMethod.hpp"
 #include "Entity.hpp"
-#include "MaterialLibrary.hpp"
-#include "UtilsCPP/Types.hpp"
+#include "Graphics/GraphicPipeline.hpp"
+#include "ShaderStructs.hpp"
 
 template<>
 gfx::StructLayout gfx::getLayout<shaderStruct::PointLight>()
@@ -47,63 +46,47 @@ gfx::StructLayout gfx::getLayout<shaderStruct::baseColor::Material>()
 }
 
 template<>
-void addToDescriptor<Shader::universal3D>(gfx::GraphicPipeline::Descriptor& descriptor)
+RenderMethod<Shader::universal3D, Shader::baseColor>::RenderMethod(const utils::SharedPtr<gfx::GraphicAPI>& api)
+    : m_graphicAPI(api)
 {
+    gfx::GraphicPipeline::Descriptor descriptor;
+
     #ifdef GFX_METAL_ENABLED
         descriptor.metalVSFunction = "universal3D";
-    #endif 
-    #if GFX_OPENGL_ENABLED
-        descriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/universal3D.vs");
-    #endif
-}
-
-template<>
-void addToDescriptor<Shader::baseTexture>(gfx::GraphicPipeline::Descriptor& descriptor)
-{
-    #ifdef GFX_METAL_ENABLED
-        descriptor.metalFSFunction = "baseTexture_fs";
-    #endif 
-    #if GFX_OPENGL_ENABLED
-        descriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/baseTexture.fs");
-    #endif
-}
-
-template<>
-void addToDescriptor<Shader::baseColor>(gfx::GraphicPipeline::Descriptor& descriptor)
-{
-    #ifdef GFX_METAL_ENABLED
         descriptor.metalFSFunction = "baseColor_fs";
     #endif 
     #if GFX_OPENGL_ENABLED
+        descriptor.openglVSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/universal3D.vs");
         descriptor.openglFSCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/baseColor.fs");
     #endif
+
+    m_graphicPipeline = m_graphicAPI->newGraphicsPipeline(descriptor);
 }
 
 template<>
-void setVpMatrix<Shader::universal3D>(gfx::GraphicAPI& api, const math::mat4x4& mat)
+void RenderMethod<Shader::universal3D, Shader::baseColor>::setVpMatrix(const math::mat4x4& mat)
 {
-    api.setVertexUniform("u_vpMatrix", mat);
-}
-
-
-
-
-template<>
-void setUniforms<Shader::universal3D>(gfx::GraphicAPI& api, const IRenderMethod::Uniforms& uniforms)
-{
-    api.setVertexUniform("u_modelMatrix", uniforms.modelMatrix);
-    api.setVertexUniform("u_vpMatrix",    uniforms.vpMatrix);
+    m_graphicAPI->setVertexUniform("u_vpMatrix", mat);
 }
 
 template<>
-void setUniforms<Shader::baseTexture>(gfx::GraphicAPI& api, const IRenderMethod::Uniforms& uniforms)
+void RenderMethod<Shader::universal3D, Shader::baseColor>::setModelMatrix(const math::mat4x4& mat)
 {
-    using shaderStruct::PointLight;
-    using shaderStruct::baseTexture::Material;
+    m_graphicAPI->setVertexUniform("u_modelMatrix", mat);
+}
 
-    utils::Array<PointLight> lights;
-    for (auto& light : uniforms.pointLights) {
-        lights.append({
+template<>
+void RenderMethod<Shader::universal3D, Shader::baseColor>::setCameraPos(const math::vec3f& pos)
+{
+    m_graphicAPI->setFragmentUniform("u_cameraPos", pos);
+}
+
+template<>
+void RenderMethod<Shader::universal3D, Shader::baseColor>::setPointLights(const utils::Array<const PointLight*>& lights)
+{
+    utils::Array<shaderStruct::PointLight> pointLights;
+    for (auto& light : lights) {
+        pointLights.append({
             light->position,
             light->color,
             light->ambiantIntensity,
@@ -111,46 +94,17 @@ void setUniforms<Shader::baseTexture>(gfx::GraphicAPI& api, const IRenderMethod:
             light->specularIntensity
         });
     }
-
-    Material material;
-    material.specularColor = uniforms.material.specularColor;
-    material.emissiveColor = uniforms.material.emissiveColor;
-    material.shininess = uniforms.material.shininess;
-
-    api.setFragmentUniform("u_cameraPos", uniforms.cameraPos);
-    api.setFragmentUniform("u_pointLights", lights);
-    api.setFragmentUniform("u_pointLightsCount", (utils::uint32)lights.length());
-    api.setFragmentUniform("u_material", material);
-
-    if (uniforms.material.baseTexture)
-        api.setFragmentTexture("u_diffuseTexture", uniforms.material.baseTexture);
+    m_graphicAPI->setFragmentUniform("u_pointLights", pointLights);
+    m_graphicAPI->setFragmentUniform("u_pointLightsCount", (utils::uint32)pointLights.length());
 }
 
 template<>
-void setUniforms<Shader::baseColor>(gfx::GraphicAPI& api, const IRenderMethod::Uniforms& uniforms)
+void RenderMethod<Shader::universal3D, Shader::baseColor>::setMaterial(const Material& mat)
 {
-    using shaderStruct::PointLight;
-    using shaderStruct::baseColor::Material;
-
-    utils::Array<PointLight> lights;
-    for (auto& light : uniforms.pointLights) {
-        lights.append({
-            light->position,
-            light->color,
-            light->ambiantIntensity,
-            light->diffuseIntensity,
-            light->specularIntensity
-        });
-    }
-
-    Material material;
-    material.baseColor = uniforms.material.baseColor;
-    material.specularColor = uniforms.material.specularColor;
-    material.emissiveColor = uniforms.material.emissiveColor;
-    material.shininess = uniforms.material.shininess;
-
-    api.setFragmentUniform("u_cameraPos", uniforms.cameraPos);
-    api.setFragmentUniform("u_pointLights", lights);
-    api.setFragmentUniform("u_pointLightsCount", (utils::uint32)lights.length());
-    api.setFragmentUniform("u_material", material);
+    shaderStruct::baseColor::Material material;
+    material.baseColor = mat.baseColor;
+    material.specularColor = mat.specularColor;
+    material.emissiveColor = mat.emissiveColor;
+    material.shininess = mat.shininess;
+    m_graphicAPI->setFragmentUniform("u_material", material);
 }

@@ -8,11 +8,13 @@
  */
 
 #include "Renderer.hpp"
+#include "AssetManager.hpp"
 #include "Entity.hpp"
 #include "Graphics/Event.hpp"
 #include "Graphics/Window.hpp"
 #include "Math/Constants.hpp"
 #include "Math/Matrix.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -60,26 +62,15 @@ void Renderer::addPointLight(const PointLight& light)
     m_pointLights.append(&light);
 }
 
-void Renderer::addRenderableEntity(const RenderableEntity& entt)
+void Renderer::addMesh(const Mesh& mesh, const math::mat4x4& transformMatrix)
 {
-    utils::Func<void(math::mat4x4, const RenderableEntity&)> recurse = [&](math::mat4x4 parentModelMatrix, const RenderableEntity& entity) {
-        math::mat4x4 modelMatrix = parentModelMatrix * entity.modelMatrix();
-        for (auto mesh : entity.meshes)
-        {
-            m_renderables.get(mesh.material, utils::Array<Renderable>()).append({
-                modelMatrix,
-                mesh.vertexBuffer,
-                mesh.indexBuffer,
-                mesh.material
-            });
-        }
-        for (Entity* child : entity.subEntities)
-        {
-            if (RenderableEntity* rEntt = dynamic_cast<RenderableEntity*>(child))
-                recurse(modelMatrix, *rEntt);
-        }
-    };
-    recurse(math::mat4x4(1.0f), entt);
+    Mesh transformedMesh = mesh;
+    transformedMesh.modelMatrix = transformMatrix * mesh.modelMatrix;
+    if (transformedMesh.vertexBuffer)
+        m_transformedMeshes.get(mesh.material).append(transformedMesh);
+
+    for (auto& child : mesh.childs)
+        addMesh(child, transformedMesh.modelMatrix);
 }
 
 void Renderer::endScene()
@@ -89,28 +80,28 @@ void Renderer::endScene()
 
     math::mat4x4 vpMatrix = m_projectionMatrix * m_camera->viewMatrix();
 
-    for (auto& renderables : m_renderables)
+    for (auto& meshs : m_transformedMeshes)
     {
-        for (auto& renderable : renderables.val) {
-            IRenderMethod::Uniforms uniforms = {
-                renderable.modelMatrix,
-                vpMatrix,
-                m_camera->position,
-                m_pointLights,
-                *renderable.material
-            };
-            renderable.material->renderMethod->use(uniforms);
-            m_api->useVertexBuffer(renderable.vertexBuffer);
-            m_api->drawIndexedVertices(renderable.indexBuffer);
+        IRenderMethod& renderMethod = *meshs.key->renderMethod;
+        renderMethod.use();
+        renderMethod.setVpMatrix(m_projectionMatrix * m_camera->viewMatrix());
+        renderMethod.setCameraPos(m_camera->position);
+        renderMethod.setPointLights(m_pointLights);
+        renderMethod.setMaterial(*meshs.key);
+
+        for (auto& mesh : meshs.val) {
+            renderMethod.setModelMatrix(mesh.modelMatrix);
+            m_api->useVertexBuffer(mesh.vertexBuffer);
+            m_api->drawIndexedVertices(mesh.indexBuffer);
         }
     }
 
-    m_imguiCalls();
+    m_makeUI();
 
     m_api->endOnScreenRenderPass();
     m_api->endFrame();
 
-    m_renderables.clear();
+    m_transformedMeshes.clear();
     m_pointLights.clear();
 }
 

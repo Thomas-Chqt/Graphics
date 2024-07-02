@@ -10,13 +10,9 @@
 #ifndef ENTITY_HPP
 # define ENTITY_HPP
 
-#include "Graphics/IndexBuffer.hpp"
-#include "Graphics/VertexBuffer.hpp"
-#include "MaterialLibrary.hpp"
+#include "AssetManager.hpp"
 #include "Math/Vector.hpp"
 #include "Math/Matrix.hpp"
-#include "UtilsCPP/Array.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 
 struct Entity
@@ -25,7 +21,6 @@ struct Entity
 
     utils::String name;
 
-    math::mat4x4 baseMat = math::mat4x4(1.0f);
     math::vec3f position = { 0.0, 0.0, 0.0 };
     math::vec3f rotation = { 0.0, 0.0, 0.0 };
     math::vec3f scale    = { 1.0, 1.0, 1.0 };
@@ -58,15 +53,7 @@ struct PointLight : public Entity
 
 struct RenderableEntity : public Entity
 {
-    struct Mesh
-    {
-        utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
-        utils::SharedPtr<gfx::IndexBuffer> indexBuffer;
-        utils::SharedPtr<Material> material;
-        math::mat4x4 modelMatrix;
-    };
-
-    utils::Array<Mesh> meshes;
+    Mesh mesh;
     
     ~RenderableEntity() override = default;
 };

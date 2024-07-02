@@ -1,40 +1,34 @@
 /*
  * ---------------------------------------------------
- * loadFile.cpp
+ * AssetManager.cpp
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/06/29 11:05:04
+ * Date: 2024/07/01 09:56:16
  * ---------------------------------------------------
  */
 
-#include "Graphics/GraphicAPI.hpp"
+#include "AssetManager.hpp"
+#include "Graphics/StructLayout.hpp"
 #include "Graphics/Texture.hpp"
-#include "MaterialLibrary.hpp"
-#include "Math/Matrix.hpp"
-#include "Mesh.hpp"
+#include "RenderMethod.hpp"
 #include "ShaderStructs.hpp"
-#include "TextureLibrary.hpp"
-#include "UtilsCPP/Array.hpp"
-#include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
-#include "UtilsCPP/String.hpp"
-#include "UtilsCPP/Types.hpp"
 #include "assimp/Importer.hpp"
-#include "assimp/matrix4x4.h"
-#include "assimp/mesh.h"
-#include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include "stb_image.h"
+#include "assimp/postprocess.h"
 
-#define POST_PROCESSING_FLAGS    \
-    aiProcess_JoinIdenticalVertices     | \
-    aiProcess_MakeLeftHanded            | \
-    aiProcess_Triangulate               | \
-    aiProcess_GenSmoothNormals          | \
-    aiProcess_FixInfacingNormals        | \
-    aiProcess_FlipUVs                   | \
+#define POST_PROCESSING_FLAGS         \
+    aiProcess_JoinIdenticalVertices | \
+    aiProcess_MakeLeftHanded        | \
+    aiProcess_Triangulate           | \
+    aiProcess_GenSmoothNormals      | \
+    aiProcess_FixInfacingNormals    | \
+    aiProcess_FlipUVs               | \
     aiProcess_FlipWindingOrder
+
+utils::UniquePtr<AssetManager> AssetManager::s_instance;
 
 template<>
 gfx::StructLayout gfx::getLayout<shaderStruct::Vertex>()
@@ -46,68 +40,81 @@ gfx::StructLayout gfx::getLayout<shaderStruct::Vertex>()
     };
 }
 
-utils::Array<Mesh> loadFile(gfx::GraphicAPI& api, const utils::String& filePath)
+utils::SharedPtr<gfx::Texture> AssetManager::texture(const utils::String& filePath)
 {
-    auto loadTexture = [&](const utils::String& textureFilePath){
-        if (TextureLibrary::shared().contain(textureFilePath))
-            return TextureLibrary::shared().getTexture(textureFilePath);
+    if (m_textures.contain(filePath))
+        return m_textures[filePath];
 
-        int width;
-        int height;
-        stbi_uc* imgBytes = stbi_load(textureFilePath, &width, &height, nullptr, STBI_rgb_alpha);
-        if (imgBytes == nullptr)
-            throw utils::RuntimeError("fail to read texture at path: " + textureFilePath);
+    int width;
+    int height;
+    stbi_uc* imgBytes = stbi_load(filePath, &width, &height, nullptr, STBI_rgb_alpha);
+    if (imgBytes == nullptr)
+        throw utils::RuntimeError("fail to read texture at path: " + filePath);
 
-        gfx::Texture::Descriptor textureDescriptor;
-        textureDescriptor.width = width;
-        textureDescriptor.height = height;
+    gfx::Texture::Descriptor textureDescriptor;
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
 
-        utils::SharedPtr<gfx::Texture> texture = api.newTexture(textureDescriptor);
-        texture->setBytes(imgBytes);
+    utils::SharedPtr<gfx::Texture> texture = m_api->newTexture(textureDescriptor);
+    texture->setBytes(imgBytes);
 
-        stbi_image_free(imgBytes);
+    stbi_image_free(imgBytes);
 
-        TextureLibrary::shared().newTexture(textureFilePath) = texture;
-        return texture;
-    };
+    m_textures.insert(filePath, texture);
+    return texture;
+}
 
-    auto loadAiMaterial = [&](aiMaterial* aiMaterial){
-        if (MaterialLibrary::shared().contain(aiMaterial->GetName().C_Str()))
-            return MaterialLibrary::shared().getMaterial(aiMaterial->GetName().C_Str());
+utils::SharedPtr<Material> AssetManager::material(const utils::String& name)
+{
+    if (m_materials.contain(name))
+        return m_materials[name];
+    utils::SharedPtr<Material> newMaterial(new Material);
+    newMaterial->name = name;
+    m_materials.insert(name, newMaterial);
+    return newMaterial;
+}
 
-        utils::SharedPtr<Material>& newMaterial = MaterialLibrary::shared().newMaterial(aiMaterial->GetName().C_Str());
+utils::SharedPtr<Material> AssetManager::material(aiMaterial* aiMaterial, const utils::String& baseDir)
+{
+    if (m_materials.contain(aiMaterial->GetName().C_Str()))
+        return m_materials[aiMaterial->GetName().C_Str()];
 
-        newMaterial->name = utils::String(aiMaterial->GetName().C_Str());
+    utils::SharedPtr<Material> newMaterial = material(aiMaterial->GetName().C_Str());
 
-        if (aiMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-        {
-            // newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseTexture>(m_api));
-            aiString path;
-            if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) != AI_SUCCESS)
-                throw utils::RuntimeError("Failed to get aiTextureType_DIFFUSE for idx 0");
-            newMaterial->baseTexture = loadTexture(filePath.substr(0, filePath.lastIndexOf('/')) + "/" + utils::String(path.C_Str()));
-        }
-        else
-        {
-            // newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
-            aiColor3D diffuse  = {1, 1, 1};
-            aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
-            newMaterial->baseColor = { diffuse.r, diffuse.g, diffuse.b };
-        }
+    newMaterial->name = utils::String(aiMaterial->GetName().C_Str());
 
-        aiColor3D specular = {0, 0, 0};
-        aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
-        newMaterial->specularColor = { specular.r, specular.g, specular.b };
+    if (aiMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+    {
+        // newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseTexture>(m_api));
+        newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
+        aiString path;
+        if (aiMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &path) != AI_SUCCESS)
+            throw utils::RuntimeError("Failed to get aiTextureType_DIFFUSE for idx 0");
+        // newMaterial->baseTexture = texture(baseDir + "/" + utils::String(path.C_Str()));
+    }
+    else
+    {
+        newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<Shader::universal3D, Shader::baseColor>(m_api));
+        aiColor3D diffuse  = {1, 1, 1};
+        aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuse);
+        newMaterial->baseColor = { diffuse.r, diffuse.g, diffuse.b };
+    }
 
-        aiColor3D emissive = {0, 0, 0};
-        aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
-        newMaterial->emissiveColor = { emissive.r, emissive.g, emissive.b };
+    aiColor3D specular = {0, 0, 0};
+    aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specular);
+    newMaterial->specularColor = { specular.r, specular.g, specular.b };
 
-        aiMaterial->Get(AI_MATKEY_SHININESS, newMaterial->shininess);
+    aiColor3D emissive = {0, 0, 0};
+    aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissive);
+    newMaterial->emissiveColor = { emissive.r, emissive.g, emissive.b };
 
-        return newMaterial;
-    };
+    aiMaterial->Get(AI_MATKEY_SHININESS, newMaterial->shininess);
 
+    return newMaterial;
+}
+
+Mesh AssetManager::mesh(const utils::String& filePath)
+{
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(filePath, POST_PROCESSING_FLAGS);
@@ -118,7 +125,7 @@ utils::Array<Mesh> loadFile(gfx::GraphicAPI& api, const utils::String& filePath)
     utils::Array<Mesh> allMeshes;
 
     for (utils::uint32 i = 0; i < scene->mNumMaterials; i++)
-        allMaterial.append(loadAiMaterial(scene->mMaterials[i]));
+        allMaterial.append(material(scene->mMaterials[i], filePath.substr(0, filePath.lastIndexOf('/'))));
     
     for(utils::uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++)
     {
@@ -161,14 +168,14 @@ utils::Array<Mesh> loadFile(gfx::GraphicAPI& api, const utils::String& filePath)
         allMeshes.append({
             aiMesh->mName.C_Str(),
             math::mat4x4(),
-            api.newVertexBuffer(vertices),
-            api.newIndexBuffer(indices),
+            m_api->newVertexBuffer(vertices),
+            m_api->newIndexBuffer(indices),
             allMaterial[aiMesh->mMaterialIndex],
             utils::Array<Mesh>()
         });
     }
 
-    utils::Array<Mesh> output;
+    Mesh output;
 
     utils::Func<Mesh(aiNode*)> meshFromNode = [&](aiNode* aiNode) {
         Mesh newMesh;
@@ -191,7 +198,10 @@ utils::Array<Mesh> loadFile(gfx::GraphicAPI& api, const utils::String& filePath)
         return newMesh;
     };
 
-    output.append(meshFromNode(scene->mRootNode));
-
+    output = meshFromNode(scene->mRootNode);
     return output;
+}
+
+AssetManager::AssetManager(const utils::SharedPtr<gfx::GraphicAPI>& api) : m_api(api)
+{
 }
