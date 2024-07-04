@@ -64,13 +64,17 @@ void Renderer::addPointLight(const PointLight& light)
 
 void Renderer::addMesh(const Mesh& mesh, const math::mat4x4& transformMatrix)
 {
-    Mesh transformedMesh = mesh;
-    transformedMesh.modelMatrix = transformMatrix * mesh.modelMatrix;
-    if (transformedMesh.vertexBuffer)
-        m_transformedMeshes.get(mesh.material).append(transformedMesh);
+    utils::Func<void(const SubMesh&, const math::mat4x4&)> addSubMesh = [&](const SubMesh& subMesh, const math::mat4x4& parentTransform) {
+        SubMesh worldSpaceSubMesh = subMesh;
+        worldSpaceSubMesh.transform = parentTransform * subMesh.transform;
+        if (subMesh.vertexBuffer)
+            m_renderables.get(subMesh.material).append(worldSpaceSubMesh);
+        for (auto& child : subMesh.childs)
+            addSubMesh(child, worldSpaceSubMesh.transform);
+    };
 
-    for (auto& child : mesh.childs)
-        addMesh(child, transformedMesh.modelMatrix);
+    for (auto& subMesh : mesh.subMeshes)
+        addSubMesh(subMesh, transformMatrix);
 }
 
 void Renderer::endScene()
@@ -80,17 +84,17 @@ void Renderer::endScene()
 
     math::mat4x4 vpMatrix = m_projectionMatrix * m_camera->viewMatrix();
 
-    for (auto& meshs : m_transformedMeshes)
+    for (auto& renderable : m_renderables)
     {
-        IRenderMethod& renderMethod = *meshs.key->renderMethod;
+        IRenderMethod& renderMethod = *renderable.key->renderMethod;
         renderMethod.use();
         renderMethod.setVpMatrix(m_projectionMatrix * m_camera->viewMatrix());
         renderMethod.setCameraPos(m_camera->position);
         renderMethod.setPointLights(m_pointLights);
-        renderMethod.setMaterial(*meshs.key);
+        renderMethod.setMaterial(*renderable.key);
 
-        for (auto& mesh : meshs.val) {
-            renderMethod.setModelMatrix(mesh.modelMatrix);
+        for (auto& mesh : renderable.val) {
+            renderMethod.setModelMatrix(mesh.transform);
             m_api->useVertexBuffer(mesh.vertexBuffer);
             m_api->drawIndexedVertices(mesh.indexBuffer);
         }
@@ -101,7 +105,7 @@ void Renderer::endScene()
     m_api->endOnScreenRenderPass();
     m_api->endFrame();
 
-    m_transformedMeshes.clear();
+    m_renderables.clear();
     m_pointLights.clear();
 }
 

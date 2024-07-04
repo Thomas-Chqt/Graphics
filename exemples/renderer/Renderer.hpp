@@ -44,7 +44,7 @@ private:
     //scene datas
     const Camera* m_camera;
     utils::Array<const PointLight*> m_pointLights;
-    utils::Dictionary<Material*, utils::Array<Mesh>> m_transformedMeshes;
+    utils::Dictionary<Material*, utils::Array<SubMesh>> m_renderables;
 };
 
 #endif // RENDERER_HPP

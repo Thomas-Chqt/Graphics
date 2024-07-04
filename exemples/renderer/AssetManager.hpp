@@ -17,6 +17,7 @@
 #include "Math/Matrix.hpp"
 #include "Math/Vector.hpp"
 #include "RenderMethod.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
@@ -45,17 +46,20 @@ struct Material
     utils::SharedPtr<gfx::Texture> shininessTexture;
 };
 
-struct Mesh
+struct SubMesh
 {
     utils::String name;
-
-    math::mat4x4 modelMatrix;
-
     utils::SharedPtr<gfx::VertexBuffer> vertexBuffer;
     utils::SharedPtr<gfx::IndexBuffer> indexBuffer;
     utils::SharedPtr<Material> material;
+    math::mat4x4 transform = math::mat4x4(1.0f);
+    utils::Array<SubMesh> childs;
+};
 
-    utils::Array<Mesh> childs;
+struct Mesh
+{
+    utils::String name;
+    utils::Array<SubMesh> subMeshes;
 };
 
 class AssetManager
@@ -68,7 +72,7 @@ public:
     utils::SharedPtr<gfx::Texture> texture(const utils::String& filePath);
     utils::SharedPtr<Material> material(const utils::String& name);
     utils::SharedPtr<Material> material(aiMaterial*, const utils::String& baseDir);
-    Mesh mesh(const utils::String& filePath);
+    utils::Array<Mesh> scene(const utils::String& filePath);
 
     ~AssetManager() = default;
 
@@ -79,8 +83,8 @@ private:
 
     utils::SharedPtr<gfx::GraphicAPI> m_api;
     utils::Dictionary<utils::String, utils::SharedPtr<gfx::Texture>> m_textures;
-    utils::Dictionary<utils::String, utils::SharedPtr<Material>> m_materials;
-    utils::Dictionary<utils::String, Mesh> m_meshes;
+    utils::Array<utils::SharedPtr<Material>> m_materials;
+    utils::Dictionary<utils::String, utils::Array<Mesh>> m_scenes;
 };
 
 #endif // ASSETMANAGER_HPP

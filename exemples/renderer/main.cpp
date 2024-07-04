@@ -65,41 +65,42 @@ int main()
     RenderableEntity lightCube;
     lightCube.name = "lightCube1";
     lightCube.scale = { 0.1, 0.1, 0.1 };
-    lightCube.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cube/cube.gltf");
-    lightCube.mesh.material = AssetManager::shared().material("lightCube1");
-    lightCube.mesh.material->ambientColor = BLACK3;
-    lightCube.mesh.material->diffuseColor = BLACK3;
-    lightCube.mesh.material->specularColor = BLACK3;
-    lightCube.mesh.material->shininess = 0.0f;
+    lightCube.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cube/cube.gltf")[0];
+    lightCube.mesh.subMeshes[0].material = AssetManager::shared().material("lightCube1");
+    lightCube.mesh.subMeshes[0].material->ambientColor = BLACK3;
+    lightCube.mesh.subMeshes[0].material->diffuseColor = BLACK3;
+    lightCube.mesh.subMeshes[0].material->specularColor = BLACK3;
+    lightCube.mesh.subMeshes[0].material->shininess = 0.0f;
     entities.append(&lightCube);
 
     RenderableEntity lightCube2;
     lightCube2.name = "lightCube2";
     lightCube2.scale = { 0.1, 0.1, 0.1 };
-    lightCube2.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cube/cube.gltf");
-    lightCube2.mesh.material = AssetManager::shared().material("lightCube2");
-    lightCube2.mesh.material->ambientColor = BLACK3;
-    lightCube2.mesh.material->diffuseColor = BLACK3;
-    lightCube2.mesh.material->specularColor = BLACK3;
-    lightCube2.mesh.material->shininess = 0.0f;
+    lightCube2.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cube/cube.gltf")[0];
+    lightCube2.mesh.subMeshes[0].material = AssetManager::shared().material("lightCube2");
+    lightCube2.mesh.subMeshes[0].material->ambientColor = BLACK3;
+    lightCube2.mesh.subMeshes[0].material->diffuseColor = BLACK3;
+    lightCube2.mesh.subMeshes[0].material->specularColor = BLACK3;
+    lightCube2.mesh.subMeshes[0].material->shininess = 0.0f;
     entities.append(&lightCube2);
 
     RenderableEntity cat;
     cat.name = "cat";
     cat.position = { 0.0, -1.5, 7.0 };
-    cat.rotation = { 0.0, PI/2, 0.0 };
-    cat.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cat/cat.gltf");
+    cat.rotation = { -PI/2, PI/2, 0.0 };
+    cat.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cat/cat.gltf")[0];
     entities.append(&cat);
 
     RenderableEntity cup;
     cup.name = "cup";
     cup.position = { 3.5, -1.5, 7.0 };
-    cup.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cup/cup.gltf");
+    cup.rotation = { -PI/2, 0, 0 };
+    cup.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cup/cup.gltf")[0];
     entities.append(&cup);
 
     renderer.UI([&](){
         static Entity* selectedEntt = nullptr;
-        static Mesh* selectedMesh = nullptr;
+        static SubMesh* selectedSubMesh = nullptr;
 
         if (ImGui::Begin("Imgui", NULL, ImGuiWindowFlags_MenuBar))
         {
@@ -117,7 +118,7 @@ int main()
                         if (ImGui::Selectable(entt->name.isEmpty() ? "No name" : entt->name, selectedEntt == entt))
                         {
                             if (selectedEntt != entt)
-                                selectedMesh = nullptr;
+                                selectedSubMesh = nullptr;
                             selectedEntt = entt;
                         }
                     }
@@ -145,46 +146,52 @@ int main()
                     }
                     if (RenderableEntity* renderableEntt = dynamic_cast<RenderableEntity*>(selectedEntt))
                     {
-                        utils::Func<void(Mesh&)> makeTreeNode = [&](Mesh& mesh){
+                        utils::Func<void(SubMesh&)> makeTreeNode = [&](SubMesh& subMesh){
                             ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
-                                if (selectedMesh == &mesh)
+                                if (selectedSubMesh == &subMesh)
                                     node_flags |= ImGuiTreeNodeFlags_Selected;
-                                if (mesh.childs.isEmpty())
+                                if (subMesh.childs.isEmpty())
                                     node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-                                bool node_open = ImGui::TreeNodeEx(&mesh, node_flags, "%s", mesh.name.isEmpty() ? "No name" : (char*)mesh.name);
+                                bool node_open = ImGui::TreeNodeEx(&subMesh, node_flags, "%s", subMesh.name.isEmpty() ? "No name" : (char*)subMesh.name);
                                 if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-                                    selectedMesh = &mesh;
-                                if (mesh.childs.isEmpty() == false && node_open)
+                                    selectedSubMesh = &subMesh;
+                                if (subMesh.childs.isEmpty() == false && node_open)
                                 {
-                                    for (auto& child : mesh.childs)
+                                    for (auto& child : subMesh.childs)
                                         makeTreeNode(child);
                                     ImGui::TreePop();
                                 }
                         };
-                        makeTreeNode(renderableEntt->mesh);
+                        if(ImGui::TreeNode(renderableEntt->mesh.name))
+                        {
+                            for (auto& subMesh : renderableEntt->mesh.subMeshes)
+                                makeTreeNode(subMesh);
+                            ImGui::TreePop();
+                        }
                     }
                 }
             }
 
-            ImGui::SeparatorText("Selected Mesh");
+            ImGui::SeparatorText("Selected sub mesh");
             {
-                if(selectedMesh == nullptr)
-                    ImGui::Text("No mesh selected");
+                if(selectedSubMesh == nullptr)
+                    ImGui::Text("No sub mesh selected");
                 else
                 {
-                    if (selectedMesh->material)
+                    if (selectedSubMesh->material)
                     {
-                        ImGui::Text("ambientTexture: %p",  (void*)selectedMesh->material->ambientTexture);
-                        ImGui::Text("diffuseTexture: %p",  (void*)selectedMesh->material->diffuseTexture);
-                        ImGui::Text("specularTexture: %p", (void*)selectedMesh->material->specularTexture);
-                        ImGui::Text("emissiveTexture: %p", (void*)selectedMesh->material->emissiveTexture);
+                        ImGui::Text("Matrial name: %s", (char*)selectedSubMesh->material->name);
+                        ImGui::Text("ambientTexture: %p",  (void*)selectedSubMesh->material->ambientTexture);
+                        ImGui::Text("diffuseTexture: %p",  (void*)selectedSubMesh->material->diffuseTexture);
+                        ImGui::Text("specularTexture: %p", (void*)selectedSubMesh->material->specularTexture);
+                        ImGui::Text("emissiveTexture: %p", (void*)selectedSubMesh->material->emissiveTexture);
 
-                        ImGui::ColorEdit3("ambientColor" , (float*)&selectedMesh->material->ambientColor);
-                        ImGui::ColorEdit3("diffuseColor" , (float*)&selectedMesh->material->diffuseColor);
-                        ImGui::ColorEdit3("specularColor", (float*)&selectedMesh->material->specularColor);
-                        ImGui::ColorEdit3("emissiveColor", (float*)&selectedMesh->material->emissiveColor);
+                        ImGui::ColorEdit3("ambientColor" , (float*)&selectedSubMesh->material->ambientColor);
+                        ImGui::ColorEdit3("diffuseColor" , (float*)&selectedSubMesh->material->diffuseColor);
+                        ImGui::ColorEdit3("specularColor", (float*)&selectedSubMesh->material->specularColor);
+                        ImGui::ColorEdit3("emissiveColor", (float*)&selectedSubMesh->material->emissiveColor);
                         
-                        ImGui::DragFloat("shininess" ,     (float*)&selectedMesh->material->shininess, 1, 1);
+                        ImGui::DragFloat("shininess" ,     (float*)&selectedSubMesh->material->shininess, 1, 1);
                     }
                 }
             }
@@ -206,10 +213,10 @@ int main()
         if (window->isKeyPress(RIGHT_KEY)) camera.rotation.y += 0.05;
 
         lightCube.position = pointLight.position;
-        lightCube.mesh.material->emissiveColor  = pointLight.color  * pointLight.ambiantIntensity  + pointLight.color  * pointLight.diffuseIntensity  + pointLight.color  * pointLight.specularIntensity;
+        lightCube.mesh.subMeshes[0].material->emissiveColor  = pointLight.color  * pointLight.ambiantIntensity  + pointLight.color  * pointLight.diffuseIntensity  + pointLight.color  * pointLight.specularIntensity;
         
         lightCube2.position = pointLight2.position;
-        lightCube2.mesh.material->emissiveColor = pointLight2.color * pointLight2.ambiantIntensity + pointLight2.color * pointLight2.diffuseIntensity + pointLight2.color * pointLight2.specularIntensity;
+        lightCube2.mesh.subMeshes[0].material->emissiveColor = pointLight2.color * pointLight2.ambiantIntensity + pointLight2.color * pointLight2.diffuseIntensity + pointLight2.color * pointLight2.specularIntensity;
         
         renderer.beginScene();
         

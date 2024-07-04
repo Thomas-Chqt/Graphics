@@ -12,8 +12,11 @@
 #include "Graphics/Texture.hpp"
 #include "RenderMethod.hpp"
 #include "ShaderStructs.hpp"
+#include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/Types.hpp"
 #include "assimp/Importer.hpp"
 #include "assimp/material.h"
 #include "assimp/scene.h"
@@ -68,23 +71,21 @@ utils::SharedPtr<gfx::Texture> AssetManager::texture(const utils::String& filePa
 
 utils::SharedPtr<Material> AssetManager::material(const utils::String& name)
 {
-    if (m_materials.contain(name))
-        return m_materials[name];
+    for (auto& mat : m_materials) {
+        if (mat->name == name)
+            return mat;
+    }
     utils::SharedPtr<Material> newMaterial(new Material);
     newMaterial->name = name;
     newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<VertexShader::universal3D, FragmentShader::universal>(m_api));
-    m_materials.insert(name, newMaterial);
+    
+    m_materials.append(newMaterial);
     return newMaterial;
 }
 
 utils::SharedPtr<Material> AssetManager::material(aiMaterial* aiMaterial, const utils::String& baseDir)
 {
-    if (m_materials.contain(aiMaterial->GetName().C_Str()))
-        return m_materials[aiMaterial->GetName().C_Str()];
-
-    utils::SharedPtr<Material> newMaterial = material(aiMaterial->GetName().C_Str());
-
-    newMaterial->name = utils::String(aiMaterial->GetName().C_Str());
+    utils::SharedPtr<Material> newMaterial = material(aiMaterial->GetName().length == 0 ? "Material" : aiMaterial->GetName().C_Str());
 
     aiColor3D ambientColor  = { 1, 1, 1 };
     aiColor3D diffuseColor  = { 1, 1, 1 };
@@ -146,10 +147,10 @@ utils::SharedPtr<Material> AssetManager::material(aiMaterial* aiMaterial, const 
     return newMaterial;
 }
 
-Mesh AssetManager::mesh(const utils::String& filePath)
+utils::Array<Mesh> AssetManager::scene(const utils::String& filePath)
 {
-    if (m_meshes.contain(filePath))
-        return m_meshes[filePath];
+    if (m_scenes.contain(filePath))
+        return m_scenes[filePath];
 
     Assimp::Importer importer;
 
@@ -158,7 +159,7 @@ Mesh AssetManager::mesh(const utils::String& filePath)
         throw utils::RuntimeError("fail to load the model using assimp");
 
     utils::Array<utils::SharedPtr<Material>> allMaterial;
-    utils::Array<Mesh> allMeshes;
+    utils::Array<SubMesh> allMeshes;
 
     for (utils::uint32 i = 0; i < scene->mNumMaterials; i++)
         allMaterial.append(material(scene->mMaterials[i], filePath.substr(0, filePath.lastIndexOf('/'))));
@@ -201,27 +202,22 @@ Mesh AssetManager::mesh(const utils::String& filePath)
             indices[faceIndex * 3 + 2] = aiMesh->mFaces[faceIndex].mIndices[2];
         }
 
-        allMeshes.append({
-            aiMesh->mName.C_Str(),
-            math::mat4x4(1.0f),
-            m_api->newVertexBuffer(vertices),
-            m_api->newIndexBuffer(indices),
-            allMaterial[aiMesh->mMaterialIndex],
-            utils::Array<Mesh>()
-        });
+        SubMesh newSubMesh;
+        newSubMesh.name = aiMesh->mName.C_Str();
+        newSubMesh.vertexBuffer = m_api->newVertexBuffer(vertices);
+        newSubMesh.indexBuffer = m_api->newIndexBuffer(indices);
+        newSubMesh.material = allMaterial[aiMesh->mMaterialIndex];
+        allMeshes.append(newSubMesh);
     }
 
-    Mesh output;
+    utils::Array<Mesh> output;
 
-    utils::Func<Mesh(aiNode*)> meshFromNode = [&](aiNode* aiNode) {
-        Mesh newMesh;
+    utils::Func<void(aiNode*, utils::Array<SubMesh>&, math::mat4x4)> addNode = [&](aiNode* aiNode, utils::Array<SubMesh>& dst, math::mat4x4 additionalTransform) {
+        SubMesh newSubMesh;
 
-        if (aiNode->mNumMeshes == 1)
-            newMesh = allMeshes[aiNode->mMeshes[0]];
+        newSubMesh.name = aiNode->mName.C_Str();
 
-        newMesh.name = aiNode->mName.C_Str();
-        
-        newMesh.modelMatrix = math::mat4x4(
+        newSubMesh.transform = additionalTransform * math::mat4x4(
             aiNode->mTransformation.a1, aiNode->mTransformation.a2, aiNode->mTransformation.a3, aiNode->mTransformation.a4,
             aiNode->mTransformation.b1, aiNode->mTransformation.b2, aiNode->mTransformation.b3, aiNode->mTransformation.b4,
             aiNode->mTransformation.c1, aiNode->mTransformation.c2, aiNode->mTransformation.c3, aiNode->mTransformation.c4,
@@ -229,16 +225,35 @@ Mesh AssetManager::mesh(const utils::String& filePath)
         );
 
         for (utils::uint32 i = 0; aiNode->mNumMeshes > 1 && i < aiNode->mNumMeshes; i++)
-            newMesh.childs.append(allMeshes[aiNode->mMeshes[i]]);
+            newSubMesh.childs.append(allMeshes[aiNode->mMeshes[i]]);
 
         for (utils::uint32 i = 0; i < aiNode->mNumChildren; i++)
-            newMesh.childs.append(meshFromNode(aiNode->mChildren[i]));
-
-        return newMesh;
+            addNode(aiNode->mChildren[i], newSubMesh.childs, math::mat4x4(1.0f));
     };
+    
+    {
+        Mesh newMesh;
+        newMesh.name = scene->mRootNode->mName.C_Str();
+        for (utils::uint32 i = 0; i < scene->mRootNode->mNumMeshes; i++)
+            newMesh.subMeshes.append(allMeshes[scene->mRootNode->mMeshes[i]]);
+        output.append(newMesh);
+    }
 
-    output = meshFromNode(scene->mRootNode);
-    m_meshes.insert(filePath, output);
+    for (utils::uint32 i = 0; i < scene->mRootNode->mNumChildren; i++)
+    {
+        aiNode* aiNode = scene->mRootNode->mChildren[i];
+
+        Mesh newMesh;
+        newMesh.name = aiNode->mName.C_Str();
+        for (utils::uint32 i = 0; i < aiNode->mNumMeshes; i++)
+            newMesh.subMeshes.append(allMeshes[aiNode->mMeshes[i]]);
+
+        for (utils::uint32 i = 0; i < aiNode->mNumChildren; i++)
+            addNode(aiNode->mChildren[i], newMesh.subMeshes, math::mat4x4(1.0f));
+        output.append(newMesh);
+    }
+
+    m_scenes.insert(filePath, output);
     return output;
 }
 
