@@ -42,11 +42,13 @@ int main()
 
     Camera camera;
     camera.name = "camera";
+    camera.position = { 0, 1, -4 };
+    camera.rotation = { 0.2, 0, 0 };
     entities.append(&camera);
     
     PointLight pointLight;
     pointLight.name = "Light 1";
-    pointLight.position = { 3.5, 2.5, 7.0 };;
+    pointLight.position = { -1.5, 1.5, -2.0 };
     pointLight.color = WHITE3;
     pointLight.ambiantIntensity = 0.1f;
     pointLight.diffuseIntensity = 0.5f;
@@ -55,7 +57,7 @@ int main()
 
     PointLight pointLight2;
     pointLight2.name = "Light 2";
-    pointLight2.position = { 0.0, 2.5, 7.0 };
+    pointLight2.position = { 1.5, 1.5, 0.5 };
     pointLight2.color = WHITE3;
     pointLight2.ambiantIntensity = 0.1f;
     pointLight2.diffuseIntensity = 0.5f;
@@ -86,15 +88,17 @@ int main()
 
     RenderableEntity cat;
     cat.name = "cat";
-    cat.position = { 0.0, -1.5, 7.0 };
-    cat.rotation = { -PI/2, PI/2, 0.0 };
+    cat.position = { -0.7, 0, -0.7 };
+    cat.rotation = { -PI/2, 2.5, 0.0 };
+    cat.scale = {0.15, 0.15, 0.15};
     cat.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cat/cat.gltf")[0];
     entities.append(&cat);
 
     RenderableEntity cup;
     cup.name = "cup";
-    cup.position = { 3.5, -1.5, 7.0 };
-    cup.rotation = { -PI/2, 0, 0 };
+    cup.position = {0.7, -0.01, -0.6};
+    cup.rotation = {-PI/2, 0, 0};
+    cup.scale = {0.1, 0.1, 0.1};
     cup.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cup/cup.gltf")[0];
     entities.append(&cup);
 
