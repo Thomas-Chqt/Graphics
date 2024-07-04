@@ -11,7 +11,10 @@
 # define RENDERMETHOD
 
 #include "Graphics/GraphicAPI.hpp"
+#include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/Types.hpp"
+#include "UtilsCPP/UniquePtr.hpp"
 
 enum class VertexShader { universal3D };
 enum class FragmentShader { universal, baseColor, baseTexture };
@@ -107,5 +110,40 @@ private:
     utils::SharedPtr<gfx::GraphicAPI> m_graphicAPI;
     utils::SharedPtr<gfx::GraphicPipeline> m_graphicPipeline;
 };
+
+class RenderMethodLibrary
+{
+public:
+    inline void init(const utils::SharedPtr<gfx::GraphicAPI>& api) { s_instance = utils::UniquePtr<RenderMethodLibrary>(new RenderMethodLibrary(api)); }
+    inline RenderMethodLibrary& shared() { return *s_instance; }
+    inline void terminate() { s_instance->terminate(); }
+
+    template<VertexShader VS, FragmentShader FS>
+    utils::SharedPtr<IRenderMethod> renderMethod()
+    {
+        if(m_renderMethods.contain(renderMethodID<VS, FS>()))
+            return m_renderMethods[renderMethodID<VS, FS>()];
+        utils::SharedPtr<IRenderMethod> newRenderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<VS, FS>(m_graphicAPI));
+        m_renderMethods.insert(renderMethodID<VS, FS>(), newRenderMethod);
+        return newRenderMethod;
+    }
+
+private:
+    inline RenderMethodLibrary(const utils::SharedPtr<gfx::GraphicAPI>& api) : m_graphicAPI(api) {}
+
+    template<VertexShader VS, FragmentShader FS>
+    utils::uint32 renderMethodID()
+    {
+        static utils::uint32 id = m_lastRenderMethodID++;
+        return id;
+    }
+
+    static utils::UniquePtr<RenderMethodLibrary> s_instance;
+
+    utils::SharedPtr<gfx::GraphicAPI> m_graphicAPI;
+    utils::uint32 m_lastRenderMethodID = 0;
+    utils::Dictionary<utils::uint32, utils::SharedPtr<IRenderMethod>> m_renderMethods;
+};
+
 
 #endif // RENDERMETHOD

@@ -18,6 +18,7 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/String.hpp"
 #include "imgui/imgui.h"
 
 int main()
@@ -102,9 +103,8 @@ int main()
     cup.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cup/cup.gltf")[0];
     entities.append(&cup);
 
-    utils::Array<Mesh> potted_plant_scene = AssetManager::shared().scene(RESSOURCES_DIR"/potted_plant/potted_plant.gltf");
     utils::Array<RenderableEntity> potted_plant_entites;
-    for (auto& mesh : potted_plant_scene) {
+    for (auto& mesh : AssetManager::shared().scene(RESSOURCES_DIR"/potted_plant/potted_plant.gltf")) {
         RenderableEntity entt;
         entt.name = mesh.name;
         entt.mesh = mesh;

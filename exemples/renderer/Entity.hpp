@@ -17,7 +17,9 @@
 
 struct Entity
 {
-    Entity() = default;
+    Entity()              = default;
+    Entity(Entity&&)      = default;
+    Entity(const Entity&) = default;
 
     utils::String name;
 
@@ -36,6 +38,10 @@ struct Entity
 
 struct Camera : public Entity
 {
+    Camera()              = default;
+    Camera(Camera&&)      = default;
+    Camera(const Camera&) = default;
+
     inline math::mat4x4 viewMatrix() const { return modelMatrix().inversed(); }
 
     ~Camera() override = default;
@@ -43,6 +49,10 @@ struct Camera : public Entity
 
 struct PointLight : public Entity
 {
+    PointLight()                  = default;
+    PointLight(PointLight&&)      = default;
+    PointLight(const PointLight&) = default;
+
     math::rgb color;
     float     ambiantIntensity;
     float     diffuseIntensity;
@@ -53,6 +63,10 @@ struct PointLight : public Entity
 
 struct RenderableEntity : public Entity
 {
+    RenderableEntity()                        = default;
+    RenderableEntity(RenderableEntity&&)      = default;
+    RenderableEntity(const RenderableEntity&) = default;
+
     Mesh mesh;
     
     ~RenderableEntity() override = default;
