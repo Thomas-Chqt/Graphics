@@ -80,6 +80,7 @@ private:
     utils::SharedPtr<gfx::GraphicAPI> m_api;
     utils::Dictionary<utils::String, utils::SharedPtr<gfx::Texture>> m_textures;
     utils::Dictionary<utils::String, utils::SharedPtr<Material>> m_materials;
+    utils::Dictionary<utils::String, Mesh> m_meshes;
 };
 
 #endif // ASSETMANAGER_HPP

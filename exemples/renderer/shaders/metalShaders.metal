@@ -60,6 +60,95 @@ float3 computePointLight(constant PointLight& light, const thread Fragment& frag
     return ambiant + diffuse + specular + emissive;
 }
 
+fragment float4 universal_fs(VertexOut in [[stage_in]],
+    constant float3& u_cameraPos             [[buffer(1)]],
+    constant PointLight* u_pointLights       [[buffer(2)]],
+    constant uint& u_pointLightsCount        [[buffer(3)]],
+    constant universal::Material& u_material [[buffer(4)]],
+    texture2d<float> u_ambientTexture        [[texture(0)]],
+    texture2d<float> u_diffuseTexture        [[texture(1)]],
+    texture2d<float> u_specularTexture       [[texture(2)]],
+    texture2d<float> u_emissiveTexture       [[texture(3)]],
+    texture2d<float> u_shininessTexture      [[texture(4)]]
+)
+{
+    constexpr metal::sampler textureSampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+
+    float4 ambientBase;
+    if (u_material.useAmbientTexture != 0)
+        ambientBase = u_ambientTexture.sample(textureSampler, in.uv);
+    else
+        ambientBase = float4(u_material.ambientColor, 1.0f);
+
+    float4 diffuseBase;
+    if (u_material.useDiffuseTexture != 0)
+        diffuseBase = u_diffuseTexture.sample(textureSampler, in.uv);
+    else
+        diffuseBase = float4(u_material.diffuseColor, 1.0f);
+
+    float4 specularBase;
+    if (u_material.useSpecularTexture != 0)
+        specularBase = u_specularTexture.sample(textureSampler, in.uv);
+    else
+        specularBase = float4(u_material.specularColor, 1.0f);
+
+    float4 emissiveBase;
+    if (u_material.useEmissiveTexture != 0)
+        emissiveBase = u_emissiveTexture.sample(textureSampler, in.uv);
+    else
+        emissiveBase = float4(u_material.emissiveColor, 1.0f);
+
+    float shininess;
+    // if (u_material.useShininessTexture != 0)
+    //     shininess = u_shininessTexture.sample(textureSampler, in.uv);
+    // else
+        shininess = u_material.shininess;
+
+    Fragment fragInfos = {
+        .position  = in.pos,
+        .normal    = normalize(in.normal),
+        .ambiant   = ambientBase.xyz,
+        .diffuse   = diffuseBase.xyz,
+        .specular  = specularBase.xyz,
+        .emissive  = emissiveBase.xyz,
+        .shininess = shininess
+    };
+
+    float3 cameraDir = normalize(u_cameraPos - in.pos);
+
+    float3 output = float3(0.0f, 0.0f, 0.0f);
+    for(uint i = 0; i < u_pointLightsCount; i++)
+        output += computePointLight(u_pointLights[i], fragInfos, cameraDir);
+
+    return float4(output, diffuseBase.w);
+}
+
+fragment float4 baseColor_fs(VertexOut in [[stage_in]],
+    constant float3& u_cameraPos             [[buffer(1)]],
+    constant PointLight* u_pointLights       [[buffer(2)]],
+    constant uint& u_pointLightsCount        [[buffer(3)]],
+    constant baseColor::Material& u_material [[buffer(4)]]
+)
+{
+    Fragment fragInfos = {
+        .position  = in.pos,
+        .normal    = normalize(in.normal),
+        .ambiant   = u_material.baseColor,
+        .diffuse   = u_material.baseColor,
+        .specular  = u_material.specularColor,
+        .emissive  = u_material.emissiveColor,
+        .shininess = u_material.shininess
+    };
+
+    float3 cameraDir = normalize(u_cameraPos - in.pos);
+
+    float3 output = float3(0.0f, 0.0f, 0.0f);
+    for(uint i = 0; i < u_pointLightsCount; i++)
+        output += computePointLight(u_pointLights[i], fragInfos, cameraDir);
+
+    return float4(output, 1.0f);
+}
+
 fragment float4 baseTexture_fs(VertexOut in [[stage_in]],
     constant float3& u_cameraPos               [[buffer(1)]],
     constant PointLight* u_pointLights         [[buffer(2)]],
@@ -89,30 +178,4 @@ fragment float4 baseTexture_fs(VertexOut in [[stage_in]],
         output += computePointLight(u_pointLights[i], fragInfos, cameraDir);
 
     return float4(output, baseColor.w);
-}
-
-fragment float4 baseColor_fs(VertexOut in [[stage_in]],
-    constant float3& u_cameraPos             [[buffer(1)]],
-    constant PointLight* u_pointLights       [[buffer(2)]],
-    constant uint& u_pointLightsCount        [[buffer(3)]],
-    constant baseColor::Material& u_material [[buffer(4)]]
-)
-{
-    Fragment fragInfos = {
-        .position  = in.pos,
-        .normal    = normalize(in.normal),
-        .ambiant   = u_material.baseColor,
-        .diffuse   = u_material.baseColor,
-        .specular  = u_material.specularColor,
-        .emissive  = u_material.emissiveColor,
-        .shininess = u_material.shininess
-    };
-
-    float3 cameraDir = normalize(u_cameraPos - in.pos);
-
-    float3 output = float3(0.0f, 0.0f, 0.0f);
-    for(uint i = 0; i < u_pointLightsCount; i++)
-        output += computePointLight(u_pointLights[i], fragInfos, cameraDir);
-
-    return float4(output, 1.0f);
 }

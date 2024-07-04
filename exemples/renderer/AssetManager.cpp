@@ -17,6 +17,7 @@
 #include "assimp/Importer.hpp"
 #include "assimp/material.h"
 #include "assimp/scene.h"
+#include "assimp/types.h"
 #include "stb_image.h"
 #include "assimp/postprocess.h"
 
@@ -71,6 +72,7 @@ utils::SharedPtr<Material> AssetManager::material(const utils::String& name)
         return m_materials[name];
     utils::SharedPtr<Material> newMaterial(new Material);
     newMaterial->name = name;
+    newMaterial->renderMethod = utils::SharedPtr<IRenderMethod>(new RenderMethod<VertexShader::universal3D, FragmentShader::universal>(m_api));
     m_materials.insert(name, newMaterial);
     return newMaterial;
 }
@@ -92,13 +94,13 @@ utils::SharedPtr<Material> AssetManager::material(aiMaterial* aiMaterial, const 
     aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ambientColor);
     newMaterial->ambientColor  = { ambientColor.r,  ambientColor.g,  ambientColor.b  };
 
-    aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, diffuseColor);
+    aiMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, diffuseColor);
     newMaterial->diffuseColor  = { diffuseColor.r,  diffuseColor.g,  diffuseColor.b  };
 
-    aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, specularColor);
+    aiMaterial->Get(AI_MATKEY_COLOR_SPECULAR, specularColor);
     newMaterial->specularColor = { specularColor.r, specularColor.g, specularColor.b };
 
-    aiMaterial->Get(AI_MATKEY_COLOR_AMBIENT, emissiveColor);
+    aiMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, emissiveColor);
     newMaterial->emissiveColor = { emissiveColor.r, emissiveColor.g, emissiveColor.b };
 
     aiMaterial->Get(AI_MATKEY_SHININESS, newMaterial->shininess);
@@ -146,6 +148,9 @@ utils::SharedPtr<Material> AssetManager::material(aiMaterial* aiMaterial, const 
 
 Mesh AssetManager::mesh(const utils::String& filePath)
 {
+    if (m_meshes.contain(filePath))
+        return m_meshes[filePath];
+
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(filePath, POST_PROCESSING_FLAGS);
@@ -233,6 +238,7 @@ Mesh AssetManager::mesh(const utils::String& filePath)
     };
 
     output = meshFromNode(scene->mRootNode);
+    m_meshes.insert(filePath, output);
     return output;
 }
 

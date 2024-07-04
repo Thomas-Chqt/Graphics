@@ -11,6 +11,7 @@
 #include "Entity.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
+#include "Math/Constants.hpp"
 #include "Math/Vector.hpp"
 #include "RenderMethod.hpp"
 #include "Renderer.hpp"
@@ -41,12 +42,11 @@ int main()
 
     Camera camera;
     camera.name = "camera";
-    camera.position = { 7, 2, -70 };
     entities.append(&camera);
     
     PointLight pointLight;
     pointLight.name = "Light 1";
-    pointLight.position = { 20, 15, 7 };
+    pointLight.position = { 3.5, 2.5, 7.0 };;
     pointLight.color = WHITE3;
     pointLight.ambiantIntensity = 0.1f;
     pointLight.diffuseIntensity = 0.5f;
@@ -55,25 +55,47 @@ int main()
 
     PointLight pointLight2;
     pointLight2.name = "Light 2";
-    pointLight2.position = { 10, 15, -36 };
+    pointLight2.position = { 0.0, 2.5, 7.0 };
     pointLight2.color = WHITE3;
     pointLight2.ambiantIntensity = 0.1f;
     pointLight2.diffuseIntensity = 0.5f;
     pointLight2.specularIntensity = 0.5f;
     entities.append(&pointLight2);
 
-    RenderableEntity city;
-    city.name = "City";
-    city.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/after_the_rain/scene.gltf");
-    entities.append(&city);
+    RenderableEntity lightCube;
+    lightCube.name = "lightCube1";
+    lightCube.scale = { 0.1, 0.1, 0.1 };
+    lightCube.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cube/cube.gltf");
+    lightCube.mesh.material = AssetManager::shared().material("lightCube1");
+    lightCube.mesh.material->ambientColor = BLACK3;
+    lightCube.mesh.material->diffuseColor = BLACK3;
+    lightCube.mesh.material->specularColor = BLACK3;
+    lightCube.mesh.material->shininess = 0.0f;
+    entities.append(&lightCube);
 
-    // RenderableEntity cat;
-    // cat.name = "cat";
-    // cat.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cat/cat.obj");
-    // cat.position = {10, 0, -60};
-    // cat.rotation = {0, 3.5, 0};
-    // cat.scale = { 0.2, 0.2, 0.2 };
-    // entities.append(&cat);
+    RenderableEntity lightCube2;
+    lightCube2.name = "lightCube2";
+    lightCube2.scale = { 0.1, 0.1, 0.1 };
+    lightCube2.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cube/cube.gltf");
+    lightCube2.mesh.material = AssetManager::shared().material("lightCube2");
+    lightCube2.mesh.material->ambientColor = BLACK3;
+    lightCube2.mesh.material->diffuseColor = BLACK3;
+    lightCube2.mesh.material->specularColor = BLACK3;
+    lightCube2.mesh.material->shininess = 0.0f;
+    entities.append(&lightCube2);
+
+    RenderableEntity cat;
+    cat.name = "cat";
+    cat.position = { 0.0, -1.5, 7.0 };
+    cat.rotation = { 0.0, PI/2, 0.0 };
+    cat.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cat/cat.gltf");
+    entities.append(&cat);
+
+    RenderableEntity cup;
+    cup.name = "cup";
+    cup.position = { 3.5, -1.5, 7.0 };
+    cup.mesh = AssetManager::shared().mesh(RESSOURCES_DIR"/cup/cup.gltf");
+    entities.append(&cup);
 
     renderer.UI([&](){
         static Entity* selectedEntt = nullptr;
@@ -182,6 +204,12 @@ int main()
         if (window->isKeyPress(LEFT_KEY))  camera.rotation.y -= 0.05;
         if (window->isKeyPress(DOWN_KEY))  camera.rotation.x += 0.05;
         if (window->isKeyPress(RIGHT_KEY)) camera.rotation.y += 0.05;
+
+        lightCube.position = pointLight.position;
+        lightCube.mesh.material->emissiveColor  = pointLight.color  * pointLight.ambiantIntensity  + pointLight.color  * pointLight.diffuseIntensity  + pointLight.color  * pointLight.specularIntensity;
+        
+        lightCube2.position = pointLight2.position;
+        lightCube2.mesh.material->emissiveColor = pointLight2.color * pointLight2.ambiantIntensity + pointLight2.color * pointLight2.diffuseIntensity + pointLight2.color * pointLight2.specularIntensity;
         
         renderer.beginScene();
         
