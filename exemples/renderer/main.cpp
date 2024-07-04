@@ -98,6 +98,17 @@ int main()
     cup.mesh = AssetManager::shared().scene(RESSOURCES_DIR"/cup/cup.gltf")[0];
     entities.append(&cup);
 
+    utils::Array<Mesh> potted_plant_scene = AssetManager::shared().scene(RESSOURCES_DIR"/potted_plant/potted_plant.gltf");
+    utils::Array<RenderableEntity> potted_plant_entites;
+    for (auto& mesh : potted_plant_scene) {
+        RenderableEntity entt;
+        entt.name = mesh.name;
+        entt.mesh = mesh;
+        potted_plant_entites.append(entt);
+    }
+    for (auto& entt : potted_plant_entites)
+        entities.append(&entt);
+
     renderer.UI([&](){
         static Entity* selectedEntt = nullptr;
         static SubMesh* selectedSubMesh = nullptr;

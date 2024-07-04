@@ -224,13 +224,16 @@ utils::Array<Mesh> AssetManager::scene(const utils::String& filePath)
             aiNode->mTransformation.d1, aiNode->mTransformation.d2, aiNode->mTransformation.d3, aiNode->mTransformation.d4
         );
 
-        for (utils::uint32 i = 0; aiNode->mNumMeshes > 1 && i < aiNode->mNumMeshes; i++)
+        for (utils::uint32 i = 0; i < aiNode->mNumMeshes; i++)
             newSubMesh.childs.append(allMeshes[aiNode->mMeshes[i]]);
 
         for (utils::uint32 i = 0; i < aiNode->mNumChildren; i++)
             addNode(aiNode->mChildren[i], newSubMesh.childs, math::mat4x4(1.0f));
+
+        dst.append(newSubMesh);
     };
     
+    if (scene->mRootNode->mNumMeshes > 0)
     {
         Mesh newMesh;
         newMesh.name = scene->mRootNode->mName.C_Str();
