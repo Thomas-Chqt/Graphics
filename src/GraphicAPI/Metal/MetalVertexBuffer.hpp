@@ -32,7 +32,7 @@ public:
     MetalVertexBuffer(const MetalVertexBuffer&) = delete;
     MetalVertexBuffer(MetalVertexBuffer&&)      = delete;
 
-    MetalVertexBuffer(id<MTLDevice> device, void* data, utils::uint64 size);
+    MetalVertexBuffer(id<MTLDevice> device, const void* data, utils::uint64 size);
 
     inline id<MTLBuffer> mtlBuffer() { return m_mtlBuffer; }
     

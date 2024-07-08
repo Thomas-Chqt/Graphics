@@ -27,6 +27,7 @@
 #include <GL/glew.h>
 #include <cassert>
 #include "UtilsCPP/String.hpp"
+#include "UtilsCPP/StructLayout.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
@@ -79,9 +80,9 @@ void OpenGLGraphicAPI::useForImGui(ImGuiConfigFlags flags)
 }
 #endif
 
-SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const
+SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(const void* data, utils::uint64 count, const utils::StructLayout& layout) const
 {
-    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, count, size, layout));
+    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, count, layout));
 }
 
 SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& desc) const
@@ -240,32 +241,32 @@ void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const math:
     GL_CALL(glUniform4f(m_boundPipeline->findFragmentUniformIndex(name), vec.x, vec.y, vec.z, vec.w));
 }
 
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout)
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, const utils::StructLayout& layout)
 {
     for (auto element : layout)
     {
-        switch (element.type)
+        switch (element.typeId)
         {
-        case Type::Float:
-            setFragmentUniform(name + "." + element.name, *((float*)((char*)data + (utils::uint64)element.offset)));
+        case TYPEID_FLOAT:
+            setFragmentUniform(name + "." + element.name, *((float*)((char*)data + element.offset)));
             break;
-        case Type::vec2f:
+        case TYPEID_VEC2F:
             // setFragmentUniform(pipeline.findFragmentUniformIndex(name + "." + element.name), *((math::vec2f*)data));
             break;
-        case Type::vec3f:
-            setFragmentUniform(name + "." + element.name, *((math::vec3f*)((char*)data + (utils::uint64)element.offset)));
+        case TYPEID_VEC3F:
+            setFragmentUniform(name + "." + element.name, *((math::vec3f*)((char*)data + element.offset)));
             break;
-        case Type::Uint32:
-            setFragmentUniform(name + "." + element.name, *((utils::uint32*)((char*)data + (utils::uint64)element.offset)));
+        case TYPEID_UINT:
+            setFragmentUniform(name + "." + element.name, *((utils::uint32*)((char*)data + element.offset)));
             break;
         }
     }
 }
 
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout& layout)
+void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, const utils::StructLayout& layout)
 {
     for (utils::uint32 i = 0; i < len; i++)
-        setFragmentUniform(name + "[" + utils::String::fromUInt(i) + "]", ((char*)data) + i * elementSize, elementSize, layout);
+        setFragmentUniform(name + "[" + utils::String::fromUInt(i) + "]", ((char*)data) + i * utils::sizeOf(layout), layout);
 }
 
 void OpenGLGraphicAPI::setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>& texture)

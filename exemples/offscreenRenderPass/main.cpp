@@ -15,17 +15,18 @@
 #include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/StructLayout.hpp"
 #include "Vertex.hpp"
 #ifdef GFX_IMGUI_ENABLED
 #include "imgui/imgui.h"
 #endif
 
 template<>
-gfx::StructLayout gfx::getLayout<Vertex>()
+utils::StructLayout utils::getLayout<Vertex>()
 {
     return {
-        { "pos", Type::vec2f, (void*)0 },
-        { "uv", Type::vec2f, (void*)offsetof(Vertex, uv) },
+        STRUCT_LAYOUT_ELEMENT(math::vec2f, 1, "pos"),
+        STRUCT_LAYOUT_ELEMENT(math::vec2f, 1, "uv")
     };
 }
 

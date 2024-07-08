@@ -14,11 +14,9 @@
 namespace gfx
 {
 
-MetalVertexBuffer::MetalVertexBuffer(id<MTLDevice> device, void* data, utils::uint64 size)
+MetalVertexBuffer::MetalVertexBuffer(id<MTLDevice> device, const void* data, utils::uint64 size)
 {
-    m_mtlBuffer = [device newBufferWithBytes:data
-                                      length:size
-                                     options:MTLResourceStorageModeShared];
+    m_mtlBuffer = [device newBufferWithBytes:data length:size options:MTLResourceStorageModeShared];
     assert(m_mtlBuffer);
 }
 

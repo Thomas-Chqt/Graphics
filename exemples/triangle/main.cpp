@@ -18,13 +18,14 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
+#include "UtilsCPP/StructLayout.hpp"
 #include "Vertex.hpp"
 
 template<>
-gfx::StructLayout gfx::getLayout<Vertex>()
+utils::StructLayout utils::getLayout<Vertex>()
 {
     return {
-        { "", Type::vec2f, (void*)0 }
+        STRUCT_LAYOUT_ELEMENT(float, 2, "")
     };
 }
 

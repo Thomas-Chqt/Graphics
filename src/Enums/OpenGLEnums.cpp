@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------
- * OpenGLPixelTypesConv.cpp
+ * OpenGLEnums.cpp
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
  * Date: 2024/06/13 11:34:03

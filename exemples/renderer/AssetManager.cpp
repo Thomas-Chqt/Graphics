@@ -8,14 +8,15 @@
  */
 
 #include "AssetManager.hpp"
-#include "Graphics/StructLayout.hpp"
 #include "Graphics/Texture.hpp"
+#include "Math/Vector.hpp"
 #include "RenderMethod.hpp"
 #include "ShaderStructs.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/StructLayout.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "assimp/Importer.hpp"
 #include "assimp/material.h"
@@ -36,12 +37,12 @@
 utils::UniquePtr<AssetManager> AssetManager::s_instance;
 
 template<>
-gfx::StructLayout gfx::getLayout<shaderStruct::Vertex>()
+utils::StructLayout utils::getLayout<shaderStruct::Vertex>()
 {
     return {
-        { "pos",    Type::vec3f, (void*)offsetof(shaderStruct::Vertex, pos)    },
-        { "uv",     Type::vec2f, (void*)offsetof(shaderStruct::Vertex, uv)     },
-        { "normal", Type::vec3f, (void*)offsetof(shaderStruct::Vertex, normal) }
+        STRUCT_LAYOUT_ELEMENT(math::vec3f, 1, "pos"),
+        STRUCT_LAYOUT_ELEMENT(math::vec2f, 1, "uv"),
+        STRUCT_LAYOUT_ELEMENT(math::vec3f, 1, "normal")
     };
 }
 

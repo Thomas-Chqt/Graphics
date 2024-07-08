@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------
- * MetalPixelTypesConv.mm
+ * MetalEnums.mm
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
  * Date: 2024/06/12 19:48:50
@@ -11,6 +11,7 @@
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/Types.hpp"
 
+#include <Metal/MTLRenderCommandEncoder.h>
 #import <Metal/Metal.h>
 
 namespace gfx

@@ -31,6 +31,7 @@
 #include "Graphics/VertexBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/StructLayout.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window/MetalWindow.hpp"
@@ -108,10 +109,9 @@ void MetalGraphicAPI::initMetalShaderLib(const utils::String& path) { @autorelea
 }}
 #endif
 
-utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const
+utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(const void* data, utils::uint64 count, const utils::StructLayout& layout) const
 {
-    (void)layout;
-    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, count * size));
+    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, count * utils::sizeOf(layout)));
 }
 
 SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& descriptor) const { @autoreleasepool
@@ -262,16 +262,14 @@ void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const math::
     [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout) { @autoreleasepool
+void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, const utils::StructLayout& layout) { @autoreleasepool
 {
-    (void)layout;
-    [m_commandEncoder setFragmentBytes:data length:size atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
+    [m_commandEncoder setFragmentBytes:data length:utils::sizeOf(layout) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
 }}
 
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout& layout) { @autoreleasepool
+void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, const utils::StructLayout& layout) { @autoreleasepool
 {
-    (void)layout;
-    [m_commandEncoder setFragmentBytes:data length:len * elementSize atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
+    [m_commandEncoder setFragmentBytes:data length:len * utils::sizeOf(layout) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
 }}
 
 void MetalGraphicAPI::setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>& texture) { @autoreleasepool

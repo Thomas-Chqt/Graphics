@@ -11,7 +11,7 @@
 # define SHADERSTRUCTS_HPP
 
 #ifndef __METAL_VERSION__
-    #include "Graphics/StructLayout.hpp"
+    #include "UtilsCPP/StructLayout.hpp"
 #endif
 #include "Math/Vector.hpp"
 #include "UtilsCPP/Types.hpp"
@@ -84,52 +84,52 @@ namespace baseTexture
 
 #ifndef __METAL_VERSION__
 template<>
-inline gfx::StructLayout gfx::getLayout<shaderStruct::PointLight>()
+inline utils::StructLayout utils::getLayout<shaderStruct::PointLight>()
 {
     return {
-        { "position",          Type::vec3f, (void*)offsetof(shaderStruct::PointLight, position)          },
-        { "color",             Type::vec3f, (void*)offsetof(shaderStruct::PointLight, color)             },
-        { "ambiantIntensity",  Type::Float, (void*)offsetof(shaderStruct::PointLight, ambiantIntensity)  },
-        { "diffuseIntensity",  Type::Float, (void*)offsetof(shaderStruct::PointLight, diffuseIntensity)  },
-        { "specularIntensity", Type::Float, (void*)offsetof(shaderStruct::PointLight, specularIntensity) }
+        STRUCT_LAYOUT_ELEMENT(math::vec3f, 1, "position"),
+        STRUCT_LAYOUT_ELEMENT(  math::rgb, 1, "color"),
+        STRUCT_LAYOUT_ELEMENT(      float, 1, "ambiantIntensity"),
+        STRUCT_LAYOUT_ELEMENT(      float, 1, "diffuseIntensity"),
+        STRUCT_LAYOUT_ELEMENT(      float, 1, "specularIntensity")
     };
 }
 
 template<>
-inline gfx::StructLayout gfx::getLayout<shaderStruct::universal::Material>()
+inline utils::StructLayout utils::getLayout<shaderStruct::universal::Material>()
 {
     return {
-        { "ambientColor",        Type::vec3f,  (void*)offsetof(shaderStruct::universal::Material, ambientColor)        },
-        { "useAmbientTexture",   Type::Uint32, (void*)offsetof(shaderStruct::universal::Material, useAmbientTexture)   },
-        { "diffuseColor",        Type::vec3f,  (void*)offsetof(shaderStruct::universal::Material, diffuseColor)        },
-        { "useDiffuseTexture",   Type::Uint32, (void*)offsetof(shaderStruct::universal::Material, useDiffuseTexture)   },
-        { "specularColor",       Type::vec3f,  (void*)offsetof(shaderStruct::universal::Material, specularColor)       },
-        { "useSpecularTexture",  Type::Uint32, (void*)offsetof(shaderStruct::universal::Material, useSpecularTexture)  },
-        { "emissiveColor",       Type::vec3f,  (void*)offsetof(shaderStruct::universal::Material, emissiveColor)       },
-        { "useEmissiveTexture",  Type::Uint32, (void*)offsetof(shaderStruct::universal::Material, useEmissiveTexture)  },
-        { "shininess",           Type::Float,  (void*)offsetof(shaderStruct::universal::Material, shininess)           },
-        { "useShininessTexture", Type::Uint32, (void*)offsetof(shaderStruct::universal::Material, useShininessTexture) }
+        STRUCT_LAYOUT_ELEMENT(    math::rgb, 1, "ambientColor"),
+        STRUCT_LAYOUT_ELEMENT(utils::uint32, 1, "useAmbientTexture"),
+        STRUCT_LAYOUT_ELEMENT(    math::rgb, 1, "diffuseColor"),
+        STRUCT_LAYOUT_ELEMENT(utils::uint32, 1, "useDiffuseTexture"),
+        STRUCT_LAYOUT_ELEMENT(    math::rgb, 1, "specularColor"),
+        STRUCT_LAYOUT_ELEMENT(utils::uint32, 1, "useSpecularTexture"),
+        STRUCT_LAYOUT_ELEMENT(    math::rgb, 1, "emissiveColor"),
+        STRUCT_LAYOUT_ELEMENT(utils::uint32, 1, "useEmissiveTexture"),
+        STRUCT_LAYOUT_ELEMENT(        float, 1, "shininess"),
+        STRUCT_LAYOUT_ELEMENT(utils::uint32, 1, "useShininessTexture")
+   };
+}
+
+template<>
+inline utils::StructLayout utils::getLayout<shaderStruct::baseColor::Material>()
+{
+    return {
+        STRUCT_LAYOUT_ELEMENT(math::rgb, 1, "baseColor"),
+        STRUCT_LAYOUT_ELEMENT(math::rgb, 1, "specularColor"),
+        STRUCT_LAYOUT_ELEMENT(math::rgb, 1, "emissiveColor"),
+        STRUCT_LAYOUT_ELEMENT(    float, 1, "shininess")
     };
 }
 
 template<>
-inline gfx::StructLayout gfx::getLayout<shaderStruct::baseColor::Material>()
+inline utils::StructLayout utils::getLayout<shaderStruct::baseTexture::Material>()
 {
     return {
-        { "baseColor",     Type::vec3f, (void*)offsetof(shaderStruct::baseColor::Material, baseColor)     },
-        { "specularColor", Type::vec3f, (void*)offsetof(shaderStruct::baseColor::Material, specularColor) },
-        { "emissiveColor", Type::vec3f, (void*)offsetof(shaderStruct::baseColor::Material, emissiveColor) },
-        { "shininess",     Type::Float, (void*)offsetof(shaderStruct::baseColor::Material, shininess)     }
-    };
-}
-
-template<>
-inline gfx::StructLayout gfx::getLayout<shaderStruct::baseTexture::Material>()
-{
-    return {
-        { "specularColor", Type::vec3f, (void*)offsetof(shaderStruct::baseTexture::Material, specularColor) },
-        { "emissiveColor", Type::vec3f, (void*)offsetof(shaderStruct::baseTexture::Material, emissiveColor) },
-        { "shininess",     Type::Float, (void*)offsetof(shaderStruct::baseTexture::Material, shininess)     }
+        STRUCT_LAYOUT_ELEMENT(math::rgb, 1, "specularColor"),
+        STRUCT_LAYOUT_ELEMENT(math::rgb, 1, "emissiveColor"),
+        STRUCT_LAYOUT_ELEMENT(    float, 1, "shininess")
     };
 }
 #endif

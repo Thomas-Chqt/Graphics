@@ -17,6 +17,8 @@
 #include "Graphics/Window.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/String.hpp"
+#include "UtilsCPP/StructLayout.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Window/MetalWindow.hpp"
 #ifdef GFX_IMGUI_ENABLED
@@ -62,7 +64,7 @@ public:
     void initMetalShaderLib(const utils::String& path) override;
     #endif
 
-    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout&) const override;
+    utils::SharedPtr<VertexBuffer> newVertexBuffer(const void* data, utils::uint64 count, const utils::StructLayout&) const override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
@@ -88,8 +90,8 @@ public:
     void setFragmentUniform(const utils::String& name, float) override;
     void setFragmentUniform(const utils::String& name, const math::vec3f&) override;
     void setFragmentUniform(const utils::String& name, const math::vec4f&) override;
-    void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) override;
-    void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout&) override;
+    void setFragmentUniform(const utils::String& name, const void* data, const utils::StructLayout&) override;
+    void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, const utils::StructLayout&) override;
 
     void setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>&) override;
 

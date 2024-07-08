@@ -65,11 +65,16 @@ endif()
 ################################################################################################################
 
 if (GFX_ENABLE_METAL)
-    list(APPEND GRAPHICS_SRC "Utils/MetalPixelTypesConv.mm")
+    list(APPEND GRAPHICS_SRC "Enums/MetalEnums.mm")
 endif()
 if (GFX_ENABLE_OPENGL)
-    list(APPEND GRAPHICS_SRC "Utils/OpenGLPixelTypesConv.cpp")
+    list(APPEND GRAPHICS_SRC "Enums/OpenGLEnums.cpp")
 endif()
+
+################################################################################################################
+
+file(GLOB FILES "StructLayout/*.cpp" "StructLayout/*.tpp" "StructLayout/*.hpp")
+list(APPEND GRAPHICS_SRC ${FILES})
 
 ################################################################################################################
 
