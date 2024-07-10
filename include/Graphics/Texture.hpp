@@ -21,13 +21,10 @@ class Texture
 public:
     struct Descriptor
     {
-    public:
-        Descriptor() = default;
-        inline Descriptor(utils::uint32 w, utils::uint32 h) : width(w), height(h) {}
-    public:
         utils::uint32 width;
         utils::uint32 height;
-        gfx::ColorPixelFormat pixelFormat = ColorPixelFormat::RGBA;
+        gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
+        StorageMode storageMode = StorageMode::Shared;
     };
 
 public:
@@ -38,7 +35,7 @@ public:
     virtual utils::uint32 height() = 0;
 
     virtual void replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes) = 0;
-    inline void setBytes(const void* ptr) { replaceRegion(0, 0, width(), height(), ptr); }
+    inline void replaceContent(const void* data) { replaceRegion(0, 0, width(), height(), data); }
 
     virtual ~Texture() = default;
 

@@ -40,7 +40,7 @@ private:
     GLuint m_textureID;
     const utils::uint32 m_width;
     const utils::uint32 m_height;
-    const ColorPixelFormat m_pixelFormat;
+    const PixelFormat m_pixelFormat;
 
 public:
     OpenGLTexture& operator = (const OpenGLTexture&) = delete;

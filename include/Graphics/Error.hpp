@@ -14,8 +14,6 @@
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 
-#define ERR_DESC inline const char* description() const override
-
 namespace gfx
 {
 
@@ -29,44 +27,52 @@ struct GLFWError : public GFXError
 };
 struct GLFWInitError : public GFXError
 {
-    ERR_DESC { return m_description; };
+    ERR_DESC(m_description)
 private:
     utils::String m_description = "fail to initialize GLFW. " + GLFWError::s_lastErrorDesc;
 };
 #endif // GLFW_ENABLE
 
-#ifdef GFX_METAL_ENABLED
+#ifdef GFX_BUILD_METAL
 struct MetalError : public GFXError {};
 
 struct RenderCommandEncoderCreationError : public MetalError {
-    ERR_DESC { return "RenderCommandEncoder creation failed"; }
+    ERR_DESC("RenderCommandEncoder creation failed")
 };
 
 struct MTLLibraryCreationError : public MetalError {
-    ERR_DESC { return "MTLLibrary creation failed"; }
+    ERR_DESC("MTLLibrary creation failed")
 };
 
 struct MTLFunctionCreationError : public MetalError {
-    ERR_DESC { return "MTLFunction creation failed"; }
+    ERR_DESC("MTLFunction creation failed")
 };
 
 struct MTLRenderPipelineStateCreationError : public MetalError {
-    ERR_DESC { return "MTLRenderPipelineState creation failed"; }
+    ERR_DESC("MTLRenderPipelineState creation failed")
 };
 
-struct MetalShaderLibNotInitError : public MetalError {
-    ERR_DESC { return "Metal shader library is not initialized"; }
+struct DepthStencilStateCreationError : public MetalError {
+    ERR_DESC("MTLDepthStencilState creation failed")
+};
+
+struct MTLBufferCreationError : public MetalError {
+    ERR_DESC("MTLBuffer creation failed")
+};
+
+struct MTLTextureCreationError : public MetalError {
+    ERR_DESC("MTLTexture creation failed")
 };
 #endif
 
-#ifdef GFX_OPENGL_ENABLED
+#ifdef GFX_BUILD_OPENGL
 struct OpenGLError : public GFXError {};
 
 struct OpenGLShaderCompileError : public OpenGLError
 {
 public:
     inline OpenGLShaderCompileError(const utils::String& desc) : m_description(desc) {}
-    ERR_DESC { return m_description; }
+    ERR_DESC(m_description)
 
 private:
     utils::String m_description;
@@ -76,7 +82,7 @@ struct OpenGLShaderLinkError : public OpenGLError
 {
 public:
     inline OpenGLShaderLinkError(const utils::String& desc) : m_description(desc) {}
-    ERR_DESC { return m_description; }
+    ERR_DESC(m_description)
 
 private:
     utils::String m_description;
@@ -94,7 +100,7 @@ public:
         }        
     }
     
-    ERR_DESC { return m_description; }
+    ERR_DESC(m_description)
 
 private:
     utils::String m_description;

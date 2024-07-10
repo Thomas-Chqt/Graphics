@@ -16,28 +16,63 @@
 namespace gfx
 {
 
-utils::uint64 toOpenGLPixelFormat(ColorPixelFormat pxFormat)
+utils::uint64 toOpenGLPixelFormat(PixelFormat pxFormat)
 {
     switch (pxFormat)
     {
-    case ColorPixelFormat::RGBA:
+    case PixelFormat::RGBA:
         return GL_RGBA;
-    case ColorPixelFormat::BGRA:
+    case PixelFormat::BGRA:
         return GL_BGRA;
+    default:
+        throw utils::RuntimeError("not implemented");
     }
 }
-ColorPixelFormat fromOpenGLPixelFormat(utils::uint64 glPxFormat)
+
+PixelFormat fromOpenGLPixelFormat(utils::uint64 glPxFormat)
 {
     switch (glPxFormat)
     {
     case GL_RGBA:
-        return ColorPixelFormat::RGBA;
-
+        return PixelFormat::RGBA;
     case GL_BGRA:
-        return ColorPixelFormat::BGRA;
-
+        return PixelFormat::BGRA;
     default:
         throw utils::RuntimeError("not implemented");
+    }
+
+}
+
+int toOpenGLVertexAttributeFormatSize(VertexAttributeFormat format)
+{
+    switch (format)
+    {
+    case VertexAttributeFormat::vec2f:
+        return 2;
+    case VertexAttributeFormat::vec3f:
+        return 2;
+    }
+}
+
+utils::uint32 toOpenGLVertexAttributeFormatType(VertexAttributeFormat format)
+{
+    switch (format)
+    {
+    case VertexAttributeFormat::vec2f:
+        return GL_FLOAT;
+    case VertexAttributeFormat::vec3f:
+        return GL_FLOAT;
+    }
+}
+
+utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat format)
+{
+    switch (format)
+    {
+    case VertexAttributeFormat::vec2f:
+        return GL_FALSE;
+    case VertexAttributeFormat::vec3f:
+        return GL_FALSE;
     }
 }
 

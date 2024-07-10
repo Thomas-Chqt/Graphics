@@ -16,7 +16,7 @@
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
-    template<typename T> using id = void*;
+    template<typename T> using id = T*;
 
     class MTLDevice;
     class MTLTextureDescriptor;
@@ -34,7 +34,7 @@ public:
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&);
 
-    MetalTexture(id<MTLDevice>, MTLTextureDescriptor*);
+    MetalTexture(id<MTLDevice>, const Texture::Descriptor&);
 
     utils::uint32 width() override;
     utils::uint32 height() override;

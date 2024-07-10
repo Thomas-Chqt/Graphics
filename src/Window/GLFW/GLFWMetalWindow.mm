@@ -9,34 +9,21 @@
 
 #define GLFW_EXPOSE_NATIVE_COCOA
 
+#include "GraphicAPI/Metal/MetalTexture.hpp"
+#include "Graphics/Enums.hpp"
+#include "Graphics/Texture.hpp"
+#include "Window/MetalWindow.hpp"
 #include "Window/GLFW/GLFWMetalWindow.hpp"
-
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-
 #include <AppKit/NSWindow.h>
 #include <QuartzCore/CAMetalLayer.h>
 #include <CoreGraphics/CGGeometry.h>
-
-#include "imguiBackends/imgui_impl_glfw.h"
-
 #include "Graphics/Event.hpp"
+#include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 
 namespace gfx
 {
-
-#ifdef GFX_IMGUI_ENABLED
-void GLFWMetalWindow::imGuiInit()
-{
-    ImGui_ImplGlfw_InitForOther(m_glfwWindow, true);
-}
-#endif
-
-CAMetalLayer* GLFWMetalWindow::metalLayer() { @autoreleasepool 
-{
-    NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
-    return (CAMetalLayer*)nswindow.contentView.layer;
-}}
 
 GLFWMetalWindow::GLFWMetalWindow(int w, int h) { @autoreleasepool
 {
@@ -62,8 +49,51 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h) { @autoreleasepool
             ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
             NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
             ((CAMetalLayer*)nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
+            recreateDepthTexture(frameBufferW, frameBufferH);
         });
     }, this);
 }}
+
+#ifdef GFX_IMGUI_ENABLED
+void GLFWMetalWindow::imGuiInit()
+{
+    ImGui_ImplGlfw_InitForOther(m_glfwWindow, true);
+}
+#endif
+
+void GLFWMetalWindow::setGraphicAPI(MetalGraphicAPI* api) { @autoreleasepool
+{
+    if (m_graphicAPI != api)
+    {
+        m_graphicAPI = api;
+        NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
+        static_cast<CAMetalLayer*>(nswindow.contentView.layer).device = m_graphicAPI->device();
+        int frameBufferW, frameBufferH;
+        ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
+        recreateDepthTexture(frameBufferW, frameBufferH);
+    }
+}}
+
+void GLFWMetalWindow::makeCurrentDrawables() { @autoreleasepool
+{
+    NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
+    m_currentDrawable = [static_cast<CAMetalLayer*>(nswindow.contentView.layer) nextDrawable];
+    [m_currentDrawable retain];
+}}
+
+void GLFWMetalWindow::clearCurrentDrawables() { @autoreleasepool
+{
+    [m_currentDrawable release];
+}}
+
+void GLFWMetalWindow::recreateDepthTexture(utils::uint32 w, utils::uint32 h)
+{
+    Texture::Descriptor descriptor;
+    descriptor.width = w;
+    descriptor.height = h;
+    descriptor.pixelFormat = PixelFormat::Depth32;
+    descriptor.storageMode = StorageMode::Private;
+    m_currentDepthTexture = MetalTexture(m_graphicAPI->device(), descriptor);
+}
 
 }

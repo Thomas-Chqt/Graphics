@@ -8,6 +8,8 @@
  */
 
 #include "GraphicAPI/Metal/MetalTexture.hpp"
+#include "Graphics/Enums.hpp"
+#include "Graphics/Error.hpp"
 #include <Metal/MTLTypes.h>
 #include <Metal/Metal.h>
 
@@ -19,9 +21,26 @@ MetalTexture::MetalTexture(MetalTexture&& mv) : m_mtlTexture(mv.m_mtlTexture)
     mv.m_mtlTexture = nullptr;
 }
 
-MetalTexture::MetalTexture(id<MTLDevice> device, MTLTextureDescriptor* desc) { @autoreleasepool
+MetalTexture::MetalTexture(id<MTLDevice> device, const Texture::Descriptor& desc) { @autoreleasepool
 {
-    m_mtlTexture = [device newTextureWithDescriptor:desc];
+    MTLTextureDescriptor* mtlTextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
+    mtlTextureDescriptor.textureType = MTLTextureType2D;
+    mtlTextureDescriptor.pixelFormat = (MTLPixelFormat)toMetalPixelFormat(desc.pixelFormat);
+    mtlTextureDescriptor.width = desc.width;
+    mtlTextureDescriptor.height = desc.height;
+    switch (desc.storageMode)
+    {
+    case StorageMode::Private:
+        mtlTextureDescriptor.storageMode = MTLStorageModePrivate;
+        break;
+    case StorageMode::Shared:
+        mtlTextureDescriptor.storageMode = MTLStorageModeShared;
+        break;
+    }
+
+    m_mtlTexture = [device newTextureWithDescriptor:mtlTextureDescriptor];
+    if (!m_mtlTexture)
+        throw MTLTextureCreationError();
 }}
 
 utils::uint32 MetalTexture::width() { @autoreleasepool
@@ -44,7 +63,7 @@ void MetalTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, u
 
 MetalTexture::~MetalTexture() { @autoreleasepool
 {
-    if (m_mtlTexture)
+    if (m_mtlTexture != nullptr)
         [m_mtlTexture release];
 }}
 

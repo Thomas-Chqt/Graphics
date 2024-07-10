@@ -17,38 +17,42 @@
 namespace gfx
 {
 
-utils::uint64 toMetalPixelFormat(ColorPixelFormat pxFormat)
+utils::uint64 toMetalPixelFormat(PixelFormat pxFormat)
 {
     switch (pxFormat)
     {
-    case ColorPixelFormat::RGBA:
+    case PixelFormat::RGBA:
         return MTLPixelFormatRGBA8Unorm;
-    case ColorPixelFormat::BGRA:
+    case PixelFormat::BGRA:
         return MTLPixelFormatBGRA8Unorm;
-    }
-}
-
-utils::uint64 toMetalPixelFormat(DepthPixelFormat pxFormat)
-{
-    switch (pxFormat)
-    {
-    case DepthPixelFormat::Depth32:
+    case PixelFormat::Depth32:
         return MTLPixelFormatDepth32Float;
     }
 }
 
-ColorPixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat)
+PixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat)
 {
     switch (mtlPxFormat)
     {
     case MTLPixelFormatRGBA8Unorm:
-        return ColorPixelFormat::RGBA;
-
+        return PixelFormat::RGBA;
     case MTLPixelFormatBGRA8Unorm:
-        return ColorPixelFormat::BGRA;
-
+        return PixelFormat::BGRA;
+    case MTLPixelFormatDepth32Float:
+        return PixelFormat::Depth32;
     default:
         throw utils::RuntimeError("not implemented");
+    }
+}
+
+utils::uint64 toMetalVertexAttributeFormat(VertexAttributeFormat format)
+{
+    switch (format)
+    {
+    case VertexAttributeFormat::vec2f:
+        return MTLVertexFormatFloat2;
+    case VertexAttributeFormat::vec3f:
+        return MTLVertexFormatFloat3;
     }
 }
 

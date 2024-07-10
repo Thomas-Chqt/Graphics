@@ -10,8 +10,8 @@
 #ifndef OPENGLGRAPHICSPIPELINE_HPP
 # define OPENGLGRAPHICSPIPELINE_HPP
 
+#include "Graphics/Enums.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "UtilsCPP/String.hpp"
 #include <GL/glew.h>
 
 namespace gfx
@@ -26,17 +26,16 @@ public:
 
     OpenGLGraphicPipeline(const GraphicPipeline::Descriptor&);
 
-    utils::uint32 findVertexUniformIndex(const utils::String& name) const override;
-    utils::uint32 findFragmentUniformIndex(const utils::String& name) const override;
-
     inline GLuint shaderProgramID() { return m_shaderProgramID; }
-    inline BlendOperation blendOperation() { return m_blendOperation; }
+    void enableVertexLayout();
+    inline BlendOperation blendOperation() { return m_descriptor.blendOperation; }
     
     ~OpenGLGraphicPipeline();
 
 private:
     GLuint m_shaderProgramID = 0;
-    BlendOperation m_blendOperation;
+    GLuint m_vertexArrayID = 0;
+    GraphicPipeline::Descriptor m_descriptor;
 
 public:
     OpenGLGraphicPipeline& operator = (const OpenGLGraphicPipeline&) = delete;

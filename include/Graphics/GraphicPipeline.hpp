@@ -10,8 +10,9 @@
 #ifndef GRAPHICSPIPELINE_HPP
 # define GRAPHICSPIPELINE_HPP
 
-#include "UtilsCPP/String.hpp"
-#include "UtilsCPP/Types.hpp"
+#include "Shader.hpp"
+#include "VertexLayout.hpp"
+
 #include "Enums.hpp"
 
 namespace gfx
@@ -22,24 +23,20 @@ class GraphicPipeline
 public:
     struct Descriptor
     {
-        utils::String metalVSFunction;
-        utils::String metalFSFunction;
+        VertexLayout vertexLayout;
 
-        utils::String openglVSCode;
-        utils::String openglFSCode;
+        Shader* vertexShader;
+        Shader* fragmentShader;
 
-        gfx::ColorPixelFormat colorPixelFormat = ColorPixelFormat::BGRA;
-        gfx::DepthPixelFormat depthPixelFormat = DepthPixelFormat::Depth32;
+        PixelFormat colorPixelFormat = PixelFormat::BGRA;
+        PixelFormat depthPixelFormat = PixelFormat::Depth32;
         
-        gfx::BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
+        BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
     };
 
 public:
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline(GraphicPipeline&&)      = delete;
-
-    virtual utils::uint32 findVertexUniformIndex(const utils::String& name) const = 0;
-    virtual utils::uint32 findFragmentUniformIndex(const utils::String& name) const = 0;
 
     virtual ~GraphicPipeline() = default;
 

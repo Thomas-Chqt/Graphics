@@ -10,7 +10,6 @@
 #ifndef METALGRAPHICPIPELINE_HPP
 # define METALGRAPHICPIPELINE_HPP
 
-#include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/String.hpp"
@@ -20,10 +19,9 @@
     #import <Metal/Metal.h>
     #import <QuartzCore/CAMetalLayer.h>
 #else
-    template<typename T> using id = void*;
+    template<typename T> using id = T*;
 
     class MTLDevice;
-    class MTLLibrary;
     class MTLRenderPipelineState;
     class MTLDepthStencilState;
 #endif // OBJCPP
@@ -39,15 +37,12 @@ public:
     MetalGraphicPipeline(const MetalGraphicPipeline&) = delete;
     MetalGraphicPipeline(MetalGraphicPipeline&&)      = delete;
 
-    MetalGraphicPipeline(id<MTLDevice>, id<MTLLibrary>, const GraphicPipeline::Descriptor&);
-
-    inline utils::uint32 findVertexUniformIndex(const utils::String& name) const override { return (utils::uint32)m_vertexUniformsIndices[name]; }
-    inline utils::uint32 findFragmentUniformIndex(const utils::String& name) const override { return (utils::uint32)m_fragmentUniformsIndices[name]; }
+    MetalGraphicPipeline(const id<MTLDevice>&, const GraphicPipeline::Descriptor&);
     
     const id<MTLRenderPipelineState>& renderPipelineState() { return m_renderPipelineState; };
     const id<MTLDepthStencilState>& depthStencilState() { return m_depthStencilState; };
     
-    ~MetalGraphicPipeline();
+    ~MetalGraphicPipeline() override;
 
 private:
     id<MTLRenderPipelineState> m_renderPipelineState = nullptr;
