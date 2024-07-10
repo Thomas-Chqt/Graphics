@@ -25,6 +25,7 @@ public:
         utils::uint32 height;
         gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
         StorageMode storageMode = StorageMode::Shared;
+        TextureUsage usage = TextureUsage::ShaderRead;
     };
 
 public:

@@ -16,7 +16,7 @@
 namespace gfx
 {
 
-utils::uint64 toOpenGLPixelFormat(PixelFormat pxFormat)
+utils::uint32 toOpenGLPixelFormat(PixelFormat pxFormat)
 {
     switch (pxFormat)
     {
@@ -29,7 +29,7 @@ utils::uint64 toOpenGLPixelFormat(PixelFormat pxFormat)
     }
 }
 
-PixelFormat fromOpenGLPixelFormat(utils::uint64 glPxFormat)
+PixelFormat fromOpenGLPixelFormat(utils::uint32 glPxFormat)
 {
     switch (glPxFormat)
     {

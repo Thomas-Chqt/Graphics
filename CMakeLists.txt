@@ -66,7 +66,7 @@ add_subdirectory("src")
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 
 if (GFX_BUILD_IMGUI)
-    target_compile_definitions(Graphics PUBLIC GFX_IMGUI_ENABLED)
+    target_compile_definitions(Graphics PUBLIC GFX_BUILD_IMGUI)
 endif()
 
 if(GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")

@@ -22,6 +22,10 @@
 #include "Graphics/Event.hpp"
 #include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 
+#ifdef GFX_BUILD_IMGUI
+    #include "imguiBackends/imgui_impl_glfw.h"
+#endif
+
 namespace gfx
 {
 
@@ -54,7 +58,7 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h) { @autoreleasepool
     }, this);
 }}
 
-#ifdef GFX_IMGUI_ENABLED
+#ifdef GFX_BUILD_IMGUI
 void GLFWMetalWindow::imGuiInit()
 {
     ImGui_ImplGlfw_InitForOther(m_glfwWindow, true);
@@ -84,6 +88,7 @@ void GLFWMetalWindow::makeCurrentDrawables() { @autoreleasepool
 void GLFWMetalWindow::clearCurrentDrawables() { @autoreleasepool
 {
     [m_currentDrawable release];
+    m_currentDrawable = nullptr;
 }}
 
 void GLFWMetalWindow::recreateDepthTexture(utils::uint32 w, utils::uint32 h)
@@ -93,6 +98,7 @@ void GLFWMetalWindow::recreateDepthTexture(utils::uint32 w, utils::uint32 h)
     descriptor.height = h;
     descriptor.pixelFormat = PixelFormat::Depth32;
     descriptor.storageMode = StorageMode::Private;
+    descriptor.usage = TextureUsage::RenderTarget;
     m_currentDepthTexture = MetalTexture(m_graphicAPI->device(), descriptor);
 }
 

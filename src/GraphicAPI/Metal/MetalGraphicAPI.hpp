@@ -21,6 +21,9 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Window/MetalWindow.hpp"
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
+#endif
 
 #ifdef __OBJC__
     #import <Metal/Metal.h>
@@ -61,6 +64,10 @@ public:
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
     utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const override;
 
+    #ifdef GFX_BUILD_IMGUI
+        void initImGui(ImGuiConfigFlags flags = ImGuiConfigFlags_DockingEnable) override;
+    #endif
+
     void beginFrame() override;
 
     inline void setLoadAction(LoadAction act) override { m_nextPassLoadAction = act; }
@@ -68,6 +75,9 @@ public:
 
     void beginRenderPass() override;
     void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
+    #ifdef GFX_BUILD_IMGUI
+        void beginImguiRenderPass() override;
+    #endif
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<Buffer>&) override;
@@ -78,6 +88,10 @@ public:
     void endRenderPass() override;
 
     void endFrame() override;
+    
+    #ifdef GFX_BUILD_IMGUI
+        void terminateImGui() override;
+    #endif
 
     ~MetalGraphicAPI() override;
 
@@ -86,6 +100,9 @@ private:
     utils::SharedPtr<MetalWindow> m_window;
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
+    #ifdef GFX_BUILD_IMGUI
+        bool m_isImguiInit = false;
+    #endif
 
     // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
@@ -95,6 +112,9 @@ private:
     math::rgba m_nextPassClearColor = BLACK;
     
     // pass time
+    #ifdef GFX_BUILD_IMGUI
+        bool m_isImguiRenderPass = false;
+    #endif
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
     utils::SharedPtr<MetalFrameBuffer> m_frameBuffer;
     utils::SharedPtr<MetalGraphicPipeline> m_graphicPipeline;

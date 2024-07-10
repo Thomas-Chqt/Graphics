@@ -29,6 +29,11 @@
 #include "Window/OpenGLWindow.hpp"
 #include "UtilsCPP/Macros.hpp"
 
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
+    #include "imguiBackends/imgui_impl_opengl3.h"
+#endif
+
 #define GL_CALL(x) { x; GLenum __err__; if ((__err__ = glGetError()) != GL_NO_ERROR) throw OpenGLCallError(__err__); }
 
 namespace gfx
@@ -73,10 +78,23 @@ utils::SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const utils::Shar
     return utils::makeShared<OpenGLFrameBuffer>(colorTexture).staticCast<FrameBuffer>();
 }
 
-void OpenGLGraphicAPI::beginFrame()
+#ifdef GFX_BUILD_IMGUI
+void OpenGLGraphicAPI::initImGui(ImGuiConfigFlags flags)
 {
-    m_window->makeContextCurrent();
+    ImGui::CreateContext();
+    
+    ImGui::GetIO().ConfigFlags = flags;
+
+    m_window->imGuiInit();
+    #ifdef __APPLE__
+        ImGui_ImplOpenGL3_Init("#version 150");
+    #else
+        ImGui_ImplOpenGL3_Init("#version 130");
+    #endif
+
+    m_isImguiInit = true;
 }
+#endif
 
 void OpenGLGraphicAPI::beginRenderPass()
 {
@@ -94,6 +112,19 @@ void OpenGLGraphicAPI::beginRenderPass()
         GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
     }
 }
+
+#ifdef GFX_BUILD_IMGUI
+void OpenGLGraphicAPI::beginImguiRenderPass()
+{
+    beginRenderPass();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    m_window->imGuiNewFrame();
+    ImGui::NewFrame();
+
+    m_isImguiRenderPass = true;
+}
+#endif
 
 void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuff)
 {
@@ -173,6 +204,13 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buff)
 
 void OpenGLGraphicAPI::endRenderPass()
 {
+    if (m_isImguiRenderPass)
+    {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        m_isImguiRenderPass = false;
+    }
+
     m_indexBuffer.clear();
     m_vertextBuffer.clear();
     m_graphicPipeline.clear();
@@ -181,7 +219,24 @@ void OpenGLGraphicAPI::endRenderPass()
 
 void OpenGLGraphicAPI::endFrame()
 {
+    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
     m_window->swapBuffer();
 }
+
+#ifdef GFX_BUILD_IMGUI
+void OpenGLGraphicAPI::terminateImGui()
+{
+    ImGui_ImplOpenGL3_Shutdown();
+    m_window->imGuiShutdown();
+    ImGui::DestroyContext();
+
+    m_isImguiInit = false;
+}
+#endif
 
 }

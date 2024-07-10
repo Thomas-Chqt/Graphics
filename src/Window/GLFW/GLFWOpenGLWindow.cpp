@@ -12,14 +12,14 @@
 #include <cassert>
 #include "GL/glew.h"
 
-#ifdef GFX_IMGUI_ENABLED
+#ifdef GFX_BUILD_IMGUI
 #include "imguiBackends/imgui_impl_glfw.h"
 #endif
 
 namespace gfx
 {
 
-#ifdef GFX_IMGUI_ENABLED
+#ifdef GFX_BUILD_IMGUI
 void GLFWOpenGLWindow::imGuiInit()
 {
     ImGui_ImplGlfw_InitForOpenGL(m_glfwWindow, true);

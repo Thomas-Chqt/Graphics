@@ -19,6 +19,10 @@
 #include "UtilsCPP/Types.hpp"
 #include "Math/Vector.hpp"
 
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
+#endif
+
 namespace gfx
 {
 
@@ -34,6 +38,10 @@ public:
     virtual utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const = 0;
     virtual utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const = 0;
 
+    #ifdef GFX_BUILD_IMGUI
+        virtual void initImGui(ImGuiConfigFlags flags = ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable) = 0;
+    #endif
+
     virtual void beginFrame() = 0;
 
     virtual void setLoadAction(LoadAction) = 0;
@@ -41,7 +49,10 @@ public:
 
     virtual void beginRenderPass() = 0;
     virtual void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) = 0;
-
+    #ifdef GFX_BUILD_IMGUI
+        virtual void beginImguiRenderPass() = 0;
+    #endif
+    
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
     virtual void useVertexBuffer(const utils::SharedPtr<Buffer>&) = 0;
 
@@ -51,6 +62,10 @@ public:
     virtual void endRenderPass() = 0;
 
     virtual void endFrame() = 0;
+
+    #ifdef GFX_BUILD_IMGUI
+        virtual void terminateImGui() = 0;
+    #endif
 
     virtual ~GraphicAPI() = default;
 

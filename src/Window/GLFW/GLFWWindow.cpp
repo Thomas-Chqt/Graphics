@@ -13,14 +13,14 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
 
-#ifdef GFX_IMGUI_ENABLED
+#ifdef GFX_BUILD_IMGUI
 #include "imguiBackends/imgui_impl_glfw.h"
 #endif
 
 namespace gfx
 {
 
-#ifdef GFX_IMGUI_ENABLED
+#ifdef GFX_BUILD_IMGUI
 void GLFWWindow::imGuiShutdown()
 {
     ImGui_ImplGlfw_Shutdown();
@@ -40,6 +40,11 @@ void GLFWWindow::getWindowSize(utils::uint32* width, utils::uint32* height) cons
 void GLFWWindow::getFrameBufferSize(utils::uint32* width, utils::uint32* height) const
 {
     ::glfwGetFramebufferSize(m_glfwWindow, (int*)width, (int*)height);
+}
+
+void GLFWWindow::getContentScale(float* xscale, float* yscale) const
+{
+    ::glfwGetWindowContentScale(m_glfwWindow, xscale, yscale);
 }
 
 GLFWWindow::~GLFWWindow()

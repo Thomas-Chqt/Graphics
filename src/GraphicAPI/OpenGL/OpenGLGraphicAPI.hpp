@@ -22,6 +22,9 @@
 #include "Graphics/Window.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Window/OpenGLWindow.hpp"
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
+#endif
 
 namespace gfx
 {
@@ -41,13 +44,20 @@ public:
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
     utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const override;
 
-    void beginFrame() override;
+    #ifdef GFX_BUILD_IMGUI
+        void initImGui(ImGuiConfigFlags flags = ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable) override;
+    #endif
+
+    inline void beginFrame() override {}
 
     inline void setLoadAction(LoadAction act) override { m_nextPassLoadAction = act; }
     inline void setClearColor(math::rgba col) override { m_nextPassClearColor = col; }
 
     void beginRenderPass() override;
     void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
+    #ifdef GFX_BUILD_IMGUI
+        void beginImguiRenderPass() override;
+    #endif
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
     void useVertexBuffer(const utils::SharedPtr<Buffer>&) override;
@@ -59,17 +69,27 @@ public:
 
     void endFrame() override;
 
+    #ifdef GFX_BUILD_IMGUI
+        void terminateImGui() override;
+    #endif
+
     ~OpenGLGraphicAPI() override = default;
 
 private:
     // Life time
     utils::SharedPtr<OpenGLWindow> m_window;
+    #ifdef GFX_BUILD_IMGUI
+        bool m_isImguiInit = false;
+    #endif
 
     // pass description
     LoadAction m_nextPassLoadAction = LoadAction::clear;
     math::rgba m_nextPassClearColor = BLACK;
 
     //pass time
+    #ifdef GFX_BUILD_IMGUI
+        bool m_isImguiRenderPass = false;
+    #endif
     utils::SharedPtr<OpenGLFrameBuffer> m_frameBuffer;
     utils::SharedPtr<OpenGLGraphicPipeline> m_graphicPipeline;
     utils::SharedPtr<OpenGLBuffer> m_vertextBuffer;

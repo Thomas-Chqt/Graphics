@@ -33,7 +33,7 @@ public:
     GLFWMetalWindow(const GLFWMetalWindow&) = delete;
     GLFWMetalWindow(GLFWMetalWindow&&)      = delete;
     
-    #ifdef GFX_IMGUI_ENABLED
+    #ifdef GFX_BUILD_IMGUI
         void imGuiInit() override;
     #endif
 
@@ -50,7 +50,7 @@ private:
     void recreateDepthTexture(utils::uint32 w, utils::uint32 h);
 
     MetalGraphicAPI* m_graphicAPI = nullptr;
-    id<CAMetalDrawable> m_currentDrawable;
+    id<CAMetalDrawable> m_currentDrawable = nullptr;
     MetalTexture m_currentDepthTexture;
 
 public:

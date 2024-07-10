@@ -39,6 +39,11 @@
 #include <cstddef>
 #include "Graphics/Error.hpp"
 
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
+    #include "imguiBackends/imgui_impl_metal.h"
+#endif
+
 namespace gfx
 {
 
@@ -80,6 +85,20 @@ utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const utils::Share
     return utils::makeShared<MetalFrameBuffer>(colorTexture).staticCast<FrameBuffer>();
 }
 
+#ifdef GFX_BUILD_IMGUI
+void MetalGraphicAPI::initImGui(ImGuiConfigFlags flags)
+{
+    ImGui::CreateContext();
+    
+    ImGui::GetIO().ConfigFlags = flags;
+
+    m_window->imGuiInit();
+    ImGui_ImplMetal_Init(m_mtlDevice);
+
+    m_isImguiInit = true;
+}
+#endif
+
 void MetalGraphicAPI::beginFrame() { @autoreleasepool
 {
     m_commandBuffer = [[m_commandQueue commandBuffer] retain];
@@ -88,7 +107,8 @@ void MetalGraphicAPI::beginFrame() { @autoreleasepool
 
 void MetalGraphicAPI::beginRenderPass() { @autoreleasepool
 {
-    m_window->makeCurrentDrawables();
+    if (m_window->currentDrawable() == nullptr)
+        m_window->makeCurrentDrawables();
 
     MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
     
@@ -124,6 +144,23 @@ void MetalGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& targe
         throw RenderCommandEncoderCreationError();
 }}
 
+#ifdef GFX_BUILD_IMGUI
+void MetalGraphicAPI::beginImguiRenderPass() { @autoreleasepool
+{
+    beginRenderPass();
+
+    MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
+    renderPassDescriptor.colorAttachments[0].texture = m_window->currentDrawable().texture;
+    renderPassDescriptor.depthAttachment.texture = m_window->currentDepthTexture().mtlTexture();
+
+    m_window->imGuiNewFrame();
+    ImGui_ImplMetal_NewFrame(renderPassDescriptor);
+    ImGui::NewFrame();
+
+    m_isImguiRenderPass = true;
+}}
+#endif
+
 void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& pipeline) { @autoreleasepool
 {
     m_graphicPipeline = pipeline.forceDynamicCast<MetalGraphicPipeline>();
@@ -154,14 +191,16 @@ void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buffer
 
 void MetalGraphicAPI::endRenderPass()
 {
+    if (m_isImguiRenderPass)
+    {
+        ImGui::Render();
+        ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
+        m_isImguiRenderPass = false;
+    }
+
     [m_commandEncoder endEncoding];
     [m_commandEncoder release];
 
-    if (m_frameBuffer == false)
-    {
-        [m_commandBuffer presentDrawable:m_window->currentDrawable()];
-        m_window->clearCurrentDrawables();
-    }
     m_indexBuffer.clear();
     m_vertexBuffer.clear();
     m_graphicPipeline.clear();
@@ -170,9 +209,29 @@ void MetalGraphicAPI::endRenderPass()
 
 void MetalGraphicAPI::endFrame()
 {
+    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
+    if (m_window->currentDrawable() != nullptr)
+    {
+        [m_commandBuffer presentDrawable:m_window->currentDrawable()];
+        m_window->clearCurrentDrawables();
+    }
     [m_commandBuffer commit];
     [m_commandBuffer release];
 }
+
+#ifdef GFX_BUILD_IMGUI
+void MetalGraphicAPI::terminateImGui()
+{
+    ImGui_ImplMetal_Shutdown();
+    m_window->imGuiShutdown();
+    ImGui::DestroyContext();
+}
+#endif
 
 MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
 {

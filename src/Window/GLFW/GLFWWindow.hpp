@@ -36,14 +36,15 @@ public:
     inline void setCursorPos(int x, int y) override { ::glfwSetCursorPos(m_glfwWindow, (double)x, (double)y); }
     inline void setCursorVisibility(bool val) override { ::glfwSetInputMode(m_glfwWindow, GLFW_CURSOR, val ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN); }
 
-    #ifdef GFX_IMGUI_ENABLED
+    #ifdef GFX_BUILD_IMGUI
         void imGuiShutdown() override;
         void imGuiNewFrame() override;
     #endif
 
     void getWindowSize(utils::uint32* width, utils::uint32* height) const override;
     void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const override;
-    
+    void getContentScale(float* xscale, float* yscale) const override;
+
     ~GLFWWindow();
 
 protected:

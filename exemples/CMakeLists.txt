@@ -20,3 +20,7 @@ FetchContent_MakeAvailable(assimp)
 set_target_properties(assimp PROPERTIES FOLDER "dependencies")
 
 add_subdirectory(triangle)
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(imguiDemo)
+endif()

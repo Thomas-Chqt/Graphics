@@ -34,6 +34,7 @@ public:
 
     virtual void getWindowSize(utils::uint32* width, utils::uint32* height) const = 0;
     virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const = 0;
+    virtual void getContentScale(float* xscale, float* yscale) const = 0;
 
     virtual ~Window() = default;
 

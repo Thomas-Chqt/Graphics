@@ -37,6 +37,15 @@ MetalTexture::MetalTexture(id<MTLDevice> device, const Texture::Descriptor& desc
         mtlTextureDescriptor.storageMode = MTLStorageModeShared;
         break;
     }
+    switch (desc.usage)
+    {
+    case TextureUsage::ShaderRead:
+        mtlTextureDescriptor.usage = MTLTextureUsageShaderRead;
+        break;
+    case TextureUsage::RenderTarget:
+        mtlTextureDescriptor.usage = MTLTextureUsageRenderTarget;
+        break;
+    }
 
     m_mtlTexture = [device newTextureWithDescriptor:mtlTextureDescriptor];
     if (!m_mtlTexture)
@@ -45,12 +54,12 @@ MetalTexture::MetalTexture(id<MTLDevice> device, const Texture::Descriptor& desc
 
 utils::uint32 MetalTexture::width() { @autoreleasepool
 {
-    return m_mtlTexture.width;
+    return (utils::uint32)m_mtlTexture.width;
 }}
 
 utils::uint32 MetalTexture::height() { @autoreleasepool
 {
-    return m_mtlTexture.height;
+    return (utils::uint32)m_mtlTexture.height;
 }}
 
 void MetalTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes) { @autoreleasepool
