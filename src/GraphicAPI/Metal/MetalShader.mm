@@ -8,7 +8,6 @@
  */
 
 #include "GraphicAPI/Metal/MetalShader.hpp"
-#include "Graphics/Enums.hpp"
 #include "Graphics/Error.hpp"
 
 namespace gfx

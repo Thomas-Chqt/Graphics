@@ -11,7 +11,6 @@
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/Types.hpp"
 
-#include <Metal/MTLRenderCommandEncoder.h>
 #import <Metal/Metal.h>
 
 namespace gfx

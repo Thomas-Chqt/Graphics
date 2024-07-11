@@ -50,7 +50,7 @@ int toOpenGLVertexAttributeFormatSize(VertexAttributeFormat format)
     case VertexAttributeFormat::vec2f:
         return 2;
     case VertexAttributeFormat::vec3f:
-        return 2;
+        return 3;
     }
 }
 
@@ -59,7 +59,6 @@ utils::uint32 toOpenGLVertexAttributeFormatType(VertexAttributeFormat format)
     switch (format)
     {
     case VertexAttributeFormat::vec2f:
-        return GL_FLOAT;
     case VertexAttributeFormat::vec3f:
         return GL_FLOAT;
     }
@@ -70,7 +69,6 @@ utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat forma
     switch (format)
     {
     case VertexAttributeFormat::vec2f:
-        return GL_FALSE;
     case VertexAttributeFormat::vec3f:
         return GL_FALSE;
     }

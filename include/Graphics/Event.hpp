@@ -76,13 +76,13 @@ public:
 
     inline const Window& window() const { return m_window; }
 
-    virtual ~WindowEvent() override = default;
+    ~WindowEvent() override = default;
 
 protected:
-    WindowEvent(Window& window);
+    explicit WindowEvent(Window& window);
 
 private:
-    virtual std::ostream& print(std::ostream& os) const override = 0;
+    std::ostream& print(std::ostream& os) const override = 0;
 
 protected:
     Window& m_window;
@@ -124,7 +124,7 @@ public:
     WindowRequestCloseEvent(const WindowRequestCloseEvent&) = delete;
     WindowRequestCloseEvent(WindowRequestCloseEvent&&)      = delete;
 
-    WindowRequestCloseEvent(Window& window);
+    explicit WindowRequestCloseEvent(Window& window);
 
     ~WindowRequestCloseEvent() override = default;
 
@@ -143,13 +143,13 @@ public:
     InputEvent(const InputEvent&) = delete;
     InputEvent(InputEvent&&)      = delete;
 
-    virtual ~InputEvent() override = default;
+    ~InputEvent() override = default;
 
 protected:
-    InputEvent(Window& window);
+    explicit InputEvent(Window& window);
 
 private:
-    virtual std::ostream& print(std::ostream& os) const override = 0;
+    std::ostream& print(std::ostream& os) const override = 0;
 
 public:
     InputEvent& operator = (const InputEvent&) = delete;
@@ -165,13 +165,13 @@ public:
 
     inline int keyCode() const { return m_keyCode; }
 
-    virtual ~KeyboardEvent() override = default;
+    ~KeyboardEvent() override = default;
 
 protected:
     KeyboardEvent(Window& window, int keyCode);
 
 private:
-    virtual std::ostream& print(std::ostream& os) const override = 0;
+    std::ostream& print(std::ostream& os) const override = 0;
 
 protected:
     int m_keyCode;
@@ -233,13 +233,13 @@ public:
     inline int mousePosX() const { return m_pos_x; }
     inline int mousePosY() const { return m_pos_y; }
 
-    virtual ~MouseEvent() override = default;
+    ~MouseEvent() override = default;
 
 protected:
     MouseEvent(Window& window, int posX, int posY);
 
 private:
-    virtual std::ostream& print(std::ostream& os) const override = 0;
+    std::ostream& print(std::ostream& os) const override = 0;
 
 protected:
     int m_pos_x;
@@ -271,7 +271,7 @@ private:
 private:
     inline std::ostream& print(std::ostream& os) const override { return os << "(ScrollEvent) -> Window: " << &m_window << " pos: " << m_pos_x << ',' << m_pos_y << " offset:" << m_offsetX << ',' << m_offsetY; };
 
-private:
+public:
     ScrollEvent& operator = (const ScrollEvent&) = delete;
     ScrollEvent& operator = (ScrollEvent&&)      = delete;
 };
@@ -285,7 +285,7 @@ public:
 
     MouseMoveEvent(Window& window, int posX, int posY);
 
-    virtual ~MouseMoveEvent() = default;
+    ~MouseMoveEvent() override = default;
 
 private:
     inline std::ostream& print(std::ostream& os) const override { return os << "(MouseMoveEvent) -> Window: " << &m_window << " X: " << m_pos_x << " Y: " << m_pos_y; }
@@ -304,7 +304,7 @@ public:
 
     inline int mouseCode() const { return m_mouseCode; }
 
-    virtual ~MouseButtonEvent() = default;
+    ~MouseButtonEvent() override = default;
 
 protected:
     MouseButtonEvent(Window& window, int posX, int posY, int mouseCode);
@@ -312,7 +312,7 @@ protected:
     int m_mouseCode;
 
 private:
-    virtual std::ostream& print(std::ostream& os) const override = 0;
+    std::ostream& print(std::ostream& os) const override = 0;
 
 public:
     MouseButtonEvent& operator = (const MouseButtonEvent&) = delete;
@@ -329,7 +329,7 @@ public:
 
     MouseDownEvent(Window& window, int posX, int posY, int mouseCode);
 
-    virtual ~MouseDownEvent() = default;
+    ~MouseDownEvent() override = default;
 
 private:
     inline std::ostream& print(std::ostream& os) const override { return os << "(MouseDownEvent) -> Window: " << &m_window << " mouseCode: " << (int)m_mouseCode << " X: " << m_pos_x << " Y: " << m_pos_y; }
@@ -348,7 +348,7 @@ public:
 
     MouseUpEvent(Window& window, int posX, int posY, int mouseCode);
 
-    virtual ~MouseUpEvent() = default;
+    ~MouseUpEvent() override = default;
 
 private:
     inline std::ostream& print(std::ostream& os) const override { return os << "(MouseUpEvent) -> Window: " << &m_window << " mouseCode: " << (int)m_mouseCode << " X: " << m_pos_x << " Y: " << m_pos_y; }

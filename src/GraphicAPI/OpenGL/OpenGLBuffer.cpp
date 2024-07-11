@@ -17,13 +17,13 @@ namespace gfx
 
 OpenGLBuffer::OpenGLBuffer(const Buffer::Descriptor& descriptor) : m_size(descriptor.size)
 {
-    GL_CALL(glGenBuffers(1, &m_bufferID));
+    GL_CALL(glGenBuffers(1, &m_bufferID))
 
-    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_bufferID));
+    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_bufferID))
     {
-        GL_CALL(glBufferData(GL_ARRAY_BUFFER, descriptor.size, descriptor.initialData, GL_DYNAMIC_COPY));
+        GL_CALL(glBufferData(GL_ARRAY_BUFFER, descriptor.size, descriptor.initialData, GL_DYNAMIC_COPY))
     }
-    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0))
 }
 
 OpenGLBuffer::~OpenGLBuffer()

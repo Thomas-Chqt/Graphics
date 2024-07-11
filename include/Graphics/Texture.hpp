@@ -21,8 +21,8 @@ class Texture
 public:
     struct Descriptor
     {
-        utils::uint32 width;
-        utils::uint32 height;
+        utils::uint32 width = 0;
+        utils::uint32 height = 0;
         gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
         StorageMode storageMode = StorageMode::Shared;
         TextureUsage usage = TextureUsage::ShaderRead;

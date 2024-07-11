@@ -25,14 +25,14 @@ namespace gfx
 {
 
 #ifdef GFX_BUILD_METAL
-utils::SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const utils::SharedPtr<Window>& window) const
+utils::SharedPtr<GraphicAPI> Platform::newMetalGraphicAPI(const utils::SharedPtr<Window>& window) const // NOLINT(*-convert-member-functions-to-static)
 {
     return utils::SharedPtr<GraphicAPI>(new MetalGraphicAPI(window));
 }
 #endif
 
 #ifdef GFX_BUILD_OPENGL
-utils::SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const utils::SharedPtr<Window>& window) const
+utils::SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const utils::SharedPtr<Window>& window) const // NOLINT(*-convert-member-functions-to-static)
 {
     return utils::SharedPtr<GraphicAPI>(new OpenGLGraphicAPI(window));
 }
@@ -47,7 +47,7 @@ utils::SharedPtr<Window> Platform::newWindow(int w, int h) const
     #else
         if (const char* val = std::getenv("GFX_USED_API"))
         {
-            if (utils::String(std::getenv("GFX_USED_API")) == utils::String("OPENGL"))   
+            if (utils::String(val) == utils::String("OPENGL"))
                 return newOpenGLWindow(w, h);
         }
         return newMetalWindow(w, h);
