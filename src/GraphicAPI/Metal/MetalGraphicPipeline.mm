@@ -10,6 +10,7 @@
 #include "GraphicAPI/Metal/MetalShader.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Error.hpp"
+#include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 #include <Metal/Metal.h>
@@ -82,9 +83,20 @@ MetalGraphicPipeline::MetalGraphicPipeline(const id<MTLDevice>& mtlDevice, const
     depthStencilDescriptor.depthWriteEnabled = YES;
 
 
-    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:renderPipelineDescriptor error:nullptr];
+    MTLAutoreleasedRenderPipelineReflection reflection = nullptr;
+
+    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:renderPipelineDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:nullptr];
     if (m_renderPipelineState == nil)
         throw MTLRenderPipelineStateCreationError();
+
+    NSArray<id<MTLBinding>>* vertexBindings = reflection.vertexBindings;
+    NSArray<id<MTLBinding>>* fragmentBindings = reflection.fragmentBindings;
+
+    for (uint32 i = 0; i < vertexBindings.count; i++)
+        m_vertexUniformsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+
+    for (uint32 i = 0; i < fragmentBindings.count; i++)
+        m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
 
     m_depthStencilState = [mtlDevice newDepthStencilStateWithDescriptor:depthStencilDescriptor];
     if (m_renderPipelineState == nil)

@@ -38,7 +38,7 @@ public:
     MetalGraphicPipeline(MetalGraphicPipeline&&)      = delete;
 
     MetalGraphicPipeline(const id<MTLDevice>&, const GraphicPipeline::Descriptor&);
-    
+
     const id<MTLRenderPipelineState>& renderPipelineState() { return m_renderPipelineState; };
     const id<MTLDepthStencilState>& depthStencilState() { return m_depthStencilState; };
     
