@@ -25,7 +25,7 @@ public:
     OpenGLTexture(const OpenGLTexture&) = delete;
     OpenGLTexture(OpenGLTexture&&)      = delete;
 
-    OpenGLTexture(const Texture::Descriptor&);
+    explicit OpenGLTexture(const Texture::Descriptor&);
 
     inline utils::uint32 width() override { return m_width; }
     inline utils::uint32 height() override { return m_height; }
@@ -37,10 +37,10 @@ public:
     ~OpenGLTexture() override;
 
 private:
-    GLuint m_textureID;
-    const utils::uint32 m_width;
-    const utils::uint32 m_height;
-    const PixelFormat m_pixelFormat;
+    GLuint m_textureID = 0;
+    const utils::uint32 m_width = 0;
+    const utils::uint32 m_height = 0;
+    const PixelFormat m_pixelFormat = PixelFormat::BGRA;
 
 public:
     OpenGLTexture& operator = (const OpenGLTexture&) = delete;

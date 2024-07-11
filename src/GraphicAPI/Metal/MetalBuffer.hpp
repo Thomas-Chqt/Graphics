@@ -33,9 +33,9 @@ public:
 
     MetalBuffer(const id<MTLDevice>&, const Buffer::Descriptor&);
 
-    utils::uint64 size() override;
+    utils::uint64 size() const override;
 
-    inline const id<MTLBuffer> mtlBuffer() { return m_mtlBuffer; }
+    inline const id<MTLBuffer>& mtlBuffer() { return m_mtlBuffer; }
     
     ~MetalBuffer() override;
 

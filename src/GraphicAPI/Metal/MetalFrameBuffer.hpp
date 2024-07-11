@@ -25,14 +25,14 @@ public:
     MetalFrameBuffer(const MetalFrameBuffer&) = delete;
     MetalFrameBuffer(MetalFrameBuffer&&)      = delete;
 
-    MetalFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>());
+    MetalFrameBuffer(const utils::SharedPtr<Texture>& colorTexture);
 
     void setColorTexture(const utils::SharedPtr<Texture>&) override;
     inline utils::SharedPtr<Texture> colorTexture() override { return m_colorTexture.staticCast<Texture>(); };
 
     inline utils::SharedPtr<MetalTexture> mtlColorTexture() { return m_colorTexture; }
 
-    virtual ~MetalFrameBuffer() override = default;
+    ~MetalFrameBuffer() override = default;
 
 private:
     utils::SharedPtr<MetalTexture> m_colorTexture;

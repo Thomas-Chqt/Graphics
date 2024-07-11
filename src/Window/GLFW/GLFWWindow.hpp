@@ -27,8 +27,8 @@ public:
     GLFWWindow(const GLFWWindow&) = delete;
     GLFWWindow(GLFWWindow&&)      = delete;
 
-    inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id = (void*)0) override { m_eventCallbacks.get(id).append(cb); }
-    inline void clearCallbacks(void* id = (void*)0) override { m_eventCallbacks.remove(id); }
+    inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id) override { m_eventCallbacks.get(id).append(cb); }
+    inline void clearCallbacks(void* id) override { m_eventCallbacks.remove(id); }
 
     inline bool isKeyPress(int key) override { return ::glfwGetKey(m_glfwWindow, key) == GLFW_PRESS; }
     inline bool isMousePress(int button) override { return ::glfwGetMouseButton(m_glfwWindow, button) == GLFW_PRESS; }
@@ -45,7 +45,7 @@ public:
     void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const override;
     void getContentScale(float* xscale, float* yscale) const override;
 
-    ~GLFWWindow();
+    ~GLFWWindow() override;
 
 protected:
     void setupGLFWcallback();

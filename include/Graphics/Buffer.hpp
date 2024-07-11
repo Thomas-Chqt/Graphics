@@ -30,7 +30,7 @@ public:
     Buffer(const Buffer&) = delete;
     Buffer(Buffer&&)      = delete;
 
-    virtual utils::uint64 size() = 0;
+    virtual utils::uint64 size() const = 0;
     
     virtual ~Buffer() = default;
 

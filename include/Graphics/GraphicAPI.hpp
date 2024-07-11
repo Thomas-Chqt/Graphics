@@ -36,10 +36,11 @@ public:
     virtual utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const = 0;
     virtual utils::SharedPtr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
     virtual utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const = 0;
-    virtual utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const = 0;
+    virtual utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const = 0;
 
     #ifdef GFX_BUILD_IMGUI
-        virtual void initImGui(ImGuiConfigFlags flags = ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable) = 0;
+        virtual void initImgui(ImGuiConfigFlags flags) = 0;
+        inline void initImgui() { initImgui(ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable); }
     #endif
 
     virtual void beginFrame() = 0;

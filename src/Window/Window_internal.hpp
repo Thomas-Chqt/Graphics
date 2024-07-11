@@ -27,7 +27,7 @@ public:
         virtual void imGuiNewFrame() = 0;
     #endif
 
-    virtual ~Window_internal() = default;
+    ~Window_internal() override = default;
 
 protected:
     Window_internal() = default;

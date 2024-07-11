@@ -25,8 +25,8 @@ public:
     {
         VertexLayout vertexLayout;
 
-        Shader* vertexShader;
-        Shader* fragmentShader;
+        Shader* vertexShader = nullptr;
+        Shader* fragmentShader = nullptr;
 
         PixelFormat colorPixelFormat = PixelFormat::BGRA;
         PixelFormat depthPixelFormat = PixelFormat::Depth32;

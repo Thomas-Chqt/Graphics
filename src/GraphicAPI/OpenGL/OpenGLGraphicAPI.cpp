@@ -20,7 +20,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
-#include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include <GL/glew.h>
@@ -44,7 +43,7 @@ OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window) : m_w
     m_window->makeContextCurrent();
     GLenum err = glewInit();
     assert(err == GLEW_OK);
-    GL_CALL(glEnable(GL_DEPTH_TEST));
+    GL_CALL(glEnable(GL_DEPTH_TEST))
 }
 
 utils::SharedPtr<Shader> OpenGLGraphicAPI::newShader(const Shader::MetalShaderDescriptor& metalShaderDescriptor, const Shader::OpenGLShaderDescriptor& descriptor) const
@@ -79,7 +78,7 @@ utils::SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const utils::Shar
 }
 
 #ifdef GFX_BUILD_IMGUI
-void OpenGLGraphicAPI::initImGui(ImGuiConfigFlags flags)
+void OpenGLGraphicAPI::initImgui(ImGuiConfigFlags flags)
 {
     ImGui::CreateContext();
     
@@ -100,16 +99,16 @@ void OpenGLGraphicAPI::beginRenderPass()
 {
     m_window->makeContextCurrent();
 
-    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0))
 
     utils::uint32 width, height;
     m_window->getFrameBufferSize(&width, &height);
-    GL_CALL(glViewport(0, 0, width, height));
+    GL_CALL(glViewport(0, 0, width, height))
 
     if (m_nextPassLoadAction == LoadAction::clear)
     {
-        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a));
-        GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a))
+        GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
     }
 }
 
@@ -132,13 +131,13 @@ void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuf
 
     m_frameBuffer = fBuff.forceDynamicCast<OpenGLFrameBuffer>();
     
-    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer->frameBufferID()));
-    GL_CALL(glViewport(0, 0, m_frameBuffer->glColorTexture()->width(), m_frameBuffer->glColorTexture()->height()));
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer->frameBufferID()))
+    GL_CALL(glViewport(0, 0, m_frameBuffer->glColorTexture()->width(), m_frameBuffer->glColorTexture()->height()))
 
     if (m_nextPassLoadAction == LoadAction::clear)
     {
-        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a));
-        GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
+        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a))
+        GL_CALL(glClear(GL_COLOR_BUFFER_BIT))
     }
 }
 
@@ -148,26 +147,26 @@ void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipelin
 
     m_graphicPipeline = graphicsPipeline.forceDynamicCast<OpenGLGraphicPipeline>();
 
-    GL_CALL(glUseProgram(m_graphicPipeline->shaderProgramID()));
+    GL_CALL(glUseProgram(m_graphicPipeline->shaderProgramID()))
     if (m_graphicPipeline->blendOperation() != BlendOperation::blendingOff)
     {
-        GL_CALL(glEnable(GL_BLEND));
+        GL_CALL(glEnable(GL_BLEND))
         switch (m_graphicPipeline->blendOperation())
         {
         case BlendOperation::srcA_plus_1_minus_srcA:
-            GL_CALL(glBlendEquation(GL_FUNC_ADD));
-            GL_CALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+            GL_CALL(glBlendEquation(GL_FUNC_ADD))
+            GL_CALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA))
             break;
         case BlendOperation::one_minus_srcA_plus_srcA:
-            GL_CALL(glBlendEquation(GL_FUNC_ADD));
-            GL_CALL(glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA));
+            GL_CALL(glBlendEquation(GL_FUNC_ADD))
+            GL_CALL(glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA))
             break;
         case BlendOperation::blendingOff:
             UNREACHABLE
         }
     }
     else
-        GL_CALL(glDisable(GL_BLEND));
+        GL_CALL(glDisable(GL_BLEND))
     
     if (m_vertextBuffer)
         m_graphicPipeline->enableVertexLayout();
@@ -179,7 +178,7 @@ void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<Buffer>& vertexBuf
 
     m_vertextBuffer = vertexBuffer.forceDynamicCast<OpenGLBuffer>();
 
-    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_vertextBuffer->bufferID()));
+    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_vertextBuffer->bufferID()))
     
     if (m_graphicPipeline)
         m_graphicPipeline->enableVertexLayout();
@@ -189,7 +188,7 @@ void OpenGLGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count)
 {
     m_window->makeContextCurrent();
 
-    GL_CALL(glDrawArrays(GL_TRIANGLES, start, count));
+    GL_CALL(glDrawArrays(GL_TRIANGLES, start, count))
 }
 
 void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buff)
@@ -198,8 +197,8 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buff)
     
     m_indexBuffer = buff.forceDynamicCast<OpenGLBuffer>();
 
-    GL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer->bufferID()));
-    GL_CALL(glDrawElements(GL_TRIANGLES, (GLsizei)(m_indexBuffer->size() / sizeof(utils::uint32)), GL_UNSIGNED_INT, 0));
+    GL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer->bufferID()))
+    GL_CALL(glDrawElements(GL_TRIANGLES, (GLsizei)(m_indexBuffer->size() / sizeof(utils::uint32)), GL_UNSIGNED_INT, nullptr))
 }
 
 void OpenGLGraphicAPI::endRenderPass()

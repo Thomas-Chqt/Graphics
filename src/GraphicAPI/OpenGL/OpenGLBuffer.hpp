@@ -24,17 +24,17 @@ public:
     OpenGLBuffer(const OpenGLBuffer&) = delete;
     OpenGLBuffer(OpenGLBuffer&&)      = delete;
     
-    OpenGLBuffer(const Buffer::Descriptor&);
+    explicit OpenGLBuffer(const Buffer::Descriptor&);
 
-    inline utils::uint64 size() override { return m_size; }
+    inline utils::uint64 size() const override { return m_size; }
 
-    inline GLuint bufferID() { return m_bufferID; }
+    inline GLuint bufferID() const { return m_bufferID; }
 
     ~OpenGLBuffer() override;
 
 private:
-    GLuint m_bufferID;
-    const utils::uint64 m_size;
+    GLuint m_bufferID = 0;
+    const utils::uint64 m_size = 0;
 
 public:
     OpenGLBuffer& operator = (const OpenGLBuffer&) = delete;

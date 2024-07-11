@@ -24,11 +24,11 @@ public:
     OpenGLShader(const OpenGLShader&) = delete;
     OpenGLShader(OpenGLShader&&)      = delete;
     
-    OpenGLShader(const Shader::OpenGLShaderDescriptor&);
+    explicit OpenGLShader(const Shader::OpenGLShaderDescriptor&);
 
     inline ShaderType type() override { return m_shaderType; }
 
-    GLuint shaderID() { return m_shaderID; }
+    GLuint shaderID() const { return m_shaderID; }
 
     ~OpenGLShader() override;
 

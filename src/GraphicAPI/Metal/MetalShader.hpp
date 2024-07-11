@@ -20,7 +20,7 @@
 
     class MTLDevice;
     class MTLFunction;
-#endif // OBJCPP
+#endif // __OBJC__
 
 
 namespace gfx

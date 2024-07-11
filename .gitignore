@@ -10,3 +10,4 @@ build_xcode.nosync/
 .clangd
 .DS_Store
 .lsansuppr
+.idea/

@@ -21,7 +21,7 @@ OpenGLFrameBuffer::OpenGLFrameBuffer(const utils::SharedPtr<Texture>& colorTextu
 {
     glGenFramebuffers(1, &m_frameBufferID);
     if (colorTexture)
-        setColorTexture(colorTexture);
+        OpenGLFrameBuffer::setColorTexture(colorTexture);
 }
 
 void OpenGLFrameBuffer::setColorTexture(const utils::SharedPtr<Texture>& texture)

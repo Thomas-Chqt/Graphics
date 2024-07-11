@@ -21,7 +21,7 @@
     template<typename T> using id = T*;
 
     class CAMetalDrawable;
-#endif // OBJCPP
+#endif // __OBJC__
 
 namespace gfx
 {

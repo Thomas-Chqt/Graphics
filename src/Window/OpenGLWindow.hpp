@@ -24,7 +24,7 @@ public:
     virtual void makeContextCurrent() = 0;
     virtual void swapBuffer() = 0;
 
-    virtual ~OpenGLWindow() = default;
+    ~OpenGLWindow() override = default;
 
 protected:
     OpenGLWindow() = default;

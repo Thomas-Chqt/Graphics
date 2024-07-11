@@ -21,7 +21,7 @@
     class MTLDevice;
     class MTLTextureDescriptor;
     class MTLTexture;
-#endif // OBJCPP
+#endif // __OBJC__
 
 
 namespace gfx
@@ -32,7 +32,7 @@ class MetalTexture : public Texture
 public:
     MetalTexture()                    = default;
     MetalTexture(const MetalTexture&) = delete;
-    MetalTexture(MetalTexture&&);
+    MetalTexture(MetalTexture&&) noexcept;
 
     MetalTexture(id<MTLDevice>, const Texture::Descriptor&);
 
@@ -50,7 +50,7 @@ private:
 
 public:
     MetalTexture& operator = (const MetalTexture&) = delete;
-    MetalTexture& operator = (MetalTexture&&);
+    MetalTexture& operator = (MetalTexture&&) noexcept;
 
 };
 

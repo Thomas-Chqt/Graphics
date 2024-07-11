@@ -23,21 +23,21 @@ OpenGLShader::OpenGLShader(const Shader::OpenGLShaderDescriptor& descriptor) : m
     switch (descriptor.type)
     {
     case ShaderType::vertex:
-        GL_CALL(m_shaderID = glCreateShader(GL_VERTEX_SHADER));
+        GL_CALL(m_shaderID = glCreateShader(GL_VERTEX_SHADER))
         break;
     case ShaderType::fragment:
-        GL_CALL(m_shaderID = glCreateShader(GL_FRAGMENT_SHADER));
+        GL_CALL(m_shaderID = glCreateShader(GL_FRAGMENT_SHADER))
         break;
     }
     const GLchar *const shaderSRC = descriptor.openglCode;
-    GL_CALL(glShaderSource(m_shaderID, 1, &shaderSRC, nullptr));
+    GL_CALL(glShaderSource(m_shaderID, 1, &shaderSRC, nullptr))
 
-    GL_CALL(glCompileShader(m_shaderID));
+    GL_CALL(glCompileShader(m_shaderID))
 
-    GL_CALL(glGetShaderiv(m_shaderID, GL_COMPILE_STATUS, &success));
+    GL_CALL(glGetShaderiv(m_shaderID, GL_COMPILE_STATUS, &success))
     if (success == 0)
     {
-        GL_CALL(glGetShaderInfoLog(m_shaderID, 1024, nullptr, &errorLog[0]));
+        GL_CALL(glGetShaderInfoLog(m_shaderID, 1024, nullptr, &errorLog[0]))
         throw OpenGLShaderCompileError(errorLog);
     }
 }

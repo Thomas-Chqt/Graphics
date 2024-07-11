@@ -38,7 +38,7 @@ utils::SharedPtr<GraphicAPI> Platform::newOpenGLGraphicAPI(const utils::SharedPt
 }
 #endif
 
-utils::SharedPtr<Window> Platform::newWindow(int w, int h)
+utils::SharedPtr<Window> Platform::newWindow(int w, int h) const
 {
     #if defined (GFX_BUILD_METAL) && !defined (GFX_BUILD_OPENGL)
         return newMetalWindow(w, h);
@@ -54,7 +54,7 @@ utils::SharedPtr<Window> Platform::newWindow(int w, int h)
     #endif
 }
 
-utils::SharedPtr<GraphicAPI> Platform::newGraphicAPI(const utils::SharedPtr<Window>& window)
+utils::SharedPtr<GraphicAPI> Platform::newGraphicAPI(const utils::SharedPtr<Window>& window) const
 {
     #if defined (GFX_BUILD_METAL) && !defined (GFX_BUILD_OPENGL)
         return newMetalGraphicAPI(window);

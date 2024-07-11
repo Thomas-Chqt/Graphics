@@ -12,7 +12,6 @@
 #include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Texture.hpp"
-#include "Window/MetalWindow.hpp"
 #include "Window/GLFW/GLFWMetalWindow.hpp"
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -47,7 +46,7 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h) { @autoreleasepool
 
     setupGLFWcallback();
 
-    addEventCallBack([this](Event& event) {
+    GLFWMetalWindow::addEventCallBack([this](Event& event) {
         event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event) {
             int frameBufferW, frameBufferH;
             ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);

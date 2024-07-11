@@ -19,7 +19,7 @@ namespace gfx
 MetalFrameBuffer::MetalFrameBuffer(const utils::SharedPtr<Texture>& colorTexture)
 {
     if (colorTexture)
-        setColorTexture(colorTexture);
+        MetalFrameBuffer::setColorTexture(colorTexture);
 }
 
 void MetalFrameBuffer::setColorTexture(const utils::SharedPtr<Texture>& texture)

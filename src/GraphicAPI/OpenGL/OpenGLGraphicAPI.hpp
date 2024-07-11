@@ -36,16 +36,16 @@ public:
     OpenGLGraphicAPI(const OpenGLGraphicAPI&) = delete;
     OpenGLGraphicAPI(OpenGLGraphicAPI&&)      = delete;
 
-    OpenGLGraphicAPI(const utils::SharedPtr<Window>&);
+    explicit OpenGLGraphicAPI(const utils::SharedPtr<Window>&);
     
     utils::SharedPtr<Shader> newShader(const Shader::MetalShaderDescriptor&, const Shader::OpenGLShaderDescriptor&) const override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
-    utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const override;
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const override;
 
     #ifdef GFX_BUILD_IMGUI
-        void initImGui(ImGuiConfigFlags flags = ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_ViewportsEnable) override;
+        void initImgui(ImGuiConfigFlags flags) override;
     #endif
 
     inline void beginFrame() override {}

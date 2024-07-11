@@ -15,28 +15,17 @@
 #include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
-#include "Graphics/Event.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
 #include "Graphics/Platform.hpp"
 #include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
-#include "Math/Vector.hpp"
-#include "UtilsCPP/Array.hpp"
-#include "UtilsCPP/Func.hpp"
-#include "UtilsCPP/RuntimeError.hpp"
-#include "UtilsCPP/String.hpp"
-#include "Graphics/GraphicAPI.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
-#include "UtilsCPP/StructLayout.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "UtilsCPP/UniquePtr.hpp"
 #include "Window/MetalWindow.hpp"
 #include <Metal/Metal.h>
-#include <QuartzCore/CAMetalLayer.h>
 #include <cassert>
-#include <cstddef>
 #include "Graphics/Error.hpp"
 
 #ifdef GFX_BUILD_IMGUI
@@ -86,7 +75,7 @@ utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const utils::Share
 }
 
 #ifdef GFX_BUILD_IMGUI
-void MetalGraphicAPI::initImGui(ImGuiConfigFlags flags)
+void MetalGraphicAPI::initImgui(ImGuiConfigFlags flags)
 {
     ImGui::CreateContext();
     

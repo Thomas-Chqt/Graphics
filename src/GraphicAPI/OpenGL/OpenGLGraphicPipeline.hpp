@@ -24,13 +24,13 @@ public:
     OpenGLGraphicPipeline(const OpenGLGraphicPipeline&) = delete;
     OpenGLGraphicPipeline(OpenGLGraphicPipeline&&)      = delete;
 
-    OpenGLGraphicPipeline(const GraphicPipeline::Descriptor&);
+    explicit OpenGLGraphicPipeline(GraphicPipeline::Descriptor);
 
-    inline GLuint shaderProgramID() { return m_shaderProgramID; }
+    inline GLuint shaderProgramID() const { return m_shaderProgramID; }
     void enableVertexLayout();
-    inline BlendOperation blendOperation() { return m_descriptor.blendOperation; }
+    inline BlendOperation blendOperation() const { return m_descriptor.blendOperation; }
     
-    ~OpenGLGraphicPipeline();
+    ~OpenGLGraphicPipeline() override;
 
 private:
     GLuint m_shaderProgramID = 0;

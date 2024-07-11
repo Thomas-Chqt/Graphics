@@ -16,7 +16,7 @@
 namespace gfx
 {
 
-MetalTexture::MetalTexture(MetalTexture&& mv) : m_mtlTexture(mv.m_mtlTexture)
+MetalTexture::MetalTexture(MetalTexture&& mv) noexcept : m_mtlTexture(mv.m_mtlTexture)
 {
     mv.m_mtlTexture = nullptr;
 }
@@ -76,7 +76,7 @@ MetalTexture::~MetalTexture() { @autoreleasepool
         [m_mtlTexture release];
 }}
 
-MetalTexture& MetalTexture::operator = (MetalTexture&& mv)
+MetalTexture& MetalTexture::operator = (MetalTexture&& mv) noexcept
 {
     if (this != &mv)
     {

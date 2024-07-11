@@ -11,7 +11,6 @@
 #include "GLFW/glfw3.h"
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
-#include "UtilsCPP/Func.hpp"
 
 #ifdef GFX_BUILD_IMGUI
 #include "imguiBackends/imgui_impl_glfw.h"

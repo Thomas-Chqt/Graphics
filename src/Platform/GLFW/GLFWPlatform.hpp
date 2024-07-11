@@ -29,7 +29,7 @@ public:
     GLFWPlatform(const GLFWPlatform&) = delete;
     GLFWPlatform(GLFWPlatform&&)      = delete;
 
-    inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id = (void*)0) override { m_eventCallbacks.get(id).append(cb); }
+    inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id) override { m_eventCallbacks.get(id).append(cb); }
     inline void clearCallbacks(void* id) override { m_eventCallbacks.remove(id); }
 
 #ifdef GFX_BUILD_METAL

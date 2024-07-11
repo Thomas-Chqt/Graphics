@@ -23,8 +23,10 @@ public:
     Window(const Window&) = delete;
     Window(Window&&)      = delete;
 
-    virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id = (void*)0) = 0;
-    virtual void clearCallbacks(void* id = (void*)0) = 0;
+    virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id) = 0;
+    inline void addEventCallBack(const utils::Func<void(Event&)>& event) { addEventCallBack(event, nullptr); }
+    virtual void clearCallbacks(void* id) = 0;
+    inline void clearCallbacks() { clearCallbacks(nullptr); }
 
     virtual bool isKeyPress(int) = 0;
     virtual bool isMousePress(int) = 0;
@@ -34,7 +36,7 @@ public:
 
     virtual void getWindowSize(utils::uint32* width, utils::uint32* height) const = 0;
     virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const = 0;
-    virtual void getContentScale(float* xscale, float* yscale) const = 0;
+    virtual void getContentScale(float* xScale, float* yScale) const = 0;
 
     virtual ~Window() = default;
 

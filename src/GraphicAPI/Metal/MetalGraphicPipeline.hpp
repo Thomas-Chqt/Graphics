@@ -24,7 +24,7 @@
     class MTLDevice;
     class MTLRenderPipelineState;
     class MTLDepthStencilState;
-#endif // OBJCPP
+#endif // __OBJC__
 
 
 namespace gfx

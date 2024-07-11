@@ -21,7 +21,7 @@
 
     class MTLDevice;
     class CAMetalDrawable;
-#endif // OBJCPP
+#endif // __OBJC__
 
 
 namespace gfx
@@ -42,7 +42,7 @@ public:
     virtual const MetalTexture& currentDepthTexture() = 0;
     virtual void clearCurrentDrawables() = 0;
 
-    virtual ~MetalWindow() = default;
+    ~MetalWindow() override = default;
 
 protected:
     MetalWindow() = default;

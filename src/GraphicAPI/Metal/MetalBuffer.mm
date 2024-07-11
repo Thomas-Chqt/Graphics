@@ -23,7 +23,7 @@ MetalBuffer::MetalBuffer(const id<MTLDevice>& mtlDevice, const Buffer::Descripto
         throw MTLBufferCreationError();
 }}
 
-utils::uint64 MetalBuffer::size() { @autoreleasepool
+utils::uint64 MetalBuffer::size() const { @autoreleasepool
 {
     return m_mtlBuffer.length;
 }}

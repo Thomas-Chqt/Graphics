@@ -10,6 +10,8 @@
 #ifndef GFX_ERROR_HPP
 # define GFX_ERROR_HPP
 
+#include <utility>
+
 #include "UtilsCPP/Error.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
@@ -31,7 +33,7 @@ struct GLFWInitError : public GFXError
 private:
     utils::String m_description = "fail to initialize GLFW. " + GLFWError::s_lastErrorDesc;
 };
-#endif // GLFW_ENABLE
+#endif // GFX_USING_GLFW
 
 #ifdef GFX_BUILD_METAL
 struct MetalError : public GFXError {};
@@ -71,7 +73,7 @@ struct OpenGLError : public GFXError {};
 struct OpenGLShaderCompileError : public OpenGLError
 {
 public:
-    inline OpenGLShaderCompileError(const utils::String& desc) : m_description(desc) {}
+    inline explicit OpenGLShaderCompileError(utils::String desc) : m_description(std::move(desc)) {}
     ERR_DESC(m_description)
 
 private:
@@ -81,7 +83,7 @@ private:
 struct OpenGLShaderLinkError : public OpenGLError
 {
 public:
-    inline OpenGLShaderLinkError(const utils::String& desc) : m_description(desc) {}
+    inline explicit OpenGLShaderLinkError(utils::String desc) : m_description(std::move(desc)) {}
     ERR_DESC(m_description)
 
 private:
@@ -91,7 +93,7 @@ private:
 struct OpenGLCallError : public OpenGLError
 {
 public:
-    inline OpenGLCallError(utils::uint32 code) : m_code(code)
+    inline explicit OpenGLCallError(utils::uint32 code) : m_code(code)
     {
         switch (m_code)
         {

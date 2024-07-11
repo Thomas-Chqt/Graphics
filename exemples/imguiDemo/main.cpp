@@ -22,7 +22,7 @@ int main()
         utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newWindow(800, 600);
         utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newGraphicAPI(window);
 
-        graphicAPI->initImGui();
+        graphicAPI->initImgui();
 
         bool running = true;
 
