@@ -21,6 +21,9 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
+
 struct Vertex
 {
     math::vec2f position;
@@ -68,7 +71,7 @@ int main()
     {
         const utils::Array<Vertex> vertices = { {{-1, -1}}, {{0,  1}}, {{1, -1}} };
 
-        utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newWindow(800, 600);
+        utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newWindow(WINDOW_WIDTH, WINDOW_HEIGHT); 
         utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newGraphicAPI(window);
 
         gfx::Buffer::Descriptor bufferDescriptor;

@@ -57,7 +57,7 @@ void GLFWWindow::setupGLFWcallback()
 
     glfwSetWindowUserPointer(m_glfwWindow, this);
 
-    ::glfwSetKeyCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int key, int scancode, int action, int mods)
+    ::glfwSetKeyCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int key, int, int action, int)
     {
         CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
         Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
@@ -91,12 +91,13 @@ void GLFWWindow::setupGLFWcallback()
         }
     });
 
-    ::glfwSetMouseButtonCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int button, int action, int mods)
+    ::glfwSetMouseButtonCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int button, int action, int)
     {
         CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
         Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
-        double x, y;
+        double x = 0;
+        double y = 0;
         ::glfwGetCursorPos(glfwWindow, &x, &y);
 
         if (action == GLFW_PRESS)
@@ -124,7 +125,8 @@ void GLFWWindow::setupGLFWcallback()
         CallbackDict callbackDict = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow))->m_eventCallbacks;
         Window& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
 
-        double x, y;
+        double x = 0;
+        double y = 0;
         ::glfwGetCursorPos(glfwWindow, &x, &y);
 
         ScrollEvent scrollEvent(gfxWindow, (int)x, (int)y, xoffset, yoffset);

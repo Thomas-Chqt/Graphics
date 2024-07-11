@@ -22,7 +22,7 @@ MetalGraphicPipeline::MetalGraphicPipeline(const id<MTLDevice>& mtlDevice, const
 {
     MTLVertexDescriptor* vertexDescriptor = [MTLVertexDescriptor vertexDescriptor];
     utils::uint32 i = 0;
-    for (auto& element : descriptor.vertexLayout.attributes)
+    for (const auto& element : descriptor.vertexLayout.attributes)
     {
         vertexDescriptor.attributes[i].format = (MTLVertexFormat)toMetalVertexAttributeFormat(element.format);
         vertexDescriptor.attributes[i].offset = element.offset;
@@ -33,9 +33,9 @@ MetalGraphicPipeline::MetalGraphicPipeline(const id<MTLDevice>& mtlDevice, const
 
     MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
     
-    if (descriptor.vertexShader)
+    if (descriptor.vertexShader != nullptr)
         renderPipelineDescriptor.vertexFunction = dynamic_cast<MetalShader&>(*descriptor.vertexShader).mtlFunction();
-    if (descriptor.fragmentShader)
+    if (descriptor.fragmentShader != nullptr)
         renderPipelineDescriptor.fragmentFunction = dynamic_cast<MetalShader&>(*descriptor.fragmentShader).mtlFunction();
 
     renderPipelineDescriptor.vertexDescriptor = vertexDescriptor;
@@ -83,11 +83,11 @@ MetalGraphicPipeline::MetalGraphicPipeline(const id<MTLDevice>& mtlDevice, const
 
 
     m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:renderPipelineDescriptor error:nullptr];
-    if (!m_renderPipelineState)
+    if (m_renderPipelineState == nil)
         throw MTLRenderPipelineStateCreationError();
 
     m_depthStencilState = [mtlDevice newDepthStencilStateWithDescriptor:depthStencilDescriptor];
-    if (!m_renderPipelineState)
+    if (m_renderPipelineState == nil)
         throw DepthStencilStateCreationError();
 }}
 

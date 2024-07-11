@@ -40,15 +40,17 @@ GLFWMetalWindow::GLFWMetalWindow(int w, int h) { @autoreleasepool
     nswindow.contentView.wantsLayer = YES;
     nswindow.contentView.layer = [CAMetalLayer layer];
 
-    int frameBufferW, frameBufferH;
+    int frameBufferW = 0;
+    int frameBufferH = 0;
     ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
     ((CAMetalLayer*)nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
 
     setupGLFWcallback();
 
     GLFWMetalWindow::addEventCallBack([this](Event& event) {
-        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event) {
-            int frameBufferW, frameBufferH;
+        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent&) {
+            int frameBufferW = 0;
+            int frameBufferH = 0;
             ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
             NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
             ((CAMetalLayer*)nswindow.contentView.layer).drawableSize = CGSizeMake(frameBufferW, frameBufferH);
@@ -71,7 +73,8 @@ void GLFWMetalWindow::setGraphicAPI(MetalGraphicAPI* api) { @autoreleasepool
         m_graphicAPI = api;
         NSWindow* nswindow = glfwGetCocoaWindow(m_glfwWindow);
         static_cast<CAMetalLayer*>(nswindow.contentView.layer).device = m_graphicAPI->device();
-        int frameBufferW, frameBufferH;
+        int frameBufferW = 0;
+        int frameBufferH = 0;
         ::glfwGetFramebufferSize(m_glfwWindow, &frameBufferW, &frameBufferH);
         recreateDepthTexture(frameBufferW, frameBufferH);
     }

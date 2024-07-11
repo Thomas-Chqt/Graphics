@@ -50,8 +50,8 @@ public:
 protected:
     void setupGLFWcallback();
 
-    ::GLFWwindow* m_glfwWindow = nullptr;
-    utils::Dictionary<void*, utils::Array<utils::Func<void(Event&)>>> m_eventCallbacks;
+    ::GLFWwindow* m_glfwWindow = nullptr; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes, misc-non-private-member-variables-in-classes)
+    utils::Dictionary<void*, utils::Array<utils::Func<void(Event&)>>> m_eventCallbacks; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes, misc-non-private-member-variables-in-classes)
 
 public:
     GLFWWindow& operator = (const GLFWWindow&) = delete;

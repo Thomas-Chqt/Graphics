@@ -33,7 +33,7 @@
     #include "imguiBackends/imgui_impl_opengl3.h"
 #endif
 
-#define GL_CALL(x) { x; GLenum __err__; if ((__err__ = glGetError()) != GL_NO_ERROR) throw OpenGLCallError(__err__); }
+#define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }
 
 namespace gfx
 {
@@ -101,7 +101,8 @@ void OpenGLGraphicAPI::beginRenderPass()
 
     GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0))
 
-    utils::uint32 width, height;
+    utils::uint32 width = 0;
+    utils::uint32 height = 0;
     m_window->getFrameBufferSize(&width, &height);
     GL_CALL(glViewport(0, 0, width, height))
 
@@ -203,12 +204,14 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buff)
 
 void OpenGLGraphicAPI::endRenderPass()
 {
+    #ifdef GFX_BUILD_IMGUI
     if (m_isImguiRenderPass)
     {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         m_isImguiRenderPass = false;
     }
+    #endif
 
     m_indexBuffer.clear();
     m_vertextBuffer.clear();
@@ -218,11 +221,13 @@ void OpenGLGraphicAPI::endRenderPass()
 
 void OpenGLGraphicAPI::endFrame()
 {
-    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
+    #ifdef GFX_BUILD_IMGUI
+    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+    #endif
 
     m_window->swapBuffer();
 }

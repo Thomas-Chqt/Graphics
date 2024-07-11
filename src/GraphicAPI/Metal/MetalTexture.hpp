@@ -41,7 +41,7 @@ public:
 
     void replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes) override;
 
-    inline id<MTLTexture> mtlTexture() const { return m_mtlTexture; } 
+    inline id<MTLTexture> mtlTexture() const { return m_mtlTexture; } //NOLINT(modernize-use-nodiscard)
 
     ~MetalTexture() override;
 

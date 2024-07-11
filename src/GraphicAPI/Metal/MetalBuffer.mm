@@ -19,7 +19,7 @@ MetalBuffer::MetalBuffer(const id<MTLDevice>& mtlDevice, const Buffer::Descripto
         m_mtlBuffer = [mtlDevice newBufferWithLength:descriptor.size options:MTLResourceStorageModeShared];    
     else
         m_mtlBuffer = [mtlDevice newBufferWithBytes:descriptor.initialData length:descriptor.size options:MTLResourceStorageModeShared];
-    if (!m_mtlBuffer)
+    if (m_mtlBuffer == Nil)
         throw MTLBufferCreationError();
 }}
 

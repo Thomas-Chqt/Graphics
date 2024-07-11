@@ -18,12 +18,12 @@ MetalShader::MetalShader(const id<MTLDevice>& mtlDevice, const MetalShaderDescri
 {
     NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:descriptor.mtlShaderLibPath encoding:NSUTF8StringEncoding] autorelease];
     id<MTLLibrary> mtlLibrary = [[mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:nullptr] autorelease];
-    if (!mtlLibrary)
+    if (mtlLibrary == nil)
         throw MTLLibraryCreationError();
 
     NSString* functionNameNSString = [[[NSString alloc] initWithCString:descriptor.mtlFunction encoding:NSUTF8StringEncoding] autorelease];
     m_mtlFunction = [mtlLibrary newFunctionWithName:functionNameNSString];
-    if (!m_mtlFunction)
+    if (m_mtlFunction == nil)
         throw MTLFunctionCreationError();
 }}
 

@@ -112,7 +112,7 @@ void MetalGraphicAPI::beginRenderPass() { @autoreleasepool
     renderPassDescriptor.depthAttachment.texture = m_window->currentDepthTexture().mtlTexture();
 
     m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
-    if (!m_commandEncoder)
+    if (m_commandEncoder == nil)
         throw RenderCommandEncoderCreationError();
 }}
 
@@ -129,7 +129,7 @@ void MetalGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& targe
     // TODO depth for frame buffer
 
     m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
-    if (!m_commandEncoder)
+    if (m_commandEncoder == nil)
         throw RenderCommandEncoderCreationError();
 }}
 
@@ -180,12 +180,14 @@ void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buffer
 
 void MetalGraphicAPI::endRenderPass()
 {
+    #ifdef GFX_BUILD_IMGUI
     if (m_isImguiRenderPass)
     {
         ImGui::Render();
         ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
         m_isImguiRenderPass = false;
     }
+    #endif
 
     [m_commandEncoder endEncoding];
     [m_commandEncoder release];
@@ -198,12 +200,14 @@ void MetalGraphicAPI::endRenderPass()
 
 void MetalGraphicAPI::endFrame()
 {
-    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable))
+    #ifdef GFX_BUILD_IMGUI
+    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
-
+    #endif
+    
     if (m_window->currentDrawable() != nullptr)
     {
         [m_commandBuffer presentDrawable:m_window->currentDrawable()];

@@ -15,7 +15,7 @@
 #include "Graphics/Error.hpp"
 #include "UtilsCPP/Types.hpp"
 
-#define GL_CALL(x) { x; GLenum __err__; if ((__err__ = glGetError()) != GL_NO_ERROR) throw OpenGLCallError(__err__); }
+#define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }
 #define TO_OPENGL_VERTEX_ATTRIBUTE_FORMAT(frmt) toOpenGLVertexAttributeFormatSize(frmt), toOpenGLVertexAttributeFormatType(frmt), toOpenGLVertexAttributeFormatNormalized(frmt)
 
 namespace gfx
@@ -23,7 +23,7 @@ namespace gfx
 
 OpenGLGraphicPipeline::OpenGLGraphicPipeline(GraphicPipeline::Descriptor descriptor) : m_descriptor(std::move(descriptor))
 {
-    int success;
+    int success = 1;
     char errorLog[1024];
 
     auto& vertexShader = dynamic_cast<OpenGLShader&>(*m_descriptor.vertexShader);
@@ -37,7 +37,7 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(GraphicPipeline::Descriptor descrip
     if (success == 0)
     {
         GL_CALL(glGetProgramInfoLog(m_shaderProgramID, 1024, nullptr, &errorLog[0]))
-        throw OpenGLShaderLinkError(errorLog);
+        throw OpenGLShaderLinkError((char*)errorLog);
     }
 
     GL_CALL(glDetachShader(m_shaderProgramID, vertexShader.shaderID()))
@@ -53,7 +53,7 @@ void OpenGLGraphicPipeline::enableVertexLayout()
     {
         const auto& attribute = m_descriptor.vertexLayout.attributes[i];
         GL_CALL(glEnableVertexAttribArray(i))
-        GL_CALL(glVertexAttribPointer(i, TO_OPENGL_VERTEX_ATTRIBUTE_FORMAT(attribute.format), (int)m_descriptor.vertexLayout.stride, (const void*)attribute.offset))
+        GL_CALL(glVertexAttribPointer(i, TO_OPENGL_VERTEX_ATTRIBUTE_FORMAT(attribute.format), (int)m_descriptor.vertexLayout.stride, (const void*)attribute.offset)) // NOLINT(performance-no-int-to-ptr)
     }
 }
 

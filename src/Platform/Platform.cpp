@@ -45,7 +45,7 @@ utils::SharedPtr<Window> Platform::newWindow(int w, int h) const
     #elif !defined (GFX_BUILD_METAL) && defined (GFX_BUILD_OPENGL)
         return newOpenGLWindow(w, h);
     #else
-        if (const char* val = std::getenv("GFX_USED_API"))
+        if (const char* val = std::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
         {
             if (utils::String(val) == utils::String("OPENGL"))
                 return newOpenGLWindow(w, h);
@@ -61,7 +61,7 @@ utils::SharedPtr<GraphicAPI> Platform::newGraphicAPI(const utils::SharedPtr<Wind
     #elif !defined (GFX_BUILD_METAL) && defined (GFX_BUILD_OPENGL)
         return newOpenGLGraphicAPI(window);
     #else
-        if (const char* val = std::getenv("GFX_USED_API"))
+        if (const char* val = std::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
         {
             if (utils::String(val) == utils::String("OPENGL"))
             {

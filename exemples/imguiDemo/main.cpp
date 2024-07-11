@@ -14,12 +14,15 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "imgui/imgui.h"
 
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
+
 int main()
 {
     gfx::Platform::init();
     {
 
-        utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newWindow(800, 600);
+        utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
         utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newGraphicAPI(window);
 
         graphicAPI->initImgui();

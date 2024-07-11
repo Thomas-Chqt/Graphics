@@ -10,7 +10,7 @@
 #include "GraphicAPI/OpenGL/OpenGLBuffer.hpp"
 #include "Graphics/Error.hpp"
 
-#define GL_CALL(x) { x; GLenum __err__; if ((__err__ = glGetError()) != GL_NO_ERROR) throw OpenGLCallError(__err__); }
+#define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }
 
 namespace gfx
 {

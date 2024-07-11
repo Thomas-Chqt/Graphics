@@ -10,14 +10,14 @@
 #include "GraphicAPI/OpenGL/OpenGLShader.hpp"
 #include "Graphics/Error.hpp"
 
-#define GL_CALL(x) { x; GLenum __err__; if ((__err__ = glGetError()) != GL_NO_ERROR) throw OpenGLCallError(__err__); }
+#define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }
 
 namespace gfx
 {
 
 OpenGLShader::OpenGLShader(const Shader::OpenGLShaderDescriptor& descriptor) : m_shaderType(descriptor.type)
 {
-    int success;
+    int success = 1;
     char errorLog[1024];
 
     switch (descriptor.type)
@@ -38,7 +38,7 @@ OpenGLShader::OpenGLShader(const Shader::OpenGLShaderDescriptor& descriptor) : m
     if (success == 0)
     {
         GL_CALL(glGetShaderInfoLog(m_shaderID, 1024, nullptr, &errorLog[0]))
-        throw OpenGLShaderCompileError(errorLog);
+        throw OpenGLShaderCompileError((char*)errorLog);
     }
 }
 

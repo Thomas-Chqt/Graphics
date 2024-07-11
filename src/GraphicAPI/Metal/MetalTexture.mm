@@ -10,6 +10,7 @@
 #include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Error.hpp"
+#include "UtilsCPP/Types.hpp"
 #include <Metal/MTLTypes.h>
 #include <Metal/Metal.h>
 
@@ -48,7 +49,7 @@ MetalTexture::MetalTexture(id<MTLDevice> device, const Texture::Descriptor& desc
     }
 
     m_mtlTexture = [device newTextureWithDescriptor:mtlTextureDescriptor];
-    if (!m_mtlTexture)
+    if (m_mtlTexture == nil)
         throw MTLTextureCreationError();
 }}
 
@@ -67,7 +68,7 @@ void MetalTexture::replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, u
     [m_mtlTexture replaceRegion:MTLRegionMake2D(offsetX, offsetY, width, height)
                     mipmapLevel:0
                       withBytes:bytes
-                    bytesPerRow:4 * width];
+                    bytesPerRow:sizeof(utils::uint32) * width];
 }}
 
 MetalTexture::~MetalTexture() { @autoreleasepool
