@@ -10,9 +10,11 @@
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
 
 #include <utility>
+#include "GraphicAPI/OpenGL/OpenGLBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLShader.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Error.hpp"
+#include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 
 #define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }
@@ -44,6 +46,28 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(GraphicPipeline::Descriptor descrip
     GL_CALL(glDetachShader(m_shaderProgramID, fragmentShader.shaderID()))
 
     GL_CALL(glGenVertexArrays(1, &m_vertexArrayID))
+
+    GLint uniformBlockCount = 0;
+    GL_CALL(glGetProgramiv(m_shaderProgramID, GL_ACTIVE_UNIFORM_BLOCKS, &uniformBlockCount));
+
+    GLuint nextBlockBinding = 0;
+    for (GLuint blockIndex = 0; blockIndex < uniformBlockCount; blockIndex++, nextBlockBinding++)
+    {
+        GLint uniformBlockNameLength = 0;
+        GL_CALL(glGetActiveUniformBlockiv(m_shaderProgramID, blockIndex, GL_UNIFORM_BLOCK_NAME_LENGTH, &uniformBlockNameLength));
+
+        utils::String name(uniformBlockNameLength - 1);
+        GL_CALL(glGetActiveUniformBlockName(m_shaderProgramID, blockIndex, uniformBlockNameLength, nullptr, &name[0]));
+
+        GL_CALL(glUniformBlockBinding(m_shaderProgramID, blockIndex, nextBlockBinding));
+
+        m_unifomBufferBindingPoints.insert(name, nextBlockBinding);
+    }
+}
+
+void OpenGLGraphicPipeline::bindBuffer(const utils::SharedPtr<Buffer>& buffer, const utils::String& name)
+{
+    GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, m_unifomBufferBindingPoints[name], buffer.forceDynamicCast<OpenGLBuffer>()->bufferID()));
 }
 
 void OpenGLGraphicPipeline::enableVertexLayout()

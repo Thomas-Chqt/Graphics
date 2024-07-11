@@ -10,7 +10,10 @@
 #ifndef GRAPHICSPIPELINE_HPP
 # define GRAPHICSPIPELINE_HPP
 
+#include "Buffer.hpp"
 #include "Shader.hpp"
+#include "UtilsCPP/SharedPtr.hpp"
+#include "UtilsCPP/String.hpp"
 #include "VertexLayout.hpp"
 
 #include "Enums.hpp"
@@ -37,6 +40,8 @@ public:
 public:
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline(GraphicPipeline&&)      = delete;
+
+    virtual void bindBuffer(const utils::SharedPtr<Buffer>&, const utils::String& name) = 0;
 
     virtual ~GraphicPipeline() = default;
 

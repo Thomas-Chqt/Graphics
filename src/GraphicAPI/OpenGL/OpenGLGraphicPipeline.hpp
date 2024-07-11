@@ -12,6 +12,9 @@
 
 #include "Graphics/Enums.hpp"
 #include "Graphics/GraphicPipeline.hpp"
+#include "UtilsCPP/Dictionary.hpp"
+#include "UtilsCPP/String.hpp"
+#include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
 
 namespace gfx
@@ -26,6 +29,8 @@ public:
 
     explicit OpenGLGraphicPipeline(GraphicPipeline::Descriptor);
 
+    void bindBuffer(const utils::SharedPtr<Buffer>& buffer, const utils::String& name) override;
+
     inline GLuint shaderProgramID() const { return m_shaderProgramID; }
     void enableVertexLayout();
     inline BlendOperation blendOperation() const { return m_descriptor.blendOperation; }
@@ -36,6 +41,7 @@ private:
     GLuint m_shaderProgramID = 0;
     GLuint m_vertexArrayID = 0;
     GraphicPipeline::Descriptor m_descriptor;
+    utils::Dictionary<utils::String, utils::uint32> m_unifomBufferBindingPoints;
 
 public:
     OpenGLGraphicPipeline& operator = (const OpenGLGraphicPipeline&) = delete;

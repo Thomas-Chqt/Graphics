@@ -29,7 +29,22 @@ struct Vertex
     math::vec2f position;
 };
 
-utils::SharedPtr<gfx::Shader> createVertexShader(gfx::GraphicAPI& api)
+utils::SharedPtr<gfx::Buffer> createVertexBuffer(const gfx::GraphicAPI& api, gfx::VertexLayout& layout)
+{
+    const utils::Array<Vertex> vertices = { {{-1, -1}}, {{0,  1}}, {{1, -1}} };
+    
+    layout.attributes.append({gfx::VertexAttributeFormat::vec2f, 0});
+    layout.stride = sizeof(Vertex);
+
+    gfx::Buffer::Descriptor bufferDescriptor;
+    bufferDescriptor.debugName = "vertexBuffer";
+    bufferDescriptor.initialData = (const void*)vertices;
+    bufferDescriptor.size = sizeof(Vertex) * vertices.length();
+    
+    return api.newBuffer(bufferDescriptor);
+}
+
+utils::SharedPtr<gfx::Shader> createVertexShader(const gfx::GraphicAPI& api)
 {
     gfx::Shader::MetalShaderDescriptor metalShaderDescriptor;
     #ifdef GFX_BUILD_METAL
@@ -47,7 +62,7 @@ utils::SharedPtr<gfx::Shader> createVertexShader(gfx::GraphicAPI& api)
     return api.newShader(metalShaderDescriptor, openglShaderDescriptor);
 }
 
-utils::SharedPtr<gfx::Shader> createFragmentShader(gfx::GraphicAPI& api)
+utils::SharedPtr<gfx::Shader> createFragmentShader(const gfx::GraphicAPI& api)
 {
     gfx::Shader::MetalShaderDescriptor metalShaderDescriptor;
     #ifdef GFX_BUILD_METAL
@@ -65,34 +80,46 @@ utils::SharedPtr<gfx::Shader> createFragmentShader(gfx::GraphicAPI& api)
     return api.newShader(metalShaderDescriptor, openglShaderDescriptor);
 }
 
+utils::SharedPtr<gfx::GraphicPipeline> createGraphicPipeline(const gfx::GraphicAPI& api, const gfx::VertexLayout& vertexLayout, const utils::SharedPtr<gfx::Shader>& vertexShader, const utils::SharedPtr<gfx::Shader>& fragmentShader)
+{
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    graphicPipelineDescriptor.vertexLayout = vertexLayout;
+    graphicPipelineDescriptor.vertexShader = vertexShader;
+    graphicPipelineDescriptor.fragmentShader = fragmentShader;
+    return api.newGraphicsPipeline(graphicPipelineDescriptor);
+}
+
+utils::SharedPtr<gfx::Buffer> createColorBuffer(const gfx::GraphicAPI& api)
+{
+    struct
+    {
+        math::vec3f red = RED3;
+        math::vec3f green = GREEN3;
+        math::vec3f blue = BLUE3;
+    } color;
+
+    gfx::Buffer::Descriptor desc;
+    desc.debugName = "color buffer";
+    desc.initialData = &color;
+    desc.size = sizeof(color);
+
+    return api.newBuffer(desc);
+}
+
 int main()
 {
     gfx::Platform::init();
     {
-        const utils::Array<Vertex> vertices = { {{-1, -1}}, {{0,  1}}, {{1, -1}} };
-
         utils::SharedPtr<gfx::Window> window = gfx::Platform::shared().newWindow(WINDOW_WIDTH, WINDOW_HEIGHT); 
         utils::SharedPtr<gfx::GraphicAPI> graphicAPI = gfx::Platform::shared().newGraphicAPI(window);
 
-        gfx::Buffer::Descriptor bufferDescriptor;
-        bufferDescriptor.debugName = "vertexBuffer";
-        bufferDescriptor.initialData = (const void*)vertices;
-        bufferDescriptor.size = sizeof(Vertex) * vertices.length();
-        utils::SharedPtr<gfx::Buffer> vertexBuffer = graphicAPI->newBuffer(bufferDescriptor);
-
+        gfx::VertexLayout vertexLayout;
+        utils::SharedPtr<gfx::Buffer> vertexBuffer = createVertexBuffer(*graphicAPI, vertexLayout);
         utils::SharedPtr<gfx::Shader> vertexShader = createVertexShader(*graphicAPI);
         utils::SharedPtr<gfx::Shader> fragmentShader = createFragmentShader(*graphicAPI);
+        utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = createGraphicPipeline(*graphicAPI, vertexLayout, vertexShader, fragmentShader);
 
-        gfx::VertexLayout vertexLayout;
-        vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec2f, 0});
-        vertexLayout.stride = sizeof(Vertex);
-
-        gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
-        graphicPipelineDescriptor.vertexLayout = vertexLayout;
-        graphicPipelineDescriptor.vertexShader = vertexShader;
-        graphicPipelineDescriptor.fragmentShader = fragmentShader;
-
-        utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = graphicAPI->newGraphicsPipeline(graphicPipelineDescriptor);
+        utils::SharedPtr<gfx::Buffer> colorBuffer = createColorBuffer(*graphicAPI);
 
         bool running = true;
 
@@ -111,6 +138,9 @@ int main()
             graphicAPI->beginRenderPass();
             
             graphicAPI->useGraphicsPipeline(graphicPipeline);
+
+            graphicPipeline->bindBuffer(colorBuffer, "color");
+
             graphicAPI->useVertexBuffer(vertexBuffer);
             graphicAPI->drawVertices(0, 3);
 
