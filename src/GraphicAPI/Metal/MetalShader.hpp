@@ -33,7 +33,7 @@ public:
     MetalShader(const MetalShader&) = delete;
     MetalShader(MetalShader&&)      = delete;
     
-    MetalShader(const id<MTLDevice>&, const MetalShaderDescriptor&);
+    MetalShader(const id<MTLDevice>&, const Shader::Descriptor&);
 
     inline ShaderType type() override { return m_shaderType; }
 

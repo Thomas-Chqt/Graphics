@@ -15,7 +15,7 @@
 namespace gfx
 {
 
-OpenGLShader::OpenGLShader(const Shader::OpenGLShaderDescriptor& descriptor) : m_shaderType(descriptor.type)
+OpenGLShader::OpenGLShader(const Shader::Descriptor& descriptor) : m_shaderType(descriptor.type)
 {
     int success = 1;
     char errorLog[1024];

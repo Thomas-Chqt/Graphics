@@ -9,11 +9,12 @@
 
 #include "GraphicAPI/Metal/MetalShader.hpp"
 #include "Graphics/Error.hpp"
+#include "Graphics/Shader.hpp"
 
 namespace gfx
 {
 
-MetalShader::MetalShader(const id<MTLDevice>& mtlDevice, const MetalShaderDescriptor& descriptor)
+MetalShader::MetalShader(const id<MTLDevice>& mtlDevice, const Shader::Descriptor& descriptor)
     : m_shaderType(descriptor.type) { @autoreleasepool
 {
     NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:descriptor.mtlShaderLibPath encoding:NSUTF8StringEncoding] autorelease];

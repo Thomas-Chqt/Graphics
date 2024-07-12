@@ -24,7 +24,7 @@ public:
     OpenGLShader(const OpenGLShader&) = delete;
     OpenGLShader(OpenGLShader&&)      = delete;
     
-    explicit OpenGLShader(const Shader::OpenGLShaderDescriptor&);
+    explicit OpenGLShader(const Shader::Descriptor&);
 
     inline ShaderType type() override { return m_shaderType; }
 

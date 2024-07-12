@@ -1,24 +1,24 @@
 /*
  * ---------------------------------------------------
- * fragment.glsl
+ * texturedSquare.fs
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/05/24 19:36:04
+ * Date: 2024/07/12 14:40:09
  * ---------------------------------------------------
  */
 
 #version 410 core
 
-out vec4 fragmentColor;
-        
-layout (std140) uniform colors
+in VertexOut
 {
-    vec3 red;
-    vec3 green;
-    vec3 blue;
-};
+    vec2 uv;
+} fsIn;
+
+out vec4 fragmentColor;
+
+uniform sampler2D texture1;
 
 void main()
 {
-    fragmentColor = vec4(blue, 1.0);
+    fragmentColor = texture(texture1, fsIn.uv);
 }

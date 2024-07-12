@@ -29,21 +29,6 @@ utils::uint64 toMetalPixelFormat(PixelFormat pxFormat)
     }
 }
 
-PixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat)
-{
-    switch (mtlPxFormat)
-    {
-    case MTLPixelFormatRGBA8Unorm:
-        return PixelFormat::RGBA;
-    case MTLPixelFormatBGRA8Unorm:
-        return PixelFormat::BGRA;
-    case MTLPixelFormatDepth32Float:
-        return PixelFormat::Depth32;
-    default:
-        throw utils::RuntimeError("not implemented");
-    }
-}
-
 utils::uint64 toMetalVertexAttributeFormat(VertexAttributeFormat format)
 {
     switch (format)
@@ -52,6 +37,35 @@ utils::uint64 toMetalVertexAttributeFormat(VertexAttributeFormat format)
         return MTLVertexFormatFloat2;
     case VertexAttributeFormat::vec3f:
         return MTLVertexFormatFloat3;
+    }
+}
+
+utils::uint64 toMTLSamplerAddressMode(SamplerAddressMode addressMode)
+{
+    switch (addressMode)
+    {
+    case SamplerAddressMode::ClampToEdge:
+        return MTLSamplerAddressModeClampToEdge;
+        break;
+    case SamplerAddressMode::Repeat:
+        return MTLSamplerAddressModeRepeat;
+        break;
+    case SamplerAddressMode::MirrorRepeat:
+        return MTLSamplerAddressModeMirrorRepeat;
+        break;
+    }
+}
+
+utils::uint64 toMTLSamplerMinMagFilter(SamplerMinMagFilter filter)
+{
+    switch (filter)
+    {
+    case SamplerMinMagFilter::Nearest:
+        return MTLSamplerMinMagFilterNearest;
+        break;
+    case SamplerMinMagFilter::Linear:
+        return MTLSamplerMinMagFilterLinear;
+        break;
     }
 }
 

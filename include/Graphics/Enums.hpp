@@ -22,21 +22,25 @@ enum class ShaderType            { vertex, fragment };
 enum class BlendOperation        { blendingOff, srcA_plus_1_minus_srcA, one_minus_srcA_plus_srcA };
 enum class VertexAttributeFormat { vec2f, vec3f };
 enum class StorageMode           { Private, Shared };
-enum class TextureUsage          { ShaderRead, RenderTarget };
+enum class TextureUsage          { ShaderRead, RenderTarget, ShaderReadAndRenderTarget };
+enum class SamplerAddressMode    { ClampToEdge, Repeat, MirrorRepeat };
+enum class SamplerMinMagFilter   { Nearest, Linear };
 
 #ifdef GFX_BUILD_METAL
     utils::uint64 toMetalPixelFormat(PixelFormat);
-    PixelFormat fromMetalPixelFormat(utils::uint64 mtlPxFormat);
-    
     utils::uint64 toMetalVertexAttributeFormat(VertexAttributeFormat);
+    utils::uint64 toMTLSamplerAddressMode(SamplerAddressMode);
+    utils::uint64 toMTLSamplerMinMagFilter(SamplerMinMagFilter);
 #endif
 #ifdef GFX_BUILD_OPENGL
     utils::uint32 toOpenGLPixelFormat(PixelFormat);
-    PixelFormat fromOpenGLPixelFormat(utils::uint32 glPxFormat);
-
+    utils::uint32 toOpenGLInternalPixelFormat(PixelFormat);
     int toOpenGLVertexAttributeFormatSize(VertexAttributeFormat);
     utils::uint32 toOpenGLVertexAttributeFormatType(VertexAttributeFormat);
     utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat);
+
+    int toOpenGLSamplerAddressMode(SamplerAddressMode);
+    int toOpenGLSamplerMinMagFilter(SamplerMinMagFilter);
 #endif
 
 }

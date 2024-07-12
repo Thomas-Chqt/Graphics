@@ -22,7 +22,7 @@ OpenGLTexture::OpenGLTexture(const Texture::Descriptor& desc) : m_width(desc.wid
     
     GL_CALL(glBindTexture(GL_TEXTURE_2D, m_textureID))
 
-    GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)m_width, (GLsizei)m_height, 0, toOpenGLPixelFormat(m_pixelFormat), GL_UNSIGNED_BYTE, nullptr))
+    GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, toOpenGLInternalPixelFormat(m_pixelFormat), (GLsizei)m_width, (GLsizei)m_height, 0, toOpenGLPixelFormat(m_pixelFormat), GL_UNSIGNED_BYTE, nullptr))
 
     GL_CALL(glBindTexture(GL_TEXTURE_2D, 0))
 }

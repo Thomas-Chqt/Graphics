@@ -19,11 +19,21 @@ namespace gfx
 class FrameBuffer
 {
 public:
+    struct Descriptor
+    {
+        utils::SharedPtr<Texture> colorTexture;
+        utils::SharedPtr<Texture> depthTexture;
+    };
+
+public:
     FrameBuffer(const FrameBuffer&) = delete;
     FrameBuffer(FrameBuffer&&)      = delete;
 
     virtual void setColorTexture(const utils::SharedPtr<Texture>&) = 0;
     virtual utils::SharedPtr<Texture> colorTexture() = 0;
+
+    virtual void setDepthTexture(const utils::SharedPtr<Texture>&) = 0;
+    virtual utils::SharedPtr<Texture> depthTexture() = 0;
 
     virtual ~FrameBuffer() = default;
 

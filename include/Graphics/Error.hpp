@@ -10,11 +10,11 @@
 #ifndef GFX_ERROR_HPP
 # define GFX_ERROR_HPP
 
-#include <utility>
+#include <utility> // IWYU pragma: keep
 
 #include "UtilsCPP/Error.hpp"
-#include "UtilsCPP/String.hpp"
-#include "UtilsCPP/Types.hpp"
+#include "UtilsCPP/String.hpp" // IWYU pragma: keep
+#include "UtilsCPP/Types.hpp" // IWYU pragma: keep
 
 namespace gfx
 {
@@ -64,6 +64,10 @@ struct MTLBufferCreationError : public MetalError {
 
 struct MTLTextureCreationError : public MetalError {
     ERR_DESC("MTLTexture creation failed")
+};
+
+struct MTLSamplerStateCreationError : public MetalError {
+    ERR_DESC("MTLSamplerState creation failed")
 };
 #endif
 

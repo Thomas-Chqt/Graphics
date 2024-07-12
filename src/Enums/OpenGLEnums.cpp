@@ -8,7 +8,6 @@
  */
 
 #include "Graphics/Enums.hpp"
-#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/Types.hpp"
 
 #include "GL/glew.h"
@@ -24,23 +23,21 @@ utils::uint32 toOpenGLPixelFormat(PixelFormat pxFormat)
         return GL_RGBA;
     case PixelFormat::BGRA:
         return GL_BGRA;
-    default:
-        throw utils::RuntimeError("not implemented");
+    case PixelFormat::Depth32:
+        return GL_DEPTH_COMPONENT;
     }
 }
 
-PixelFormat fromOpenGLPixelFormat(utils::uint32 glPxFormat)
+utils::uint32 toOpenGLInternalPixelFormat(PixelFormat pxFormat)
 {
-    switch (glPxFormat)
+    switch (pxFormat)
     {
-    case GL_RGBA:
-        return PixelFormat::RGBA;
-    case GL_BGRA:
-        return PixelFormat::BGRA;
-    default:
-        throw utils::RuntimeError("not implemented");
+    case PixelFormat::RGBA:
+    case PixelFormat::BGRA:
+        return GL_RGBA;
+    case PixelFormat::Depth32:
+        return GL_DEPTH_COMPONENT;
     }
-
 }
 
 int toOpenGLVertexAttributeFormatSize(VertexAttributeFormat format)
@@ -73,5 +70,35 @@ utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat forma
         return GL_FALSE;
     }
 }
+
+int toOpenGLSamplerAddressMode(SamplerAddressMode addressMode)
+{
+    switch (addressMode)
+    {
+    case SamplerAddressMode::ClampToEdge:
+        return GL_CLAMP_TO_EDGE;
+        break;
+    case SamplerAddressMode::Repeat:
+        return GL_REPEAT;
+        break;
+    case SamplerAddressMode::MirrorRepeat:
+        return GL_MIRRORED_REPEAT;
+        break;
+    }
+}
+
+int toOpenGLSamplerMinMagFilter(SamplerMinMagFilter filter)
+{
+    switch (filter)
+    {
+    case SamplerMinMagFilter::Nearest:
+        return GL_NEAREST;
+        break;
+    case SamplerMinMagFilter::Linear:
+        return GL_LINEAR;
+        break;
+    }
+}
+
 
 }

@@ -46,6 +46,9 @@ MetalTexture::MetalTexture(id<MTLDevice> device, const Texture::Descriptor& desc
     case TextureUsage::RenderTarget:
         mtlTextureDescriptor.usage = MTLTextureUsageRenderTarget;
         break;
+    case TextureUsage::ShaderReadAndRenderTarget:
+        mtlTextureDescriptor.usage = MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget;
+        break;
     }
 
     m_mtlTexture = [device newTextureWithDescriptor:mtlTextureDescriptor];

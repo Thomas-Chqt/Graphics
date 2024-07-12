@@ -24,3 +24,9 @@ add_subdirectory(triangle)
 if(GFX_BUILD_IMGUI)
     add_subdirectory(imguiDemo)
 endif()
+
+add_subdirectory(texturedSquare)
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(offscreenRenderPass)
+endif()

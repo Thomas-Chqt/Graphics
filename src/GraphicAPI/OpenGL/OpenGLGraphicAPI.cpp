@@ -11,6 +11,7 @@
 #include "GraphicAPI/OpenGL/OpenGLBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLFrameBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
+#include "GraphicAPI/OpenGL/OpenGLSampler.hpp"
 #include "GraphicAPI/OpenGL/OpenGLShader.hpp"
 #include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
 #include "Graphics/Buffer.hpp"
@@ -18,6 +19,7 @@
 #include "Graphics/Error.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
+#include "Graphics/Sampler.hpp"
 #include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -46,9 +48,8 @@ OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window) : m_w
     GL_CALL(glEnable(GL_DEPTH_TEST))
 }
 
-utils::SharedPtr<Shader> OpenGLGraphicAPI::newShader(const Shader::MetalShaderDescriptor& metalShaderDescriptor, const Shader::OpenGLShaderDescriptor& descriptor) const
+utils::SharedPtr<Shader> OpenGLGraphicAPI::newShader(const Shader::Descriptor& descriptor) const
 {
-    (void)metalShaderDescriptor;
     m_window->makeContextCurrent();
     return utils::makeShared<OpenGLShader>(descriptor).staticCast<Shader>();
 }
@@ -71,10 +72,15 @@ utils::SharedPtr<Texture> OpenGLGraphicAPI::newTexture(const Texture::Descriptor
     return utils::makeShared<OpenGLTexture>(descriptor).staticCast<Texture>();
 }
 
-utils::SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const
+utils::SharedPtr<Sampler> OpenGLGraphicAPI::newSampler(const Sampler::Descriptor& descriptor) const
+{
+    return utils::makeShared<OpenGLSampler>(descriptor).staticCast<Sampler>();
+}
+
+utils::SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const FrameBuffer::Descriptor& descriptor) const
 {
     m_window->makeContextCurrent();
-    return utils::makeShared<OpenGLFrameBuffer>(colorTexture).staticCast<FrameBuffer>();
+    return utils::makeShared<OpenGLFrameBuffer>(descriptor).staticCast<FrameBuffer>();
 }
 
 #ifdef GFX_BUILD_IMGUI
@@ -169,20 +175,51 @@ void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipelin
     else
         GL_CALL(glDisable(GL_BLEND))
     
-    if (m_vertextBuffer)
+    if (m_buffers.contain(0))
         m_graphicPipeline->enableVertexLayout();
 }
 
-void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<Buffer>& vertexBuffer)
+void OpenGLGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx)
 {
-    m_window->makeContextCurrent();
-
-    m_vertextBuffer = vertexBuffer.forceDynamicCast<OpenGLBuffer>();
-
-    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_vertextBuffer->bufferID()))
+    m_buffers.get(idx) = buffer.forceDynamicCast<OpenGLBuffer>();
     
-    if (m_graphicPipeline)
-        m_graphicPipeline->enableVertexLayout();
+    if (idx == 0)
+    {
+        GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_buffers[idx]->bufferID()))
+        
+        if (m_graphicPipeline)
+            m_graphicPipeline->enableVertexLayout();
+    }
+    else
+    {
+        GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)idx, m_buffers[idx]->bufferID()));
+    }
+}
+
+void OpenGLGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx)
+{
+    GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)idx, buffer.forceDynamicCast<OpenGLBuffer>()->bufferID()));
+}
+
+void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx)
+{
+    setFragmentTexture(texture, idx, newSampler(Sampler::Descriptor()), 0);
+}
+
+void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx, const utils::SharedPtr<Sampler>& sampler, utils::uint64)
+{
+    m_textures.get(idx) = texture.forceDynamicCast<OpenGLTexture>();
+
+    GL_CALL(glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit));
+    GL_CALL(glBindTexture(GL_TEXTURE_2D, m_textures[idx]->textureID()));
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sampler.forceDynamicCast<OpenGLSampler>()->minFilter());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sampler.forceDynamicCast<OpenGLSampler>()->magFilter());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, 	  sampler.forceDynamicCast<OpenGLSampler>()->sAddressMode());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     sampler.forceDynamicCast<OpenGLSampler>()->tAddressMode());
+
+    GL_CALL(glUniform1i((GLint)idx, m_nextTextureUnit));
+    m_nextTextureUnit++;
 }
 
 void OpenGLGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count)
@@ -190,6 +227,7 @@ void OpenGLGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count)
     m_window->makeContextCurrent();
 
     GL_CALL(glDrawArrays(GL_TRIANGLES, start, count))
+    m_nextTextureUnit = 0;
 }
 
 void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buff)
@@ -200,6 +238,7 @@ void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buff)
 
     GL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer->bufferID()))
     GL_CALL(glDrawElements(GL_TRIANGLES, (GLsizei)(m_indexBuffer->size() / sizeof(utils::uint32)), GL_UNSIGNED_INT, nullptr))
+    m_nextTextureUnit = 0;
 }
 
 void OpenGLGraphicAPI::endRenderPass()
@@ -214,7 +253,8 @@ void OpenGLGraphicAPI::endRenderPass()
     #endif
 
     m_indexBuffer.clear();
-    m_vertextBuffer.clear();
+    m_textures.clear();
+    m_buffers.clear();
     m_graphicPipeline.clear();
     m_frameBuffer.clear();
 }

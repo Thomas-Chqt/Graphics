@@ -10,6 +10,7 @@
 #include "GraphicAPI/Metal/MetalShader.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Error.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
@@ -89,22 +90,54 @@ MetalGraphicPipeline::MetalGraphicPipeline(const id<MTLDevice>& mtlDevice, const
     if (m_renderPipelineState == nil)
         throw MTLRenderPipelineStateCreationError();
 
+    m_depthStencilState = [mtlDevice newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+    if (m_renderPipelineState == nil)
+        throw DepthStencilStateCreationError();
+
+
     NSArray<id<MTLBinding>>* vertexBindings = reflection.vertexBindings;
     NSArray<id<MTLBinding>>* fragmentBindings = reflection.fragmentBindings;
 
     for (uint32 i = 0; i < vertexBindings.count; i++)
-        m_vertexUniformsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+    {
+        switch (vertexBindings[i].type)
+        {
+        case MTLBindingTypeBuffer:
+            m_vertexBufferBindingsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+            break;
+        case MTLBindingTypeTexture:
+            m_vertexTextureBindingsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+            break;
+        case MTLBindingTypeSampler:
+            m_vertexSamplerBindingsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+            break;
+        default:
+            throw utils::RuntimeError("not implemented");
+        }
+    }
 
     for (uint32 i = 0; i < fragmentBindings.count; i++)
-        m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
-
-    m_depthStencilState = [mtlDevice newDepthStencilStateWithDescriptor:depthStencilDescriptor];
-    if (m_renderPipelineState == nil)
-        throw DepthStencilStateCreationError();
+    {
+        switch (fragmentBindings[i].type)
+        {
+        case MTLBindingTypeBuffer:
+            m_fragmentBufferBindingsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+            break;
+        case MTLBindingTypeTexture:
+            m_fragmentTextureBindingsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+            break;
+        case MTLBindingTypeSampler:
+            m_fragmentSamplerBindingsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+            break;
+        default:
+            throw utils::RuntimeError("not implemented");
+        }
+    }
 }}
 
 MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
 {
+    [m_depthStencilState release];
     [m_renderPipelineState release];
 }}
 

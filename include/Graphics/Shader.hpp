@@ -22,16 +22,8 @@ public:
     struct Descriptor
     {
         ShaderType type;
-    };
-
-    struct MetalShaderDescriptor : public Descriptor
-    {
         utils::String mtlShaderLibPath;
         utils::String mtlFunction;
-    };
-
-    struct OpenGLShaderDescriptor : public Descriptor
-    {
         utils::String openglCode;
     };
 

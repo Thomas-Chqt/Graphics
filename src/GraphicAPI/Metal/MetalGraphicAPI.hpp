@@ -12,12 +12,14 @@
 
 #include "GraphicAPI/Metal/MetalBuffer.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
+#include "GraphicAPI/Metal/MetalSampler.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Shader.hpp"
 #include "Math/Vector.hpp"
+#include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Window/MetalWindow.hpp"
@@ -58,11 +60,12 @@ public:
 
     inline id<MTLDevice> device() { return m_mtlDevice; }
 
-    utils::SharedPtr<Shader> newShader(const Shader::MetalShaderDescriptor&, const Shader::OpenGLShaderDescriptor&) const override;
+    utils::SharedPtr<Shader> newShader(const Shader::Descriptor&) const override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
-    utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const override;
+    utils::SharedPtr<Sampler> newSampler(const Sampler::Descriptor&) const override;
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
 
     #ifdef GFX_BUILD_IMGUI
         void initImgui(ImGuiConfigFlags flags) override;
@@ -80,7 +83,12 @@ public:
     #endif
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
-    void useVertexBuffer(const utils::SharedPtr<Buffer>&) override;
+
+    void setVertexBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
+
+    void setFragmentBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
+    void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 idx) override;
+    void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 textureIdx, const utils::SharedPtr<Sampler>&, utils::uint64 samplerIdx) override;
 
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<Buffer>&) override;
@@ -118,7 +126,10 @@ private:
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
     utils::SharedPtr<MetalFrameBuffer> m_frameBuffer;
     utils::SharedPtr<MetalGraphicPipeline> m_graphicPipeline;
-    utils::SharedPtr<MetalBuffer> m_vertexBuffer;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>> m_vertexBuffers;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>> m_fragmentBuffers;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalTexture>> m_fragmentTextures;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalSampler>> m_fragmentSamplers;
     utils::SharedPtr<MetalBuffer> m_indexBuffer;
 
 public:

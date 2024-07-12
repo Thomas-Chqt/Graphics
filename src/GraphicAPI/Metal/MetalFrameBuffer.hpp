@@ -25,17 +25,22 @@ public:
     MetalFrameBuffer(const MetalFrameBuffer&) = delete;
     MetalFrameBuffer(MetalFrameBuffer&&)      = delete;
 
-    explicit MetalFrameBuffer(const utils::SharedPtr<Texture>& colorTexture);
+    MetalFrameBuffer(const FrameBuffer::Descriptor&);
 
     void setColorTexture(const utils::SharedPtr<Texture>&) override;
     inline utils::SharedPtr<Texture> colorTexture() override { return m_colorTexture.staticCast<Texture>(); };
 
+    void setDepthTexture(const utils::SharedPtr<Texture>&) override;
+    inline utils::SharedPtr<Texture> depthTexture() override { return m_depthTexture.staticCast<Texture>(); };
+
     inline utils::SharedPtr<MetalTexture> mtlColorTexture() { return m_colorTexture; }
+    inline utils::SharedPtr<MetalTexture> mtlDepthTexture() { return m_depthTexture; }
 
     ~MetalFrameBuffer() override = default;
 
 private:
     utils::SharedPtr<MetalTexture> m_colorTexture;
+    utils::SharedPtr<MetalTexture> m_depthTexture;
 
 public:
     MetalFrameBuffer& operator = (const MetalFrameBuffer&) = delete;

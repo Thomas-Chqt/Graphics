@@ -19,7 +19,14 @@ vertex float4 triangle_vs(VertexIN vtx [[stage_in]])
     return float4(vtx.position.x, vtx.position.y, 0.0, 1.0);
 }
 
-fragment float4 triangle_fs()
+struct Colors
 {
-    return float4(1.0, 1.0, 1.0, 1.0);
+    float3 red;
+    float3 green;
+    float3 blue;
+};
+
+fragment float4 triangle_fs(constant Colors& colors [[buffer(0)]])
+{
+    return float4(colors.blue, 1.0);
 }

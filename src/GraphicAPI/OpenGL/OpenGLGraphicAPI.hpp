@@ -13,10 +13,13 @@
 #include "GraphicAPI/OpenGL/OpenGLBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLFrameBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
+#include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
+#include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
@@ -38,11 +41,12 @@ public:
 
     explicit OpenGLGraphicAPI(const utils::SharedPtr<Window>&);
     
-    utils::SharedPtr<Shader> newShader(const Shader::MetalShaderDescriptor&, const Shader::OpenGLShaderDescriptor&) const override;
+    utils::SharedPtr<Shader> newShader(const Shader::Descriptor&) const override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
     utils::SharedPtr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
-    utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const override;
+    utils::SharedPtr<Sampler> newSampler(const Sampler::Descriptor&) const override;
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
 
     #ifdef GFX_BUILD_IMGUI
         void initImgui(ImGuiConfigFlags flags) override;
@@ -60,8 +64,13 @@ public:
     #endif
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
-    void useVertexBuffer(const utils::SharedPtr<Buffer>&) override;
 
+    void setVertexBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
+
+    void setFragmentBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
+    void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 idx) override;
+    void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 textureIdx, const utils::SharedPtr<Sampler>&, utils::uint64 samplerIdx) override;
+ 
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
     void drawIndexedVertices(const utils::SharedPtr<Buffer>&) override;
 
@@ -90,9 +99,11 @@ private:
     #ifdef GFX_BUILD_IMGUI
         bool m_isImguiRenderPass = false;
     #endif
+    utils::uint32 m_nextTextureUnit = 0;
     utils::SharedPtr<OpenGLFrameBuffer> m_frameBuffer;
     utils::SharedPtr<OpenGLGraphicPipeline> m_graphicPipeline;
-    utils::SharedPtr<OpenGLBuffer> m_vertextBuffer;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<OpenGLBuffer>> m_buffers;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<OpenGLTexture>> m_textures;
     utils::SharedPtr<OpenGLBuffer> m_indexBuffer;
 
 public:

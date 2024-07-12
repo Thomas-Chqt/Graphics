@@ -29,7 +29,14 @@ public:
 
     explicit OpenGLGraphicPipeline(GraphicPipeline::Descriptor);
 
-    void bindBuffer(const utils::SharedPtr<Buffer>& buffer, const utils::String& name) override;
+    inline utils::uint64 getVertexBufferIndex(const utils::String& name) override { return (utils::uint64)getBufferBindingPoint(name); }
+    inline utils::uint64 getVertexTextureIndex(const utils::String& name) override { return getSamplerUniformIndex(name); }
+    inline utils::uint64 getVertexSamplerIndex(const utils::String&) override { return 0; }
+
+    inline utils::uint64 getFragmentBufferIndex(const utils::String& name) override { return (utils::uint64)getBufferBindingPoint(name); }
+    inline utils::uint64 getFragmentTextureIndex(const utils::String& name) override { return getSamplerUniformIndex(name); }
+    inline utils::uint64 getFragmentSamplerIndex(const utils::String&) override { return 0; }
+
 
     inline GLuint shaderProgramID() const { return m_shaderProgramID; }
     void enableVertexLayout();
@@ -38,6 +45,9 @@ public:
     ~OpenGLGraphicPipeline() override;
 
 private:
+    inline utils::uint32 getBufferBindingPoint(const utils::String& name) { return m_unifomBufferBindingPoints[name]; }
+    utils::uint32 getSamplerUniformIndex(const utils::String& name) const;
+
     GLuint m_shaderProgramID = 0;
     GLuint m_vertexArrayID = 0;
     GraphicPipeline::Descriptor m_descriptor;

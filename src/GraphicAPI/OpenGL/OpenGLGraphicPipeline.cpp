@@ -10,7 +10,6 @@
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
 
 #include <utility>
-#include "GraphicAPI/OpenGL/OpenGLBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLShader.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Error.hpp"
@@ -50,7 +49,7 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(GraphicPipeline::Descriptor descrip
     GLint uniformBlockCount = 0;
     GL_CALL(glGetProgramiv(m_shaderProgramID, GL_ACTIVE_UNIFORM_BLOCKS, &uniformBlockCount));
 
-    GLuint nextBlockBinding = 0;
+    GLuint nextBlockBinding = 1;
     for (GLuint blockIndex = 0; blockIndex < uniformBlockCount; blockIndex++, nextBlockBinding++)
     {
         GLint uniformBlockNameLength = 0;
@@ -63,11 +62,6 @@ OpenGLGraphicPipeline::OpenGLGraphicPipeline(GraphicPipeline::Descriptor descrip
 
         m_unifomBufferBindingPoints.insert(name, nextBlockBinding);
     }
-}
-
-void OpenGLGraphicPipeline::bindBuffer(const utils::SharedPtr<Buffer>& buffer, const utils::String& name)
-{
-    GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, m_unifomBufferBindingPoints[name], buffer.forceDynamicCast<OpenGLBuffer>()->bufferID()));
 }
 
 void OpenGLGraphicPipeline::enableVertexLayout()
@@ -85,6 +79,13 @@ OpenGLGraphicPipeline::~OpenGLGraphicPipeline()
 {
     glDeleteVertexArrays(1, &m_vertexArrayID);
     glDeleteProgram(m_shaderProgramID);
+}
+
+utils::uint32 OpenGLGraphicPipeline::getSamplerUniformIndex(const utils::String& name) const
+{
+    utils::uint32 idx = 0;
+    GL_CALL(idx = glGetUniformLocation(m_shaderProgramID, (const char*)name));
+    return idx;
 }
 
 }
