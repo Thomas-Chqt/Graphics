@@ -108,12 +108,12 @@ private:
     utils::SharedPtr<MetalWindow> m_window;
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
-    #ifdef GFX_BUILD_IMGUI
-        bool m_isImguiInit = false;
-    #endif
 
     // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
+    #ifdef GFX_BUILD_IMGUI
+        bool m_isImguiFrame = false;
+    #endif
 
     // pass description
     LoadAction m_nextPassLoadAction = LoadAction::clear; 

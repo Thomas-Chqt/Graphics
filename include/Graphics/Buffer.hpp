@@ -31,6 +31,9 @@ public:
     Buffer(Buffer&&)      = delete;
 
     virtual utils::uint64 size() const = 0;
+
+    virtual void* mapContent() = 0;
+    virtual void unMapContent() = 0;
     
     virtual ~Buffer() = default;
 

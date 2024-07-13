@@ -28,6 +28,9 @@ public:
 
     inline utils::uint64 size() const override { return m_size; }
 
+    void* mapContent() override;
+    void unMapContent() override;
+
     inline GLuint bufferID() const { return m_bufferID; }
 
     ~OpenGLBuffer() override;

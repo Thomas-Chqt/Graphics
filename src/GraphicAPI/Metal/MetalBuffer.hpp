@@ -35,6 +35,9 @@ public:
 
     utils::uint64 size() const override;
 
+    void* mapContent() override;
+    void unMapContent() override;
+
     inline const id<MTLBuffer>& mtlBuffer() { return m_mtlBuffer; }
     
     ~MetalBuffer() override;

@@ -28,6 +28,15 @@ utils::uint64 MetalBuffer::size() const { @autoreleasepool
     return m_mtlBuffer.length;
 }}
 
+void* MetalBuffer::mapContent() { @autoreleasepool
+{
+    return m_mtlBuffer.contents;
+}}
+
+void MetalBuffer::unMapContent() { @autoreleasepool
+{
+}}
+
 MetalBuffer::~MetalBuffer() { @autoreleasepool
 {
     [m_mtlBuffer release];

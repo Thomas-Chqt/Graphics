@@ -26,6 +26,26 @@ OpenGLBuffer::OpenGLBuffer(const Buffer::Descriptor& descriptor) : m_size(descri
     GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0))
 }
 
+void* OpenGLBuffer::mapContent()
+{
+    void* mappedBuffer = nullptr;
+    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_bufferID))
+    {
+        GL_CALL(mappedBuffer = glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE));
+    }
+    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0))
+    return mappedBuffer;
+}
+
+void OpenGLBuffer::unMapContent()
+{
+    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_bufferID))
+    {
+        GL_CALL(glUnmapBuffer(GL_ARRAY_BUFFER));
+    }
+    GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0))
+}
+
 OpenGLBuffer::~OpenGLBuffer()
 {
     glDeleteBuffers(1, &m_bufferID);

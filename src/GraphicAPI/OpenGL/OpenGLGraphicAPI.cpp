@@ -96,8 +96,6 @@ void OpenGLGraphicAPI::initImgui(ImGuiConfigFlags flags)
     #else
         ImGui_ImplOpenGL3_Init("#version 130");
     #endif
-
-    m_isImguiInit = true;
 }
 #endif
 
@@ -129,6 +127,7 @@ void OpenGLGraphicAPI::beginImguiRenderPass()
     ImGui::NewFrame();
 
     m_isImguiRenderPass = true;
+    m_isImguiFrame = true;
 }
 #endif
 
@@ -262,10 +261,11 @@ void OpenGLGraphicAPI::endRenderPass()
 void OpenGLGraphicAPI::endFrame()
 {
     #ifdef GFX_BUILD_IMGUI
-    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
+    if (m_isImguiFrame && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
+        m_isImguiFrame = false;
     }
     #endif
 
@@ -278,8 +278,6 @@ void OpenGLGraphicAPI::terminateImGui()
     ImGui_ImplOpenGL3_Shutdown();
     m_window->imGuiShutdown();
     ImGui::DestroyContext();
-
-    m_isImguiInit = false;
 }
 #endif
 

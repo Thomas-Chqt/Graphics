@@ -30,3 +30,7 @@ add_subdirectory(texturedSquare)
 if(GFX_BUILD_IMGUI)
     add_subdirectory(offscreenRenderPass)
 endif()
+
+if(GFX_BUILD_IMGUI)
+    add_subdirectory(materialEditor)
+endif()

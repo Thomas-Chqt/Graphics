@@ -89,8 +89,6 @@ void MetalGraphicAPI::initImgui(ImGuiConfigFlags flags)
 
     m_window->imGuiInit();
     ImGui_ImplMetal_Init(m_mtlDevice);
-
-    m_isImguiInit = true;
 }
 #endif
 
@@ -156,6 +154,7 @@ void MetalGraphicAPI::beginImguiRenderPass() { @autoreleasepool
     ImGui::NewFrame();
 
     m_isImguiRenderPass = true;
+    m_isImguiFrame = true;
 }}
 #endif
 
@@ -235,10 +234,11 @@ void MetalGraphicAPI::endRenderPass()
 void MetalGraphicAPI::endFrame()
 {
     #ifdef GFX_BUILD_IMGUI
-    if (m_isImguiInit && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
+    if (m_isImguiFrame && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
+        m_isImguiFrame = false;
     }
     #endif
     

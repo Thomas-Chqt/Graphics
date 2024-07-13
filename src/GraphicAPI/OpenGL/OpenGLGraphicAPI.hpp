@@ -87,8 +87,10 @@ public:
 private:
     // Life time
     utils::SharedPtr<OpenGLWindow> m_window;
+
+    //frame time
     #ifdef GFX_BUILD_IMGUI
-        bool m_isImguiInit = false;
+        bool m_isImguiFrame = false;
     #endif
 
     // pass description
