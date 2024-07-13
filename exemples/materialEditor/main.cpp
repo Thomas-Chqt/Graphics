@@ -7,9 +7,11 @@
  * ---------------------------------------------------
  */
 
+#include "DirectionalLight.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
 #include "Graphics/Window.hpp"
+#include "Material.hpp"
 #include "Renderer.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
@@ -27,6 +29,8 @@ int main()
         Renderer renderer(graphicAPI, window);
 
         Mesh sphere = loadMeshes(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0];
+        Material material;
+        DirectionalLight directionalLight;
 
         bool running = true;
         window->addEventCallBack([&](gfx::Event& event) {
@@ -40,9 +44,30 @@ int main()
             gfx::Platform::shared().pollEvents();
             graphicAPI->beginFrame();
             {
-                graphicAPI->beginRenderPass();
+                graphicAPI->beginImguiRenderPass();
                 {
-                    renderer.render(sphere);
+                    if (ImGui::Begin("Imgui", nullptr, ImGuiWindowFlags_MenuBar))
+                    {
+                        if (ImGui::BeginMenuBar())
+                        {
+                            ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+                            ImGui::EndMenuBar();
+                        }
+                        ImGui::SeparatorText("Light");
+                        {
+                            ImGui::ColorEdit3("Color",            (float*)&directionalLight.color);
+                            ImGui::DragFloat("ambiantIntensity",  (float*)&directionalLight.ambiantIntensity,  0.001, 0.0, 1.0);
+                            ImGui::DragFloat("diffuseIntensity",  (float*)&directionalLight.diffuseIntensity,  0.001, 0.0, 1.0);
+                            ImGui::DragFloat("specularIntensity", (float*)&directionalLight.specularIntensity, 0.001, 0.0, 1.0);
+                        }
+                        ImGui::SeparatorText("Material");
+                        {
+                            ImGui::ColorEdit3("Base color", (float*)&material.baseColor);
+                        }
+                    }
+                    ImGui::End();
+
+                    renderer.render(sphere, material, directionalLight);
                 }
                 graphicAPI->endRenderPass();
             }

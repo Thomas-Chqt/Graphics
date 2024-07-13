@@ -10,10 +10,12 @@
 #ifndef RENDERER_HPP
 # define RENDERER_HPP
 
+#include "DirectionalLight.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Window.hpp"
+#include "Material.hpp"
 #include "Mesh.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
@@ -26,7 +28,7 @@ public:
     
     Renderer(const utils::SharedPtr<gfx::GraphicAPI>&, const utils::SharedPtr<gfx::Window>&);
 
-    void render(const Mesh&);
+    void render(const Mesh&, const Material&, const DirectionalLight&);
 
     ~Renderer();
 
@@ -36,6 +38,8 @@ private:
 
     utils::SharedPtr<gfx::GraphicPipeline> m_defaultPipeline;
     utils::SharedPtr<gfx::Buffer> m_matrixBuffer;
+    utils::SharedPtr<gfx::Buffer> m_materialBuffer;
+    utils::SharedPtr<gfx::Buffer> m_lightBuffer;
 
 public:
     Renderer& operator = (const Renderer&) = delete;

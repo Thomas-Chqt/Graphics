@@ -43,7 +43,29 @@ vertex VertexOut universal3D(VertexIn in [[stage_in]], constant Matrices& matric
     };
 }
 
-fragment float4 phong1(VertexOut in [[stage_in]])
+struct Material
 {
-    return float4(1.0, 1.0, 1.0, 1.0);
+    float4 baseColor;
+};
+
+struct DirectionalLight
+{
+    float3 color;
+    float  ambiantIntensity;
+    float  diffuseIntensity;
+    float  specularIntensity;
+    float3 direction;
+};
+
+fragment float4 phong1(VertexOut in  [[stage_in]],
+    constant Material& material      [[buffer(0)]],
+    constant DirectionalLight& light [[buffer(1)]]
+)
+{
+    float diffuseFactor = dot(normalize(in.normal), normalize(-light.direction));
+
+    float3 ambiant = material.baseColor.xyz * light.color * light.ambiantIntensity;
+    float3 diffuse = material.baseColor.xyz * light.color * light.diffuseIntensity * max(diffuseFactor, 0.0F);
+
+    return float4(ambiant + diffuse, material.baseColor.w);
 }

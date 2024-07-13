@@ -18,7 +18,30 @@ in VertexOut
 
 out vec4 fragmentColor;
 
+layout (std140) uniform material
+{
+    vec4 baseColor;
+};
+
+layout (std140) uniform light
+{
+    vec3  lightColor;
+    float _pad1;
+    float lightAmbiantIntensity;
+    float lightDiffuseIntensity;
+    float lightSpecularIntensity;
+    float _pad2;
+    vec3  lightDirection;
+};
+
 void main()
 {
-    fragmentColor = vec4(1.0, 1.0, 1.0, 1.0);
+    fragmentColor = baseColor;
+
+    float diffuseFactor = dot(normalize(fsIn.normal), normalize(-lightDirection));
+
+    vec3 ambiant = baseColor.xyz * lightColor * lightAmbiantIntensity;
+    vec3 diffuse = baseColor.xyz * lightColor * lightDiffuseIntensity * max(diffuseFactor, 0.0F);
+
+    fragmentColor = vec4(ambiant + diffuse, baseColor.w);
 }

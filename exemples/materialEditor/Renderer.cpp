@@ -8,11 +8,13 @@
  */
 
 #include "Renderer.hpp"
+#include "DirectionalLight.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Shader.hpp"
 #include "Graphics/VertexLayout.hpp"
+#include "Material.hpp"
 #include "Math/Constants.hpp"
 #include "Math/Matrix.hpp"
 #include "Mesh.hpp"
@@ -85,11 +87,24 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
 
     m_defaultPipeline = m_graphicAPI->newGraphicsPipeline(graphicPipelineDescriptor);
     
-    gfx::Buffer::Descriptor bufferDescriptor;
-    bufferDescriptor.debugName = "Matrices";
-    bufferDescriptor.size = sizeof(MatrixBuffer);
-
-    m_matrixBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
+    {
+        gfx::Buffer::Descriptor bufferDescriptor;
+        bufferDescriptor.debugName = "Matrices";
+        bufferDescriptor.size = sizeof(MatrixBuffer);
+        m_matrixBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
+    }
+    {
+        gfx::Buffer::Descriptor bufferDescriptor;
+        bufferDescriptor.debugName = "Material";
+        bufferDescriptor.size = sizeof(Material);
+        m_materialBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
+    }
+    {
+        gfx::Buffer::Descriptor bufferDescriptor;
+        bufferDescriptor.debugName = "Light";
+        bufferDescriptor.size = sizeof(DirectionalLight);
+        m_lightBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
+    }
 
     utils::uint32 w = 0;
     utils::uint32 h = 0;
@@ -99,17 +114,27 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
     m_window->addEventCallBack(updateVPMatrix, this);
 }
 
-void Renderer::render(const Mesh& mesh)
+void Renderer::render(const Mesh& mesh, const Material& material, const DirectionalLight& light)
 {
     m_graphicAPI->useGraphicsPipeline(m_defaultPipeline);
     m_graphicAPI->setVertexBuffer(m_matrixBuffer, m_defaultPipeline->getVertexBufferIndex("matrices"));
+
+    Material& gpuSideMaterial = *(Material*)m_materialBuffer->mapContent();
+        gpuSideMaterial = material;
+    m_materialBuffer->unMapContent();
+    m_graphicAPI->setFragmentBuffer(m_materialBuffer, m_defaultPipeline->getFragmentBufferIndex("material"));
+
+    DirectionalLight& gpuSideLight = *(DirectionalLight*)m_lightBuffer->mapContent();
+        gpuSideLight = light;
+    m_lightBuffer->unMapContent();
+    m_graphicAPI->setFragmentBuffer(m_lightBuffer, m_defaultPipeline->getFragmentBufferIndex("light"));
 
     utils::Func<void(const SubMesh&, const math::mat4x4&)> renderSubMesh = [&](const SubMesh& subMesh, const math::mat4x4& transform) {
         math::mat4x4 modelMatrix = transform * subMesh.transform;
         if (subMesh.vertexBuffer && subMesh.indexBuffer)
         {
             MatrixBuffer& matrices = *(MatrixBuffer*)m_matrixBuffer->mapContent();
-            matrices.modelMatrix = modelMatrix;
+                matrices.modelMatrix = modelMatrix;
             m_matrixBuffer->unMapContent();
 
             m_graphicAPI->setVertexBuffer(subMesh.vertexBuffer, 0);
