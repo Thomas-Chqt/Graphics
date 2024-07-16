@@ -136,10 +136,10 @@ utils::SharedPtr<gfx::Sampler> createSampler(const gfx::GraphicAPI& api)
     gfx::Sampler::Descriptor samplerDescriptor;
 
     samplerDescriptor.debugName = "mcGrassSampler";
-    samplerDescriptor.sAddressMode = gfx::SamplerAddressMode::Repeat;
-    samplerDescriptor.tAddressMode = gfx::SamplerAddressMode::Repeat;
-    samplerDescriptor.minFilter = gfx::SamplerMinMagFilter::Linear;
-    samplerDescriptor.magFilter = gfx::SamplerMinMagFilter::Linear;
+    samplerDescriptor.sAddressMode = gfx::Sampler::AddressMode::Repeat;
+    samplerDescriptor.tAddressMode = gfx::Sampler::AddressMode::Repeat;
+    samplerDescriptor.minFilter = gfx::Sampler::MinMagFilter::Linear;
+    samplerDescriptor.magFilter = gfx::Sampler::MinMagFilter::Linear;
 
     return api.newSampler(samplerDescriptor);
 }

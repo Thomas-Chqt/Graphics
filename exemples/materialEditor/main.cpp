@@ -18,8 +18,11 @@
 #include "Math/Matrix.hpp"
 #include "Math/Vector.hpp"
 #include "Mesh.hpp"
+#include "RenderMethod.hpp"
 #include "Renderer.hpp"
+#include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Dictionary.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "imgui/imgui.h"
@@ -34,6 +37,8 @@ utils::SharedPtr<gfx::Texture> loadTexture(const gfx::GraphicAPI& api, const uti
     int width = 0;
     int height = 0;
     stbi_uc* imgBytes = stbi_load(path, &width, &height, nullptr, STBI_rgb_alpha);
+    if (imgBytes == nullptr)
+        throw utils::RuntimeError("Unable to load the texture for path: " + path);
 
     gfx::Texture::Descriptor textureDescriptor;
     textureDescriptor.width = width;
@@ -43,6 +48,30 @@ utils::SharedPtr<gfx::Texture> loadTexture(const gfx::GraphicAPI& api, const uti
     texture->replaceContent(imgBytes);
 
     stbi_image_free(imgBytes);
+
+    return texture;
+}
+
+utils::SharedPtr<gfx::Texture> loadCubeMap(const gfx::GraphicAPI& api, const utils::Array<utils::String>& paths)
+{
+    int width = 0;
+    int height = 0;
+
+    stbi_uc* imgBytes[6];
+    for (int i = 0; i < 6; i++)
+    {
+        imgBytes[i] = stbi_load(paths[i], &width, &height, nullptr, STBI_rgb_alpha);
+        if (imgBytes[i] == nullptr)
+            throw utils::RuntimeError("Unable to load the texture for path: " + paths[i]);
+    }
+
+    utils::SharedPtr<gfx::Texture> texture = api.newTexture(gfx::Texture::Descriptor::textureCubeDescriptor(width));
+
+    for (int i = 0; i < 6; i++)
+    {
+        texture->replaceSliceContent(i, imgBytes[i]);
+        stbi_image_free(imgBytes[i]);
+    }
 
     return texture;
 }
@@ -57,9 +86,18 @@ int main()
 
         Renderer renderer(graphicAPI, window);
 
+        renderer.setSkyBoxTexture(loadCubeMap(*graphicAPI, {
+            utils::String(RESSOURCES_DIR) + "/skybox/px.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/nx.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/py.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/ny.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/pz.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/nz.png",
+        }));
+
         utils::Array<Mesh> meshes;
-        meshes.append(loadMeshes(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0]);
-        meshes.append(loadMeshes(*graphicAPI, RESSOURCES_DIR"/cube.glb")[0]);
+        meshes.append(loadMeshes<PhongRenderMethod::Vertex>(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0]);
+        meshes.append(loadMeshes<PhongRenderMethod::Vertex>(*graphicAPI, RESSOURCES_DIR"/cube.glb")[0]);
 
         Material material;
 
@@ -82,6 +120,7 @@ int main()
         Mesh* renderedMesh = &meshes[0];
         math::vec3f pos;
         math::vec3f rot;
+        float scale = 1.0;
 
         while (running)
         {
@@ -117,6 +156,7 @@ int main()
                                 ImGui::EndCombo();
                             }
                             ImGui::DragFloat3("Rotation##mesh", (float*)&rot, 0.001, -(2*PI), 2*PI);
+                            ImGui::DragFloat("Scale", &scale, 0.001, 0.0, 2.0);
                         }
                         ImGui::SeparatorText("Material");
                         {
@@ -139,9 +179,45 @@ int main()
                                 ImGui::ColorEdit3("Diffuse color", (float*)&material.diffuse.value);
                             
                             ImGui::Spacing();
-                            ImGui::ColorEdit3("Specular color", (float*)&material.specular.value);
+
+                            static utils::String selectedTexture_specular;
+                            if (ImGui::BeginCombo("Specluar texture", material.specular.texture ? selectedTexture_specular : "Use color", 0))
+                            {
+                                if (ImGui::Selectable("Use color", material.specular.texture == nullptr))
+                                    material.specular.texture.clear();
+                                for (auto& keyVal : textures)
+                                {
+                                    if (ImGui::Selectable(keyVal.key, material.specular.texture == keyVal.val))
+                                    {
+                                        material.specular.texture = keyVal.val;
+                                        selectedTexture_specular = keyVal.key;
+                                    }
+                                }
+                                ImGui::EndCombo();
+                            }
+                            if (material.specular.texture == nullptr)
+                                ImGui::ColorEdit3("Specular color", (float*)&material.specular.value);
+
                             ImGui::Spacing();
-                            ImGui::ColorEdit3("Emissive color", (float*)&material.emissive.value);
+
+                            static utils::String selectedTexture_emissive;
+                            if (ImGui::BeginCombo("Emissve texture", material.emissive.texture ? selectedTexture_emissive : "Use color", 0))
+                            {
+                                if (ImGui::Selectable("Use color", material.emissive.texture == nullptr))
+                                    material.emissive.texture.clear();
+                                for (auto& keyVal : textures)
+                                {
+                                    if (ImGui::Selectable(keyVal.key, material.emissive.texture == keyVal.val))
+                                    {
+                                        material.emissive.texture = keyVal.val;
+                                        selectedTexture_emissive = keyVal.key;
+                                    }
+                                }
+                                ImGui::EndCombo();
+                            }
+                            if (material.emissive.texture == nullptr)
+                                ImGui::ColorEdit3("Emissive color", (float*)&material.emissive.value);
+
                             ImGui::Spacing();
                             ImGui::DragFloat("shininess", (float*)&material.shininess, 1, 1);
                             ImGui::Spacing();
@@ -165,7 +241,7 @@ int main()
                     }
                     ImGui::End();
 
-                    renderer.render(*renderedMesh, material, directionalLight, math::mat4x4::rotation(rot));
+                    renderer.render(*renderedMesh, material, directionalLight, math::mat4x4::rotation(rot) * math::mat4x4::scale({scale, scale, scale}));
                 }
                 graphicAPI->endRenderPass();
             }

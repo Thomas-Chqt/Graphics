@@ -23,8 +23,6 @@ enum class BlendOperation        { blendingOff, srcA_plus_1_minus_srcA, one_minu
 enum class VertexAttributeFormat { vec2f, vec3f };
 enum class StorageMode           { Private, Shared };
 enum class TextureUsage          { ShaderRead, RenderTarget, ShaderReadAndRenderTarget };
-enum class SamplerAddressMode    { ClampToEdge, Repeat, MirrorRepeat };
-enum class SamplerMinMagFilter   { Nearest, Linear };
 
 #ifdef GFX_BUILD_METAL
     utils::uint64 toMetalPixelFormat(PixelFormat);
@@ -38,9 +36,6 @@ enum class SamplerMinMagFilter   { Nearest, Linear };
     int toOpenGLVertexAttributeFormatSize(VertexAttributeFormat);
     utils::uint32 toOpenGLVertexAttributeFormatType(VertexAttributeFormat);
     utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat);
-
-    int toOpenGLSamplerAddressMode(SamplerAddressMode);
-    int toOpenGLSamplerMinMagFilter(SamplerMinMagFilter);
 #endif
 
 }

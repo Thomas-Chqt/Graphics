@@ -115,6 +115,8 @@ void PhongRenderMethod::setMaterial(const ::Material& material)
         gpuMaterial.shininess = material.shininess;
         gpuMaterial.useDiffuseTexture = material.diffuse.texture ? 1 : 0;
         gpuMaterial.useNormalMap = material.normalMap ? 1 : 0;
+        gpuMaterial.useSpecularMap = material.specular.texture ? 1 : 0;
+        gpuMaterial.useEmissiveMap = material.emissive.texture ? 1 : 0;
     }
     m_materialBuffer->unMapContent();
 
@@ -122,6 +124,10 @@ void PhongRenderMethod::setMaterial(const ::Material& material)
         m_api->setFragmentTexture(material.diffuse.texture, m_graphicPipeline->getFragmentTextureIndex("diffuseTexture"));
     if (gpuMaterial.useNormalMap != 0)
         m_api->setFragmentTexture(material.normalMap, m_graphicPipeline->getFragmentTextureIndex("normalMap"));
+    if (gpuMaterial.useSpecularMap != 0)
+        m_api->setFragmentTexture(material.specular.texture, m_graphicPipeline->getFragmentTextureIndex("specularMap"));
+    if (gpuMaterial.useEmissiveMap != 0)
+        m_api->setFragmentTexture(material.emissive.texture, m_graphicPipeline->getFragmentTextureIndex("emissiveMap"));
 }
 
 void PhongRenderMethod::setLight(const ::DirectionalLight& light)
@@ -135,4 +141,65 @@ void PhongRenderMethod::setLight(const ::DirectionalLight& light)
         gpuLight.direction = (math::vec4f({0, 0, 1, 0}) * math::mat4x4::rotation(light.rotation) * math::mat4x4::rotation(light.rotation)).xyz();
     }
     m_lightBuffer->unMapContent();
+}
+
+utils::SharedPtr<gfx::GraphicPipeline> makeSkyboxGraphicPipeline(const gfx::GraphicAPI& api)
+{
+    gfx::Shader::Descriptor shaderDescriptor;
+    shaderDescriptor.type = gfx::ShaderType::vertex;
+    #ifdef GFX_BUILD_METAL
+        shaderDescriptor.mtlShaderLibPath = MTL_SHADER_LIB;
+        shaderDescriptor.mtlFunction = "skybox_vs";
+    #endif
+    #ifdef GFX_BUILD_OPENGL
+        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/skybox.vs");
+    #endif
+    utils::SharedPtr<gfx::Shader> vs = api.newShader(shaderDescriptor);
+    shaderDescriptor.type = gfx::ShaderType::fragment;
+    #ifdef GFX_BUILD_METAL
+        shaderDescriptor.mtlShaderLibPath = MTL_SHADER_LIB;
+        shaderDescriptor.mtlFunction = "skybox_fs";
+    #endif
+    #ifdef GFX_BUILD_OPENGL
+        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/skybox.fs");
+    #endif
+    utils::SharedPtr<gfx::Shader> fs = api.newShader(shaderDescriptor);
+
+    gfx::VertexLayout vertexLayout;
+    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(SkyboxRenderMethod::Vertex, pos)});
+    vertexLayout.stride = sizeof(PhongRenderMethod::Vertex);
+
+    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
+    graphicPipelineDescriptor.vertexLayout = vertexLayout;
+    graphicPipelineDescriptor.vertexShader = vs;
+    graphicPipelineDescriptor.fragmentShader = fs;
+
+    return api.newGraphicsPipeline(graphicPipelineDescriptor);
+}
+
+SkyboxRenderMethod::SkyboxRenderMethod(const utils::SharedPtr<gfx::GraphicAPI>& api) : RenderMethod(api, makeSkyboxGraphicPipeline(*api))
+{
+    gfx::Buffer::Descriptor bufferDescriptor;
+    bufferDescriptor.debugName = "Matrices";
+    bufferDescriptor.size = sizeof(Matrices);
+    m_matrixBuffer = m_api->newBuffer(bufferDescriptor);
+}
+
+void SkyboxRenderMethod::use()
+{
+    m_api->useGraphicsPipeline(m_graphicPipeline);
+}
+
+void SkyboxRenderMethod::setVpMatrix(math::mat4x4 mat)
+{
+    auto& matrices = *(SkyboxRenderMethod::Matrices*)m_matrixBuffer->mapContent();
+    {
+        matrices.vpMatrix = mat;
+    }
+    m_matrixBuffer->unMapContent();
+}
+
+void SkyboxRenderMethod::setTextureCube(const utils::SharedPtr<gfx::Texture>& texture)
+{
+    m_api->setFragmentTexture(texture, m_graphicPipeline->getFragmentTextureIndex("skyboxTexture"));
 }

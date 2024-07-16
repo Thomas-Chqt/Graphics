@@ -13,6 +13,7 @@
 #include "DirectionalLight.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
+#include "Graphics/Texture.hpp"
 #include "Material.hpp"
 #include "Math/Matrix.hpp"
 #include "Math/Vector.hpp"
@@ -22,8 +23,8 @@ class RenderMethod
 {
 public:
     RenderMethod()                    = delete;
-    RenderMethod(const RenderMethod&) = delete;
-    RenderMethod(RenderMethod&&)      = delete;
+    RenderMethod(const RenderMethod&) = default;
+    RenderMethod(RenderMethod&&)      = default;
 
     virtual void use() = 0;
 
@@ -41,8 +42,8 @@ protected:
     utils::SharedPtr<gfx::GraphicPipeline> m_graphicPipeline;
 
 public:
-    RenderMethod& operator = (const RenderMethod&) = delete;
-    RenderMethod& operator = (RenderMethod&&)      = delete;
+    RenderMethod& operator = (const RenderMethod&) = default;
+    RenderMethod& operator = (RenderMethod&&)      = default;
 };
 
 class PhongRenderMethod : public RenderMethod
@@ -58,8 +59,8 @@ public:
 
 public:
     PhongRenderMethod()                         = delete;
-    PhongRenderMethod(const PhongRenderMethod&) = delete;
-    PhongRenderMethod(PhongRenderMethod&&)      = delete;
+    PhongRenderMethod(const PhongRenderMethod&) = default;
+    PhongRenderMethod(PhongRenderMethod&&)      = default;
 
     PhongRenderMethod(const utils::SharedPtr<gfx::GraphicAPI>&);
 
@@ -88,6 +89,8 @@ private:
 
         int useDiffuseTexture;
         int useNormalMap;
+        int useSpecularMap;
+        int useEmissiveMap;
     };
 
     struct DirectionalLight
@@ -104,8 +107,48 @@ private:
     utils::SharedPtr<gfx::Buffer> m_lightBuffer;
 
 public:
-    PhongRenderMethod& operator = (const PhongRenderMethod&) = delete;
-    PhongRenderMethod& operator = (PhongRenderMethod&&)      = delete;
+    PhongRenderMethod& operator = (const PhongRenderMethod&) = default;
+    PhongRenderMethod& operator = (PhongRenderMethod&&)      = default;
+};
+
+class SkyboxRenderMethod : public RenderMethod
+{
+public:
+    struct Vertex
+    {
+        math::vec3f pos;
+    };
+
+public:
+    SkyboxRenderMethod()                          = delete;
+    SkyboxRenderMethod(const SkyboxRenderMethod&) = default;
+    SkyboxRenderMethod(SkyboxRenderMethod&&)      = default;
+
+    SkyboxRenderMethod(const utils::SharedPtr<gfx::GraphicAPI>&);
+
+    void use() override;
+
+    void setVpMatrix(math::mat4x4) override;
+    void setModelMatrix(math::mat4x4) override {}
+    void setMaterial(const ::Material&) override {}
+    void setLight(const ::DirectionalLight&) override {}
+
+    void setTextureCube(const utils::SharedPtr<gfx::Texture>&);
+
+    ~SkyboxRenderMethod() override = default;
+
+private:
+    struct Matrices
+    {
+        math::mat4x4 vpMatrix;
+        math::mat4x4 modelMatrix;
+    };
+
+    utils::SharedPtr<gfx::Buffer> m_matrixBuffer;
+
+public:
+    SkyboxRenderMethod& operator = (const SkyboxRenderMethod&) = default;
+    SkyboxRenderMethod& operator = (SkyboxRenderMethod&&)      = default;
 };
 
 #endif // RENDERMETHOD_HPP

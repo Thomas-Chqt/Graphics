@@ -124,23 +124,11 @@ utils::SharedPtr<gfx::Texture> createColorTexture(const gfx::GraphicAPI& api)
     return api.newTexture(textureDescriptor);
 }
 
-utils::SharedPtr<gfx::Texture> createDepthTexture(const gfx::GraphicAPI& api)
-{
-    gfx::Texture::Descriptor textureDescriptor;
-    textureDescriptor.width = WINDOW_WIDTH;
-    textureDescriptor.height = WINDOW_HEIGHT;
-    textureDescriptor.pixelFormat = gfx::PixelFormat::Depth32;
-    textureDescriptor.usage = gfx::TextureUsage::RenderTarget;
-    textureDescriptor.storageMode = gfx::StorageMode::Private;
-
-    return api.newTexture(textureDescriptor);
-}
-
 utils::SharedPtr<gfx::FrameBuffer> createFrameBuffer(const gfx::GraphicAPI& api)
 {
     gfx::FrameBuffer::Descriptor frameBufferDescriptor;
     frameBufferDescriptor.colorTexture = createColorTexture(api);
-    frameBufferDescriptor.depthTexture = createDepthTexture(api);
+    frameBufferDescriptor.depthTexture = api.newTexture(gfx::Texture::Descriptor::depthTextureDescriptor(WINDOW_WIDTH, WINDOW_HEIGHT));
 
     return api.newFrameBuffer(frameBufferDescriptor);
 }

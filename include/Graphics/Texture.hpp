@@ -12,6 +12,7 @@
 
 #include "Enums.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "UtilsCPP/Macros.hpp"
 
 namespace gfx
 {
@@ -19,13 +20,60 @@ namespace gfx
 class Texture
 {
 public:
+    enum class Type { texture2d, textureCube };
+
     struct Descriptor
     {
+        static inline Descriptor texture2dDescriptor(utils::uint32 width, utils::uint32 height)
+        {
+            Descriptor descriptor;
+            descriptor.type        = Texture::Type::texture2d;
+            descriptor.width       = width;
+            descriptor.height      = height;
+            descriptor.pixelFormat = PixelFormat::RGBA;
+            descriptor.storageMode = StorageMode::Shared;
+            descriptor.usage       = TextureUsage::ShaderRead;
+            return descriptor;
+        }
+        
+        static inline Descriptor depthTextureDescriptor(utils::uint32 width, utils::uint32 height)
+        {
+            Descriptor descriptor;
+            descriptor.type        = Texture::Type::texture2d;
+            descriptor.width       = width;
+            descriptor.height      = height;
+            descriptor.pixelFormat = PixelFormat::Depth32;
+            descriptor.storageMode = StorageMode::Private;
+            descriptor.usage       = TextureUsage::RenderTarget;
+            return descriptor;
+        }
+
+        static inline Descriptor textureCubeDescriptor(utils::uint32 size)
+        {
+            Descriptor descriptor;
+            descriptor.type        = Texture::Type::textureCube;
+            descriptor.width       = size;
+            descriptor.height      = size;
+            descriptor.pixelFormat = PixelFormat::RGBA;
+            descriptor.storageMode = StorageMode::Shared;
+            descriptor.usage       = TextureUsage::ShaderRead;
+            return descriptor;
+        }
+
+        Texture::Type type = Texture::Type::texture2d;
         utils::uint32 width = 0;
         utils::uint32 height = 0;
         gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
         StorageMode storageMode = StorageMode::Shared;
         TextureUsage usage = TextureUsage::ShaderRead;
+    };
+
+    struct Region
+    {
+        utils::uint32 offsetX;
+        utils::uint32 offsetY;
+        utils::uint32 width;
+        utils::uint32 height;
     };
 
 public:
@@ -35,8 +83,11 @@ public:
     virtual utils::uint32 width() = 0;
     virtual utils::uint32 height() = 0;
 
-    virtual void replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes) = 0;
-    inline void replaceContent(const void* data) { replaceRegion(0, 0, width(), height(), data); }
+    virtual void replaceRegion(const Region&, const void* bytes) = 0;
+    virtual void replaceRegion(const Region&, utils::uint32 slice, const void* bytes) = 0;
+
+    inline void replaceContent(const void* data) { replaceRegion({0, 0, width(), height()}, data); }
+    inline void replaceSliceContent(utils::uint32 slice, const void* data) { replaceRegion({0, 0, width(), height()}, slice, data); }
 
     virtual ~Texture() = default;
 

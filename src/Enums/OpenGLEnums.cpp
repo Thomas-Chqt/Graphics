@@ -71,34 +71,4 @@ utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat forma
     }
 }
 
-int toOpenGLSamplerAddressMode(SamplerAddressMode addressMode)
-{
-    switch (addressMode)
-    {
-    case SamplerAddressMode::ClampToEdge:
-        return GL_CLAMP_TO_EDGE;
-        break;
-    case SamplerAddressMode::Repeat:
-        return GL_REPEAT;
-        break;
-    case SamplerAddressMode::MirrorRepeat:
-        return GL_MIRRORED_REPEAT;
-        break;
-    }
-}
-
-int toOpenGLSamplerMinMagFilter(SamplerMinMagFilter filter)
-{
-    switch (filter)
-    {
-    case SamplerMinMagFilter::Nearest:
-        return GL_NEAREST;
-        break;
-    case SamplerMinMagFilter::Linear:
-        return GL_LINEAR;
-        break;
-    }
-}
-
-
 }

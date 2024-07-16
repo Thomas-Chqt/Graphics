@@ -10,7 +10,6 @@
 #ifndef OPENGLTEXTURE_HPP
 # define OPENGLTEXTURE_HPP
 
-#include "Graphics/Enums.hpp"
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <GL/glew.h>
@@ -25,22 +24,26 @@ public:
     OpenGLTexture(const OpenGLTexture&) = delete;
     OpenGLTexture(OpenGLTexture&&)      = delete;
 
-    explicit OpenGLTexture(const Texture::Descriptor&);
+    OpenGLTexture(const Texture::Descriptor&);
 
     inline utils::uint32 width() override { return m_width; }
     inline utils::uint32 height() override { return m_height; }
 
-    void replaceRegion(utils::uint32 offsetX, utils::uint32 offsetY, utils::uint32 width, utils::uint32 height, const void* bytes) override;
+    void replaceRegion(const Region&, const void* bytes) override;
+    void replaceRegion(const Region&, utils::uint32 slice, const void* bytes) override;
     
     inline GLuint textureID() const { return m_textureID; };
+    inline GLenum textureType() const { return m_textureType; }
 
     ~OpenGLTexture() override;
 
 private:
     GLuint m_textureID = 0;
-    const utils::uint32 m_width = 0;
-    const utils::uint32 m_height = 0;
-    const PixelFormat m_pixelFormat = PixelFormat::BGRA;
+    const GLenum m_textureType = 0;
+    const GLsizei m_width = 0;
+    const GLsizei m_height = 0;
+    const GLenum m_internalPixelFormat = 0;
+    const GLenum m_pixelFormat = 0;
 
 public:
     OpenGLTexture& operator = (const OpenGLTexture&) = delete;

@@ -10,7 +10,6 @@
 #ifndef SAMPLER_HPP
 # define SAMPLER_HPP
 
-#include "Enums.hpp"
 #include "UtilsCPP/String.hpp"
 
 namespace gfx
@@ -19,13 +18,17 @@ namespace gfx
 class Sampler
 {
 public:
+    enum class AddressMode  { ClampToEdge, Repeat, MirrorRepeat };
+    enum class MinMagFilter { Nearest, Linear };
+
     struct Descriptor
     {
         utils::String debugName;
-        SamplerAddressMode sAddressMode = SamplerAddressMode::ClampToEdge;
-        SamplerAddressMode tAddressMode = SamplerAddressMode::ClampToEdge;
-        SamplerMinMagFilter minFilter = SamplerMinMagFilter::Nearest;
-        SamplerMinMagFilter magFilter = SamplerMinMagFilter::Nearest;
+        AddressMode sAddressMode = AddressMode::ClampToEdge;
+        AddressMode tAddressMode = AddressMode::ClampToEdge;
+        AddressMode rAddressMode = AddressMode::ClampToEdge;
+        MinMagFilter minFilter = MinMagFilter::Nearest;
+        MinMagFilter magFilter = MinMagFilter::Nearest;
     };
 
 public:

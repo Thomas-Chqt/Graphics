@@ -9,9 +9,11 @@
 
 #include "Renderer.hpp"
 #include "DirectionalLight.hpp"
+#include "Graphics/Buffer.hpp"
 #include "Material.hpp"
 #include "Math/Constants.hpp"
 #include "Math/Matrix.hpp"
+#include "Math/Vector.hpp"
 #include "Mesh.hpp"
 #include "RenderMethod.hpp"
 #include "UtilsCPP/Func.hpp"
@@ -19,7 +21,52 @@
 #include "UtilsCPP/Types.hpp"
 #include <cmath>
 
-Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::SharedPtr<gfx::Window>& window) : m_window(window), m_graphicAPI(api)
+#define SKYBOX_VERTICES {                 \
+    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
+    math::vec3f{ -1.0F, -1.0F, -1.0F },   \
+    math::vec3f{  1.0F, -1.0F, -1.0F },   \
+    math::vec3f{  1.0F, -1.0F, -1.0F },   \
+    math::vec3f{  1.0F,  1.0F, -1.0F },   \
+    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
+                                          \
+    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
+    math::vec3f{ -1.0F, -1.0F, -1.0F },   \
+    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
+    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
+    math::vec3f{ -1.0F,  1.0F,  1.0F },   \
+    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
+                                          \
+    math::vec3f{  1.0F, -1.0F, -1.0F },   \
+    math::vec3f{  1.0F, -1.0F,  1.0F },   \
+    math::vec3f{  1.0F,  1.0F,  1.0F },   \
+    math::vec3f{  1.0F,  1.0F,  1.0F },   \
+    math::vec3f{  1.0F,  1.0F, -1.0F },   \
+    math::vec3f{  1.0F, -1.0F, -1.0F },   \
+                                          \
+    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
+    math::vec3f{ -1.0F,  1.0F,  1.0F },   \
+    math::vec3f{  1.0F,  1.0F,  1.0F },   \
+    math::vec3f{  1.0F,  1.0F,  1.0F },   \
+    math::vec3f{  1.0F, -1.0F,  1.0F },   \
+    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
+                                          \
+    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
+    math::vec3f{  1.0F,  1.0F, -1.0F },   \
+    math::vec3f{  1.0F,  1.0F,  1.0F },   \
+    math::vec3f{  1.0F,  1.0F,  1.0F },   \
+    math::vec3f{ -1.0F,  1.0F,  1.0F },   \
+    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
+                                          \
+    math::vec3f{ -1.0F, -1.0F, -1.0F },   \
+    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
+    math::vec3f{  1.0F, -1.0F, -1.0F },   \
+    math::vec3f{  1.0F, -1.0F, -1.0F },   \
+    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
+    math::vec3f{  1.0F, -1.0F,  1.0F }}   \
+
+Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::SharedPtr<gfx::Window>& window)
+    : m_window(window), m_graphicAPI(api),
+      m_skyBoxRenderMethod(SkyboxRenderMethod(api))
 {
     utils::Func<void(gfx::Event&)> updateVPMatrix = [this](gfx::Event& event) {
         event.dispatch<gfx::WindowResizeEvent>([this](gfx::WindowResizeEvent& event) {
@@ -49,10 +96,20 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
     m_window->addEventCallBack(updateVPMatrix, this);
 
     m_defautRenderMethod = utils::makeShared<PhongRenderMethod>(api).staticCast<RenderMethod>();
+
+    SkyboxRenderMethod::Vertex skyboxVertices[] = SKYBOX_VERTICES;
+
+    gfx::Buffer::Descriptor bufferDescriptor;
+    bufferDescriptor.debugName = "skybox vertex buffer";
+    bufferDescriptor.size = sizeof(skyboxVertices);
+    bufferDescriptor.initialData = skyboxVertices;
+
+    m_skyBoxVertexBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
 }
 
 void Renderer::render(const Mesh& mesh, const Material& material, const DirectionalLight& light, const math::mat4x4& transform)
 {
+    renderSkybox();
     m_defautRenderMethod->use();
 
     m_defautRenderMethod->setVpMatrix(m_vpMatrix);
@@ -77,4 +134,13 @@ void Renderer::render(const Mesh& mesh, const Material& material, const Directio
 Renderer::~Renderer()
 {
     m_window->clearCallbacks(this);
+}
+
+void Renderer::renderSkybox()
+{
+    m_skyBoxRenderMethod.use();
+    m_skyBoxRenderMethod.setVpMatrix(m_vpMatrix);
+    m_skyBoxRenderMethod.setTextureCube(m_skyBoxTexture);
+    m_graphicAPI->setVertexBuffer(m_skyBoxVertexBuffer, 0);
+    m_graphicAPI->drawVertices(0, 36);
 }
