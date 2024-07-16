@@ -11,12 +11,12 @@
 # define RENDERER_HPP
 
 #include "DirectionalLight.hpp"
-#include "Graphics/Buffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
-#include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/Window.hpp"
 #include "Material.hpp"
+#include "Math/Matrix.hpp"
 #include "Mesh.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
 class Renderer
@@ -35,11 +35,9 @@ public:
 private:
     utils::SharedPtr<gfx::GraphicAPI> m_graphicAPI;
     utils::SharedPtr<gfx::Window> m_window;
+    math::mat4x4 m_vpMatrix;
 
-    utils::SharedPtr<gfx::GraphicPipeline> m_defaultPipeline;
-    utils::SharedPtr<gfx::Buffer> m_matrixBuffer;
-    utils::SharedPtr<gfx::Buffer> m_materialBuffer;
-    utils::SharedPtr<gfx::Buffer> m_lightBuffer;
+    utils::SharedPtr<RenderMethod> m_defautRenderMethod;
 
 public:
     Renderer& operator = (const Renderer&) = delete;

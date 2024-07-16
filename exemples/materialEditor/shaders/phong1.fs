@@ -20,28 +20,39 @@ out vec4 fragmentColor;
 
 layout (std140) uniform material
 {
-    vec4 baseColor;
+    vec4  material_diffuseColor;
+    vec4  material_specularColor;
+    vec4  material_emissiveColor;
+    float material_shininess;
+    bool  material_useDiffuseTexture;
 };
+
+uniform sampler2D diffuseTexture;
 
 layout (std140) uniform light
 {
-    vec3  lightColor;
-    float _pad1;
-    float lightAmbiantIntensity;
-    float lightDiffuseIntensity;
-    float lightSpecularIntensity;
-    float _pad2;
-    vec3  lightDirection;
+    vec4  light_color;
+    float light_ambiantIntensity;
+    float light_diffuseIntensity;
+    float light_specularIntensity;
+    vec4  light_direction;
 };
 
 void main()
 {
-    fragmentColor = baseColor;
+    vec3 diffuseColor = material_diffuseColor.xyz;
+    if (material_useDiffuseTexture)
+        diffuseColor = texture(diffuseTexture, fsIn.uv).xyz;
 
-    float diffuseFactor = dot(normalize(fsIn.normal), normalize(-lightDirection));
+    vec3 cameraDir = normalize(vec3(0, 0, -3) - fsIn.pos);
 
-    vec3 ambiant = baseColor.xyz * lightColor * lightAmbiantIntensity;
-    vec3 diffuse = baseColor.xyz * lightColor * lightDiffuseIntensity * max(diffuseFactor, 0.0F);
+    float diffuseFactor = dot(normalize(fsIn.normal), normalize(-light_direction.xyz));
+    float specularFactor = dot(reflect(light_direction.xyz, fsIn.normal), cameraDir);
 
-    fragmentColor = vec4(ambiant + diffuse, baseColor.w);
+    vec3 ambiant  = diffuseColor               * light_color.xyz * light_ambiantIntensity;
+    vec3 diffuse  = diffuseColor               * light_color.xyz * light_diffuseIntensity  * max(diffuseFactor, 0.0F);
+    vec3 specular = material_specularColor.xyz * light_color.xyz * light_specularIntensity * (specularFactor > 0.0F ? pow(specularFactor, material_shininess) : 0.0F);
+    vec3 emissive = material_emissiveColor.xyz;
+
+    fragmentColor = vec4(ambiant + diffuse + specular + emissive, 1.0F);
 }

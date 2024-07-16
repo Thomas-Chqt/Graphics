@@ -18,7 +18,7 @@ struct DirectionalLight
     float ambiantIntensity  = 0.25;
     float diffuseIntensity  = 0.5;
     float specularIntensity = 0.5;
-    math::vec3f direction   = { 1.0F, 0.0F, 0.0F };
+    math::vec3f rotation = {0, 0, 0};
 };
 
 #endif // DIRECTIONALLIGHT_HPP

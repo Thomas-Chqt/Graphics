@@ -11,3 +11,4 @@ build_xcode.nosync/
 .DS_Store
 .lsansuppr
 .idea/
+.zed/

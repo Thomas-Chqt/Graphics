@@ -10,11 +10,24 @@
 #ifndef MATERIAL_HPP
 # define MATERIAL_HPP
 
+#include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
+#include "UtilsCPP/SharedPtr.hpp"
+
+struct ColorInput
+{
+    ColorInput(math::rgb color) : value(color) {}
+
+    math::rgb value;
+    utils::SharedPtr<gfx::Texture> texture;
+};
 
 struct Material
 {
-    math::vec4f baseColor = WHITE;
+    ColorInput diffuse  = WHITE3;
+    ColorInput specular = BLACK3;
+    ColorInput emissive = BLACK3;
+    float shininess     = 1.0F;
 };
 
 #endif // MATERIAL_HPP

@@ -9,26 +9,15 @@
 
 #include "Renderer.hpp"
 #include "DirectionalLight.hpp"
-#include "Graphics/Buffer.hpp"
-#include "Graphics/Enums.hpp"
-#include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/Shader.hpp"
-#include "Graphics/VertexLayout.hpp"
 #include "Material.hpp"
 #include "Math/Constants.hpp"
 #include "Math/Matrix.hpp"
 #include "Mesh.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
-#include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <cstddef>
-
-struct MatrixBuffer
-{
-    math::mat4x4 vpMatrix;
-    math::mat4x4 modelMatrix;
-};
 
 Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::SharedPtr<gfx::Window>& window) : m_window(window), m_graphicAPI(api)
 {
@@ -48,63 +37,9 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
                                                           0,   0, zs, -zNear * zs,
                                                           0,   0,  1,           0);
             math::mat4x4 viewMatrix = math::mat4x4::translation({0, 0, -3}).inversed();
-            MatrixBuffer& matrices = *(MatrixBuffer*)m_matrixBuffer->mapContent();
-            matrices.vpMatrix = projectionMatrix * viewMatrix;
-            m_matrixBuffer->unMapContent();
+            m_vpMatrix = projectionMatrix * viewMatrix;
         });
     };
-
-    gfx::Shader::Descriptor shaderDescriptor;
-    shaderDescriptor.type = gfx::ShaderType::vertex;
-    #ifdef GFX_BUILD_METAL
-        shaderDescriptor.mtlShaderLibPath = MTL_SHADER_LIB;
-        shaderDescriptor.mtlFunction = "universal3D";
-    #endif
-    #ifdef GFX_BUILD_OPENGL
-        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/universal3D.vs");
-    #endif
-    utils::SharedPtr<gfx::Shader> vs = m_graphicAPI->newShader(shaderDescriptor);
-    shaderDescriptor.type = gfx::ShaderType::fragment;
-    #ifdef GFX_BUILD_METAL
-        shaderDescriptor.mtlShaderLibPath = MTL_SHADER_LIB;
-        shaderDescriptor.mtlFunction = "phong1";
-    #endif
-    #ifdef GFX_BUILD_OPENGL
-        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/phong1.fs");
-    #endif
-    utils::SharedPtr<gfx::Shader> fs = m_graphicAPI->newShader(shaderDescriptor);
-
-    gfx::VertexLayout vertexLayout;
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, pos)});
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec2f, offsetof(Vertex, uv)});
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, normal)});
-    vertexLayout.stride = sizeof(Vertex);
-
-    gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
-    graphicPipelineDescriptor.vertexLayout = vertexLayout;
-    graphicPipelineDescriptor.vertexShader = vs;
-    graphicPipelineDescriptor.fragmentShader = fs;
-
-    m_defaultPipeline = m_graphicAPI->newGraphicsPipeline(graphicPipelineDescriptor);
-    
-    {
-        gfx::Buffer::Descriptor bufferDescriptor;
-        bufferDescriptor.debugName = "Matrices";
-        bufferDescriptor.size = sizeof(MatrixBuffer);
-        m_matrixBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
-    }
-    {
-        gfx::Buffer::Descriptor bufferDescriptor;
-        bufferDescriptor.debugName = "Material";
-        bufferDescriptor.size = sizeof(Material);
-        m_materialBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
-    }
-    {
-        gfx::Buffer::Descriptor bufferDescriptor;
-        bufferDescriptor.debugName = "Light";
-        bufferDescriptor.size = sizeof(DirectionalLight);
-        m_lightBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
-    }
 
     utils::uint32 w = 0;
     utils::uint32 h = 0;
@@ -112,31 +47,23 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
     gfx::WindowResizeEvent ev(*m_window, (int)w, (int)h);
     updateVPMatrix(ev);
     m_window->addEventCallBack(updateVPMatrix, this);
+
+    m_defautRenderMethod = utils::makeShared<PhongRenderMethod>(api).staticCast<RenderMethod>();
 }
 
 void Renderer::render(const Mesh& mesh, const Material& material, const DirectionalLight& light)
 {
-    m_graphicAPI->useGraphicsPipeline(m_defaultPipeline);
-    m_graphicAPI->setVertexBuffer(m_matrixBuffer, m_defaultPipeline->getVertexBufferIndex("matrices"));
+    m_defautRenderMethod->use();
 
-    Material& gpuSideMaterial = *(Material*)m_materialBuffer->mapContent();
-        gpuSideMaterial = material;
-    m_materialBuffer->unMapContent();
-    m_graphicAPI->setFragmentBuffer(m_materialBuffer, m_defaultPipeline->getFragmentBufferIndex("material"));
-
-    DirectionalLight& gpuSideLight = *(DirectionalLight*)m_lightBuffer->mapContent();
-        gpuSideLight = light;
-    m_lightBuffer->unMapContent();
-    m_graphicAPI->setFragmentBuffer(m_lightBuffer, m_defaultPipeline->getFragmentBufferIndex("light"));
+    m_defautRenderMethod->setVpMatrix(m_vpMatrix);
+    m_defautRenderMethod->setMaterial(material);
+    m_defautRenderMethod->setLight(light);
 
     utils::Func<void(const SubMesh&, const math::mat4x4&)> renderSubMesh = [&](const SubMesh& subMesh, const math::mat4x4& transform) {
         math::mat4x4 modelMatrix = transform * subMesh.transform;
         if (subMesh.vertexBuffer && subMesh.indexBuffer)
         {
-            MatrixBuffer& matrices = *(MatrixBuffer*)m_matrixBuffer->mapContent();
-                matrices.modelMatrix = modelMatrix;
-            m_matrixBuffer->unMapContent();
-
+            m_defautRenderMethod->setModelMatrix(modelMatrix);
             m_graphicAPI->setVertexBuffer(subMesh.vertexBuffer, 0);
             m_graphicAPI->drawIndexedVertices(subMesh.indexBuffer);
         }

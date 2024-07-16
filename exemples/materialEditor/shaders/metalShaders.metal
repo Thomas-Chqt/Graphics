@@ -45,7 +45,12 @@ vertex VertexOut universal3D(VertexIn in [[stage_in]], constant Matrices& matric
 
 struct Material
 {
-    float4 baseColor;
+    float3 diffuseColor;
+    float3 specularColor;
+    float3 emissiveColor;
+    float  shininess;
+
+    bool useDiffuseTexture;
 };
 
 struct DirectionalLight
@@ -59,13 +64,25 @@ struct DirectionalLight
 
 fragment float4 phong1(VertexOut in  [[stage_in]],
     constant Material& material      [[buffer(0)]],
-    constant DirectionalLight& light [[buffer(1)]]
+    constant DirectionalLight& light [[buffer(1)]],
+    texture2d<float> diffuseTexture  [[texture(1)]]
 )
 {
+    constexpr metal::sampler diffuseTextureSampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+
+    float3 diffuseColor = material.diffuseColor;
+    if (material.useDiffuseTexture)
+        diffuseColor = diffuseTexture.sample(diffuseTextureSampler, in.uv).xyz;
+
+    float3 cameraDir = normalize(float3(0, 0, -3) - in.pos);
+
     float diffuseFactor = dot(normalize(in.normal), normalize(-light.direction));
+    float specularFactor = dot(reflect(light.direction, in.normal), cameraDir);
 
-    float3 ambiant = material.baseColor.xyz * light.color * light.ambiantIntensity;
-    float3 diffuse = material.baseColor.xyz * light.color * light.diffuseIntensity * max(diffuseFactor, 0.0F);
+    float3 ambiant  = diffuseColor           * light.color * light.ambiantIntensity;
+    float3 diffuse  = diffuseColor           * light.color * light.diffuseIntensity  * max(diffuseFactor, 0.0F);
+    float3 specular = material.specularColor * light.color * light.specularIntensity * (specularFactor > 0.0f ? pow(specularFactor, material.shininess) : 0.0f);
+    float3 emissive = material.emissiveColor;
 
-    return float4(ambiant + diffuse, material.baseColor.w);
+    return float4(ambiant + diffuse + specular + emissive, 1.0F);
 }
