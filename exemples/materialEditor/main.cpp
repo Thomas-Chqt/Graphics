@@ -15,7 +15,9 @@
 #include "Graphics/Window.hpp"
 #include "Material.hpp"
 #include "Math/Constants.hpp"
-#include "RenderMethod.hpp"
+#include "Math/Matrix.hpp"
+#include "Math/Vector.hpp"
+#include "Mesh.hpp"
 #include "Renderer.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -55,7 +57,9 @@ int main()
 
         Renderer renderer(graphicAPI, window);
 
-        Mesh sphere = loadMeshes<PhongRenderMethod::Vertex>(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0];
+        utils::Array<Mesh> meshes;
+        meshes.append(loadMeshes(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0]);
+        meshes.append(loadMeshes(*graphicAPI, RESSOURCES_DIR"/cube.glb")[0]);
 
         Material material;
 
@@ -64,6 +68,9 @@ int main()
         utils::Dictionary<utils::String, utils::SharedPtr<gfx::Texture>> textures;
         textures.insert("rock_diff", loadTexture(*graphicAPI, RESSOURCES_DIR"/rock_diff.jpg"));
         textures.insert("rock_nor", loadTexture(*graphicAPI, RESSOURCES_DIR"/rock_nor.jpg"));
+        textures.insert("container_diffuse", loadTexture(*graphicAPI, RESSOURCES_DIR"/container_diffuse.png"));
+        textures.insert("container_emissive", loadTexture(*graphicAPI, RESSOURCES_DIR"/container_emissive.png"));
+        textures.insert("container_specular", loadTexture(*graphicAPI, RESSOURCES_DIR"/container_specular.png"));
 
         bool running = true;
         window->addEventCallBack([&](gfx::Event& event) {
@@ -71,6 +78,10 @@ int main()
                 if (keyDownEvent.keyCode() == ESC_KEY) running = false;
             });
         });
+
+        Mesh* renderedMesh = &meshes[0];
+        math::vec3f pos;
+        math::vec3f rot;
 
         while (running)
         {
@@ -92,7 +103,20 @@ int main()
                             ImGui::DragFloat ("ambiantIntensity",  (float*)&directionalLight.ambiantIntensity,  0.001, 0.0,     1.0);
                             ImGui::DragFloat ("diffuseIntensity",  (float*)&directionalLight.diffuseIntensity,  0.001, 0.0,     1.0);
                             ImGui::DragFloat ("specularIntensity", (float*)&directionalLight.specularIntensity, 0.001, 0.0,     1.0);
-                            ImGui::DragFloat3("Rotation",          (float*)&directionalLight.rotation,          0.001, -(2*PI), 2*PI);
+                            ImGui::DragFloat3("Rotation##light",   (float*)&directionalLight.rotation,          0.001, -(2*PI), 2*PI);
+                        }
+                        ImGui::SeparatorText("Mesh");
+                        {
+                            if (ImGui::BeginCombo("Mesh", renderedMesh->name, 0))
+                            {
+                                for (auto& mesh : meshes)
+                                {
+                                    if (ImGui::Selectable(mesh.name, renderedMesh == &mesh))
+                                        renderedMesh = &mesh;
+                                }
+                                ImGui::EndCombo();
+                            }
+                            ImGui::DragFloat3("Rotation##mesh", (float*)&rot, 0.001, -(2*PI), 2*PI);
                         }
                         ImGui::SeparatorText("Material");
                         {
@@ -141,7 +165,7 @@ int main()
                     }
                     ImGui::End();
 
-                    renderer.render(sphere, material, directionalLight);
+                    renderer.render(*renderedMesh, material, directionalLight, math::mat4x4::rotation(rot));
                 }
                 graphicAPI->endRenderPass();
             }

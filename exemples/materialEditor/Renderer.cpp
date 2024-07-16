@@ -51,7 +51,7 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
     m_defautRenderMethod = utils::makeShared<PhongRenderMethod>(api).staticCast<RenderMethod>();
 }
 
-void Renderer::render(const Mesh& mesh, const Material& material, const DirectionalLight& light)
+void Renderer::render(const Mesh& mesh, const Material& material, const DirectionalLight& light, const math::mat4x4& transform)
 {
     m_defautRenderMethod->use();
 
@@ -71,7 +71,7 @@ void Renderer::render(const Mesh& mesh, const Material& material, const Directio
             renderSubMesh(subMesh, modelMatrix);
     };
     for (const auto& subMesh : mesh.subMeshes)
-        renderSubMesh(subMesh, math::mat4x4(1.0F));
+        renderSubMesh(subMesh, transform);
 }
 
 Renderer::~Renderer()

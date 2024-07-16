@@ -28,7 +28,7 @@ public:
     
     Renderer(const utils::SharedPtr<gfx::GraphicAPI>&, const utils::SharedPtr<gfx::Window>&);
 
-    void render(const Mesh&, const Material&, const DirectionalLight&);
+    void render(const Mesh&, const Material&, const DirectionalLight&, const math::mat4x4& transform);
 
     ~Renderer();
 
