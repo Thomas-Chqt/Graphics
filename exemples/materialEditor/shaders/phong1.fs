@@ -14,6 +14,7 @@ in VertexOut
     vec3 pos;
     vec2 uv;
     vec3 normal;
+    mat3 TBN;
 } fsIn;
 
 out vec4 fragmentColor;
@@ -24,10 +25,12 @@ layout (std140) uniform material
     vec4  material_specularColor;
     vec4  material_emissiveColor;
     float material_shininess;
-    bool  material_useDiffuseTexture;
+    int   material_useDiffuseTexture;
+    int   material_useNormalMap;
 };
 
 uniform sampler2D diffuseTexture;
+uniform sampler2D normalMap;
 
 layout (std140) uniform light
 {
@@ -40,14 +43,19 @@ layout (std140) uniform light
 
 void main()
 {
+    vec3 normal = fsIn.normal;
+    if (material_useNormalMap != 0)
+        normal = fsIn.TBN * (texture(normalMap, fsIn.uv).xyz * 2.0F - 1);
+    normal = normalize(normal);
+
     vec3 diffuseColor = material_diffuseColor.xyz;
-    if (material_useDiffuseTexture)
+    if (material_useDiffuseTexture != 0)
         diffuseColor = texture(diffuseTexture, fsIn.uv).xyz;
 
     vec3 cameraDir = normalize(vec3(0, 0, -3) - fsIn.pos);
 
-    float diffuseFactor = dot(normalize(fsIn.normal), normalize(-light_direction.xyz));
-    float specularFactor = dot(reflect(light_direction.xyz, fsIn.normal), cameraDir);
+    float diffuseFactor = dot(normal, normalize(-light_direction.xyz));
+    float specularFactor = dot(reflect(light_direction.xyz, normal), cameraDir);
 
     vec3 ambiant  = diffuseColor               * light_color.xyz * light_ambiantIntensity;
     vec3 diffuse  = diffuseColor               * light_color.xyz * light_diffuseIntensity  * max(diffuseFactor, 0.0F);
