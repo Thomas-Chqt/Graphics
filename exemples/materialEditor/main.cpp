@@ -19,7 +19,6 @@
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
-#include "UtilsCPP/Types.hpp"
 #include "imgui/imgui.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -93,45 +92,47 @@ int main()
                         }
                         ImGui::SeparatorText("Material");
                         {
-                            ImGui::Text("Diffuse");
-                            ImGui::Indent(10);
+                            static utils::String selectedTexture_diffuse;
+                            if (ImGui::BeginCombo("Diffuse texture", material.diffuse.texture ? selectedTexture_diffuse : "Use color", 0))
                             {
-                                static utils::String selectedTexture_diffuse = "Value";
-                                if (ImGui::BeginCombo("Texture##1", selectedTexture_diffuse, 0))
+                                if (ImGui::Selectable("Use color", material.diffuse.texture == nullptr))
+                                    material.diffuse.texture.clear();
+                                for (auto& keyVal : textures)
                                 {
-                                    const bool is_selected = (selectedTexture_diffuse == utils::String("Value"));
-                                    if (ImGui::Selectable("Value", is_selected))
+                                    if (ImGui::Selectable(keyVal.key, material.diffuse.texture == keyVal.val))
                                     {
-                                        selectedTexture_diffuse = "Value";
-                                        material.diffuse.texture.clear();
+                                        material.diffuse.texture = keyVal.val;
+                                        selectedTexture_diffuse = keyVal.key;
                                     }
-                                    for (auto& keyVal : textures)
-                                    {
-                                        const bool is_selected = (selectedTexture_diffuse == keyVal.key);
-                                        if (ImGui::Selectable(keyVal.key, is_selected))
-                                        {
-                                            selectedTexture_diffuse = keyVal.key;
-                                            material.diffuse.texture = keyVal.val;
-                                        }
-                                    }
-                                    ImGui::EndCombo();
                                 }
-                                if (selectedTexture_diffuse == utils::String("Value"))
-                                    ImGui::ColorEdit3("value##1", (float*)&material.diffuse.value);
+                                ImGui::EndCombo();
                             }
-                            ImGui::Unindent(10);
-
-                            ImGui::Text("Specular");
-                            ImGui::Indent(10);
-                                ImGui::ColorEdit3("value##2", (float*)&material.specular.value);
-                            ImGui::Unindent(10);
-
-                            ImGui::Text("Emissive");
-                            ImGui::Indent(10);
-                                ImGui::ColorEdit3("value##3", (float*)&material.emissive.value);
-                            ImGui::Unindent(10);
+                            if (material.diffuse.texture == nullptr)
+                                ImGui::ColorEdit3("Diffuse color", (float*)&material.diffuse.value);
                             
+                            ImGui::Spacing();
+                            ImGui::ColorEdit3("Specular color", (float*)&material.specular.value);
+                            ImGui::Spacing();
+                            ImGui::ColorEdit3("Emissive color", (float*)&material.emissive.value);
+                            ImGui::Spacing();
                             ImGui::DragFloat ("shininess", (float*)&material.shininess, 1, 1);
+                            ImGui::Spacing();
+
+                            static utils::String selectedNormalMap;
+                            if (ImGui::BeginCombo("Normal map", material.normalMap ? selectedNormalMap : "Disabled", 0))
+                            {
+                                if (ImGui::Selectable("Disable", material.normalMap == nullptr))
+                                    material.normalMap.clear();
+                                for (auto& keyVal : textures)
+                                {
+                                    if (ImGui::Selectable(keyVal.key, material.normalMap == keyVal.val))
+                                    {
+                                        material.normalMap = keyVal.val;
+                                        selectedNormalMap = keyVal.key;
+                                    }
+                                }
+                                ImGui::EndCombo();
+                            }
                         }
                     }
                     ImGui::End();

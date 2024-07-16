@@ -47,6 +47,8 @@ utils::SharedPtr<gfx::GraphicPipeline> makePhongGraphicPipeline(const gfx::Graph
     vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, pos)});
     vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec2f, offsetof(Vertex, uv)});
     vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, normal)});
+    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, tangent)});
+    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, bitangent)});
     vertexLayout.stride = sizeof(Vertex);
 
     gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
@@ -113,12 +115,15 @@ void PhongRenderMethod::setMaterial(const ::Material& material)
         gpuMaterial.specularColor = material.specular.value;
         gpuMaterial.emissiveColor = material.emissive.value;
         gpuMaterial.shininess = material.shininess;
-        gpuMaterial.useDiffuseTexture = (bool)material.diffuse.texture;
+        gpuMaterial.useDiffuseTexture = material.diffuse.texture ? 1 : 0;
+        gpuMaterial.useNormalMap = material.normalMap ? 1 : 0;
     }
     m_materialBuffer->unMapContent();
 
-    if (gpuMaterial.useDiffuseTexture)
+    if (gpuMaterial.useDiffuseTexture != 0)
         m_api->setFragmentTexture(material.diffuse.texture, m_graphicPipeline->getFragmentTextureIndex("diffuseTexture"));
+    if (gpuMaterial.useNormalMap != 0)
+        m_api->setFragmentTexture(material.normalMap, m_graphicPipeline->getFragmentTextureIndex("normalMap"));
 }
 
 void PhongRenderMethod::setLight(const ::DirectionalLight& light)

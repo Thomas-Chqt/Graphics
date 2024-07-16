@@ -13,17 +13,21 @@ using namespace metal;
 
 struct VertexIn
 {
-    float3 pos    [[attribute(0)]];
-    float2 uv     [[attribute(1)]];
-    float3 normal [[attribute(2)]];
+    float3 pos       [[attribute(0)]];
+    float2 uv        [[attribute(1)]];
+    float3 normal    [[attribute(2)]];
+    float3 tangent   [[attribute(3)]];
+    float3 bitangent [[attribute(4)]];
 };
 
 struct VertexOut
 {
-    float3 pos;
-    float4 clipPos [[position]];
-    float2 uv;
-    float3 normal;
+    float3   pos;
+    float4   clipPos [[position]];
+    float2   uv;
+    float3   tangent;
+    float3   bitangent;
+    float3   normal;
 };
 
 struct Matrices
@@ -35,11 +39,14 @@ struct Matrices
 vertex VertexOut universal3D(VertexIn in [[stage_in]], constant Matrices& matrices [[buffer(1)]])
 {
     float4 worldPos = matrices.modelMatrix * float4(in.pos, 1.0);
+
     return (VertexOut){
-        .pos     = worldPos.xyz,
-        .clipPos = matrices.vpMatrix * worldPos,
-        .uv      = in.uv,
-        .normal  = (matrices.modelMatrix * float4(in.normal, 0)).xyz
+        .pos       = worldPos.xyz,
+        .clipPos   = matrices.vpMatrix * worldPos,
+        .uv        = in.uv,
+        .tangent   = (matrices.modelMatrix * float4(in.tangent,   0)).xyz,
+        .bitangent = (matrices.modelMatrix * float4(in.bitangent, 0)).xyz,
+        .normal    = (matrices.modelMatrix * float4(in.normal,    0)).xyz,
     };
 }
 
@@ -50,7 +57,8 @@ struct Material
     float3 emissiveColor;
     float  shininess;
 
-    bool useDiffuseTexture;
+    int useDiffuseTexture;
+    int useNormalMap;
 };
 
 struct DirectionalLight
@@ -65,19 +73,27 @@ struct DirectionalLight
 fragment float4 phong1(VertexOut in  [[stage_in]],
     constant Material& material      [[buffer(0)]],
     constant DirectionalLight& light [[buffer(1)]],
-    texture2d<float> diffuseTexture  [[texture(1)]]
+    texture2d<float> diffuseTexture  [[texture(1)]],
+    texture2d<float> normalMap       [[texture(2)]]
 )
 {
-    constexpr metal::sampler diffuseTextureSampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+    constexpr metal::sampler default_sampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+
+    float3x3 TBN = float3x3(in.tangent, in.bitangent, in.normal);
+
+    float3 normal = in.normal;
+    if (material.useNormalMap)
+        normal = TBN * (normalMap.sample(default_sampler, in.uv).xyz * 2.0F - 1);
+    normal = normalize(normal);
 
     float3 diffuseColor = material.diffuseColor;
     if (material.useDiffuseTexture)
-        diffuseColor = diffuseTexture.sample(diffuseTextureSampler, in.uv).xyz;
+        diffuseColor = diffuseTexture.sample(default_sampler, in.uv).xyz;
 
     float3 cameraDir = normalize(float3(0, 0, -3) - in.pos);
 
-    float diffuseFactor = dot(normalize(in.normal), normalize(-light.direction));
-    float specularFactor = dot(reflect(light.direction, in.normal), cameraDir);
+    float diffuseFactor = dot(normal, normalize(-light.direction));
+    float specularFactor = dot(reflect(light.direction, normal), cameraDir);
 
     float3 ambiant  = diffuseColor           * light.color * light.ambiantIntensity;
     float3 diffuse  = diffuseColor           * light.color * light.diffuseIntensity  * max(diffuseFactor, 0.0F);

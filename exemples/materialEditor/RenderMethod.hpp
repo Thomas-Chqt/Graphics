@@ -39,7 +39,7 @@ protected:
 
     utils::SharedPtr<gfx::GraphicAPI> m_api;
     utils::SharedPtr<gfx::GraphicPipeline> m_graphicPipeline;
-    
+
 public:
     RenderMethod& operator = (const RenderMethod&) = delete;
     RenderMethod& operator = (RenderMethod&&)      = delete;
@@ -51,7 +51,7 @@ public:
     PhongRenderMethod()                         = delete;
     PhongRenderMethod(const PhongRenderMethod&) = delete;
     PhongRenderMethod(PhongRenderMethod&&)      = delete;
-    
+
     PhongRenderMethod(const utils::SharedPtr<gfx::GraphicAPI>&);
 
     void use() override;
@@ -61,10 +61,10 @@ public:
     void setMaterial(const ::Material&) override;
     void setLight(const ::DirectionalLight&) override;
 
-    ~PhongRenderMethod() = default;
+    ~PhongRenderMethod() override = default;
 
 private:
-    struct Matrices 
+    struct Matrices
     {
         math::mat4x4 vpMatrix;
         math::mat4x4 modelMatrix;
@@ -77,7 +77,8 @@ private:
         math::rgb emissiveColor;
         float shininess;
 
-        bool useDiffuseTexture;
+        int useDiffuseTexture;
+        int useNormalMap;
     };
 
     struct DirectionalLight

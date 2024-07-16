@@ -24,7 +24,8 @@
     aiProcess_GenSmoothNormals      | \
     aiProcess_FixInfacingNormals    | \
     aiProcess_FlipUVs               | \
-    aiProcess_FlipWindingOrder
+    aiProcess_FlipWindingOrder      | \
+    aiProcess_CalcTangentSpace
 
 utils::Array<Mesh> loadMeshes(gfx::GraphicAPI& api, const utils::String& filePath)
 {
@@ -35,10 +36,10 @@ utils::Array<Mesh> loadMeshes(gfx::GraphicAPI& api, const utils::String& filePat
         throw utils::RuntimeError("fail to load the model using assimp");
 
     utils::Array<SubMesh> allMeshes;
-    
+
     for(utils::uint32 meshIndex = 0; meshIndex < scene->mNumMeshes; meshIndex++)
     {
-        aiMesh* aiMesh = scene->mMeshes[meshIndex]; 
+        aiMesh* aiMesh = scene->mMeshes[meshIndex];
 
         SubMesh newSubMesh;
 
@@ -53,35 +54,51 @@ utils::Array<Mesh> loadMeshes(gfx::GraphicAPI& api, const utils::String& filePat
         newSubMesh.indexBuffer = api.newBuffer(bufferDescriptor);
         auto* indices = (utils::uint32*)newSubMesh.indexBuffer->mapContent();
 
-        for(utils::uint32 vertexIndex = 0; vertexIndex < aiMesh->mNumVertices; vertexIndex++)
+        for(utils::uint32 i = 0; i < aiMesh->mNumVertices; i++)
         {
-            vertices[vertexIndex].pos = {
-                aiMesh->mVertices[vertexIndex].x,
-                aiMesh->mVertices[vertexIndex].y,
-                aiMesh->mVertices[vertexIndex].z
+            vertices[i].pos = {
+                aiMesh->mVertices[i].x,
+                aiMesh->mVertices[i].y,
+                aiMesh->mVertices[i].z
             };
             if (aiMesh->mTextureCoords[0] != nullptr)
             {
-                vertices[vertexIndex].uv = {
-                    aiMesh->mTextureCoords[0][vertexIndex].x,
-                    aiMesh->mTextureCoords[0][vertexIndex].y
+                vertices[i].uv = {
+                    aiMesh->mTextureCoords[0][i].x,
+                    aiMesh->mTextureCoords[0][i].y
                 };
             }
             if (aiMesh->mNormals != nullptr)
             {
-                vertices[vertexIndex].normal = {
-                    aiMesh->mNormals[vertexIndex].x,
-                    aiMesh->mNormals[vertexIndex].y,
-                    aiMesh->mNormals[vertexIndex].z
+                vertices[i].normal = {
+                    aiMesh->mNormals[i].x,
+                    aiMesh->mNormals[i].y,
+                    aiMesh->mNormals[i].z
+                };
+            }
+            if (aiMesh->mTangents != nullptr)
+            {
+                vertices[i].tangent = {
+                    aiMesh->mTangents[i].x,
+                    aiMesh->mTangents[i].y,
+                    aiMesh->mTangents[i].z
+                };
+            }
+            if (aiMesh->mBitangents != nullptr)
+            {
+                vertices[i].bitangent = {
+                    aiMesh->mBitangents[i].x,
+                    aiMesh->mBitangents[i].y,
+                    aiMesh->mBitangents[i].z
                 };
             }
         }
 
-        for(utils::uint32 faceIndex = 0; faceIndex < aiMesh->mNumFaces; faceIndex++)
+        for(utils::uint32 i = 0; i < aiMesh->mNumFaces; i++)
         {
-            indices[faceIndex * 3 + 0] = aiMesh->mFaces[faceIndex].mIndices[0];
-            indices[faceIndex * 3 + 1] = aiMesh->mFaces[faceIndex].mIndices[1];
-            indices[faceIndex * 3 + 2] = aiMesh->mFaces[faceIndex].mIndices[2];
+            indices[i * 3 + 0] = aiMesh->mFaces[i].mIndices[0];
+            indices[i * 3 + 1] = aiMesh->mFaces[i].mIndices[1];
+            indices[i * 3 + 2] = aiMesh->mFaces[i].mIndices[2];
         }
 
         newSubMesh.vertexBuffer->unMapContent();
@@ -112,7 +129,7 @@ utils::Array<Mesh> loadMeshes(gfx::GraphicAPI& api, const utils::String& filePat
 
         dst.append(newSubMesh);
     };
-    
+
     if (scene->mRootNode->mNumMeshes > 0)
     {
         Mesh newMesh;

@@ -17,7 +17,7 @@
 #include "UtilsCPP/Func.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
-#include <cstddef>
+#include <cmath>
 
 Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::SharedPtr<gfx::Window>& window) : m_window(window), m_graphicAPI(api)
 {
@@ -28,10 +28,10 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
             float zNear = 0.1F;
             float zFar = 10000;
 
-            float ys = 1.0F / std::tanf(fov * 0.5F);
+            float ys = 1.0F / std::tan(fov * 0.5F);
             float xs = ys / aspectRatio;
             float zs = zFar / (zFar - zNear);
-            
+
             math::mat4x4 projectionMatrix = math::mat4x4(xs,   0,  0,           0,
                                                           0,  ys,  0,           0,
                                                           0,   0, zs, -zNear * zs,
@@ -71,7 +71,7 @@ void Renderer::render(const Mesh& mesh, const Material& material, const Directio
             renderSubMesh(subMesh, modelMatrix);
     };
     for (const auto& subMesh : mesh.subMeshes)
-        renderSubMesh(subMesh, math::mat4x4(1.0F));    
+        renderSubMesh(subMesh, math::mat4x4(1.0F));
 }
 
 Renderer::~Renderer()

@@ -28,6 +28,7 @@ struct Material
     ColorInput specular = BLACK3;
     ColorInput emissive = BLACK3;
     float shininess     = 1.0F;
+    utils::SharedPtr<gfx::Texture> normalMap;
 };
 
 #endif // MATERIAL_HPP
