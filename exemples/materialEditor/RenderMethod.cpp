@@ -12,7 +12,6 @@
 #include "Graphics/GraphicPipeline.hpp"
 #include "Math/Matrix.hpp"
 #include "Math/Vector.hpp"
-#include "Mesh.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include <utility>
 
@@ -44,12 +43,11 @@ utils::SharedPtr<gfx::GraphicPipeline> makePhongGraphicPipeline(const gfx::Graph
     utils::SharedPtr<gfx::Shader> fs = api.newShader(shaderDescriptor);
 
     gfx::VertexLayout vertexLayout;
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, pos)});
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec2f, offsetof(Vertex, uv)});
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, normal)});
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, tangent)});
-    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(Vertex, bitangent)});
-    vertexLayout.stride = sizeof(Vertex);
+    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(PhongRenderMethod::Vertex, pos)});
+    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec2f, offsetof(PhongRenderMethod::Vertex, uv)});
+    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(PhongRenderMethod::Vertex, normal)});
+    vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(PhongRenderMethod::Vertex, tangent)});
+    vertexLayout.stride = sizeof(PhongRenderMethod::Vertex);
 
     gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
     graphicPipelineDescriptor.vertexLayout = vertexLayout;

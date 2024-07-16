@@ -17,15 +17,6 @@
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
-struct Vertex
-{
-    math::vec3f pos;
-    math::vec2f uv;
-    math::vec3f normal;
-    math::vec3f tangent;
-    math::vec3f bitangent;
-};
-
 struct SubMesh
 {
     utils::String name;
@@ -41,6 +32,7 @@ struct Mesh
     utils::Array<SubMesh> subMeshes;
 };
 
+template<typename VERTEX>
 utils::Array<Mesh> loadMeshes(gfx::GraphicAPI&, const utils::String& filePath);
 
 #endif // MESH_HPP

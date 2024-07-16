@@ -48,6 +48,15 @@ public:
 class PhongRenderMethod : public RenderMethod
 {
 public:
+    struct Vertex
+    {
+        math::vec3f pos;
+        math::vec2f uv;
+        math::vec3f normal;
+        math::vec3f tangent;
+    };
+
+public:
     PhongRenderMethod()                         = delete;
     PhongRenderMethod(const PhongRenderMethod&) = delete;
     PhongRenderMethod(PhongRenderMethod&&)      = delete;

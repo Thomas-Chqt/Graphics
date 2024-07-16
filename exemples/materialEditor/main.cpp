@@ -15,6 +15,7 @@
 #include "Graphics/Window.hpp"
 #include "Material.hpp"
 #include "Math/Constants.hpp"
+#include "RenderMethod.hpp"
 #include "Renderer.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -54,9 +55,12 @@ int main()
 
         Renderer renderer(graphicAPI, window);
 
-        Mesh sphere = loadMeshes(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0];
+        Mesh sphere = loadMeshes<PhongRenderMethod::Vertex>(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0];
+
         Material material;
+
         DirectionalLight directionalLight;
+
         utils::Dictionary<utils::String, utils::SharedPtr<gfx::Texture>> textures;
         textures.insert("rock_diff", loadTexture(*graphicAPI, RESSOURCES_DIR"/rock_diff.jpg"));
         textures.insert("rock_nor", loadTexture(*graphicAPI, RESSOURCES_DIR"/rock_nor.jpg"));
@@ -115,7 +119,7 @@ int main()
                             ImGui::Spacing();
                             ImGui::ColorEdit3("Emissive color", (float*)&material.emissive.value);
                             ImGui::Spacing();
-                            ImGui::DragFloat ("shininess", (float*)&material.shininess, 1, 1);
+                            ImGui::DragFloat("shininess", (float*)&material.shininess, 1, 1);
                             ImGui::Spacing();
 
                             static utils::String selectedNormalMap;

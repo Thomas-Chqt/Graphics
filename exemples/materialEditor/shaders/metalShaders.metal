@@ -13,11 +13,10 @@ using namespace metal;
 
 struct VertexIn
 {
-    float3 pos       [[attribute(0)]];
-    float2 uv        [[attribute(1)]];
-    float3 normal    [[attribute(2)]];
-    float3 tangent   [[attribute(3)]];
-    float3 bitangent [[attribute(4)]];
+    float3 pos     [[attribute(0)]];
+    float2 uv      [[attribute(1)]];
+    float3 normal  [[attribute(2)]];
+    float3 tangent [[attribute(3)]];
 };
 
 struct VertexOut
@@ -38,15 +37,16 @@ struct Matrices
 
 vertex VertexOut universal3D(VertexIn in [[stage_in]], constant Matrices& matrices [[buffer(1)]])
 {
-    float4 worldPos = matrices.modelMatrix * float4(in.pos, 1.0);
+    float4 worldPos  = matrices.modelMatrix * float4(in.pos, 1.0);
+    float3 bitangent = cross(in.tangent, in.normal);
 
     return (VertexOut){
         .pos       = worldPos.xyz,
         .clipPos   = matrices.vpMatrix * worldPos,
         .uv        = in.uv,
-        .tangent   = (matrices.modelMatrix * float4(in.tangent,   0)).xyz,
-        .bitangent = (matrices.modelMatrix * float4(in.bitangent, 0)).xyz,
-        .normal    = (matrices.modelMatrix * float4(in.normal,    0)).xyz,
+        .tangent   = (modelMatrix * float4(in.tangent, 0)).xyz,
+        .bitangent = (modelMatrix * float4(bitangent,  0)).xyz,
+        .normal    = (modelMatrix * float4(in.normal,  0)).xyz,
     };
 }
 

@@ -10,6 +10,7 @@
 #include "Mesh.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Math/Vector.hpp"
+#include "RenderMethod.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "assimp/Importer.hpp"
@@ -27,7 +28,8 @@
     aiProcess_FlipWindingOrder      | \
     aiProcess_CalcTangentSpace
 
-utils::Array<Mesh> loadMeshes(gfx::GraphicAPI& api, const utils::String& filePath)
+template<>
+utils::Array<Mesh> loadMeshes<PhongRenderMethod::Vertex>(gfx::GraphicAPI& api, const utils::String& filePath)
 {
     Assimp::Importer importer;
 
@@ -46,9 +48,9 @@ utils::Array<Mesh> loadMeshes(gfx::GraphicAPI& api, const utils::String& filePat
         newSubMesh.name = aiMesh->mName.C_Str();
 
         gfx::Buffer::Descriptor bufferDescriptor;
-        bufferDescriptor.size = aiMesh->mNumVertices * sizeof(Vertex);
+        bufferDescriptor.size = aiMesh->mNumVertices * sizeof(PhongRenderMethod::Vertex);
         newSubMesh.vertexBuffer = api.newBuffer(bufferDescriptor);
-        auto* vertices = (Vertex*)newSubMesh.vertexBuffer->mapContent();
+        auto* vertices = (PhongRenderMethod::Vertex*)newSubMesh.vertexBuffer->mapContent();
 
         bufferDescriptor.size = aiMesh->mNumFaces * 3UL * sizeof(utils::uint32);
         newSubMesh.indexBuffer = api.newBuffer(bufferDescriptor);
@@ -82,14 +84,6 @@ utils::Array<Mesh> loadMeshes(gfx::GraphicAPI& api, const utils::String& filePat
                     aiMesh->mTangents[i].x,
                     aiMesh->mTangents[i].y,
                     aiMesh->mTangents[i].z
-                };
-            }
-            if (aiMesh->mBitangents != nullptr)
-            {
-                vertices[i].bitangent = {
-                    aiMesh->mBitangents[i].x,
-                    aiMesh->mBitangents[i].y,
-                    aiMesh->mBitangents[i].z
                 };
             }
         }

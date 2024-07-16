@@ -13,8 +13,9 @@ in VertexOut
 {
     vec3 pos;
     vec2 uv;
+    vec3 tangent;
+    vec3 bitangent;
     vec3 normal;
-    mat3 TBN;
 } fsIn;
 
 out vec4 fragmentColor;
@@ -41,26 +42,48 @@ layout (std140) uniform light
     vec4  light_direction;
 };
 
+
+vec3 getFragmentNormal();
+vec3 getFragmentDiffuseColor();
+
 void main()
 {
-    vec3 normal = fsIn.normal;
-    if (material_useNormalMap != 0)
-        normal = fsIn.TBN * (texture(normalMap, fsIn.uv).xyz * 2.0F - 1);
-    normal = normalize(normal);
-
-    vec3 diffuseColor = material_diffuseColor.xyz;
-    if (material_useDiffuseTexture != 0)
-        diffuseColor = texture(diffuseTexture, fsIn.uv).xyz;
+    vec3 fragNormal = getFragmentNormal();
+    vec3 fragDiffuse = getFragmentDiffuseColor();
 
     vec3 cameraDir = normalize(vec3(0, 0, -3) - fsIn.pos);
 
-    float diffuseFactor = dot(normal, normalize(-light_direction.xyz));
-    float specularFactor = dot(reflect(light_direction.xyz, normal), cameraDir);
+    float diffuseFactor = dot(fragNormal, normalize(-light_direction.xyz));
+    float specularFactor = dot(reflect(light_direction.xyz, fragNormal), cameraDir);
 
-    vec3 ambiant  = diffuseColor               * light_color.xyz * light_ambiantIntensity;
-    vec3 diffuse  = diffuseColor               * light_color.xyz * light_diffuseIntensity  * max(diffuseFactor, 0.0F);
+    vec3 ambiant  = fragDiffuse                * light_color.xyz * light_ambiantIntensity;
+    vec3 diffuse  = fragDiffuse                * light_color.xyz * light_diffuseIntensity  * max(diffuseFactor, 0.0F);
     vec3 specular = material_specularColor.xyz * light_color.xyz * light_specularIntensity * (specularFactor > 0.0F ? pow(specularFactor, material_shininess) : 0.0F);
     vec3 emissive = material_emissiveColor.xyz;
 
     fragmentColor = vec4(ambiant + diffuse + specular + emissive, 1.0F);
+}
+
+vec3 getFragmentNormal()
+{
+    vec3 normal;
+    if (material_useNormalMap != 0)
+    {
+        mat3 TBN = mat3(fsIn.tangent, fsIn.bitangent, fsIn.normal);
+        normal = TBN * (texture(normalMap, fsIn.uv).xyz * 2.0F - 1);
+    }
+    else
+    {
+        normal = fsIn.normal;
+    }
+    return normalize(normal);
+}
+
+vec3 getFragmentDiffuseColor()
+{
+    vec3 diffuseColor;
+    if (material_useDiffuseTexture != 0)
+        return texture(diffuseTexture, fsIn.uv).xyz;
+    else
+        return material_diffuseColor.xyz;
 }
