@@ -10,13 +10,14 @@
 #ifndef RENDERER_HPP
 # define RENDERER_HPP
 
-#include "DirectionalLight.hpp"
+#include "Camera.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/Texture.hpp"
 #include "Graphics/Window.hpp"
 #include "Material.hpp"
 #include "Math/Matrix.hpp"
+#include "Math/Vector.hpp"
 #include "Mesh.hpp"
 #include "RenderMethod.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -30,22 +31,28 @@ public:
     
     Renderer(const utils::SharedPtr<gfx::GraphicAPI>&, const utils::SharedPtr<gfx::Window>&);
 
-    void render(const Mesh&, const Material&, const DirectionalLight&, const math::mat4x4& transform);
+    void beginScene(const Camera&);
+    inline void setLight(const DirectionalLight& light) { m_light = &light; }
+    void renderMesh(const Mesh&, const Material&);
     void renderSkybox(const utils::SharedPtr<gfx::Texture>&);
+    inline void endScene() {}
 
     ~Renderer();
 
 private:
-
     utils::SharedPtr<gfx::GraphicAPI> m_graphicAPI;
     utils::SharedPtr<gfx::Window> m_window;
-    math::mat4x4 m_viewMatrix;
-    math::mat4x4 m_projectionMatrix;
 
     PhongRenderMethod m_phongRenderMethod;
-
     SkyboxRenderMethod m_skyBoxRenderMethod;
+
     utils::SharedPtr<gfx::Buffer> m_skyBoxVertexBuffer;
+    math::mat4x4 m_projectionMatrix;
+
+    // Scene data
+    math::vec3f m_cameraPos;
+    math::mat4x4 m_viewMatrix;
+    const DirectionalLight* m_light;
 
 public:
     Renderer& operator = (const Renderer&) = delete;

@@ -7,7 +7,9 @@
  * ---------------------------------------------------
  */
 
+#include "Camera.hpp"
 #include "DirectionalLight.hpp"
+#include "Graphics/Event.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
@@ -15,8 +17,6 @@
 #include "Graphics/Window.hpp"
 #include "Material.hpp"
 #include "Math/Constants.hpp"
-#include "Math/Matrix.hpp"
-#include "Math/Vector.hpp"
 #include "Mesh.hpp"
 #include "RenderMethod.hpp"
 #include "Renderer.hpp"
@@ -110,17 +110,34 @@ int main()
             utils::String(RESSOURCES_DIR) + "/skybox/nz.png",
         });
 
+        Camera camera;
+        camera.distance = 3;
+
         bool running = true;
         window->addEventCallBack([&](gfx::Event& event) {
-            event.dispatch<gfx::KeyDownEvent>([&](gfx::KeyDownEvent& keyDownEvent) {
-                if (keyDownEvent.keyCode() == ESC_KEY) running = false;
+            event.dispatch<gfx::KeyDownEvent>([&](gfx::KeyDownEvent& keyDownEvent)
+            {
+                switch (keyDownEvent.keyCode())
+                {
+                case ESC_KEY:
+                    running = false;
+                    break;
+                }
+            });
+
+            event.dispatch<gfx::ScrollEvent>([&](gfx::ScrollEvent& scrollEvent)
+            {
+                if (window->isKeyPress(LEFT_SHIFT_KEY))
+                    camera.distance += (float)scrollEvent.offsetY();
+                else
+                {
+                    camera.orientationX += (float)scrollEvent.offsetX();
+                    camera.orientationY += (float)scrollEvent.offsetY();
+                }
             });
         });
 
         Mesh* renderedMesh = &meshes[0];
-        math::vec3f pos;
-        math::vec3f rot;
-        float scale = 1.0;
 
         while (running)
         {
@@ -142,7 +159,7 @@ int main()
                             ImGui::DragFloat ("ambiantIntensity",  (float*)&directionalLight.ambiantIntensity,  0.001, 0.0,     1.0);
                             ImGui::DragFloat ("diffuseIntensity",  (float*)&directionalLight.diffuseIntensity,  0.001, 0.0,     1.0);
                             ImGui::DragFloat ("specularIntensity", (float*)&directionalLight.specularIntensity, 0.001, 0.0,     1.0);
-                            ImGui::DragFloat3("Rotation##light",   (float*)&directionalLight.rotation,          0.001, -(2*PI), 2*PI);
+                            ImGui::DragFloat3("Rotation",          (float*)&directionalLight.rotation,          0.001, -(2*PI), 2*PI);
                         }
                         ImGui::SeparatorText("Mesh");
                         {
@@ -155,8 +172,6 @@ int main()
                                 }
                                 ImGui::EndCombo();
                             }
-                            ImGui::DragFloat3("Rotation##mesh", (float*)&rot, 0.001, -(2*PI), 2*PI);
-                            ImGui::DragFloat("Scale", &scale, 0.001, 0.0, 2.0);
                         }
                         ImGui::SeparatorText("Material");
                         {
@@ -241,8 +256,13 @@ int main()
                     }
                     ImGui::End();
 
-                    renderer.render(*renderedMesh, material, directionalLight, math::mat4x4::rotation(rot) * math::mat4x4::scale({scale, scale, scale}));
-                    renderer.renderSkybox(skyboxTexture);
+                    renderer.beginScene(camera);
+                    {
+                        renderer.setLight(directionalLight);
+                        renderer.renderMesh(*renderedMesh, material);
+                        renderer.renderSkybox(skyboxTexture);
+                    }
+                    renderer.endScene();
                 }
                 graphicAPI->endRenderPass();
             }

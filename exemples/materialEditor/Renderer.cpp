@@ -8,7 +8,6 @@
  */
 
 #include "Renderer.hpp"
-#include "DirectionalLight.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Material.hpp"
 #include "Math/Constants.hpp"
@@ -43,16 +42,7 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
         });
     };
 
-    utils::uint32 w = 0;
-    utils::uint32 h = 0;
-    m_window->getWindowSize(&w, &h);
-    gfx::WindowResizeEvent ev(*m_window, (int)w, (int)h);
-    updateVPMatrix(ev);
-    m_window->addEventCallBack(updateVPMatrix, this);
-
-    m_viewMatrix = math::mat4x4::translation({0, 0, -3}).inversed();
-
-    SkyboxRenderMethod::Vertex skyboxVertices[] = {
+    const SkyboxRenderMethod::Vertex skyboxVertices[] = {
         { { -1.0F,  1.0F, -1.0F } },
         { { -1.0F, -1.0F, -1.0F } },
         { {  1.0F, -1.0F, -1.0F } },
@@ -92,21 +82,43 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
     };
 
     gfx::Buffer::Descriptor bufferDescriptor;
-    bufferDescriptor.debugName = "skybox vertex buffer";
     bufferDescriptor.size = sizeof(skyboxVertices);
     bufferDescriptor.initialData = skyboxVertices;
-
     m_skyBoxVertexBuffer = m_graphicAPI->newBuffer(bufferDescriptor);
+
+    utils::uint32 w = 0;
+    utils::uint32 h = 0;
+    m_window->getWindowSize(&w, &h);
+    gfx::WindowResizeEvent ev(*m_window, (int)w, (int)h);
+    updateVPMatrix(ev);
+    m_window->addEventCallBack(updateVPMatrix, this);
 }
 
-void Renderer::render(const Mesh& mesh, const Material& material, const DirectionalLight& light, const math::mat4x4& transform)
+void Renderer::beginScene(const Camera& camera)
+{
+    m_cameraPos = (math::mat4x4::rotation({camera.orientationX, camera.orientationY, 0}) * math::vec4f(0, 0, -1, 0) * camera.distance).xyz();
+
+    math::vec3f F = -((math::mat4x4::rotation({camera.orientationX, camera.orientationY, 0}) * math::vec4f( 0, 0, -1, 0)).xyz().normalized());
+    math::vec3f R = -((math::mat4x4::rotation({camera.orientationX, camera.orientationY, 0}) * math::vec4f(-1, 0,  0, 0)).xyz().normalized());
+    math::vec3f U = math::cross(F, R).normalized();
+
+    m_viewMatrix = math::mat4x4(
+        R.x, R.y, R.z, -dot(R, m_cameraPos),
+        U.x, U.y, U.z, -dot(U, m_cameraPos),
+        F.x, F.y, F.z, -dot(F, m_cameraPos),
+          0,   0,   0,                    1
+    );
+}
+
+void Renderer::renderMesh(const Mesh& mesh, const Material& material)
 {
     m_phongRenderMethod.use();
 
-    m_phongRenderMethod.setViewMatrix(m_viewMatrix);
     m_phongRenderMethod.setProjectionMatrix(m_projectionMatrix);
+    m_phongRenderMethod.setViewMatrix(m_viewMatrix);
     m_phongRenderMethod.setMaterial(material);
-    m_phongRenderMethod.setLight(light);
+    if (m_light != nullptr)
+        m_phongRenderMethod.setLight(*m_light);
 
     utils::Func<void(const SubMesh&, const math::mat4x4&)> renderSubMesh = [&](const SubMesh& subMesh, const math::mat4x4& transform) {
         math::mat4x4 modelMatrix = transform * subMesh.transform;
@@ -120,15 +132,18 @@ void Renderer::render(const Mesh& mesh, const Material& material, const Directio
             renderSubMesh(subMesh, modelMatrix);
     };
     for (const auto& subMesh : mesh.subMeshes)
-        renderSubMesh(subMesh, transform);
+        renderSubMesh(subMesh, math::mat4x4(1.0F));
 }
 
 void Renderer::renderSkybox(const utils::SharedPtr<gfx::Texture>& texture)
 {
     m_skyBoxRenderMethod.use();
-    m_skyBoxRenderMethod.setViewMatrix(m_viewMatrix);
+
     m_skyBoxRenderMethod.setProjectionMatrix(m_projectionMatrix);
+    m_skyBoxRenderMethod.setViewMatrix(m_viewMatrix);
+
     m_skyBoxRenderMethod.setTextureCube(texture);
+    
     m_graphicAPI->setVertexBuffer(m_skyBoxVertexBuffer, 0);
     m_graphicAPI->drawVertices(0, 36);
 }
@@ -137,4 +152,3 @@ Renderer::~Renderer()
 {
     m_window->clearCallbacks(this);
 }
-
