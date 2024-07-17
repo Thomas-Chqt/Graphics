@@ -118,7 +118,7 @@ utils::SharedPtr<gfx::Texture> createColorTexture(const gfx::GraphicAPI& api)
     textureDescriptor.width = WINDOW_WIDTH;
     textureDescriptor.height = WINDOW_HEIGHT;
     textureDescriptor.pixelFormat = gfx::PixelFormat::BGRA;
-    textureDescriptor.usage = gfx::TextureUsage::ShaderReadAndRenderTarget;
+    textureDescriptor.usage = gfx::Texture::Usage::ShaderReadAndRenderTarget;
     textureDescriptor.storageMode = gfx::StorageMode::Private;
 
     return api.newTexture(textureDescriptor);

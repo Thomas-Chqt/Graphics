@@ -44,9 +44,9 @@ vertex VertexOut universal3D(VertexIn in [[stage_in]], constant Matrices& matric
         .pos       = worldPos.xyz,
         .clipPos   = matrices.vpMatrix * worldPos,
         .uv        = in.uv,
-        .tangent   = (modelMatrix * float4(in.tangent, 0)).xyz,
-        .bitangent = (modelMatrix * float4(bitangent,  0)).xyz,
-        .normal    = (modelMatrix * float4(in.normal,  0)).xyz,
+        .tangent   = (matrices.modelMatrix * float4(in.tangent, 0)).xyz,
+        .bitangent = (matrices.modelMatrix * float4(bitangent,  0)).xyz,
+        .normal    = (matrices.modelMatrix * float4(in.normal,  0)).xyz,
     };
 }
 
@@ -59,6 +59,8 @@ struct Material
 
     int useDiffuseTexture;
     int useNormalMap;
+    int useSpecularMap;
+    int useEmissiveMap;
 };
 
 struct DirectionalLight
@@ -70,35 +72,75 @@ struct DirectionalLight
     float3 direction;
 };
 
+float3 getFragmentNormal(constant Material& material, thread const float3x3& TBN, thread texture2d<float>& normalMap, float2 uv);
+float3 getFragmentDiffuseColor(constant Material& material, thread texture2d<float>& diffuseTexture, float2 uv);
+float3 getFragmentSpecularColor(constant Material& material, thread texture2d<float>& specularMap, float2 uv);
+float3 getFragmentEmissiveColor(constant Material& material, thread texture2d<float>& emissiveMap, float2 uv);
+
 fragment float4 phong1(VertexOut in  [[stage_in]],
     constant Material& material      [[buffer(0)]],
     constant DirectionalLight& light [[buffer(1)]],
     texture2d<float> diffuseTexture  [[texture(1)]],
-    texture2d<float> normalMap       [[texture(2)]]
+    texture2d<float> normalMap       [[texture(2)]],
+    texture2d<float> specularMap     [[texture(3)]],
+    texture2d<float> emissiveMap     [[texture(4)]]
 )
 {
-    constexpr metal::sampler default_sampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+    float3 fragNormal = getFragmentNormal(material, float3x3(in.tangent, in.bitangent, in.normal), normalMap, in.uv);
 
-    float3x3 TBN = float3x3(in.tangent, in.bitangent, in.normal);
-
-    float3 normal = in.normal;
-    if (material.useNormalMap)
-        normal = TBN * (normalMap.sample(default_sampler, in.uv).xyz * 2.0F - 1);
-    normal = normalize(normal);
-
-    float3 diffuseColor = material.diffuseColor;
-    if (material.useDiffuseTexture)
-        diffuseColor = diffuseTexture.sample(default_sampler, in.uv).xyz;
+    float3 fragDiffuse  = getFragmentDiffuseColor (material, diffuseTexture, in.uv);
+    float3 fragSpecular = getFragmentSpecularColor(material, specularMap,    in.uv);
+    float3 fragEmissive = getFragmentEmissiveColor(material, emissiveMap,    in.uv);
 
     float3 cameraDir = normalize(float3(0, 0, -3) - in.pos);
 
-    float diffuseFactor = dot(normal, normalize(-light.direction));
-    float specularFactor = dot(reflect(light.direction, normal), cameraDir);
+    float diffuseFactor = dot(fragNormal, -light.direction);
+    float specularFactor = dot(reflect(light.direction, fragNormal), cameraDir);
 
-    float3 ambiant  = diffuseColor           * light.color * light.ambiantIntensity;
-    float3 diffuse  = diffuseColor           * light.color * light.diffuseIntensity  * max(diffuseFactor, 0.0F);
-    float3 specular = material.specularColor * light.color * light.specularIntensity * (specularFactor > 0.0f ? pow(specularFactor, material.shininess) : 0.0f);
-    float3 emissive = material.emissiveColor;
+    float3 ambiant  = fragDiffuse  * light.color * light.ambiantIntensity;
+    float3 diffuse  = fragDiffuse  * light.color * light.diffuseIntensity  * max(diffuseFactor, 0.0F);
+    float3 specular = fragSpecular * light.color * light.specularIntensity * (specularFactor > 0.0f ? pow(specularFactor, material.shininess) : 0.0f);
+    float3 emissive = fragEmissive;
 
     return float4(ambiant + diffuse + specular + emissive, 1.0F);
+}
+
+float3 getFragmentNormal(constant Material& material, thread const float3x3& TBN, thread texture2d<float>& normalMap, float2 uv)
+{
+    constexpr metal::sampler default_sampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+
+    if (material.useNormalMap != 0)
+        return normalize(TBN * (normalMap.sample(default_sampler, uv).xyz * 2.0F - 1));
+    else
+        return normalize(TBN[2]);
+}
+
+float3 getFragmentDiffuseColor(constant Material& material, thread texture2d<float>& diffuseTexture, float2 uv)
+{
+    constexpr metal::sampler default_sampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+
+    if (material.useDiffuseTexture != 0)
+        return diffuseTexture.sample(default_sampler, uv).xyz;
+    else
+        return material.diffuseColor;
+}
+
+float3 getFragmentSpecularColor(constant Material& material, thread texture2d<float>& specularMap, float2 uv)
+{
+    constexpr metal::sampler default_sampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+
+    if (material.useSpecularMap != 0)
+        return specularMap.sample(default_sampler, uv).xyz;
+    else
+        return material.specularColor;
+}
+
+float3 getFragmentEmissiveColor(constant Material& material, thread texture2d<float>& emissiveMap, float2 uv)
+{
+    constexpr metal::sampler default_sampler(metal::mag_filter::nearest, metal::min_filter::nearest);
+
+    if (material.useEmissiveMap != 0)
+        return emissiveMap.sample(default_sampler, uv).xyz;
+    else
+        return material.emissiveColor;
 }

@@ -100,7 +100,7 @@ void GLFWMetalWindow::recreateDepthTexture(utils::uint32 w, utils::uint32 h)
     descriptor.height = h;
     descriptor.pixelFormat = PixelFormat::Depth32;
     descriptor.storageMode = StorageMode::Private;
-    descriptor.usage = TextureUsage::RenderTarget;
+    descriptor.usage = Texture::Usage::RenderTarget;
     m_currentDepthTexture = MetalTexture(m_graphicAPI->device(), descriptor);
 }
 

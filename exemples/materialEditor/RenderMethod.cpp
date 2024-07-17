@@ -87,20 +87,31 @@ void PhongRenderMethod::use()
     m_api->setFragmentBuffer(m_lightBuffer, m_graphicPipeline->getFragmentBufferIndex("light"));
 }
 
-void PhongRenderMethod::setVpMatrix(math::mat4x4 mat)
-{
-    Matrices& matrices = *(Matrices*)m_matrixBuffer->mapContent();
-    {
-        matrices.vpMatrix = mat;
-    }
-    m_matrixBuffer->unMapContent();
-}
-
 void PhongRenderMethod::setModelMatrix(math::mat4x4 mat)
 {
     Matrices& matrices = *(Matrices*)m_matrixBuffer->mapContent();
     {
         matrices.modelMatrix = mat;
+    }
+    m_matrixBuffer->unMapContent();
+}
+
+void PhongRenderMethod::setViewMatrix(math::mat4x4 mat)
+{
+    m_viewMatrix = mat;
+    Matrices& matrices = *(Matrices*)m_matrixBuffer->mapContent();
+    {
+        matrices.vpMatrix = m_projectionMatrix * m_viewMatrix;
+    }
+    m_matrixBuffer->unMapContent();
+}
+
+void PhongRenderMethod::setProjectionMatrix(math::mat4x4 mat)
+{
+    m_projectionMatrix = mat;
+    Matrices& matrices = *(Matrices*)m_matrixBuffer->mapContent();
+    {
+        matrices.vpMatrix = m_projectionMatrix * m_viewMatrix;
     }
     m_matrixBuffer->unMapContent();
 }
@@ -138,7 +149,7 @@ void PhongRenderMethod::setLight(const ::DirectionalLight& light)
         gpuLight.ambiantIntensity = light.ambiantIntensity;
         gpuLight.diffuseIntensity = light.diffuseIntensity;
         gpuLight.specularIntensity = light.specularIntensity;
-        gpuLight.direction = (math::vec4f({0, 0, 1, 0}) * math::mat4x4::rotation(light.rotation) * math::mat4x4::rotation(light.rotation)).xyz();
+        gpuLight.direction = (math::vec4f({0, 0, 1, 0}) * math::mat4x4::rotation(light.rotation) * math::mat4x4::rotation(light.rotation)).xyz().normalized();
     }
     m_lightBuffer->unMapContent();
 }
@@ -167,7 +178,7 @@ utils::SharedPtr<gfx::GraphicPipeline> makeSkyboxGraphicPipeline(const gfx::Grap
 
     gfx::VertexLayout vertexLayout;
     vertexLayout.attributes.append({gfx::VertexAttributeFormat::vec3f, offsetof(SkyboxRenderMethod::Vertex, pos)});
-    vertexLayout.stride = sizeof(PhongRenderMethod::Vertex);
+    vertexLayout.stride = sizeof(SkyboxRenderMethod::Vertex);
 
     gfx::GraphicPipeline::Descriptor graphicPipelineDescriptor;
     graphicPipelineDescriptor.vertexLayout = vertexLayout;
@@ -181,22 +192,34 @@ SkyboxRenderMethod::SkyboxRenderMethod(const utils::SharedPtr<gfx::GraphicAPI>& 
 {
     gfx::Buffer::Descriptor bufferDescriptor;
     bufferDescriptor.debugName = "Matrices";
-    bufferDescriptor.size = sizeof(Matrices);
-    m_matrixBuffer = m_api->newBuffer(bufferDescriptor);
+    bufferDescriptor.size = sizeof(math::mat4x4);
+    m_vpMatrixBuffer = m_api->newBuffer(bufferDescriptor);
 }
 
 void SkyboxRenderMethod::use()
 {
     m_api->useGraphicsPipeline(m_graphicPipeline);
+    m_api->setVertexBuffer(m_vpMatrixBuffer, m_graphicPipeline->getVertexBufferIndex("vpMatrix"));
 }
 
-void SkyboxRenderMethod::setVpMatrix(math::mat4x4 mat)
+void SkyboxRenderMethod::setViewMatrix(math::mat4x4 mat)
 {
-    auto& matrices = *(SkyboxRenderMethod::Matrices*)m_matrixBuffer->mapContent();
+    m_viewMatrix = math::mat4x4(math::mat3x3(mat));
+    auto& vpMatrix = *(math::mat4x4*)m_vpMatrixBuffer->mapContent();
     {
-        matrices.vpMatrix = mat;
+        vpMatrix = m_projectionMatrix * m_viewMatrix;
     }
-    m_matrixBuffer->unMapContent();
+    m_vpMatrixBuffer->unMapContent();
+}
+
+void SkyboxRenderMethod::setProjectionMatrix(math::mat4x4 mat)
+{
+    m_projectionMatrix = mat;
+    auto& vpMatrix = *(math::mat4x4*)m_vpMatrixBuffer->mapContent();
+    {
+        vpMatrix = m_projectionMatrix * m_viewMatrix;
+    }
+    m_vpMatrixBuffer->unMapContent();
 }
 
 void SkyboxRenderMethod::setTextureCube(const utils::SharedPtr<gfx::Texture>& texture)

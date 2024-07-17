@@ -30,23 +30,22 @@ public:
     
     Renderer(const utils::SharedPtr<gfx::GraphicAPI>&, const utils::SharedPtr<gfx::Window>&);
 
-    inline void setSkyBoxTexture(const utils::SharedPtr<gfx::Texture>& tex) { m_skyBoxTexture = tex; }
-
     void render(const Mesh&, const Material&, const DirectionalLight&, const math::mat4x4& transform);
+    void renderSkybox(const utils::SharedPtr<gfx::Texture>&);
 
     ~Renderer();
 
 private:
-    void renderSkybox();
 
     utils::SharedPtr<gfx::GraphicAPI> m_graphicAPI;
     utils::SharedPtr<gfx::Window> m_window;
-    math::mat4x4 m_vpMatrix;
-    utils::SharedPtr<gfx::Texture> m_skyBoxTexture;
+    math::mat4x4 m_viewMatrix;
+    math::mat4x4 m_projectionMatrix;
+
+    PhongRenderMethod m_phongRenderMethod;
+
     SkyboxRenderMethod m_skyBoxRenderMethod;
     utils::SharedPtr<gfx::Buffer> m_skyBoxVertexBuffer;
-
-    utils::SharedPtr<RenderMethod> m_defautRenderMethod;
 
 public:
     Renderer& operator = (const Renderer&) = delete;

@@ -23,13 +23,14 @@ class RenderMethod
 {
 public:
     RenderMethod()                    = delete;
-    RenderMethod(const RenderMethod&) = default;
-    RenderMethod(RenderMethod&&)      = default;
+    RenderMethod(const RenderMethod&) = delete;
+    RenderMethod(RenderMethod&&)      = delete;
 
     virtual void use() = 0;
 
-    virtual void setVpMatrix(math::mat4x4) = 0;
     virtual void setModelMatrix(math::mat4x4) = 0;
+    virtual void setViewMatrix(math::mat4x4) = 0;
+    virtual void setProjectionMatrix(math::mat4x4) = 0;
     virtual void setMaterial(const ::Material&) = 0;
     virtual void setLight(const ::DirectionalLight&) = 0;
 
@@ -42,8 +43,8 @@ protected:
     utils::SharedPtr<gfx::GraphicPipeline> m_graphicPipeline;
 
 public:
-    RenderMethod& operator = (const RenderMethod&) = default;
-    RenderMethod& operator = (RenderMethod&&)      = default;
+    RenderMethod& operator = (const RenderMethod&) = delete;
+    RenderMethod& operator = (RenderMethod&&)      = delete;
 };
 
 class PhongRenderMethod : public RenderMethod
@@ -59,26 +60,30 @@ public:
 
 public:
     PhongRenderMethod()                         = delete;
-    PhongRenderMethod(const PhongRenderMethod&) = default;
-    PhongRenderMethod(PhongRenderMethod&&)      = default;
+    PhongRenderMethod(const PhongRenderMethod&) = delete;
+    PhongRenderMethod(PhongRenderMethod&&)      = delete;
 
     PhongRenderMethod(const utils::SharedPtr<gfx::GraphicAPI>&);
 
     void use() override;
 
-    void setVpMatrix(math::mat4x4) override;
     void setModelMatrix(math::mat4x4) override;
+    void setViewMatrix(math::mat4x4) override;
+    void setProjectionMatrix(math::mat4x4) override;
     void setMaterial(const ::Material&) override;
     void setLight(const ::DirectionalLight&) override;
 
     ~PhongRenderMethod() override = default;
 
 private:
+    math::mat4x4 m_viewMatrix;
+    math::mat4x4 m_projectionMatrix;
     struct Matrices
     {
         math::mat4x4 vpMatrix;
         math::mat4x4 modelMatrix;
     };
+    utils::SharedPtr<gfx::Buffer> m_matrixBuffer;
 
     struct Material
     {
@@ -92,6 +97,7 @@ private:
         int useSpecularMap;
         int useEmissiveMap;
     };
+    utils::SharedPtr<gfx::Buffer> m_materialBuffer;
 
     struct DirectionalLight
     {
@@ -101,14 +107,11 @@ private:
         float specularIntensity;
         math::vec3f direction;
     };
-
-    utils::SharedPtr<gfx::Buffer> m_matrixBuffer;
-    utils::SharedPtr<gfx::Buffer> m_materialBuffer;
     utils::SharedPtr<gfx::Buffer> m_lightBuffer;
 
 public:
-    PhongRenderMethod& operator = (const PhongRenderMethod&) = default;
-    PhongRenderMethod& operator = (PhongRenderMethod&&)      = default;
+    PhongRenderMethod& operator = (const PhongRenderMethod&) = delete;
+    PhongRenderMethod& operator = (PhongRenderMethod&&)      = delete;
 };
 
 class SkyboxRenderMethod : public RenderMethod
@@ -121,15 +124,16 @@ public:
 
 public:
     SkyboxRenderMethod()                          = delete;
-    SkyboxRenderMethod(const SkyboxRenderMethod&) = default;
-    SkyboxRenderMethod(SkyboxRenderMethod&&)      = default;
+    SkyboxRenderMethod(const SkyboxRenderMethod&) = delete;
+    SkyboxRenderMethod(SkyboxRenderMethod&&)      = delete;
 
     SkyboxRenderMethod(const utils::SharedPtr<gfx::GraphicAPI>&);
 
     void use() override;
 
-    void setVpMatrix(math::mat4x4) override;
     void setModelMatrix(math::mat4x4) override {}
+    void setViewMatrix(math::mat4x4) override;
+    void setProjectionMatrix(math::mat4x4) override;
     void setMaterial(const ::Material&) override {}
     void setLight(const ::DirectionalLight&) override {}
 
@@ -138,17 +142,13 @@ public:
     ~SkyboxRenderMethod() override = default;
 
 private:
-    struct Matrices
-    {
-        math::mat4x4 vpMatrix;
-        math::mat4x4 modelMatrix;
-    };
-
-    utils::SharedPtr<gfx::Buffer> m_matrixBuffer;
+    math::mat4x4 m_viewMatrix;
+    math::mat4x4 m_projectionMatrix;
+    utils::SharedPtr<gfx::Buffer> m_vpMatrixBuffer;
 
 public:
-    SkyboxRenderMethod& operator = (const SkyboxRenderMethod&) = default;
-    SkyboxRenderMethod& operator = (SkyboxRenderMethod&&)      = default;
+    SkyboxRenderMethod& operator = (const SkyboxRenderMethod&) = delete;
+    SkyboxRenderMethod& operator = (SkyboxRenderMethod&&)      = delete;
 };
 
 #endif // RENDERMETHOD_HPP

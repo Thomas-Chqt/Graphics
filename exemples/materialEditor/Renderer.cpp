@@ -21,52 +21,9 @@
 #include "UtilsCPP/Types.hpp"
 #include <cmath>
 
-#define SKYBOX_VERTICES {                 \
-    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
-    math::vec3f{ -1.0F, -1.0F, -1.0F },   \
-    math::vec3f{  1.0F, -1.0F, -1.0F },   \
-    math::vec3f{  1.0F, -1.0F, -1.0F },   \
-    math::vec3f{  1.0F,  1.0F, -1.0F },   \
-    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
-                                          \
-    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
-    math::vec3f{ -1.0F, -1.0F, -1.0F },   \
-    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
-    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
-    math::vec3f{ -1.0F,  1.0F,  1.0F },   \
-    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
-                                          \
-    math::vec3f{  1.0F, -1.0F, -1.0F },   \
-    math::vec3f{  1.0F, -1.0F,  1.0F },   \
-    math::vec3f{  1.0F,  1.0F,  1.0F },   \
-    math::vec3f{  1.0F,  1.0F,  1.0F },   \
-    math::vec3f{  1.0F,  1.0F, -1.0F },   \
-    math::vec3f{  1.0F, -1.0F, -1.0F },   \
-                                          \
-    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
-    math::vec3f{ -1.0F,  1.0F,  1.0F },   \
-    math::vec3f{  1.0F,  1.0F,  1.0F },   \
-    math::vec3f{  1.0F,  1.0F,  1.0F },   \
-    math::vec3f{  1.0F, -1.0F,  1.0F },   \
-    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
-                                          \
-    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
-    math::vec3f{  1.0F,  1.0F, -1.0F },   \
-    math::vec3f{  1.0F,  1.0F,  1.0F },   \
-    math::vec3f{  1.0F,  1.0F,  1.0F },   \
-    math::vec3f{ -1.0F,  1.0F,  1.0F },   \
-    math::vec3f{ -1.0F,  1.0F, -1.0F },   \
-                                          \
-    math::vec3f{ -1.0F, -1.0F, -1.0F },   \
-    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
-    math::vec3f{  1.0F, -1.0F, -1.0F },   \
-    math::vec3f{  1.0F, -1.0F, -1.0F },   \
-    math::vec3f{ -1.0F, -1.0F,  1.0F },   \
-    math::vec3f{  1.0F, -1.0F,  1.0F }}   \
-
 Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::SharedPtr<gfx::Window>& window)
     : m_window(window), m_graphicAPI(api),
-      m_skyBoxRenderMethod(SkyboxRenderMethod(api))
+      m_phongRenderMethod(api), m_skyBoxRenderMethod(api)
 {
     utils::Func<void(gfx::Event&)> updateVPMatrix = [this](gfx::Event& event) {
         event.dispatch<gfx::WindowResizeEvent>([this](gfx::WindowResizeEvent& event) {
@@ -79,12 +36,10 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
             float xs = ys / aspectRatio;
             float zs = zFar / (zFar - zNear);
 
-            math::mat4x4 projectionMatrix = math::mat4x4(xs,   0,  0,           0,
-                                                          0,  ys,  0,           0,
-                                                          0,   0, zs, -zNear * zs,
-                                                          0,   0,  1,           0);
-            math::mat4x4 viewMatrix = math::mat4x4::translation({0, 0, -3}).inversed();
-            m_vpMatrix = projectionMatrix * viewMatrix;
+            m_projectionMatrix = math::mat4x4(xs,   0,  0,           0,
+                                               0,  ys,  0,           0,
+                                               0,   0, zs, -zNear * zs,
+                                               0,   0,  1,           0);
         });
     };
 
@@ -95,9 +50,46 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
     updateVPMatrix(ev);
     m_window->addEventCallBack(updateVPMatrix, this);
 
-    m_defautRenderMethod = utils::makeShared<PhongRenderMethod>(api).staticCast<RenderMethod>();
+    m_viewMatrix = math::mat4x4::translation({0, 0, -3}).inversed();
 
-    SkyboxRenderMethod::Vertex skyboxVertices[] = SKYBOX_VERTICES;
+    SkyboxRenderMethod::Vertex skyboxVertices[] = {
+        { { -1.0F,  1.0F, -1.0F } },
+        { { -1.0F, -1.0F, -1.0F } },
+        { {  1.0F, -1.0F, -1.0F } },
+        { {  1.0F, -1.0F, -1.0F } },
+        { {  1.0F,  1.0F, -1.0F } },
+        { { -1.0F,  1.0F, -1.0F } },
+        { { -1.0F, -1.0F,  1.0F } },
+        { { -1.0F, -1.0F, -1.0F } },
+        { { -1.0F,  1.0F, -1.0F } },
+        { { -1.0F,  1.0F, -1.0F } },
+        { { -1.0F,  1.0F,  1.0F } },
+        { { -1.0F, -1.0F,  1.0F } },
+        { {  1.0F, -1.0F, -1.0F } },
+        { {  1.0F, -1.0F,  1.0F } },
+        { {  1.0F,  1.0F,  1.0F } },
+        { {  1.0F,  1.0F,  1.0F } },
+        { {  1.0F,  1.0F, -1.0F } },
+        { {  1.0F, -1.0F, -1.0F } },
+        { { -1.0F, -1.0F,  1.0F } },
+        { { -1.0F,  1.0F,  1.0F } },
+        { {  1.0F,  1.0F,  1.0F } },
+        { {  1.0F,  1.0F,  1.0F } },
+        { {  1.0F, -1.0F,  1.0F } },
+        { { -1.0F, -1.0F,  1.0F } },
+        { { -1.0F,  1.0F, -1.0F } },
+        { {  1.0F,  1.0F, -1.0F } },
+        { {  1.0F,  1.0F,  1.0F } },
+        { {  1.0F,  1.0F,  1.0F } },
+        { { -1.0F,  1.0F,  1.0F } },
+        { { -1.0F,  1.0F, -1.0F } },
+        { { -1.0F, -1.0F, -1.0F } },
+        { { -1.0F, -1.0F,  1.0F } },
+        { {  1.0F, -1.0F, -1.0F } },
+        { {  1.0F, -1.0F, -1.0F } },
+        { { -1.0F, -1.0F,  1.0F } },
+        { {  1.0F, -1.0F,  1.0F } }
+    };
 
     gfx::Buffer::Descriptor bufferDescriptor;
     bufferDescriptor.debugName = "skybox vertex buffer";
@@ -109,18 +101,18 @@ Renderer::Renderer(const utils::SharedPtr<gfx::GraphicAPI>& api, const utils::Sh
 
 void Renderer::render(const Mesh& mesh, const Material& material, const DirectionalLight& light, const math::mat4x4& transform)
 {
-    renderSkybox();
-    m_defautRenderMethod->use();
+    m_phongRenderMethod.use();
 
-    m_defautRenderMethod->setVpMatrix(m_vpMatrix);
-    m_defautRenderMethod->setMaterial(material);
-    m_defautRenderMethod->setLight(light);
+    m_phongRenderMethod.setViewMatrix(m_viewMatrix);
+    m_phongRenderMethod.setProjectionMatrix(m_projectionMatrix);
+    m_phongRenderMethod.setMaterial(material);
+    m_phongRenderMethod.setLight(light);
 
     utils::Func<void(const SubMesh&, const math::mat4x4&)> renderSubMesh = [&](const SubMesh& subMesh, const math::mat4x4& transform) {
         math::mat4x4 modelMatrix = transform * subMesh.transform;
         if (subMesh.vertexBuffer && subMesh.indexBuffer)
         {
-            m_defautRenderMethod->setModelMatrix(modelMatrix);
+            m_phongRenderMethod.setModelMatrix(modelMatrix);
             m_graphicAPI->setVertexBuffer(subMesh.vertexBuffer, 0);
             m_graphicAPI->drawIndexedVertices(subMesh.indexBuffer);
         }
@@ -131,16 +123,18 @@ void Renderer::render(const Mesh& mesh, const Material& material, const Directio
         renderSubMesh(subMesh, transform);
 }
 
+void Renderer::renderSkybox(const utils::SharedPtr<gfx::Texture>& texture)
+{
+    m_skyBoxRenderMethod.use();
+    m_skyBoxRenderMethod.setViewMatrix(m_viewMatrix);
+    m_skyBoxRenderMethod.setProjectionMatrix(m_projectionMatrix);
+    m_skyBoxRenderMethod.setTextureCube(texture);
+    m_graphicAPI->setVertexBuffer(m_skyBoxVertexBuffer, 0);
+    m_graphicAPI->drawVertices(0, 36);
+}
+
 Renderer::~Renderer()
 {
     m_window->clearCallbacks(this);
 }
 
-void Renderer::renderSkybox()
-{
-    m_skyBoxRenderMethod.use();
-    m_skyBoxRenderMethod.setVpMatrix(m_vpMatrix);
-    m_skyBoxRenderMethod.setTextureCube(m_skyBoxTexture);
-    m_graphicAPI->setVertexBuffer(m_skyBoxVertexBuffer, 0);
-    m_graphicAPI->drawVertices(0, 36);
-}

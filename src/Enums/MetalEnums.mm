@@ -40,33 +40,4 @@ utils::uint64 toMetalVertexAttributeFormat(VertexAttributeFormat format)
     }
 }
 
-utils::uint64 toMTLSamplerAddressMode(SamplerAddressMode addressMode)
-{
-    switch (addressMode)
-    {
-    case SamplerAddressMode::ClampToEdge:
-        return MTLSamplerAddressModeClampToEdge;
-        break;
-    case SamplerAddressMode::Repeat:
-        return MTLSamplerAddressModeRepeat;
-        break;
-    case SamplerAddressMode::MirrorRepeat:
-        return MTLSamplerAddressModeMirrorRepeat;
-        break;
-    }
-}
-
-utils::uint64 toMTLSamplerMinMagFilter(SamplerMinMagFilter filter)
-{
-    switch (filter)
-    {
-    case SamplerMinMagFilter::Nearest:
-        return MTLSamplerMinMagFilterNearest;
-        break;
-    case SamplerMinMagFilter::Linear:
-        return MTLSamplerMinMagFilterLinear;
-        break;
-    }
-}
-
 }

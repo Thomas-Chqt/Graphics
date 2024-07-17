@@ -86,15 +86,6 @@ int main()
 
         Renderer renderer(graphicAPI, window);
 
-        renderer.setSkyBoxTexture(loadCubeMap(*graphicAPI, {
-            utils::String(RESSOURCES_DIR) + "/skybox/px.png",
-            utils::String(RESSOURCES_DIR) + "/skybox/nx.png",
-            utils::String(RESSOURCES_DIR) + "/skybox/py.png",
-            utils::String(RESSOURCES_DIR) + "/skybox/ny.png",
-            utils::String(RESSOURCES_DIR) + "/skybox/pz.png",
-            utils::String(RESSOURCES_DIR) + "/skybox/nz.png",
-        }));
-
         utils::Array<Mesh> meshes;
         meshes.append(loadMeshes<PhongRenderMethod::Vertex>(*graphicAPI, RESSOURCES_DIR"/sphere.glb")[0]);
         meshes.append(loadMeshes<PhongRenderMethod::Vertex>(*graphicAPI, RESSOURCES_DIR"/cube.glb")[0]);
@@ -109,6 +100,15 @@ int main()
         textures.insert("container_diffuse", loadTexture(*graphicAPI, RESSOURCES_DIR"/container_diffuse.png"));
         textures.insert("container_emissive", loadTexture(*graphicAPI, RESSOURCES_DIR"/container_emissive.png"));
         textures.insert("container_specular", loadTexture(*graphicAPI, RESSOURCES_DIR"/container_specular.png"));
+
+        utils::SharedPtr<gfx::Texture> skyboxTexture = loadCubeMap(*graphicAPI, {
+            utils::String(RESSOURCES_DIR) + "/skybox/px.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/nx.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/py.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/ny.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/pz.png",
+            utils::String(RESSOURCES_DIR) + "/skybox/nz.png",
+        });
 
         bool running = true;
         window->addEventCallBack([&](gfx::Event& event) {
@@ -242,6 +242,7 @@ int main()
                     ImGui::End();
 
                     renderer.render(*renderedMesh, material, directionalLight, math::mat4x4::rotation(rot) * math::mat4x4::scale({scale, scale, scale}));
+                    renderer.renderSkybox(skyboxTexture);
                 }
                 graphicAPI->endRenderPass();
             }

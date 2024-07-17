@@ -20,7 +20,8 @@ namespace gfx
 class Texture
 {
 public:
-    enum class Type { texture2d, textureCube };
+    enum class Type  { texture2d, textureCube };
+    enum class Usage { ShaderRead, RenderTarget, ShaderReadAndRenderTarget };
 
     struct Descriptor
     {
@@ -31,8 +32,8 @@ public:
             descriptor.width       = width;
             descriptor.height      = height;
             descriptor.pixelFormat = PixelFormat::RGBA;
-            descriptor.storageMode = StorageMode::Shared;
-            descriptor.usage       = TextureUsage::ShaderRead;
+            descriptor.storageMode = StorageMode::Managed;
+            descriptor.usage       = Texture::Usage::ShaderRead;
             return descriptor;
         }
         
@@ -43,8 +44,8 @@ public:
             descriptor.width       = width;
             descriptor.height      = height;
             descriptor.pixelFormat = PixelFormat::Depth32;
-            descriptor.storageMode = StorageMode::Private;
-            descriptor.usage       = TextureUsage::RenderTarget;
+            descriptor.storageMode = StorageMode::Managed;
+            descriptor.usage       = Texture::Usage::RenderTarget;
             return descriptor;
         }
 
@@ -55,8 +56,8 @@ public:
             descriptor.width       = size;
             descriptor.height      = size;
             descriptor.pixelFormat = PixelFormat::RGBA;
-            descriptor.storageMode = StorageMode::Shared;
-            descriptor.usage       = TextureUsage::ShaderRead;
+            descriptor.storageMode = StorageMode::Managed;
+            descriptor.usage       = Texture::Usage::ShaderRead;
             return descriptor;
         }
 
@@ -64,8 +65,8 @@ public:
         utils::uint32 width = 0;
         utils::uint32 height = 0;
         gfx::PixelFormat pixelFormat = PixelFormat::RGBA;
-        StorageMode storageMode = StorageMode::Shared;
-        TextureUsage usage = TextureUsage::ShaderRead;
+        StorageMode storageMode = StorageMode::Managed;
+        Texture::Usage usage = Texture::Usage::ShaderRead;
     };
 
     struct Region
