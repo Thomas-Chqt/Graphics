@@ -9,17 +9,17 @@
 
 #version 410 core
 
-layout (location = 0) in vec4 pos;
+layout (location = 0) in vec3 pos;
 
 out vec3 uv;
 
-layout (std140) uniform matrices
+layout (std140) uniform vpMatrix
 {
-    mat4 vpMatrix;
+    mat4 vpMatrix_data;
 };
 
 void main()
 {
-    uv = pos.xyz;
-    gl_Position = vpMatrix * vec4(pos.xyz, 1.0);
+    gl_Position = (vpMatrix_data * vec4(pos, 1.0)).xyww;
+    uv = pos;
 }

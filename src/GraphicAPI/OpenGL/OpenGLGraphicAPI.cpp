@@ -46,6 +46,7 @@ OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window) : m_w
     GLenum err = glewInit();
     assert(err == GLEW_OK);
     GL_CALL(glEnable(GL_DEPTH_TEST))
+    GL_CALL(glDepthFunc(GL_LEQUAL))
 }
 
 utils::SharedPtr<Shader> OpenGLGraphicAPI::newShader(const Shader::Descriptor& descriptor) const
@@ -180,6 +181,8 @@ void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipelin
 
 void OpenGLGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx)
 {
+    m_window->makeContextCurrent();
+
     m_buffers.get(idx) = buffer.forceDynamicCast<OpenGLBuffer>();
     
     if (idx == 0)
@@ -197,6 +200,8 @@ void OpenGLGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, u
 
 void OpenGLGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx)
 {
+    m_window->makeContextCurrent();
+
     GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)idx, buffer.forceDynamicCast<OpenGLBuffer>()->bufferID()));
 }
 
@@ -207,18 +212,21 @@ void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& textu
 
 void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx, const utils::SharedPtr<Sampler>& sampler, utils::uint64)
 {
+    m_window->makeContextCurrent();
+
     utils::SharedPtr<OpenGLTexture> glTexture = texture.forceDynamicCast<OpenGLTexture>();
+    utils::SharedPtr<OpenGLSampler> glSampler = sampler.forceDynamicCast<OpenGLSampler>();
     m_textures.get(idx) = glTexture;
 
     GL_CALL(glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit));
     GL_CALL(glBindTexture(glTexture->textureType(), glTexture->textureID()));
 
-    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MIN_FILTER, sampler.forceDynamicCast<OpenGLSampler>()->minFilter());
-    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MAG_FILTER, sampler.forceDynamicCast<OpenGLSampler>()->magFilter());
-	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_S, 	 sampler.forceDynamicCast<OpenGLSampler>()->sAddressMode());
-	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_T,     sampler.forceDynamicCast<OpenGLSampler>()->tAddressMode());
+    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MIN_FILTER, glSampler->minFilter());
+    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MAG_FILTER, glSampler->magFilter());
+	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_S, 	 glSampler->sAddressMode());
+	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_T,     glSampler->tAddressMode());
     if (glTexture->textureType() == GL_TEXTURE_CUBE_MAP)
-        glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_R, sampler.forceDynamicCast<OpenGLSampler>()->rAddressMode());
+        glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_R, glSampler->rAddressMode());
 
     GL_CALL(glUniform1i((GLint)idx, m_nextTextureUnit));
     m_nextTextureUnit++;
