@@ -131,8 +131,8 @@ int main()
                     camera.distance += (float)scrollEvent.offsetY();
                 else
                 {
-                    camera.orientationX += (float)scrollEvent.offsetX();
-                    camera.orientationY += (float)scrollEvent.offsetY();
+                    camera.orientationX += (float)scrollEvent.offsetY() * 0.08;
+                    camera.orientationY += (float)scrollEvent.offsetX() * 0.08;
                 }
             });
         });
