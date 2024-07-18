@@ -10,7 +10,6 @@
 #ifndef BUFFER_HPP
 # define BUFFER_HPP
 
-#include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 
@@ -23,7 +22,7 @@ public:
     struct Descriptor
     {
         Descriptor() = default;
-        Descriptor(utils::uint64 size, const void* initialData = nullptr) : size(size), initialData(initialData) {};
+        explicit Descriptor(utils::uint64 size, const void* initialData = nullptr) : size(size), initialData(initialData) {};
 
         utils::String debugName;
         utils::uint64 size;
@@ -47,18 +46,6 @@ protected:
 public:
     Buffer& operator = (const Buffer&) = delete;
     Buffer& operator = (Buffer&&)      = delete;
-};
-
-template<typename T>
-struct BufferInstance
-{
-    BufferInstance(const utils::SharedPtr<gfx::Buffer>& buffer) : buffer(buffer) {}
-
-    inline void map() { content = buffer->mapContent(); }
-    inline void unmap() { buffer->unMapContent(); }
-
-    T* content;
-    utils::SharedPtr<gfx::Buffer> buffer;
 };
 
 }

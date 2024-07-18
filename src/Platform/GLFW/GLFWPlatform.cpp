@@ -61,9 +61,9 @@ utils::SharedPtr<Window> GLFWPlatform::newOpenGLWindow(int w, int h) const
 {
     SharedPtr<Window> newWindow = SharedPtr<Window>(new GLFWOpenGLWindow(w, h));
     newWindow->addEventCallBack([this](Event& event) {
-        for (auto& callbacks : m_eventCallbacks)
+        for (const auto& callbacks : m_eventCallbacks)
         {
-            for (auto& callback : callbacks.val)
+            for (const auto& callback : callbacks.val)
                 callback(event);
         }
     }, (void*)this);

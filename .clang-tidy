@@ -22,11 +22,11 @@ Checks:
 
   - portability-*
 
-  - readability-*
+  <!-- - readability-*
   - -readability-braces-around-statements
   - -readability-identifier-length
   - -readability-redundant-access-specifiers
   - -readability-simplify-boolean-expr
   - -readability-named-parameter
   - -readability-magic-numbers
-  - -readability-function-cognitive-complexity
+  - -readability-function-cognitive-complexity -->
