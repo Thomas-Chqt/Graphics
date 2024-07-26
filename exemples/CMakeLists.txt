@@ -34,7 +34,3 @@ endif()
 if(GFX_BUILD_IMGUI)
     add_subdirectory(materialEditor)
 endif()
-
-if(GFX_BUILD_IMGUI)
-    add_subdirectory(renderer)
-endif()

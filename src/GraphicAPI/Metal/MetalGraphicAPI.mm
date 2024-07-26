@@ -167,30 +167,45 @@ void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline
 
 void MetalGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx) { @autoreleasepool
 {
-    m_vertexBuffers.get(idx) = buffer.forceDynamicCast<MetalBuffer>();
-    [m_commandEncoder setVertexBuffer:m_vertexBuffers[idx]->mtlBuffer() offset:0 atIndex:idx];
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>>::Iterator it = m_vertexBuffers.find(idx);
+    if (it == m_vertexBuffers.end())
+        it = m_vertexBuffers.insert(idx, utils::SharedPtr<MetalBuffer>());
+    it->val = buffer.forceDynamicCast<MetalBuffer>();
+    [m_commandEncoder setVertexBuffer:it->val->mtlBuffer() offset:0 atIndex:idx];
 }}
 
 void MetalGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx) { @autoreleasepool
 {
-    m_fragmentBuffers.get(idx) = buffer.forceDynamicCast<MetalBuffer>();
-    [m_commandEncoder setFragmentBuffer:m_fragmentBuffers[idx]->mtlBuffer() offset:0 atIndex:idx];
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>>::Iterator it = m_fragmentBuffers.find(idx);
+    if (it == m_fragmentBuffers.end())
+        it = m_fragmentBuffers.insert(idx, utils::SharedPtr<MetalBuffer>());
+    it->val = buffer.forceDynamicCast<MetalBuffer>();
+    [m_commandEncoder setFragmentBuffer:it->val->mtlBuffer() offset:0 atIndex:idx];
 }}
 
 void MetalGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx) { @autoreleasepool
 {
-    m_fragmentTextures.get(idx) = texture.forceDynamicCast<MetalTexture>();
-
-    [m_commandEncoder setFragmentTexture:m_fragmentTextures[idx]->mtlTexture() atIndex:idx];
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalTexture>>::Iterator it = m_fragmentTextures.find(idx);
+    if (it == m_fragmentTextures.end())
+        it = m_fragmentTextures.insert(idx, utils::SharedPtr<MetalTexture>());
+    it->val = texture.forceDynamicCast<MetalTexture>();
+    [m_commandEncoder setFragmentTexture:it->val->mtlTexture() atIndex:idx];
 }}
 
 void MetalGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 textureIdx, const utils::SharedPtr<Sampler>& sampler, utils::uint64 samplerIdx) { @autoreleasepool
 {
-    m_fragmentTextures.get(textureIdx) = texture.forceDynamicCast<MetalTexture>();
-    m_fragmentSamplers.get(samplerIdx) = sampler.forceDynamicCast<MetalSampler>();
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalTexture>>::Iterator textureIt = m_fragmentTextures.find(textureIdx);
+    if (textureIt == m_fragmentTextures.end())
+        textureIt = m_fragmentTextures.insert(textureIdx, utils::SharedPtr<MetalTexture>());
+    textureIt->val = texture.forceDynamicCast<MetalTexture>();
 
-    [m_commandEncoder setFragmentTexture:m_fragmentTextures[textureIdx]->mtlTexture() atIndex:textureIdx];
-    [m_commandEncoder setFragmentSamplerState:m_fragmentSamplers[samplerIdx]->mtlSamplerState() atIndex:samplerIdx];
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalSampler>>::Iterator samplerIt = m_fragmentSamplers.find(samplerIdx);
+    if (samplerIt == m_fragmentSamplers.end())
+        samplerIt = m_fragmentSamplers.insert(samplerIdx, utils::SharedPtr<MetalSampler>());
+    samplerIt->val = sampler.forceDynamicCast<MetalSampler>();
+
+    [m_commandEncoder setFragmentTexture:textureIt->val->mtlTexture() atIndex:textureIdx];
+    [m_commandEncoder setFragmentSamplerState:samplerIt->val->mtlSamplerState() atIndex:samplerIdx];
 }}
 
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
