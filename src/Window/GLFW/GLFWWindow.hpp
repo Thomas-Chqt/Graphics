@@ -27,7 +27,7 @@ public:
     GLFWWindow(const GLFWWindow&) = delete;
     GLFWWindow(GLFWWindow&&)      = delete;
 
-    inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id) override { m_eventCallbacks.get(id).append(cb); }
+    void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id) override;
     inline void clearCallbacks(void* id) override { m_eventCallbacks.remove(id); }
 
     inline bool isKeyPress(int key) override { return ::glfwGetKey(m_glfwWindow, key) == GLFW_PRESS; }

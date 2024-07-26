@@ -12,8 +12,44 @@
 
 #include "Math/Vector.hpp"
 #include "AssetManager.hpp"
-#include "UtilsCPP/Optional.hpp"
 #include "UtilsCPP/String.hpp"
+
+template<typename T>
+class Optional
+{
+public:
+    Optional()                = default;
+    Optional(const Optional&) = default;
+    Optional(Optional&&)      = default;
+    
+    Optional(const T& data) : m_null(false), m_data(data)
+    {
+    }
+
+    ~Optional() = default;
+
+private:
+    bool m_null = true;
+    T m_data;
+
+public:
+    Optional& operator = (const Optional&) = default;
+    Optional& operator = (Optional&&)      = default;
+    
+    Optional& operator = (const T& data)
+    {
+        m_null = false;
+        m_data = data;
+        return *this;
+    }
+    
+    inline       T& operator  * ()       { return  m_data; }
+    inline const T& operator  * () const { return  m_data; }
+    inline       T* operator -> ()       { return &m_data; }
+    inline const T* operator -> () const { return &m_data; }
+
+    inline operator bool () const { return m_null == false; }
+};
 
 struct TransformComponent
 {
@@ -45,10 +81,10 @@ struct Entity
 {
     utils::String name;
 
-    utils::Optional<TransformComponent> transformComponent;
-    utils::Optional<ViewPointComponent> viewPointComponent;
-    utils::Optional<LightSourceComponent> lightSourceComponent;
-    utils::Optional<RenderableComponent> renderableComponent;
+    Optional<TransformComponent> transformComponent;
+    Optional<ViewPointComponent> viewPointComponent;
+    Optional<LightSourceComponent> lightSourceComponent;
+    Optional<RenderableComponent> renderableComponent;
 };
 
 #endif // ENTITYCOMPONENT_HPP

@@ -19,6 +19,15 @@
 namespace gfx
 {
 
+void GLFWWindow::addEventCallBack(const utils::Func<void(Event&)>& cb, void* id)
+{
+    utils::Dictionary<void*, utils::Array<utils::Func<void(Event&)>>>::Iterator it = m_eventCallbacks.find(id);
+    if (it == m_eventCallbacks.end())
+        m_eventCallbacks.insert(id, utils::Array<utils::Func<void(Event&)>>({cb}));
+    else
+        it->val.append(cb);
+}
+
 #ifdef GFX_BUILD_IMGUI
 void GLFWWindow::imGuiShutdown()
 {

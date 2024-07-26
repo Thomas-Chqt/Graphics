@@ -183,7 +183,10 @@ void OpenGLGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, u
 {
     m_window->makeContextCurrent();
 
-    m_buffers.get(idx) = buffer.forceDynamicCast<OpenGLBuffer>();
+    if (m_buffers.contain(idx))
+        m_buffers[idx] = buffer.forceDynamicCast<OpenGLBuffer>();
+    else
+        m_buffers.insert(idx, buffer.forceDynamicCast<OpenGLBuffer>());
     
     if (idx == 0)
     {
@@ -216,7 +219,11 @@ void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& textu
 
     utils::SharedPtr<OpenGLTexture> glTexture = texture.forceDynamicCast<OpenGLTexture>();
     utils::SharedPtr<OpenGLSampler> glSampler = sampler.forceDynamicCast<OpenGLSampler>();
-    m_textures.get(idx) = glTexture;
+
+    if (m_textures.contain(idx))
+        m_textures[idx] = glTexture;
+    else
+        m_textures.insert(idx, glTexture);
 
     GL_CALL(glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit));
     GL_CALL(glBindTexture(glTexture->textureType(), glTexture->textureID()));
