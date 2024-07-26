@@ -80,8 +80,8 @@ protected:
     utils::SharedPtr<gfx::GraphicPipeline> m_graphicPipeline;
 
 public:
-    RenderMethod operator = (const RenderMethod&) = delete;
-    RenderMethod operator = (RenderMethod&&)      = delete;
+    RenderMethod& operator = (const RenderMethod&) = delete;
+    RenderMethod& operator = (RenderMethod&&)      = delete;
 };
 
 class DefaultRenderMethod : public RenderMethod
@@ -133,8 +133,8 @@ private:
     utils::uint64 m_materialBufferIdx = 0;
 
 public:
-    DefaultRenderMethod operator = (const DefaultRenderMethod&) = delete;
-    DefaultRenderMethod operator = (DefaultRenderMethod&&)      = delete;
+    DefaultRenderMethod& operator = (const DefaultRenderMethod&) = delete;
+    DefaultRenderMethod& operator = (DefaultRenderMethod&&)      = delete;
 };
 
 #endif // RENDERMETHOD_HPP
