@@ -10,10 +10,11 @@
 #ifndef GFX_ERROR_HPP
 # define GFX_ERROR_HPP
 
-#include "UtilsCPP/Error.hpp"
-#include "UtilsCPP/String.hpp"
+#include <utility> // IWYU pragma: keep
 
-#define ERR_DESC inline const char* description() const override
+#include "UtilsCPP/Error.hpp"
+#include "UtilsCPP/String.hpp" // IWYU pragma: keep
+#include "UtilsCPP/Types.hpp" // IWYU pragma: keep
 
 namespace gfx
 {
@@ -28,44 +29,56 @@ struct GLFWError : public GFXError
 };
 struct GLFWInitError : public GFXError
 {
-    ERR_DESC { return m_description; };
+    ERR_DESC(m_description)
 private:
     utils::String m_description = "fail to initialize GLFW. " + GLFWError::s_lastErrorDesc;
 };
-#endif // GLFW_ENABLE
+#endif // GFX_USING_GLFW
 
-#ifdef GFX_METAL_ENABLED
+#ifdef GFX_BUILD_METAL
 struct MetalError : public GFXError {};
 
 struct RenderCommandEncoderCreationError : public MetalError {
-    ERR_DESC { return "RenderCommandEncoder creation failed"; }
+    ERR_DESC("RenderCommandEncoder creation failed")
 };
 
 struct MTLLibraryCreationError : public MetalError {
-    ERR_DESC { return "MTLLibrary creation failed"; }
+    ERR_DESC("MTLLibrary creation failed")
 };
 
 struct MTLFunctionCreationError : public MetalError {
-    ERR_DESC { return "MTLFunction creation failed"; }
+    ERR_DESC("MTLFunction creation failed")
 };
 
 struct MTLRenderPipelineStateCreationError : public MetalError {
-    ERR_DESC { return "MTLRenderPipelineState creation failed"; }
+    ERR_DESC("MTLRenderPipelineState creation failed")
 };
 
-struct MetalShaderLibNotInitError : public MetalError {
-    ERR_DESC { return "Metal shader library is not initialized"; }
+struct DepthStencilStateCreationError : public MetalError {
+    ERR_DESC("MTLDepthStencilState creation failed")
+};
+
+struct MTLBufferCreationError : public MetalError {
+    ERR_DESC("MTLBuffer creation failed")
+};
+
+struct MTLTextureCreationError : public MetalError {
+    ERR_DESC("MTLTexture creation failed")
+};
+
+struct MTLSamplerStateCreationError : public MetalError {
+    ERR_DESC("MTLSamplerState creation failed")
 };
 #endif
 
-#ifdef GFX_OPENGL_ENABLED
+#ifdef GFX_BUILD_OPENGL
 struct OpenGLError : public GFXError {};
 
 struct OpenGLShaderCompileError : public OpenGLError
 {
 public:
-    inline OpenGLShaderCompileError(const utils::String& desc) : m_description(desc) {}
-    ERR_DESC { return m_description; }
+    inline explicit OpenGLShaderCompileError(utils::String desc) : m_description(std::move(desc)) {}
+    ERR_DESC(m_description)
 
 private:
     utils::String m_description;
@@ -74,13 +87,31 @@ private:
 struct OpenGLShaderLinkError : public OpenGLError
 {
 public:
-    inline OpenGLShaderLinkError(const utils::String& desc) : m_description(desc) {}
-    ERR_DESC { return m_description; }
+    inline explicit OpenGLShaderLinkError(utils::String desc) : m_description(std::move(desc)) {}
+    ERR_DESC(m_description)
 
 private:
     utils::String m_description;
 };
 
+struct OpenGLCallError : public OpenGLError
+{
+public:
+    inline explicit OpenGLCallError(utils::uint32 code) : m_code(code)
+    {
+        switch (m_code)
+        {
+        default:
+            m_description = utils::String::fromUInt(m_code);
+        }        
+    }
+    
+    ERR_DESC(m_description)
+
+private:
+    utils::String m_description;
+    utils::uint32 m_code;
+};
 #endif
 
 }

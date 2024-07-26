@@ -10,44 +10,48 @@
 #ifndef GLFWMETALWINDOW_HPP
 # define GLFWMETALWINDOW_HPP
 
+#include "UtilsCPP/Types.hpp"
 #include "Window/GLFW/GLFWWindow.hpp"
 #include "Window/MetalWindow.hpp"
-
 #include <GLFW/glfw3.h>
 
-#include "Platform/GLFW/GLFWPlatform.hpp"
-#include "Graphics/Event.hpp"
-#include "UtilsCPP/SharedPtr.hpp"
-
 #ifdef __OBJC__
-    #import <QuartzCore/CAMetalLayer.h>
+    #import <Metal/Metal.h>
 #else
-    class CAMetalLayer;
-    class NSWindow;
-#endif // OBJCPP
+    template<typename T> using id = T*;
+
+    class CAMetalDrawable;
+#endif // __OBJC__
 
 namespace gfx
 {
 
 class GLFWMetalWindow final : public GLFWWindow, public MetalWindow
 {
-private:
-    friend utils::SharedPtr<Window> GLFWPlatform::newMetalWindow(int w, int h) const;
-
 public:
+    GLFWMetalWindow(int w, int h);
     GLFWMetalWindow(const GLFWMetalWindow&) = delete;
     GLFWMetalWindow(GLFWMetalWindow&&)      = delete;
     
-    #ifdef GFX_IMGUI_ENABLED
+    #ifdef GFX_BUILD_IMGUI
         void imGuiInit() override;
     #endif
 
-    CAMetalLayer* metalLayer() override;
+    void setGraphicAPI(MetalGraphicAPI*) override;
+
+    void makeCurrentDrawables() override;
+    inline const id<CAMetalDrawable>& currentDrawable() override { return m_currentDrawable; }
+    inline const MetalTexture& currentDepthTexture() override { return m_currentDepthTexture; }
+    void clearCurrentDrawables() override;
 
     ~GLFWMetalWindow() override = default;
 
 private:
-    GLFWMetalWindow(int w, int h);
+    void recreateDepthTexture(utils::uint32 w, utils::uint32 h);
+
+    MetalGraphicAPI* m_graphicAPI = nullptr;
+    id<CAMetalDrawable> m_currentDrawable = nullptr;
+    MetalTexture m_currentDepthTexture;
 
 public:
     GLFWMetalWindow& operator = (const GLFWMetalWindow&) = delete;

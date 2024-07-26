@@ -26,19 +26,23 @@ public:
     OpenGLFrameBuffer(const OpenGLFrameBuffer&) = delete;
     OpenGLFrameBuffer(OpenGLFrameBuffer&&)      = delete;
 
-    OpenGLFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>());
+    explicit OpenGLFrameBuffer(const FrameBuffer::Descriptor&);
 
     void setColorTexture(const utils::SharedPtr<Texture>&) override;
     inline utils::SharedPtr<Texture> colorTexture() override { return m_colorTexture.staticCast<Texture>(); }
 
+    void setDepthTexture(const utils::SharedPtr<Texture>&) override;
+    inline utils::SharedPtr<Texture> depthTexture() override { return m_depthTexture.staticCast<Texture>(); }
+
     inline utils::SharedPtr<OpenGLTexture> glColorTexture() { return m_colorTexture; }
-    inline GLuint frameBufferID() { return m_frameBufferID; } 
+    inline GLuint frameBufferID() const { return m_frameBufferID; }
     
     ~OpenGLFrameBuffer() override;
 
 private:
-    GLuint m_frameBufferID;
+    GLuint m_frameBufferID = 0;
     utils::SharedPtr<OpenGLTexture> m_colorTexture;
+    utils::SharedPtr<OpenGLTexture> m_depthTexture;
 
 public:
     OpenGLFrameBuffer& operator = (const OpenGLFrameBuffer&) = delete;

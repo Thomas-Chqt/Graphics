@@ -29,13 +29,13 @@ public:
     GLFWPlatform(const GLFWPlatform&) = delete;
     GLFWPlatform(GLFWPlatform&&)      = delete;
 
-    inline void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id = (void*)0) override { m_eventCallbacks.get(id).append(cb); }
+    void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id) override;
     inline void clearCallbacks(void* id) override { m_eventCallbacks.remove(id); }
 
-#ifdef GFX_METAL_ENABLED
+#ifdef GFX_BUILD_METAL
     utils::SharedPtr<Window> newMetalWindow(int w, int h) const override;
 #endif
-#ifdef GFX_OPENGL_ENABLED
+#ifdef GFX_BUILD_OPENGL
     utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const override;
 #endif
 

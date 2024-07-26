@@ -27,8 +27,8 @@ jobs:
         include:
           - os: macos-latest
             compiler: clang
-            c_compiler: $(brew --prefix llvm@15)/bin/clang
-            cpp_compiler: $(brew --prefix llvm@15)/bin/clang++
+            c_compiler: clang
+            cpp_compiler: clang++
             
           - os: ubuntu-latest
             compiler: clang

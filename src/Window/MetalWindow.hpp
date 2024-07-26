@@ -10,16 +10,24 @@
 #ifndef METALWINDOW_HPP
 # define METALWINDOW_HPP
 
+#include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Window/Window_internal.hpp"
 
 #ifdef __OBJC__
+    #import <Metal/Metal.h>
     #import <QuartzCore/CAMetalLayer.h>
 #else
-    class CAMetalLayer;
-#endif // OBJCPP
+    template<typename T> using id = T*;
+
+    class MTLDevice;
+    class CAMetalDrawable;
+#endif // __OBJC__
+
 
 namespace gfx
 {
+
+class MetalGraphicAPI;
 
 class MetalWindow : virtual public Window_internal
 {
@@ -27,9 +35,14 @@ public:
     MetalWindow(const MetalWindow&) = delete;
     MetalWindow(MetalWindow&&)      = delete;
 
-    virtual CAMetalLayer* metalLayer() = 0;
+    virtual void setGraphicAPI(MetalGraphicAPI*) = 0;
 
-    virtual ~MetalWindow() = default;
+    virtual void makeCurrentDrawables() = 0;
+    virtual const id<CAMetalDrawable>& currentDrawable() = 0;
+    virtual const MetalTexture& currentDepthTexture() = 0;
+    virtual void clearCurrentDrawables() = 0;
+
+    ~MetalWindow() override = default;
 
 protected:
     MetalWindow() = default;

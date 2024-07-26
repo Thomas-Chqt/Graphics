@@ -30,20 +30,22 @@ public:
     inline static Platform& shared() { return *s_shared; };
     static void terminate();
 
-    virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id = (void*)0) = 0;
-    virtual void clearCallbacks(void* id = nullptr) = 0;
+    virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id) = 0;
+    inline void addEventCallBack(const utils::Func<void(Event&)>& event) { addEventCallBack(event, nullptr); }
+    virtual void clearCallbacks(void* id) = 0;
+    inline void clearCallbacks() { clearCallbacks(nullptr); }
 
-#ifdef GFX_METAL_ENABLED
+#ifdef GFX_BUILD_METAL
     virtual utils::SharedPtr<Window> newMetalWindow(int w, int h) const = 0;
-    utils::SharedPtr<GraphicAPI> newMetalGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
+    utils::SharedPtr<GraphicAPI> newMetalGraphicAPI(const utils::SharedPtr<Window>&) const;
 #endif
-#ifdef GFX_OPENGL_ENABLED
+#ifdef GFX_BUILD_OPENGL
     virtual utils::SharedPtr<Window> newOpenGLWindow(int w, int h) const = 0;
-    utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>& renderTarget) const;
+    utils::SharedPtr<GraphicAPI> newOpenGLGraphicAPI(const utils::SharedPtr<Window>&) const;
 #endif
 
-    utils::SharedPtr<Window> newDefaultWindow(int w, int h);
-    utils::SharedPtr<GraphicAPI> newDefaultGraphicAPI(const utils::SharedPtr<Window>& renderTarget);
+    utils::SharedPtr<Window> newWindow(int w, int h) const;
+    utils::SharedPtr<GraphicAPI> newGraphicAPI(const utils::SharedPtr<Window>&) const;
 
     virtual void pollEvents() = 0;
 

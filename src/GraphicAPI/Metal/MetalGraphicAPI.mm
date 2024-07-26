@@ -9,136 +9,88 @@
 
 #include "GraphicAPI/Metal/MetalGraphicAPI.hpp"
 
+#include "GraphicAPI/Metal/MetalBuffer.hpp"
 #include "GraphicAPI/Metal/MetalFrameBuffer.hpp"
-#include "GraphicAPI/Metal/MetalIndexBuffer.hpp"
+#include "GraphicAPI/Metal/MetalShader.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
+#include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
-#include "Graphics/Event.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
-#include "Graphics/IndexBuffer.hpp"
 #include "Graphics/Platform.hpp"
+#include "Graphics/Sampler.hpp"
+#include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
-#include "Math/Vector.hpp"
-#include "UtilsCPP/Array.hpp"
-#include "UtilsCPP/Func.hpp"
-#include "UtilsCPP/RuntimeError.hpp"
-#include "UtilsCPP/String.hpp"
-#include <Foundation/NSString.h>
-#include <Foundation/NSURL.h>
-#include "GraphicAPI/Metal/MetalVertexBuffer.hpp"
-#include "Graphics/VertexBuffer.hpp"
-#include "Graphics/GraphicAPI.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "UtilsCPP/UniquePtr.hpp"
 #include "Window/MetalWindow.hpp"
 #include <Metal/Metal.h>
-#include <QuartzCore/CAMetalLayer.h>
 #include <cassert>
-#include <cstddef>
-#include "imgui/imgui.h"
-#include "imguiBackends/imgui_impl_metal.h"
 #include "Graphics/Error.hpp"
+#include "GraphicAPI/Metal/MetalSampler.hpp"
 
-using utils::SharedPtr;
-using utils::UniquePtr;
-using utils::uint32;
-using utils::Array;
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
+    #include "imguiBackends/imgui_impl_metal.h"
+#endif
 
 namespace gfx
 {
 
-MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window) { @autoreleasepool
+MetalGraphicAPI::MetalGraphicAPI(const utils::SharedPtr<Window>& window)
+    : m_window(window.forceDynamicCast<MetalWindow>()) { @autoreleasepool
 {
-    if (SharedPtr<MetalWindow> mtlWindow = window.dynamicCast<MetalWindow>())
-        m_window = mtlWindow;
-    else
-        throw utils::RuntimeError("Window is not MetalWindow");
-
     m_mtlDevice = MTLCreateSystemDefaultDevice();
     assert(m_mtlDevice); // TODO use throw
-    
-    m_window->metalLayer().device = m_mtlDevice;
 
+    m_window->setGraphicAPI(this);
+    
     m_commandQueue = [m_mtlDevice newCommandQueue];
     assert(m_commandQueue); // TODO use throw
-
-    utils::Func<void(Event&)> updateDepthTexture = [this](Event& event) { @autoreleasepool {
-        event.dispatch<WindowResizeEvent>([this](WindowResizeEvent& event){
-            MTLTextureDescriptor* depthDextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
-            utils::uint32 winFbuffWidth, winFbuffHeight;
-            event.window().getFrameBufferSize(&winFbuffWidth, &winFbuffHeight);
-            depthDextureDescriptor.width = winFbuffWidth;
-            depthDextureDescriptor.height = winFbuffHeight;
-            depthDextureDescriptor.pixelFormat = MTLPixelFormatDepth32Float;
-            depthDextureDescriptor.usage = MTLTextureUsageRenderTarget;
-            depthDextureDescriptor.storageMode = MTLStorageModePrivate;
-            m_depthTexture = MetalTexture(m_mtlDevice, depthDextureDescriptor);
-        });
-    }};
-
-    WindowResizeEvent windowResizeEvent(*m_window, 0, 0);
-    updateDepthTexture(windowResizeEvent);
-    m_window->addEventCallBack(updateDepthTexture, this);
 }}
 
-#ifdef GFX_IMGUI_ENABLED
-void MetalGraphicAPI::useForImGui(ImGuiConfigFlags flags)
+utils::SharedPtr<Shader> MetalGraphicAPI::newShader(const Shader::Descriptor& shaderDescriptor) const
 {
-    assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
-    
+    return utils::makeShared<MetalShader>(m_mtlDevice, shaderDescriptor).staticCast<Shader>();
+}
+
+utils::SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& descriptor) const
+{
+    return utils::makeShared<MetalGraphicPipeline>(m_mtlDevice, descriptor).staticCast<GraphicPipeline>();
+}
+
+utils::SharedPtr<Buffer> MetalGraphicAPI::newBuffer(const Buffer::Descriptor& descriptor) const
+{
+    return utils::makeShared<MetalBuffer>(m_mtlDevice, descriptor).staticCast<Buffer>();
+}
+
+utils::SharedPtr<Texture> MetalGraphicAPI::newTexture(const Texture::Descriptor& descriptor) const
+{
+    return utils::makeShared<MetalTexture>(m_mtlDevice, descriptor).staticCast<Texture>();
+}
+
+utils::SharedPtr<Sampler> MetalGraphicAPI::newSampler(const Sampler::Descriptor& descriptor) const
+{
+    return utils::makeShared<MetalSampler>(m_mtlDevice, descriptor).staticCast<Sampler>();
+}
+
+utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const FrameBuffer::Descriptor& descriptor) const
+{
+    return utils::makeShared<MetalFrameBuffer>(descriptor).staticCast<FrameBuffer>();
+}
+
+#ifdef GFX_BUILD_IMGUI
+void MetalGraphicAPI::initImgui(ImGuiConfigFlags flags)
+{
     ImGui::CreateContext();
     
     ImGui::GetIO().ConfigFlags = flags;
 
     m_window->imGuiInit();
     ImGui_ImplMetal_Init(m_mtlDevice);
-    s_imguiEnabledAPI = this;
 }
 #endif
-
-#ifdef GFX_METAL_ENABLED
-void MetalGraphicAPI::initMetalShaderLib(const utils::String& path) { @autoreleasepool
-{
-    NSError *error;
-    NSString* mtlShaderLibPath = [[[NSString alloc] initWithCString:path encoding:NSUTF8StringEncoding] autorelease];
-    m_shaderLib = [m_mtlDevice newLibraryWithURL:[NSURL URLWithString: mtlShaderLibPath] error:&error];
-}}
-#endif
-
-utils::SharedPtr<VertexBuffer> MetalGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const
-{
-    (void)layout;
-    return SharedPtr<VertexBuffer>(new MetalVertexBuffer(m_mtlDevice, data, count * size));
-}
-
-SharedPtr<GraphicPipeline> MetalGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& descriptor) const { @autoreleasepool
-{
-    if (m_shaderLib == nullptr)
-        throw MetalShaderLibNotInitError();
-    return SharedPtr<GraphicPipeline>(new MetalGraphicPipeline(m_mtlDevice, m_shaderLib, descriptor));
-}}
-
-SharedPtr<IndexBuffer> MetalGraphicAPI::newIndexBuffer(const Array<uint32>& indices) const
-{
-    return SharedPtr<IndexBuffer>(new MetalIndexBuffer(m_mtlDevice, indices));
-}
-
-SharedPtr<Texture> MetalGraphicAPI::newTexture(const Texture::Descriptor& descriptor) const { @autoreleasepool
-{
-    MTLTextureDescriptor* textureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
-    textureDescriptor.width = descriptor.width;
-    textureDescriptor.height = descriptor.height;
-    textureDescriptor.pixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.pixelFormat);
-    return SharedPtr<Texture>(new MetalTexture(m_mtlDevice, textureDescriptor));
-}}
-
-utils::SharedPtr<FrameBuffer> MetalGraphicAPI::newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const
-{
-    return SharedPtr<FrameBuffer>(new MetalFrameBuffer(colorTexture));
-}
 
 void MetalGraphicAPI::beginFrame() { @autoreleasepool
 {
@@ -146,143 +98,114 @@ void MetalGraphicAPI::beginFrame() { @autoreleasepool
     assert(m_commandBuffer); // TODO use throw
 }}
 
-void MetalGraphicAPI::beginOnScreenRenderPass() { @autoreleasepool
+void MetalGraphicAPI::beginRenderPass() { @autoreleasepool
 {
-    m_currentDrawable = [[m_window->metalLayer() nextDrawable] retain];
+    if (m_window->currentDrawable() == nullptr)
+        m_window->makeCurrentDrawables();
 
     MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
     
     renderPassDescriptor.colorAttachments[0].loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
     renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
     renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
-    renderPassDescriptor.colorAttachments[0].texture = m_currentDrawable.texture;
+    renderPassDescriptor.colorAttachments[0].texture = m_window->currentDrawable().texture;
 
     renderPassDescriptor.depthAttachment.loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
     renderPassDescriptor.depthAttachment.clearDepth = 1.0;
     renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
-    renderPassDescriptor.depthAttachment.texture = m_depthTexture.mtlTexture();
-
-    #ifdef GFX_IMGUI_ENABLED
-    if (s_imguiEnabledAPI == this)
-    {
-        m_window->imGuiNewFrame();
-        ImGui_ImplMetal_NewFrame(renderPassDescriptor);
-        ImGui::NewFrame();
-    }
-    #endif
+    renderPassDescriptor.depthAttachment.texture = m_window->currentDepthTexture().mtlTexture();
 
     m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
-    if (!m_commandEncoder)
+    if (m_commandEncoder == nil)
         throw RenderCommandEncoderCreationError();
 }}
 
-void MetalGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>& frameBuffer) { @autoreleasepool
+void MetalGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& target) { @autoreleasepool
 {
-    if (utils::SharedPtr<MetalFrameBuffer> mtlFrameBuffer = frameBuffer.dynamicCast<MetalFrameBuffer>())
-    {
-        MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
-    
-        renderPassDescriptor.colorAttachments[0].loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
-        renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
-        renderPassDescriptor.colorAttachments[0].texture = mtlFrameBuffer->mtlColorTexture()->mtlTexture();
+    m_frameBuffer = target.forceDynamicCast<MetalFrameBuffer>();
+    MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
 
-        // TODO depth for frame buffer
+    renderPassDescriptor.colorAttachments[0].loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
+    renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
+    renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(m_nextPassClearColor.r, m_nextPassClearColor.g, m_nextPassClearColor.b, m_nextPassClearColor.a);
+    renderPassDescriptor.colorAttachments[0].texture = m_frameBuffer->mtlColorTexture()->mtlTexture();
 
-        m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
-        if (!m_commandEncoder)
-            throw RenderCommandEncoderCreationError();
+    renderPassDescriptor.depthAttachment.loadAction = m_nextPassLoadAction == LoadAction::clear ? MTLLoadActionClear : MTLLoadActionLoad;
+    renderPassDescriptor.depthAttachment.clearDepth = 1.0;
+    renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
+    renderPassDescriptor.depthAttachment.texture = m_frameBuffer->mtlDepthTexture()->mtlTexture();
 
-        m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<FrameBuffer>(frameBuffer)));
-    }
-    else
-        throw utils::RuntimeError("FrameBuffer is not MetalFrameBuffer");
+    m_commandEncoder = [[m_commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor] retain];
+    if (m_commandEncoder == nil)
+        throw RenderCommandEncoderCreationError();
 }}
 
-void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline) { @autoreleasepool
+#ifdef GFX_BUILD_IMGUI
+void MetalGraphicAPI::beginImguiRenderPass() { @autoreleasepool
 {
-    if (utils::SharedPtr<MetalGraphicPipeline> mtlGraphicsPipeline = graphicsPipeline.dynamicCast<MetalGraphicPipeline>())
-    {
-        [m_commandEncoder setRenderPipelineState:mtlGraphicsPipeline->renderPipelineState()];
-        [m_commandEncoder setDepthStencilState:mtlGraphicsPipeline->depthStencilState()];
-        m_boundPipeline = graphicsPipeline;
-    }
-    else
-        throw utils::RuntimeError("GraphicPipeline is not MetalGraphicPipeline");
+    beginRenderPass();
+
+    MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
+    renderPassDescriptor.colorAttachments[0].texture = m_window->currentDrawable().texture;
+    renderPassDescriptor.depthAttachment.texture = m_window->currentDepthTexture().mtlTexture();
+
+    m_window->imGuiNewFrame();
+    ImGui_ImplMetal_NewFrame(renderPassDescriptor);
+    ImGui::NewFrame();
+
+    m_isImguiRenderPass = true;
+    m_isImguiFrame = true;
+}}
+#endif
+
+void MetalGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& pipeline) { @autoreleasepool
+{
+    m_graphicPipeline = pipeline.forceDynamicCast<MetalGraphicPipeline>();
+    [m_commandEncoder setRenderPipelineState:m_graphicPipeline->renderPipelineState()];
+    [m_commandEncoder setDepthStencilState:m_graphicPipeline->depthStencilState()];
 }}
 
-void MetalGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer) { @autoreleasepool
+void MetalGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx) { @autoreleasepool
 {
-    if (utils::SharedPtr<MetalVertexBuffer> mtlVertexBuffer = vertexBuffer.dynamicCast<MetalVertexBuffer>())
-    {
-        [m_commandEncoder setVertexBuffer:mtlVertexBuffer->mtlBuffer() offset:0 atIndex:0];
-        m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<VertexBuffer>(vertexBuffer)));
-    }
-    else
-        throw utils::RuntimeError("VertexBuffer is not MetalVertexBuffer");
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>>::Iterator it = m_vertexBuffers.find(idx);
+    if (it == m_vertexBuffers.end())
+        it = m_vertexBuffers.insert(idx, utils::SharedPtr<MetalBuffer>());
+    it->val = buffer.forceDynamicCast<MetalBuffer>();
+    [m_commandEncoder setVertexBuffer:it->val->mtlBuffer() offset:0 atIndex:idx];
 }}
 
-void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::vec4f& vec) { @autoreleasepool
+void MetalGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx) { @autoreleasepool
 {
-    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>>::Iterator it = m_fragmentBuffers.find(idx);
+    if (it == m_fragmentBuffers.end())
+        it = m_fragmentBuffers.insert(idx, utils::SharedPtr<MetalBuffer>());
+    it->val = buffer.forceDynamicCast<MetalBuffer>();
+    [m_commandEncoder setFragmentBuffer:it->val->mtlBuffer() offset:0 atIndex:idx];
 }}
 
-void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::mat4x4& mat) { @autoreleasepool
+void MetalGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx) { @autoreleasepool
 {
-    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat4x4) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalTexture>>::Iterator it = m_fragmentTextures.find(idx);
+    if (it == m_fragmentTextures.end())
+        it = m_fragmentTextures.insert(idx, utils::SharedPtr<MetalTexture>());
+    it->val = texture.forceDynamicCast<MetalTexture>();
+    [m_commandEncoder setFragmentTexture:it->val->mtlTexture() atIndex:idx];
 }}
 
-void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::vec2f& vec){ @autoreleasepool
+void MetalGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 textureIdx, const utils::SharedPtr<Sampler>& sampler, utils::uint64 samplerIdx) { @autoreleasepool
 {
-    [m_commandEncoder setVertexBytes:(const void *)&vec length:sizeof(math::vec2f) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
-}}
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalTexture>>::Iterator textureIt = m_fragmentTextures.find(textureIdx);
+    if (textureIt == m_fragmentTextures.end())
+        textureIt = m_fragmentTextures.insert(textureIdx, utils::SharedPtr<MetalTexture>());
+    textureIt->val = texture.forceDynamicCast<MetalTexture>();
 
-void MetalGraphicAPI::setVertexUniform(const utils::String& name, const math::mat3x3& mat) { @autoreleasepool
-{
-    [m_commandEncoder setVertexBytes:(const void *)&mat length:sizeof(math::mat3x3) atIndex:m_boundPipeline->findVertexUniformIndex(name)];
-}}
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalSampler>>::Iterator samplerIt = m_fragmentSamplers.find(samplerIdx);
+    if (samplerIt == m_fragmentSamplers.end())
+        samplerIt = m_fragmentSamplers.insert(samplerIdx, utils::SharedPtr<MetalSampler>());
+    samplerIt->val = sampler.forceDynamicCast<MetalSampler>();
 
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, utils::uint32 val) { @autoreleasepool
-{
-    [m_commandEncoder setFragmentBytes:(const void *)&val length:sizeof(utils::uint32) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
-}}
-
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, float f) { @autoreleasepool
-{
-    [m_commandEncoder setFragmentBytes:(const void *)&f length:sizeof(float) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
-}}
-
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec3f& vec) { @autoreleasepool
-{
-    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec3f) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
-}}
-
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec4f& vec) { @autoreleasepool
-{
-    [m_commandEncoder setFragmentBytes:(const void *)&vec length:sizeof(math::vec4f) atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
-}}
-
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout) { @autoreleasepool
-{
-    (void)layout;
-    [m_commandEncoder setFragmentBytes:data length:size atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
-}}
-
-void MetalGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout& layout) { @autoreleasepool
-{
-    (void)layout;
-    [m_commandEncoder setFragmentBytes:data length:len * elementSize atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
-}}
-
-void MetalGraphicAPI::setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>& texture) { @autoreleasepool
-{
-    if (utils::SharedPtr<MetalTexture> mtlTexture = texture.dynamicCast<MetalTexture>())
-    {
-        [m_commandEncoder setFragmentTexture:mtlTexture->mtlTexture() atIndex:m_boundPipeline->findFragmentUniformIndex(name)];
-        m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<Texture>(texture)));
-    }
-    else
-        throw utils::RuntimeError("Texture is not MetalTexture");
+    [m_commandEncoder setFragmentTexture:textureIt->val->mtlTexture() atIndex:textureIdx];
+    [m_commandEncoder setFragmentSamplerState:samplerIt->val->mtlSamplerState() atIndex:samplerIdx];
 }}
 
 void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @autoreleasepool
@@ -290,75 +213,70 @@ void MetalGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count) { @
     [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
 }}
 
-void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& indexBuffer) { @autoreleasepool
+void MetalGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buffer) { @autoreleasepool
 {
-    if (utils::SharedPtr<MetalIndexBuffer> mtlIndexBuffer = indexBuffer.dynamicCast<MetalIndexBuffer>())
-    {
-        [m_commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                     indexCount:mtlIndexBuffer->indexCount()
-                                      indexType:MTLIndexTypeUInt32
-                                    indexBuffer:mtlIndexBuffer->mtlBuffer()
-                              indexBufferOffset:0];
-        m_renderPassObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<IndexBuffer>(indexBuffer)));
-    }
-    else
-        throw utils::RuntimeError("IndexBuffer is not MetalIndexBuffer");
+    m_indexBuffer = buffer.forceDynamicCast<MetalBuffer>();
+    [m_commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                 indexCount:m_indexBuffer->size() / sizeof(utils::uint32)
+                                  indexType:MTLIndexTypeUInt32
+                                indexBuffer:m_indexBuffer->mtlBuffer()
+                          indexBufferOffset:0];
 }}
 
-void MetalGraphicAPI::endOnScreenRenderPass() { @autoreleasepool
+void MetalGraphicAPI::endRenderPass()
 {
-    #ifdef GFX_IMGUI_ENABLED
-    if (s_imguiEnabledAPI == this)
+    #ifdef GFX_BUILD_IMGUI
+    if (m_isImguiRenderPass)
     {
         ImGui::Render();
         ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
-        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
+        m_isImguiRenderPass = false;
     }
     #endif
 
     [m_commandEncoder endEncoding];
     [m_commandEncoder release];
 
-    [m_commandBuffer presentDrawable:m_currentDrawable];
-    [m_currentDrawable release];
+    m_indexBuffer.clear();
+    m_fragmentSamplers.clear();
+    m_fragmentTextures.clear();
+    m_fragmentBuffers.clear();
+    m_vertexBuffers.clear();
+    m_graphicPipeline.clear();
+    m_frameBuffer.clear();
+}
 
-    m_boundPipeline.clear();
-    m_renderPassObjects.clear();
-}}
-
-void MetalGraphicAPI::endOffScreeRenderPass() { @autoreleasepool
+void MetalGraphicAPI::endFrame()
 {
-    [m_commandEncoder endEncoding];
-    [m_commandEncoder release];
-    m_boundPipeline.clear();
-    m_renderPassObjects.clear();
-}}
-
-void MetalGraphicAPI::endFrame() { @autoreleasepool
-{
+    #ifdef GFX_BUILD_IMGUI
+    if (m_isImguiFrame && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        m_isImguiFrame = false;
+    }
+    #endif
+    
+    if (m_window->currentDrawable() != nullptr)
+    {
+        [m_commandBuffer presentDrawable:m_window->currentDrawable()];
+        m_window->clearCurrentDrawables();
+    }
     [m_commandBuffer commit];
     [m_commandBuffer release];
-}}
+}
+
+#ifdef GFX_BUILD_IMGUI
+void MetalGraphicAPI::terminateImGui()
+{
+    ImGui_ImplMetal_Shutdown();
+    m_window->imGuiShutdown();
+    ImGui::DestroyContext();
+}
+#endif
 
 MetalGraphicAPI::~MetalGraphicAPI() { @autoreleasepool
 {
-    #ifdef GFX_IMGUI_ENABLED
-    if (s_imguiEnabledAPI == this)
-    {
-        ImGui_ImplMetal_Shutdown();
-        m_window->imGuiShutdown();
-        ImGui::DestroyContext();
-        s_imguiEnabledAPI = nullptr;
-    }
-    #endif
-
-    if (m_shaderLib)
-        [m_shaderLib release];
-    m_window->clearCallbacks(this);
     [m_commandQueue release];
     [m_mtlDevice release];
 }}

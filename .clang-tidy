@@ -1,0 +1,32 @@
+Checks:
+  - -*
+
+  - bugprone-*
+  - -bugprone-easily-swappable-parameters
+
+  - clang-analyzer-*
+
+  - concurrency-*
+
+  - misc-*
+
+  - modernize-*
+  - -modernize-use-trailing-return-type
+  - -modernize-avoid-c-arrays
+  - -modernize-use-nodiscard
+  - -misc-non-private-member-variables-in-classes
+
+  - objc-*
+
+  - performance-*
+
+  - portability-*
+
+  <!-- - readability-*
+  - -readability-braces-around-statements
+  - -readability-identifier-length
+  - -readability-redundant-access-specifiers
+  - -readability-simplify-boolean-expr
+  - -readability-named-parameter
+  - -readability-magic-numbers
+  - -readability-function-cognitive-complexity -->

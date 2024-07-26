@@ -10,8 +10,11 @@
 #ifndef GRAPHICSPIPELINE_HPP
 # define GRAPHICSPIPELINE_HPP
 
+#include "Shader.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "VertexLayout.hpp"
+
 #include "Enums.hpp"
 
 namespace gfx
@@ -22,24 +25,28 @@ class GraphicPipeline
 public:
     struct Descriptor
     {
-        utils::String metalVSFunction;
-        utils::String metalFSFunction;
+        VertexLayout vertexLayout;
 
-        utils::String openglVSCode;
-        utils::String openglFSCode;
+        Shader* vertexShader = nullptr;
+        Shader* fragmentShader = nullptr;
 
-        gfx::ColorPixelFormat colorPixelFormat = ColorPixelFormat::BGRA;
-        gfx::DepthPixelFormat depthPixelFormat = DepthPixelFormat::Depth32;
+        PixelFormat colorPixelFormat = PixelFormat::BGRA;
+        PixelFormat depthPixelFormat = PixelFormat::Depth32;
         
-        gfx::BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
+        BlendOperation blendOperation = BlendOperation::srcA_plus_1_minus_srcA;
     };
 
 public:
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline(GraphicPipeline&&)      = delete;
 
-    virtual utils::uint32 findVertexUniformIndex(const utils::String& name) const = 0;
-    virtual utils::uint32 findFragmentUniformIndex(const utils::String& name) const = 0;
+    virtual utils::uint64 getVertexBufferIndex(const utils::String& name) = 0;
+    virtual utils::uint64 getVertexTextureIndex(const utils::String& name) = 0;
+    virtual utils::uint64 getVertexSamplerIndex(const utils::String& name) = 0;
+
+    virtual utils::uint64 getFragmentBufferIndex(const utils::String& name) = 0;
+    virtual utils::uint64 getFragmentTextureIndex(const utils::String& name) = 0;
+    virtual utils::uint64 getFragmentSamplerIndex(const utils::String& name) = 0;
 
     virtual ~GraphicPipeline() = default;
 

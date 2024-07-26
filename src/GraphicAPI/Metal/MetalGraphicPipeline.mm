@@ -7,33 +7,45 @@
  * ---------------------------------------------------
  */
 
+#include "GraphicAPI/Metal/MetalShader.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Error.hpp"
-#include "Graphics/GraphicPipeline.hpp"
-#include <Metal/Metal.h>
+#include "UtilsCPP/RuntimeError.hpp"
+#include "UtilsCPP/String.hpp"
+#include "UtilsCPP/Types.hpp"
 #include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
+#include <Metal/Metal.h>
+#include "UtilsCPP/Macros.hpp"
 
 namespace gfx
 {
 
-MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrary> mtlLibrary, const GraphicPipeline::Descriptor& descriptor) { @autoreleasepool
+MetalGraphicPipeline::MetalGraphicPipeline(const id<MTLDevice>& mtlDevice, const GraphicPipeline::Descriptor& descriptor) { @autoreleasepool
 {
-    NSString* vertexShaderFuncName = [[[NSString alloc] initWithCString:descriptor.metalVSFunction encoding:NSUTF8StringEncoding] autorelease];
-    id<MTLFunction> vertexFunction = [[mtlLibrary newFunctionWithName:vertexShaderFuncName] autorelease];
-    if (!vertexFunction)
-        throw MTLFunctionCreationError();
-
-    NSString* fragmentShaderFuncName = [[[NSString alloc] initWithCString:descriptor.metalFSFunction encoding:NSUTF8StringEncoding] autorelease];
-    id<MTLFunction> fragmentFunction = [[mtlLibrary newFunctionWithName:fragmentShaderFuncName] autorelease];
-    if (!fragmentFunction)
-        throw MTLFunctionCreationError();
+    MTLVertexDescriptor* vertexDescriptor = [MTLVertexDescriptor vertexDescriptor];
+    utils::uint32 i = 0;
+    for (const auto& element : descriptor.vertexLayout.attributes)
+    {
+        vertexDescriptor.attributes[i].format = (MTLVertexFormat)toMetalVertexAttributeFormat(element.format);
+        vertexDescriptor.attributes[i].offset = element.offset;
+        vertexDescriptor.attributes[i].bufferIndex = 0;
+        i++;
+    }
+    vertexDescriptor.layouts[0].stride = descriptor.vertexLayout.stride;
 
     MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
     
-    renderPipelineDescriptor.vertexFunction = vertexFunction;
-    renderPipelineDescriptor.fragmentFunction = fragmentFunction;
+    if (descriptor.vertexShader != nullptr)
+        renderPipelineDescriptor.vertexFunction = dynamic_cast<MetalShader&>(*descriptor.vertexShader).mtlFunction();
+    if (descriptor.fragmentShader != nullptr)
+        renderPipelineDescriptor.fragmentFunction = dynamic_cast<MetalShader&>(*descriptor.fragmentShader).mtlFunction();
+
+    renderPipelineDescriptor.vertexDescriptor = vertexDescriptor;
+
     renderPipelineDescriptor.colorAttachments[0].pixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.colorPixelFormat);
     if (descriptor.blendOperation != BlendOperation::blendingOff)
+        renderPipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
+    else
     {
         renderPipelineDescriptor.colorAttachments[0].blendingEnabled = YES;
         switch (descriptor.blendOperation)
@@ -61,42 +73,71 @@ MetalGraphicPipeline::MetalGraphicPipeline(id<MTLDevice> mtlDevice, id<MTLLibrar
             break;
 
         case BlendOperation::blendingOff:
-            #if defined(_MSC_VER) && !defined(__clang__) // MSVC
-                __assume(false);
-            #else // GCC, Clang
-                __builtin_unreachable();
-            #endif
+            UNREACHABLE
         }
     }
-    else
-        renderPipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
 
     renderPipelineDescriptor.depthAttachmentPixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.depthPixelFormat);
-
-    NSError* error;
-    MTLAutoreleasedRenderPipelineReflection reflection;
-
-    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:renderPipelineDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:&error];
-    if (!m_renderPipelineState)
-        throw MTLRenderPipelineStateCreationError();
-
-    auto vertexBindings = reflection.vertexBindings;
-    auto fragmentBindings = reflection.fragmentBindings;
-
-    for (uint32 i = 0; i < vertexBindings.count; i++)
-        m_vertexUniformsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
-
-    for (uint32 i = 0; i < fragmentBindings.count; i++)
-        m_fragmentUniformsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
 
     MTLDepthStencilDescriptor* depthStencilDescriptor = [[[MTLDepthStencilDescriptor alloc] init] autorelease];
     depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;
     depthStencilDescriptor.depthWriteEnabled = YES;
+
+
+    MTLAutoreleasedRenderPipelineReflection reflection = nullptr;
+
+    m_renderPipelineState = [mtlDevice newRenderPipelineStateWithDescriptor:renderPipelineDescriptor options:MTLPipelineOptionBufferTypeInfo reflection:&reflection error:nullptr];
+    if (m_renderPipelineState == nil)
+        throw MTLRenderPipelineStateCreationError();
+
     m_depthStencilState = [mtlDevice newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+    if (m_renderPipelineState == nil)
+        throw DepthStencilStateCreationError();
+
+
+    NSArray<id<MTLBinding>>* vertexBindings = reflection.vertexBindings;
+    NSArray<id<MTLBinding>>* fragmentBindings = reflection.fragmentBindings;
+
+    for (uint32 i = 0; i < vertexBindings.count; i++)
+    {
+        switch (vertexBindings[i].type)
+        {
+        case MTLBindingTypeBuffer:
+            m_vertexBufferBindingsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+            break;
+        case MTLBindingTypeTexture:
+            m_vertexTextureBindingsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+            break;
+        case MTLBindingTypeSampler:
+            m_vertexSamplerBindingsIndices.insert([vertexBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], vertexBindings[i].index);
+            break;
+        default:
+            throw utils::RuntimeError("not implemented");
+        }
+    }
+
+    for (uint32 i = 0; i < fragmentBindings.count; i++)
+    {
+        switch (fragmentBindings[i].type)
+        {
+        case MTLBindingTypeBuffer:
+            m_fragmentBufferBindingsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+            break;
+        case MTLBindingTypeTexture:
+            m_fragmentTextureBindingsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+            break;
+        case MTLBindingTypeSampler:
+            m_fragmentSamplerBindingsIndices.insert([fragmentBindings[i].name cStringUsingEncoding:NSUTF8StringEncoding], fragmentBindings[i].index);
+            break;
+        default:
+            throw utils::RuntimeError("not implemented");
+        }
+    }
 }}
 
 MetalGraphicPipeline::~MetalGraphicPipeline() { @autoreleasepool
 {
+    [m_depthStencilState release];
     [m_renderPipelineState release];
 }}
 

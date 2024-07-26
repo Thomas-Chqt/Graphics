@@ -11,7 +11,14 @@
 
 out vec4 fragmentColor;
         
+layout (std140) uniform colors
+{
+    vec3 red;
+    vec3 green;
+    vec3 blue;
+};
+
 void main()
 {
-    fragmentColor = vec4(1, 1, 1, 1);
+    fragmentColor = vec4(blue, 1.0);
 }

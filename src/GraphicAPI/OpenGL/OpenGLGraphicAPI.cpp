@@ -8,60 +8,85 @@
  */
 
 #include "GraphicAPI/OpenGL/OpenGLGraphicAPI.hpp"
+#include "GraphicAPI/OpenGL/OpenGLBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLFrameBuffer.hpp"
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
+#include "GraphicAPI/OpenGL/OpenGLSampler.hpp"
+#include "GraphicAPI/OpenGL/OpenGLShader.hpp"
 #include "GraphicAPI/OpenGL/OpenGLTexture.hpp"
-#include "GraphicAPI/OpenGL/OpenGLVertexBuffer.hpp"
+#include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Error.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/IndexBuffer.hpp"
+#include "Graphics/Sampler.hpp"
+#include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
-#include "Graphics/VertexBuffer.hpp"
-#include "Math/Vector.hpp"
-#include "UtilsCPP/Array.hpp"
-#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include <GL/glew.h>
 #include <cassert>
-#include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "GraphicAPI/OpenGL/OpenGLIndexBuffer.hpp"
-#include "UtilsCPP/UniquePtr.hpp"
-#ifdef GFX_IMGUI_ENABLED
+#include "Window/OpenGLWindow.hpp"
+#include "UtilsCPP/Macros.hpp"
+
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
     #include "imguiBackends/imgui_impl_opengl3.h"
 #endif
 
-using utils::SharedPtr;
-using utils::UniquePtr;
-using utils::uint32;
-using utils::uint64;
-using utils::Array;
+#define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }
 
 namespace gfx
 {
 
-OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window)
-{
-    if (SharedPtr<OpenGLWindow> glWindow = window.dynamicCast<OpenGLWindow>())
-        m_window = glWindow;
-    else
-        throw utils::RuntimeError("Window is not OpenGLWindow");
-    
+OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window) : m_window(window.forceDynamicCast<OpenGLWindow>())
+{    
     m_window->makeContextCurrent();
     GLenum err = glewInit();
     assert(err == GLEW_OK);
-
-    glEnable(GL_DEPTH_TEST);
+    GL_CALL(glEnable(GL_DEPTH_TEST))
+    GL_CALL(glDepthFunc(GL_LEQUAL))
 }
 
-#ifdef GFX_IMGUI_ENABLED
-void OpenGLGraphicAPI::useForImGui(ImGuiConfigFlags flags)
+utils::SharedPtr<Shader> OpenGLGraphicAPI::newShader(const Shader::Descriptor& descriptor) const
 {
-    assert(s_imguiEnabledAPI == nullptr && "Im gui is already using a graphic api object");
-    assert(m_window && "Render target need to be set before initializing imgui");
-    
+    m_window->makeContextCurrent();
+    return utils::makeShared<OpenGLShader>(descriptor).staticCast<Shader>();
+}
+
+utils::SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& descriptor) const
+{
+    m_window->makeContextCurrent();
+    return utils::makeShared<OpenGLGraphicPipeline>(descriptor).staticCast<GraphicPipeline>();
+}
+
+utils::SharedPtr<Buffer> OpenGLGraphicAPI::newBuffer(const Buffer::Descriptor& descriptor) const
+{
+    m_window->makeContextCurrent();
+    return utils::makeShared<OpenGLBuffer>(descriptor).staticCast<Buffer>();
+}
+
+utils::SharedPtr<Texture> OpenGLGraphicAPI::newTexture(const Texture::Descriptor& descriptor) const
+{
+    m_window->makeContextCurrent();
+    return utils::makeShared<OpenGLTexture>(descriptor).staticCast<Texture>();
+}
+
+utils::SharedPtr<Sampler> OpenGLGraphicAPI::newSampler(const Sampler::Descriptor& descriptor) const
+{
+    return utils::makeShared<OpenGLSampler>(descriptor).staticCast<Sampler>();
+}
+
+utils::SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const FrameBuffer::Descriptor& descriptor) const
+{
+    m_window->makeContextCurrent();
+    return utils::makeShared<OpenGLFrameBuffer>(descriptor).staticCast<FrameBuffer>();
+}
+
+#ifdef GFX_BUILD_IMGUI
+void OpenGLGraphicAPI::initImgui(ImGuiConfigFlags flags)
+{
     ImGui::CreateContext();
     
     ImGui::GetIO().ConfigFlags = flags;
@@ -72,276 +97,206 @@ void OpenGLGraphicAPI::useForImGui(ImGuiConfigFlags flags)
     #else
         ImGui_ImplOpenGL3_Init("#version 130");
     #endif
-    s_imguiEnabledAPI = this;
 }
 #endif
 
-SharedPtr<VertexBuffer> OpenGLGraphicAPI::newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout& layout) const
+void OpenGLGraphicAPI::beginRenderPass()
 {
-    return SharedPtr<VertexBuffer>(new OpenGLVertexBuffer(data, count, size, layout));
+    m_window->makeContextCurrent();
+
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, 0))
+
+    utils::uint32 width = 0;
+    utils::uint32 height = 0;
+    m_window->getFrameBufferSize(&width, &height);
+    GL_CALL(glViewport(0, 0, width, height))
+
+    if (m_nextPassLoadAction == LoadAction::clear)
+    {
+        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a))
+        GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
+    }
 }
 
-SharedPtr<GraphicPipeline> OpenGLGraphicAPI::newGraphicsPipeline(const GraphicPipeline::Descriptor& desc) const
+#ifdef GFX_BUILD_IMGUI
+void OpenGLGraphicAPI::beginImguiRenderPass()
 {
-    return SharedPtr<GraphicPipeline>(new OpenGLGraphicPipeline(desc));
+    beginRenderPass();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    m_window->imGuiNewFrame();
+    ImGui::NewFrame();
+
+    m_isImguiRenderPass = true;
+    m_isImguiFrame = true;
+}
+#endif
+
+void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuff)
+{
+    m_window->makeContextCurrent();
+
+    m_frameBuffer = fBuff.forceDynamicCast<OpenGLFrameBuffer>();
+    
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer->frameBufferID()))
+    GL_CALL(glViewport(0, 0, m_frameBuffer->glColorTexture()->width(), m_frameBuffer->glColorTexture()->height()))
+
+    if (m_nextPassLoadAction == LoadAction::clear)
+    {
+        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a))
+        GL_CALL(glClear(GL_COLOR_BUFFER_BIT))
+    }
 }
 
-SharedPtr<IndexBuffer> OpenGLGraphicAPI::newIndexBuffer(const Array<uint32>& indices) const
+void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline)
 {
-    return SharedPtr<IndexBuffer>(new OpenGLIndexBuffer(indices));
+    m_window->makeContextCurrent();
+
+    m_graphicPipeline = graphicsPipeline.forceDynamicCast<OpenGLGraphicPipeline>();
+
+    GL_CALL(glUseProgram(m_graphicPipeline->shaderProgramID()))
+    if (m_graphicPipeline->blendOperation() != BlendOperation::blendingOff)
+    {
+        GL_CALL(glEnable(GL_BLEND))
+        switch (m_graphicPipeline->blendOperation())
+        {
+        case BlendOperation::srcA_plus_1_minus_srcA:
+            GL_CALL(glBlendEquation(GL_FUNC_ADD))
+            GL_CALL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA))
+            break;
+        case BlendOperation::one_minus_srcA_plus_srcA:
+            GL_CALL(glBlendEquation(GL_FUNC_ADD))
+            GL_CALL(glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA))
+            break;
+        case BlendOperation::blendingOff:
+            UNREACHABLE
+        }
+    }
+    else
+        GL_CALL(glDisable(GL_BLEND))
+    
+    if (m_buffers.contain(0))
+        m_graphicPipeline->enableVertexLayout();
 }
 
-SharedPtr<Texture> OpenGLGraphicAPI::newTexture(const Texture::Descriptor& desc) const
+void OpenGLGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx)
 {
-    return SharedPtr<Texture>(new OpenGLTexture(desc));
+    m_window->makeContextCurrent();
+
+    if (m_buffers.contain(idx))
+        m_buffers[idx] = buffer.forceDynamicCast<OpenGLBuffer>();
+    else
+        m_buffers.insert(idx, buffer.forceDynamicCast<OpenGLBuffer>());
+    
+    if (idx == 0)
+    {
+        GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_buffers[idx]->bufferID()))
+        
+        if (m_graphicPipeline)
+            m_graphicPipeline->enableVertexLayout();
+    }
+    else
+    {
+        GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)idx, m_buffers[idx]->bufferID()));
+    }
 }
 
-SharedPtr<FrameBuffer> OpenGLGraphicAPI::newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture) const
+void OpenGLGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx)
 {
-    return SharedPtr<FrameBuffer>(new OpenGLFrameBuffer(colorTexture));
+    m_window->makeContextCurrent();
+
+    GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)idx, buffer.forceDynamicCast<OpenGLBuffer>()->bufferID()));
 }
 
-void OpenGLGraphicAPI::beginFrame()
+void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx)
+{
+    setFragmentTexture(texture, idx, newSampler(Sampler::Descriptor()), 0);
+}
+
+void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx, const utils::SharedPtr<Sampler>& sampler, utils::uint64)
+{
+    m_window->makeContextCurrent();
+
+    utils::SharedPtr<OpenGLTexture> glTexture = texture.forceDynamicCast<OpenGLTexture>();
+    utils::SharedPtr<OpenGLSampler> glSampler = sampler.forceDynamicCast<OpenGLSampler>();
+
+    if (m_textures.contain(idx))
+        m_textures[idx] = glTexture;
+    else
+        m_textures.insert(idx, glTexture);
+
+    GL_CALL(glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit));
+    GL_CALL(glBindTexture(glTexture->textureType(), glTexture->textureID()));
+
+    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MIN_FILTER, glSampler->minFilter());
+    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MAG_FILTER, glSampler->magFilter());
+	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_S, 	 glSampler->sAddressMode());
+	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_T,     glSampler->tAddressMode());
+    if (glTexture->textureType() == GL_TEXTURE_CUBE_MAP)
+        glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_R, glSampler->rAddressMode());
+
+    GL_CALL(glUniform1i((GLint)idx, m_nextTextureUnit));
+    m_nextTextureUnit++;
+}
+
+void OpenGLGraphicAPI::drawVertices(utils::uint32 start, utils::uint32 count)
+{
+    m_window->makeContextCurrent();
+
+    GL_CALL(glDrawArrays(GL_TRIANGLES, start, count))
+    m_nextTextureUnit = 0;
+}
+
+void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<Buffer>& buff)
 {
     m_window->makeContextCurrent();
     
-    #ifdef GFX_IMGUI_ENABLED
-    if (s_imguiEnabledAPI == this)
+    m_indexBuffer = buff.forceDynamicCast<OpenGLBuffer>();
+
+    GL_CALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer->bufferID()))
+    GL_CALL(glDrawElements(GL_TRIANGLES, (GLsizei)(m_indexBuffer->size() / sizeof(utils::uint32)), GL_UNSIGNED_INT, nullptr))
+    m_nextTextureUnit = 0;
+}
+
+void OpenGLGraphicAPI::endRenderPass()
+{
+    #ifdef GFX_BUILD_IMGUI
+    if (m_isImguiRenderPass)
     {
-        ImGui_ImplOpenGL3_NewFrame();
-        m_window->imGuiNewFrame();
-        ImGui::NewFrame();
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        m_isImguiRenderPass = false;
     }
     #endif
-}
 
-void OpenGLGraphicAPI::beginOnScreenRenderPass()
-{
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    utils::uint32 width, height;
-    m_window->getFrameBufferSize(&width, &height);
-    glViewport(0, 0, width, height);
-
-    if (m_nextPassLoadAction == LoadAction::clear)
-    {
-        glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-
-    m_nextTextureUnit = 0;
-}
-
-void OpenGLGraphicAPI::beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>& fBuff)
-{
-    if (utils::SharedPtr<OpenGLFrameBuffer> glFrameBuffer = fBuff.dynamicCast<OpenGLFrameBuffer>())
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, glFrameBuffer->frameBufferID());
-        glViewport(0, 0, glFrameBuffer->glColorTexture()->width(), glFrameBuffer->glColorTexture()->height());
-    }
-    else
-        throw utils::RuntimeError("FrameBuffer is not OpenGLFrameBuffer");
-
-    if (m_nextPassLoadAction == LoadAction::clear)
-    {
-        glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a);
-        glClear(GL_COLOR_BUFFER_BIT);
-    }
-
-    m_nextTextureUnit = 0;
-
-}
-
-void OpenGLGraphicAPI::useGraphicsPipeline(const SharedPtr<GraphicPipeline>& graphicsPipeline)
-{
-    if (utils::SharedPtr<OpenGLGraphicPipeline> glGraphicsPipeline = graphicsPipeline.dynamicCast<OpenGLGraphicPipeline>())
-    {
-        glUseProgram(glGraphicsPipeline->shaderProgramID());
-        m_boundPipeline = graphicsPipeline;
-        if (glGraphicsPipeline->blendOperation() != BlendOperation::blendingOff)
-        {
-            glEnable(GL_BLEND);
-            switch (glGraphicsPipeline->blendOperation())
-            {
-            case BlendOperation::srcA_plus_1_minus_srcA:
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                break;
-            case BlendOperation::one_minus_srcA_plus_srcA:
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
-                break;
-            case BlendOperation::blendingOff:
-                #if defined(_MSC_VER) && !defined(__clang__) // MSVC
-                    __assume(false);
-                #else // GCC, Clang
-                    __builtin_unreachable();
-                #endif
-            }
-        }
-        else
-            glDisable(GL_BLEND);
-    }
-    else
-        throw utils::RuntimeError("GraphicPipeline is not OpenGLGraphicPipeline");
-}
-
-void OpenGLGraphicAPI::useVertexBuffer(const utils::SharedPtr<VertexBuffer>& vertexBuffer)
-{
-    if (utils::SharedPtr<OpenGLVertexBuffer> glVertexBuffer = vertexBuffer.dynamicCast<OpenGLVertexBuffer>())
-    {
-        glBindVertexArray(glVertexBuffer->vertexArrayID());
-        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<VertexBuffer>(vertexBuffer)));
-    }
-    else
-        throw utils::RuntimeError("VertexBuffer is not OpenGLVertexBuffer");
-}
-
-void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::vec4f& vec)
-{
-    glUniform4f(m_boundPipeline->findVertexUniformIndex(name), vec.x, vec.y, vec.z, vec.w);
-}
-
-void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::mat4x4& mat)
-{
-    glUniformMatrix4fv(m_boundPipeline->findVertexUniformIndex(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&mat));
-}
-
-void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::vec2f& vec)
-{
-    glUniform2f(m_boundPipeline->findVertexUniformIndex(name), vec.x, vec.y);
-}
-
-void OpenGLGraphicAPI::setVertexUniform(const utils::String& name, const math::mat3x3& mat)
-{
-    float glmat[] = {
-        mat[0].x, mat[0].y, mat[0].z,
-        mat[1].x, mat[1].y, mat[1].z,
-        mat[2].x, mat[2].y, mat[2].z
-    };
-
-    glUniformMatrix3fv(m_boundPipeline->findVertexUniformIndex(name), 1, GL_FALSE, reinterpret_cast<const GLfloat*>(&glmat));
-}
-
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, utils::uint32 val)
-{
-    glUniform1ui(m_boundPipeline->findFragmentUniformIndex(name), val);
-}
-
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, float f)
-{
-    glUniform1f(m_boundPipeline->findFragmentUniformIndex(name), f);
-}
-
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec3f& vec)
-{
-    glUniform3f(m_boundPipeline->findFragmentUniformIndex(name), vec.x, vec.y, vec.z);
-}
-
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const math::vec4f& vec)
-{
-    glUniform4f(m_boundPipeline->findFragmentUniformIndex(name), vec.x, vec.y, vec.z, vec.w);
-}
-
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout& layout)
-{
-    for (auto element : layout)
-    {
-        switch (element.type)
-        {
-        case Type::Float:
-            setFragmentUniform(name + "." + element.name, *((float*)((char*)data + (utils::uint64)element.offset)));
-            break;
-        case Type::vec2f:
-            // setFragmentUniform(pipeline.findFragmentUniformIndex(name + "." + element.name), *((math::vec2f*)data));
-            break;
-        case Type::vec3f:
-            setFragmentUniform(name + "." + element.name, *((math::vec3f*)((char*)data + (utils::uint64)element.offset)));
-            break;
-        case Type::Uint32:
-            setFragmentUniform(name + "." + element.name, *((utils::uint32*)((char*)data + (utils::uint64)element.offset)));
-            break;
-        }
-    }
-}
-
-void OpenGLGraphicAPI::setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout& layout)
-{
-    for (utils::uint32 i = 0; i < len; i++)
-        setFragmentUniform(name + "[" + utils::String::fromUInt(i) + "]", ((char*)data) + i * elementSize, elementSize, layout);
-}
-
-void OpenGLGraphicAPI::setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>& texture)
-{
-    if (SharedPtr<OpenGLTexture> glTexture = texture.dynamicCast<OpenGLTexture>())
-    {
-        glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit);
-        glUniform1i(m_boundPipeline->findFragmentUniformIndex(name), m_nextTextureUnit++);
-        glBindTexture(GL_TEXTURE_2D, glTexture->textureID());
-        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<Texture>(texture)));
-    }
-    else
-        throw utils::RuntimeError("Texture is not OpenGLTexture");
-}
-
-void OpenGLGraphicAPI::drawVertices(uint32 start, uint32 count)
-{
-    glDrawArrays(GL_TRIANGLES, start, count);
-}
-
-void OpenGLGraphicAPI::drawIndexedVertices(const utils::SharedPtr<IndexBuffer>& indexBuffer)
-{
-    if (SharedPtr<OpenGLIndexBuffer> glIndexBuffer = indexBuffer.dynamicCast<OpenGLIndexBuffer>())
-    {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glIndexBuffer->indexBufferID());
-        glDrawElements(GL_TRIANGLES, (int)glIndexBuffer->indexCount(), GL_UNSIGNED_INT, 0);
-        m_passObjects.append(UniquePtr<utils::SharedPtrBase>(new SharedPtr<IndexBuffer>(indexBuffer)));
-    }
-    else
-        throw utils::RuntimeError("IndexBuffer is not OpenGLIndexBuffer");
-}
-
-void OpenGLGraphicAPI::endOnScreenRenderPass()
-{
-    m_boundPipeline.clear();
-    m_passObjects.clear();
-}
-
-void OpenGLGraphicAPI::endOffScreeRenderPass()
-{
-    m_boundPipeline.clear();
-    m_passObjects.clear();
+    m_indexBuffer.clear();
+    m_textures.clear();
+    m_buffers.clear();
+    m_graphicPipeline.clear();
+    m_frameBuffer.clear();
 }
 
 void OpenGLGraphicAPI::endFrame()
 {
-    #ifdef GFX_IMGUI_ENABLED
-    if (s_imguiEnabledAPI == this)
+    #ifdef GFX_BUILD_IMGUI
+    if (m_isImguiFrame && (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0)
     {
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        m_isImguiFrame = false;
     }
     #endif
 
     m_window->swapBuffer();
 }
 
-OpenGLGraphicAPI::~OpenGLGraphicAPI()
+#ifdef GFX_BUILD_IMGUI
+void OpenGLGraphicAPI::terminateImGui()
 {
-    #ifdef GFX_IMGUI_ENABLED
-    if (s_imguiEnabledAPI == this)
-    {
-        ImGui_ImplOpenGL3_Shutdown();
-        m_window->imGuiShutdown();
-        ImGui::DestroyContext();
-        s_imguiEnabledAPI = nullptr;
-    }
-    #endif
+    ImGui_ImplOpenGL3_Shutdown();
+    m_window->imGuiShutdown();
+    ImGui::DestroyContext();
 }
+#endif
 
 }

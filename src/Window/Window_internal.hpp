@@ -21,13 +21,13 @@ public:
     Window_internal(const Window_internal&) = delete;
     Window_internal(Window_internal&&)      = delete;
     
-    #ifdef GFX_IMGUI_ENABLED
+    #ifdef GFX_BUILD_IMGUI
         virtual void imGuiInit()     = 0;
         virtual void imGuiShutdown() = 0;
         virtual void imGuiNewFrame() = 0;
     #endif
 
-    virtual ~Window_internal() = default;
+    ~Window_internal() override = default;
 
 protected:
     Window_internal() = default;

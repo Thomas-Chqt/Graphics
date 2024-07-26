@@ -9,6 +9,7 @@
 
 #include "GraphicAPI/Metal/MetalFrameBuffer.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
+#include "Graphics/FrameBuffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -16,18 +17,22 @@
 namespace gfx
 {
 
-MetalFrameBuffer::MetalFrameBuffer(const utils::SharedPtr<Texture>& colorTexture)
+MetalFrameBuffer::MetalFrameBuffer(const FrameBuffer::Descriptor& descriptor)
 {
-    if (colorTexture)
-        setColorTexture(colorTexture);
+    if (descriptor.colorTexture)
+        MetalFrameBuffer::setColorTexture(descriptor.colorTexture);
+    if (descriptor.depthTexture)
+        MetalFrameBuffer::setDepthTexture(descriptor.depthTexture);
 }
 
 void MetalFrameBuffer::setColorTexture(const utils::SharedPtr<Texture>& texture)
 {
-    if (utils::SharedPtr<MetalTexture> mtlTexture = texture.dynamicCast<MetalTexture>())
-        m_colorTexture = mtlTexture;
-    else
-        throw utils::RuntimeError("Texture is not MetalTexture");
+    m_colorTexture = texture.forceDynamicCast<MetalTexture>();
+}
+
+void MetalFrameBuffer::setDepthTexture(const utils::SharedPtr<Texture>& texture)
+{
+    m_depthTexture = texture.forceDynamicCast<MetalTexture>();
 }
 
 }

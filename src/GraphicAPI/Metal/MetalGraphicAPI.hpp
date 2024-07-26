@@ -10,16 +10,20 @@
 #ifndef METALGRAPHICAPI_HPP
 # define METALGRAPHICAPI_HPP
 
+#include "GraphicAPI/Metal/MetalBuffer.hpp"
+#include "GraphicAPI/Metal/MetalGraphicPipeline.hpp"
+#include "GraphicAPI/Metal/MetalSampler.hpp"
 #include "GraphicAPI/Metal/MetalTexture.hpp"
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
-#include "Graphics/Window.hpp"
+#include "Graphics/Shader.hpp"
 #include "Math/Vector.hpp"
+#include "UtilsCPP/Dictionary.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Window/MetalWindow.hpp"
-#ifdef GFX_IMGUI_ENABLED
+#ifdef GFX_BUILD_IMGUI
     #include "imgui/imgui.h"
 #endif
 
@@ -27,7 +31,7 @@
     #import <Metal/Metal.h>
     #import <QuartzCore/CAMetalLayer.h>
 #else
-    template<typename T> using id = void*;
+    template<typename T> using id = T*;
 
     class MTLDevice;
     class MTLCommandQueue;
@@ -51,55 +55,51 @@ public:
     MetalGraphicAPI()                       = delete;
     MetalGraphicAPI(const MetalGraphicAPI&) = delete;
     MetalGraphicAPI(MetalGraphicAPI&&)      = delete;
+    
+    explicit MetalGraphicAPI(const utils::SharedPtr<Window>&);
 
-    MetalGraphicAPI(const utils::SharedPtr<Window>&);
+    inline id<MTLDevice> device() { return m_mtlDevice; }
 
-    #ifdef GFX_IMGUI_ENABLED
-    void useForImGui(ImGuiConfigFlags flags = 0) override;
-    #endif
-
-    #ifdef GFX_METAL_ENABLED
-    void initMetalShaderLib(const utils::String& path) override;
-    #endif
-
-    utils::SharedPtr<VertexBuffer> newVertexBuffer(void* data, utils::uint64 count, utils::uint32 size, const StructLayout&) const override;
+    utils::SharedPtr<Shader> newShader(const Shader::Descriptor&) const override;
     utils::SharedPtr<GraphicPipeline> newGraphicsPipeline(const GraphicPipeline::Descriptor&) const override;
-    utils::SharedPtr<IndexBuffer> newIndexBuffer(const utils::Array<utils::uint32>& indices) const override;
+    utils::SharedPtr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     utils::SharedPtr<Texture> newTexture(const Texture::Descriptor&) const override;
-    utils::SharedPtr<FrameBuffer> newFrameBuffer(const utils::SharedPtr<Texture>& colorTexture = utils::SharedPtr<Texture>()) const override;
+    utils::SharedPtr<Sampler> newSampler(const Sampler::Descriptor&) const override;
+    utils::SharedPtr<FrameBuffer> newFrameBuffer(const FrameBuffer::Descriptor&) const override;
+
+    #ifdef GFX_BUILD_IMGUI
+        void initImgui(ImGuiConfigFlags flags) override;
+    #endif
 
     void beginFrame() override;
 
     inline void setLoadAction(LoadAction act) override { m_nextPassLoadAction = act; }
     inline void setClearColor(math::rgba col) override { m_nextPassClearColor = col; }
 
-    void beginOnScreenRenderPass() override;
-    void beginOffScreenRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
+    void beginRenderPass() override;
+    void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
+    #ifdef GFX_BUILD_IMGUI
+        void beginImguiRenderPass() override;
+    #endif
 
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
-    void useVertexBuffer(const utils::SharedPtr<VertexBuffer>&) override;
 
-    void setVertexUniform(const utils::String& name, const math::vec4f&) override;
-    void setVertexUniform(const utils::String& name, const math::mat4x4&) override;
-    void setVertexUniform(const utils::String& name, const math::vec2f&) override;
-    void setVertexUniform(const utils::String& name, const math::mat3x3&) override;
+    void setVertexBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
 
-    void setFragmentUniform(const utils::String& name, utils::uint32) override;
-    void setFragmentUniform(const utils::String& name, float) override;
-    void setFragmentUniform(const utils::String& name, const math::vec3f&) override;
-    void setFragmentUniform(const utils::String& name, const math::vec4f&) override;
-    void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 size, const StructLayout&) override;
-    void setFragmentUniform(const utils::String& name, const void* data, utils::uint32 len, utils::uint32 elementSize, const StructLayout&) override;
-
-    void setFragmentTexture(const utils::String& name, const utils::SharedPtr<Texture>&) override;
+    void setFragmentBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
+    void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 idx) override;
+    void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 textureIdx, const utils::SharedPtr<Sampler>&, utils::uint64 samplerIdx) override;
 
     void drawVertices(utils::uint32 start, utils::uint32 count) override;
-    void drawIndexedVertices(const utils::SharedPtr<IndexBuffer>&) override;
+    void drawIndexedVertices(const utils::SharedPtr<Buffer>&) override;
 
-    void endOnScreenRenderPass() override;
-    void endOffScreeRenderPass() override;
+    void endRenderPass() override;
 
     void endFrame() override;
+    
+    #ifdef GFX_BUILD_IMGUI
+        void terminateImGui() override;
+    #endif
 
     ~MetalGraphicAPI() override;
 
@@ -108,19 +108,29 @@ private:
     utils::SharedPtr<MetalWindow> m_window;
     id<MTLDevice> m_mtlDevice = nullptr;
     id<MTLCommandQueue> m_commandQueue = nullptr;
-    id<MTLLibrary> m_shaderLib = nullptr;
-    MetalTexture m_depthTexture;
 
     // frame time
     id<MTLCommandBuffer> m_commandBuffer = nullptr;
-    id<CAMetalDrawable> m_currentDrawable = nullptr;
+    #ifdef GFX_BUILD_IMGUI
+        bool m_isImguiFrame = false;
+    #endif
 
-    // pass time
+    // pass description
     LoadAction m_nextPassLoadAction = LoadAction::clear; 
     math::rgba m_nextPassClearColor = BLACK;
+    
+    // pass time
+    #ifdef GFX_BUILD_IMGUI
+        bool m_isImguiRenderPass = false;
+    #endif
     id<MTLRenderCommandEncoder> m_commandEncoder = nullptr;
-    utils::SharedPtr<GraphicPipeline> m_boundPipeline;
-    utils::Array<utils::UniquePtr<utils::SharedPtrBase>> m_renderPassObjects;
+    utils::SharedPtr<MetalFrameBuffer> m_frameBuffer;
+    utils::SharedPtr<MetalGraphicPipeline> m_graphicPipeline;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>> m_vertexBuffers;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>> m_fragmentBuffers;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalTexture>> m_fragmentTextures;
+    utils::Dictionary<utils::uint64, utils::SharedPtr<MetalSampler>> m_fragmentSamplers;
+    utils::SharedPtr<MetalBuffer> m_indexBuffer;
 
 public:
     MetalGraphicAPI& operator = (const MetalGraphicAPI&) = delete;
