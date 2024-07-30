@@ -21,15 +21,11 @@ template<typename T>
 class BufferInstance
 {
 public:
-    BufferInstance()                      = delete;
-    BufferInstance(const BufferInstance&) = delete;
+    BufferInstance()                      = default;
+    BufferInstance(const BufferInstance&) = default;
     BufferInstance(BufferInstance&&)      = default;
 
-    BufferInstance(const utils::SharedPtr<gfx::Buffer>& buffer) : m_buffer(buffer) 
-    {
-    }
-
-    static inline BufferInstance alloc(const utils::SharedPtr<GraphicAPI>& api) { return BufferInstance(api->newBuffer(Buffer::Descriptor(sizeof(T)))); }
+    inline void alloc(const GraphicAPI& api) { m_buffer = api.newBuffer(Buffer::Descriptor(sizeof(T))); }
 
     inline void map() { m_content = (T*)m_buffer->mapContent(); }
     inline T& content() { return *m_content; }
@@ -41,7 +37,7 @@ private:
     utils::SharedPtr<gfx::Buffer> m_buffer;
 
 public:
-    BufferInstance& operator = (const BufferInstance&) = delete;
+    BufferInstance& operator = (const BufferInstance&) = default;
     BufferInstance& operator = (BufferInstance&&)      = default;
 };
 
