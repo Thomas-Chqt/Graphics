@@ -43,7 +43,7 @@ MetalGraphicPipeline::MetalGraphicPipeline(const id<MTLDevice>& mtlDevice, const
     renderPipelineDescriptor.vertexDescriptor = vertexDescriptor;
 
     renderPipelineDescriptor.colorAttachments[0].pixelFormat = (MTLPixelFormat)toMetalPixelFormat(descriptor.colorPixelFormat);
-    if (descriptor.blendOperation != BlendOperation::blendingOff)
+    if (descriptor.blendOperation == BlendOperation::blendingOff)
         renderPipelineDescriptor.colorAttachments[0].blendingEnabled = NO;
     else
     {

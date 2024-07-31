@@ -25,6 +25,8 @@ public:
     BufferInstance(const BufferInstance&) = default;
     BufferInstance(BufferInstance&&)      = default;
 
+    BufferInstance(const GraphicAPI& api) : m_buffer(api.newBuffer(Buffer::Descriptor(sizeof(T)))) {}
+
     inline void alloc(const GraphicAPI& api) { m_buffer = api.newBuffer(Buffer::Descriptor(sizeof(T))); }
 
     inline void map() { m_content = (T*)m_buffer->mapContent(); }
