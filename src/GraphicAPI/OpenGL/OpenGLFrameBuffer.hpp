@@ -14,7 +14,7 @@
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 namespace gfx
 {

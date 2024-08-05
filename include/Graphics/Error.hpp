@@ -74,6 +74,8 @@ struct MTLSamplerStateCreationError : public MetalError {
 #ifdef GFX_BUILD_OPENGL
 struct OpenGLError : public GFXError {};
 
+struct GLADInitError : public OpenGLError { ERR_DESC("Failed to init glad"); };
+
 struct OpenGLShaderCompileError : public OpenGLError
 {
 public:

@@ -24,7 +24,7 @@
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <cassert>
 #include "UtilsCPP/Types.hpp"
 #include "Window/OpenGLWindow.hpp"
@@ -43,8 +43,6 @@ namespace gfx
 OpenGLGraphicAPI::OpenGLGraphicAPI(const utils::SharedPtr<Window>& window) : m_window(window.forceDynamicCast<OpenGLWindow>())
 {    
     m_window->makeContextCurrent();
-    GLenum err = glewInit();
-    assert(err == GLEW_OK);
     GL_CALL(glEnable(GL_DEPTH_TEST))
     GL_CALL(glDepthFunc(GL_LEQUAL))
 }
