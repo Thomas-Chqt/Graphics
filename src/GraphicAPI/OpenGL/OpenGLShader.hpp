@@ -12,7 +12,7 @@
 
 #include "Graphics/Enums.hpp"
 #include "Graphics/Shader.hpp"
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 namespace gfx
 {

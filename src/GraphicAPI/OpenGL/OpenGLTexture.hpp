@@ -12,7 +12,7 @@
 
 #include "Graphics/Texture.hpp"
 #include "UtilsCPP/Types.hpp"
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 namespace gfx
 {

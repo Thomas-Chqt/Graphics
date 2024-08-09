@@ -11,7 +11,7 @@
 # define OPENGLSAMPLER_HPP
 
 #include "Graphics/Sampler.hpp"
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 namespace gfx
 {

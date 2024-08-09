@@ -13,7 +13,7 @@
 #include "Graphics/FrameBuffer.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 #define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }
 

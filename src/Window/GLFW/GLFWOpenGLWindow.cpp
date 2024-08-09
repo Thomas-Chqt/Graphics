@@ -8,9 +8,10 @@
  */
 
 #include "Window/GLFW/GLFWOpenGLWindow.hpp"
+#include "Graphics/Error.hpp"
 #include <GLFW/glfw3.h>
 #include <cassert>
-#include "GL/glew.h"
+#include <glad/glad.h>
 
 #ifdef GFX_BUILD_IMGUI
 #include "imguiBackends/imgui_impl_glfw.h"
@@ -42,6 +43,16 @@ GLFWOpenGLWindow::GLFWOpenGLWindow(int w, int h)
     
     m_glfwWindow = ::glfwCreateWindow(w, h, "", nullptr, nullptr);
     assert(m_glfwWindow);
+
+    glfwMakeContextCurrent(m_glfwWindow);
+
+    static bool isGladInit = false;
+    if (isGladInit == false)
+    {
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) // NOLINT(*-misleading-indentation)
+           throw GLADInitError();
+        isGladInit = true;
+    }
 
     setupGLFWcallback();
 }
