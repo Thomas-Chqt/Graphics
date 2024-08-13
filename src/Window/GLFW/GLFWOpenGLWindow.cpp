@@ -49,7 +49,7 @@ GLFWOpenGLWindow::GLFWOpenGLWindow(int w, int h)
     static bool isGladInit = false;
     if (isGladInit == false)
     {
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) // NOLINT(*-misleading-indentation)
+        if (!gladLoadGL())
            throw GLADInitError();
         isGladInit = true;
     }
