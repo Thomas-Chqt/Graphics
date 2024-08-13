@@ -110,7 +110,7 @@ if (GFX_BUILD_METAL)
 endif()
     
 if (GFX_BUILD_OPENGL)
-    FetchContent_Declare(glad GIT_REPOSITORY https://github.com/Thomas-Chqt/GLAD.git GIT_TAG 230080f9295df0a91b73372a58de9eb574045433 GIT_SHALLOW 1)
+    FetchContent_Declare(glad GIT_REPOSITORY https://github.com/Thomas-Chqt/GLAD.git GIT_TAG master GIT_SHALLOW 1)
     FetchContent_MakeAvailable(glad)
     set_target_properties(glad PROPERTIES FOLDER "dependencies")
     target_link_libraries(Graphics PRIVATE glad)
