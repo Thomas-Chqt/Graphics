@@ -285,6 +285,7 @@ void OpenGLGraphicAPI::endFrame()
     }
     #endif
 
+    GL_CALL(glFinish());
     m_window->swapBuffer();
 }
 

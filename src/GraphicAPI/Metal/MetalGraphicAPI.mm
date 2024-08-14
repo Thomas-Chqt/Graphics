@@ -263,6 +263,7 @@ void MetalGraphicAPI::endFrame()
         m_window->clearCurrentDrawables();
     }
     [m_commandBuffer commit];
+    [m_commandBuffer waitUntilCompleted];
     [m_commandBuffer release];
 }
 
