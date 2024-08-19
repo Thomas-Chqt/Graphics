@@ -35,6 +35,9 @@ public:
         return true;
     }
 
+    inline bool processed() { return m_processed; }
+    inline void process() { m_processed = true; }
+
     virtual ~Event() = default;
 
 protected:
@@ -42,6 +45,8 @@ protected:
 
 private:
     virtual std::ostream& print(std::ostream&) const = 0;
+
+    bool m_processed = false;
 
 public:
     Event& operator = (const Event&) = delete;
