@@ -44,6 +44,7 @@ public:
     void getWindowSize(utils::uint32* width, utils::uint32* height) const override;
     void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const override;
     void getContentScale(float* xscale, float* yscale) const override;
+    void getFrameBufferScaleFactor(float* xScale, float* yScale) const override;
 
     ~GLFWWindow() override;
 

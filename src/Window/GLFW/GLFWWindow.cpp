@@ -55,6 +55,18 @@ void GLFWWindow::getContentScale(float* xscale, float* yscale) const
     ::glfwGetWindowContentScale(m_glfwWindow, xscale, yscale);
 }
 
+void GLFWWindow::getFrameBufferScaleFactor(float* xscale, float* yscale) const
+{
+    int width, height;
+    ::glfwGetWindowSize(m_glfwWindow, &width, &height);
+
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_glfwWindow, &fbWidth, &fbHeight);
+
+    *xscale = (float)fbWidth / (float)width;
+    *yscale = (float)fbHeight / (float)height;
+}
+
 GLFWWindow::~GLFWWindow()
 {
     ::glfwDestroyWindow(m_glfwWindow);

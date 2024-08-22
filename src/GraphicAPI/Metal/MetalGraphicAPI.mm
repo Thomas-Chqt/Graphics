@@ -229,16 +229,7 @@ void MetalGraphicAPI::endRenderPass()
     if (m_isImguiRenderPass)
     {
         ImGui::Render();
-        ImDrawData* drawData = ImGui::GetDrawData();
-        // for (ImDrawList* drawList : drawData->CmdLists)
-        // {
-        //     for (ImDrawCmd& drawCmd: drawList->CmdBuffer)
-        //     {
-        //         if (drawCmd.GetTexID() != nullptr)
-        //             drawCmd.TextureId = ((MetalTexture*)(drawCmd.GetTexID()))->mtlTexture();
-        //     }
-        // }
-        ImGui_ImplMetal_RenderDrawData(drawData, m_commandBuffer, m_commandEncoder);
+        ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(), m_commandBuffer, m_commandEncoder);
         m_isImguiRenderPass = false;
     }
     #endif

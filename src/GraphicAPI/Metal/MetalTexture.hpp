@@ -44,6 +44,8 @@ public:
 
     inline id<MTLTexture> mtlTexture() const { return m_mtlTexture; } //NOLINT(modernize-use-nodiscard)
 
+    inline void* imguiTextureId() const override { return (void*)mtlTexture(); }
+
     ~MetalTexture() override;
 
 private:
