@@ -30,9 +30,9 @@ vertex VertexOut texturedSquare_vs(VertexIn in [[stage_in]])
 }
 
 fragment float4 texturedSquare_fs(VertexOut in [[stage_in]],
-    metal::texture2d<float> texture1 [[texture(0)]]
+    metal::texture2d<float> grass  [[texture(0)]],
+    metal::sampler texture_sampler [[sampler(0)]]
 )
 {
-    constexpr metal::sampler default_sampler(metal::mag_filter::nearest, metal::min_filter::nearest);
-    return texture1.sample(default_sampler, in.uv);
+    return grass.sample(texture_sampler, in.uv);
 }

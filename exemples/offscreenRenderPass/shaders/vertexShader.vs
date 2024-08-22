@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------
- * texturedSquare.vs
+ * vertexShader.vs
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
  * Date: 2024/07/12 14:40:18

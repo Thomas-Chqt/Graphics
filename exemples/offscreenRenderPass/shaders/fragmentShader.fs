@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------
- * texturedSquare.fs
+ * fragmentShader.fs
  *
  * Author: Thomas Choquet <thomas.publique@icloud.com>
  * Date: 2024/07/12 14:40:09
@@ -16,9 +16,9 @@ in VertexOut
 
 out vec4 fragmentColor;
 
-uniform sampler2D texture1;
+uniform sampler2D inputTexture;
 
 void main()
 {
-    fragmentColor = texture(texture1, fsIn.uv);
+    fragmentColor = texture(inputTexture, fsIn.uv);
 }

@@ -22,6 +22,7 @@
 #include "Graphics/Sampler.hpp"
 #include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include <glad/glad.h>
@@ -135,14 +136,20 @@ void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuf
     m_window->makeContextCurrent();
 
     m_frameBuffer = fBuff.forceDynamicCast<OpenGLFrameBuffer>();
-    
+
     GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer->frameBufferID()))
+
+    GLenum fBuffStatus;
+    GL_CALL(fBuffStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    if (fBuffStatus != GL_FRAMEBUFFER_COMPLETE)
+        throw utils::RuntimeError("framebuffer not complete");
+    
     GL_CALL(glViewport(0, 0, m_frameBuffer->glColorTexture()->width(), m_frameBuffer->glColorTexture()->height()))
 
     if (m_nextPassLoadAction == LoadAction::clear)
     {
         GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a))
-        GL_CALL(glClear(GL_COLOR_BUFFER_BIT))
+        GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
     }
 }
 
