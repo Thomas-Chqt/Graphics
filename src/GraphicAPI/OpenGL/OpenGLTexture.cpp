@@ -49,6 +49,13 @@ OpenGLTexture::OpenGLTexture(const Texture::Descriptor& desc)
             GL_CALL(glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X+i, 0, m_internalPixelFormat, m_width, m_height, 0, m_pixelFormat, GL_UNSIGNED_BYTE, nullptr))
     }
 
+    GL_CALL(glTexParameteri(m_textureType, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GL_CALL(glTexParameteri(m_textureType, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CALL(glTexParameteri(m_textureType, GL_TEXTURE_WRAP_S, 	  GL_CLAMP_TO_EDGE));
+    GL_CALL(glTexParameteri(m_textureType, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE));
+    if (m_textureType == GL_TEXTURE_CUBE_MAP)
+        GL_CALL(glTexParameteri(m_textureType, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+
     GL_CALL(glBindTexture(m_textureType, 0))
 }
 

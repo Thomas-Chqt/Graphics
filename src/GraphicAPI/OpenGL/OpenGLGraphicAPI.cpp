@@ -233,12 +233,12 @@ void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& textu
     GL_CALL(glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit));
     GL_CALL(glBindTexture(glTexture->textureType(), glTexture->textureID()));
 
-    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MIN_FILTER, glSampler->minFilter());
-    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MAG_FILTER, glSampler->magFilter());
-	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_S, 	 glSampler->sAddressMode());
-	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_T,     glSampler->tAddressMode());
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_MIN_FILTER, glSampler->minFilter()));
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_MAG_FILTER, glSampler->magFilter()));
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_S, 	 glSampler->sAddressMode()));
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_T,     glSampler->tAddressMode()));
     if (glTexture->textureType() == GL_TEXTURE_CUBE_MAP)
-        glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_R, glSampler->rAddressMode());
+        GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_R, glSampler->rAddressMode()));
 
     GL_CALL(glUniform1i((GLint)idx, m_nextTextureUnit));
     m_nextTextureUnit++;
