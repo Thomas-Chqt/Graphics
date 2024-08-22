@@ -13,6 +13,9 @@
 #include "Enums.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "UtilsCPP/Macros.hpp"
+#ifdef GFX_BUILD_IMGUI
+    #include "imgui/imgui.h"
+#endif
 
 namespace gfx
 {
@@ -92,6 +95,8 @@ public:
 
     #ifdef GFX_BUILD_IMGUI
     virtual void* imguiTextureId() const = 0;
+    virtual ImVec2 imguiUV0() const = 0;
+    virtual ImVec2 imguiUV1() const = 0;
     #endif
 
     virtual ~Texture() = default;

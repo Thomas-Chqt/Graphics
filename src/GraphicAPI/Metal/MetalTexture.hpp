@@ -44,7 +44,12 @@ public:
 
     inline id<MTLTexture> mtlTexture() const { return m_mtlTexture; } //NOLINT(modernize-use-nodiscard)
 
+    #ifdef GFX_BUILD_IMGUI
     inline void* imguiTextureId() const override { return (void*)mtlTexture(); }
+    inline ImVec2 imguiUV0() const override { return ImVec2(0, 0); }
+    inline ImVec2 imguiUV1() const override { return ImVec2(1, 1); }
+    #endif
+
 
     ~MetalTexture() override;
 
