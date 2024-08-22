@@ -90,6 +90,10 @@ public:
     inline void replaceContent(const void* data) { replaceRegion({0, 0, width(), height()}, data); }
     inline void replaceSliceContent(utils::uint32 slice, const void* data) { replaceRegion({0, 0, width(), height()}, slice, data); }
 
+    #ifdef GFX_BUILD_IMGUI
+    virtual void* imguiTextureId() const = 0;
+    #endif
+
     virtual ~Texture() = default;
 
 protected:

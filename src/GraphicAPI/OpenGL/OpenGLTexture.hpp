@@ -35,6 +35,8 @@ public:
     inline GLuint textureID() const { return m_textureID; };
     inline GLenum textureType() const { return m_textureType; }
 
+    inline void* imguiTextureId() const override { return (void*)(utils::uint64)textureID(); }
+
     ~OpenGLTexture() override;
 
 private:
