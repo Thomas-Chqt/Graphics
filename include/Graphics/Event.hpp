@@ -36,7 +36,7 @@ public:
     }
 
     inline bool processed() { return m_processed; }
-    inline void process() { m_processed = true; }
+    inline void markAsProcessed() { m_processed = true; }
 
     virtual ~Event() = default;
 
