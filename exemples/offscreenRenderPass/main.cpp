@@ -23,7 +23,7 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "imgui/imgui.h"
+#include <imgui.h>
 #include <cstddef>
 
 #define WINDOW_WIDTH 800

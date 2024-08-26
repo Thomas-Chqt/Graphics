@@ -25,7 +25,7 @@
 #include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
-#include "imgui/imgui.h"
+#include <imgui.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 

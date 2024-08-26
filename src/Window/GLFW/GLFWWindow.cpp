@@ -13,7 +13,7 @@
 #include "UtilsCPP/Array.hpp"
 
 #ifdef GFX_BUILD_IMGUI
-#include "imguiBackends/imgui_impl_glfw.h"
+    #include <imgui_impl_glfw.h>
 #endif
 
 namespace gfx
