@@ -31,8 +31,8 @@
 #include "UtilsCPP/Macros.hpp"
 
 #ifdef GFX_BUILD_IMGUI
-    #include "imgui/imgui.h"
-    #include "imguiBackends/imgui_impl_opengl3.h"
+    #include <imgui.h>
+    #include <imgui_impl_opengl3.h>
 #endif
 
 #define GL_CALL(x) { x; GLenum __err__ = glGetError(); if (__err__ != GL_NO_ERROR) throw OpenGLCallError(__err__); }

@@ -12,7 +12,7 @@
 #include "Graphics/Platform.hpp"
 #include "Graphics/Window.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
-#include "imgui/imgui.h"
+#include <imgui.h>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600

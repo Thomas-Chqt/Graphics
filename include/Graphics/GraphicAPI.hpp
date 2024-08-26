@@ -21,7 +21,7 @@
 #include "Math/Vector.hpp"
 
 #ifdef GFX_BUILD_IMGUI
-    #include "imgui/imgui.h"
+    #include <imgui.h>
 #endif
 
 namespace gfx

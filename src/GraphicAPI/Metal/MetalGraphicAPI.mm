@@ -31,8 +31,8 @@
 #include "GraphicAPI/Metal/MetalSampler.hpp"
 
 #ifdef GFX_BUILD_IMGUI
-    #include "imgui/imgui.h"
-    #include "imguiBackends/imgui_impl_metal.h"
+    #include <imgui.h>
+    #include <imgui_impl_metal.h>
 #endif
 
 namespace gfx
