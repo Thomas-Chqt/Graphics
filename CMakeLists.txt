@@ -11,9 +11,11 @@ include(FetchContent)
 
 enable_testing()
 
-option(BUILD_SHARED_LIBS  "Build using shared libraries"        OFF)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build using shared libraries" FORCE)
+
 option(GFX_BUILD_EXEMPLES "Build Graphics exemples executables" OFF)
 option(GFX_BUILD_IMGUI    "Build with imgui capabilities"       OFF)
+option(GFX_INSTALL        "Enable Graphics install command"     ON)
 
 if (APPLE)
     set(GFX_USED_WINDOW_LIBRARY "GLFW" CACHE STRING "Used library for window handling (available options: GLFW)")
@@ -41,7 +43,6 @@ endif()
 
 
 project(Graphics)
-
 enable_language(CXX)
 
 if (APPLE AND GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
@@ -51,8 +52,19 @@ if(GFX_BUILD_METAL)
     enable_language(OBJCXX)
 endif()
 
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+endif()
 
-add_library(Graphics ${GFX_LIBRARY_TYPE})
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+endif()
+
+if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+endif()
+
+add_library(Graphics STATIC)
 
 set_target_properties(Graphics PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
 
@@ -92,7 +104,11 @@ if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
     set(GLFW_BUILD_DOCS  OFF)
     set(GLFW_INSTALL     OFF)
 
-    FetchContent_Declare(glfw GIT_REPOSITORY https://github.com/glfw/glfw.git GIT_TAG 3.4 GIT_SHALLOW 1)
+    FetchContent_Declare(glfw
+        GIT_REPOSITORY https://github.com/glfw/glfw.git
+        GIT_TAG        3.4
+        GIT_SHALLOW    1
+    )
     FetchContent_MakeAvailable(glfw)
 
     get_target_property(GLFW_FOLDER glfw FOLDER)
@@ -110,11 +126,14 @@ if (GFX_BUILD_METAL)
 endif()
     
 if (GFX_BUILD_OPENGL)
-    FetchContent_Declare(glad GIT_REPOSITORY https://github.com/Thomas-Chqt/GLAD.git GIT_TAG master GIT_SHALLOW 1)
+    FetchContent_Declare(glad
+        GIT_REPOSITORY https://github.com/Thomas-Chqt/GLAD.git
+        GIT_TAG        d12a9405aeba141e7c6808ebba218a944326f72b
+        GIT_SHALLOW    1
+    )
     FetchContent_MakeAvailable(glad)
     set_target_properties(glad PROPERTIES FOLDER "dependencies")
     target_link_libraries(Graphics PRIVATE glad)
-
 endif()
 
 if(GFX_BUILD_IMGUI)
@@ -123,7 +142,14 @@ if(GFX_BUILD_IMGUI)
     endif()
     set(IM_BUILD_METAL ${GFX_BUILD_METAL})
     set(IM_BUILD_OPENGL3 ${GFX_BUILD_OPENGL})
-    FetchContent_Declare(imgui GIT_REPOSITORY https://github.com/Thomas-Chqt/imgui.git GIT_TAG cmake GIT_SHALLOW 1)
+    if(NOT GFX_INSTALL)
+        set(IM_INSTALL OFF)
+    endif()
+    FetchContent_Declare(imgui
+        GIT_REPOSITORY https://github.com/Thomas-Chqt/imgui.git
+        GIT_TAG        fabbe27effebeeb452c243b9b3dd6d139f6313d5
+        GIT_SHALLOW    1
+    )
     FetchContent_MakeAvailable(imgui)
     set_target_properties(imgui PROPERTIES FOLDER "dependencies")
     if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
@@ -140,4 +166,25 @@ endif()
 
 if(GFX_BUILD_EXEMPLES)
     add_subdirectory("exemples")
+endif()
+
+if(GFX_INSTALL)
+    install(TARGETS Graphics
+        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "lib"
+        ARCHIVE DESTINATION "lib"
+    )
+    install(DIRECTORY "include/" DESTINATION "include")
+
+    install(TARGETS glfw
+        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "lib"
+        ARCHIVE DESTINATION "lib"
+    )
+
+    install(TARGETS glad
+        RUNTIME DESTINATION "bin"
+        LIBRARY DESTINATION "lib"
+        ARCHIVE DESTINATION "lib"
+    )    
 endif()
