@@ -14,6 +14,7 @@
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
+#include "UtilsCPP/Types.hpp"
 #include "Window/Window_internal.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 
@@ -26,6 +27,9 @@ public:
     GLFWWindow()                  = default;
     GLFWWindow(const GLFWWindow&) = delete;
     GLFWWindow(GLFWWindow&&)      = delete;
+
+    utils::uint32 width() override;
+    utils::uint32 height() override;
 
     void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id) override;
     inline void clearCallbacks(void* id) override { m_eventCallbacks.remove(id); }

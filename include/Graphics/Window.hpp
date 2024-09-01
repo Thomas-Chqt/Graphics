@@ -10,6 +10,7 @@
 #ifndef WINDOW_HPP
 # define WINDOW_HPP
 
+#include "Graphics/RenderTarget.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
 #include "UtilsCPP/Types.hpp"
@@ -17,11 +18,14 @@
 namespace gfx
 {
 
-class Window
+class Window : public RenderTarget
 {
 public:
     Window(const Window&) = delete;
     Window(Window&&)      = delete;
+
+    virtual utils::uint32 width() override = 0;
+    virtual utils::uint32 height() override = 0;
 
     virtual void addEventCallBack(const utils::Func<void(Event&)>&, void* id) = 0;
     inline void addEventCallBack(const utils::Func<void(Event&)>& event) { addEventCallBack(event, nullptr); }

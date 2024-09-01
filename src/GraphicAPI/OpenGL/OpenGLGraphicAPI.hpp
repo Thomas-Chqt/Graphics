@@ -19,6 +19,7 @@
 #include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
+#include "Graphics/RenderTarget.hpp"
 #include "Graphics/Texture.hpp"
 #include "Math/Vector.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
@@ -59,6 +60,7 @@ public:
 
     void beginRenderPass() override;
     void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
+    void beginRenderPass(const utils::SharedPtr<RenderTarget>&) override;
     #ifdef GFX_BUILD_IMGUI
         void beginImguiRenderPass() override;
     #endif

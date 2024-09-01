@@ -11,6 +11,8 @@
 #include "GLFW/glfw3.h"
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/Types.hpp"
+#include <cassert>
 
 #ifdef GFX_BUILD_IMGUI
     #include <imgui_impl_glfw.h>
@@ -18,6 +20,22 @@
 
 namespace gfx
 {
+
+utils::uint32 GLFWWindow::width()
+{
+    int w, h;
+    ::glfwGetFramebufferSize(m_glfwWindow, &w, &h);
+    assert(w >= 0);
+    return static_cast<utils::uint32>(w);
+}
+
+utils::uint32 GLFWWindow::height()
+{
+    int w, h;
+    ::glfwGetFramebufferSize(m_glfwWindow, &w, &h);
+    assert(h >= 0);
+    return static_cast<utils::uint32>(h);
+}
 
 void GLFWWindow::addEventCallBack(const utils::Func<void(Event&)>& cb, void* id)
 {

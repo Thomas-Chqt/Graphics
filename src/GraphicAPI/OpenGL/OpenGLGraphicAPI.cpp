@@ -117,20 +117,6 @@ void OpenGLGraphicAPI::beginRenderPass()
     }
 }
 
-#ifdef GFX_BUILD_IMGUI
-void OpenGLGraphicAPI::beginImguiRenderPass()
-{
-    beginRenderPass();
-
-    ImGui_ImplOpenGL3_NewFrame();
-    m_window->imGuiNewFrame();
-    ImGui::NewFrame();
-
-    m_isImguiRenderPass = true;
-    m_isImguiFrame = true;
-}
-#endif
-
 void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuff)
 {
     m_window->makeContextCurrent();
@@ -152,6 +138,29 @@ void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuf
         GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
     }
 }
+
+void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<RenderTarget>& rt)
+{
+    if (auto win = rt.dynamicCast<Window>())
+        beginRenderPass();
+    else if (auto fb = rt.dynamicCast<FrameBuffer>())
+        beginRenderPass(fb);
+    UNREACHABLE;
+}
+
+#ifdef GFX_BUILD_IMGUI
+void OpenGLGraphicAPI::beginImguiRenderPass()
+{
+    beginRenderPass();
+
+    ImGui_ImplOpenGL3_NewFrame();
+    m_window->imGuiNewFrame();
+    ImGui::NewFrame();
+
+    m_isImguiRenderPass = true;
+    m_isImguiFrame = true;
+}
+#endif
 
 void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline)
 {

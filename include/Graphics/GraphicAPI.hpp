@@ -13,6 +13,7 @@
 #include "GraphicPipeline.hpp"
 #include "Buffer.hpp"
 #include "FrameBuffer.hpp"
+#include "Graphics/RenderTarget.hpp"
 #include "Sampler.hpp"
 #include "Shader.hpp"
 #include "Texture.hpp"
@@ -51,6 +52,7 @@ public:
 
     virtual void beginRenderPass() = 0;
     virtual void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) = 0;
+    virtual void beginRenderPass(const utils::SharedPtr<RenderTarget>&) = 0;
     #ifdef GFX_BUILD_IMGUI
         virtual void beginImguiRenderPass() = 0;
     #endif
