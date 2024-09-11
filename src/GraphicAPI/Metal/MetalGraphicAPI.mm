@@ -140,6 +140,16 @@ void MetalGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& targe
         throw RenderCommandEncoderCreationError();
 }}
 
+void MetalGraphicAPI::beginRenderPass(const utils::SharedPtr<RenderTarget>& rt)
+{
+    if (auto win = rt.dynamicCast<Window>())
+        beginRenderPass();
+    else if (auto fb = rt.dynamicCast<FrameBuffer>())
+        beginRenderPass(fb);
+    else
+        UNREACHABLE;
+}
+
 #ifdef GFX_BUILD_IMGUI
 void MetalGraphicAPI::beginImguiRenderPass() { @autoreleasepool
 {

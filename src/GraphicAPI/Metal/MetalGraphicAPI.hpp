@@ -78,6 +78,7 @@ public:
 
     void beginRenderPass() override;
     void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
+    void beginRenderPass(const utils::SharedPtr<RenderTarget>&) override;
     #ifdef GFX_BUILD_IMGUI
         void beginImguiRenderPass() override;
     #endif

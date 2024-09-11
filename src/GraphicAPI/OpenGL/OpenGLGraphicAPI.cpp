@@ -145,7 +145,8 @@ void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<RenderTarget>& rt)
         beginRenderPass();
     else if (auto fb = rt.dynamicCast<FrameBuffer>())
         beginRenderPass(fb);
-    UNREACHABLE;
+    else
+        UNREACHABLE;
 }
 
 #ifdef GFX_BUILD_IMGUI
