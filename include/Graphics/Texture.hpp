@@ -12,7 +12,7 @@
 
 #include "Enums.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "UtilsCPP/Macros.hpp"
+
 #ifdef GFX_BUILD_IMGUI
     #include <imgui.h>
 #endif
