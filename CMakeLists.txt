@@ -100,9 +100,10 @@ endif()
 add_subdirectory("dependencies")
 
 if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
-    set(GLFW_BUILD_TESTS OFF)
-    set(GLFW_BUILD_DOCS  OFF)
-    set(GLFW_INSTALL     OFF)
+    set(GLFW_BUILD_TESTS    OFF)
+    set(GLFW_BUILD_DOCS     OFF)
+    set(GLFW_INSTALL        OFF)
+    set(GLFW_BUILD_EXAMPLES OFF)
 
     FetchContent_Declare(glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git

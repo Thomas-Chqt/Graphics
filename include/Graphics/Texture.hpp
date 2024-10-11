@@ -12,7 +12,6 @@
 
 #include "Enums.hpp"
 #include "UtilsCPP/Types.hpp"
-#include "UtilsCPP/Macros.hpp"
 
 namespace gfx
 {
@@ -44,7 +43,7 @@ public:
             descriptor.width       = width;
             descriptor.height      = height;
             descriptor.pixelFormat = PixelFormat::Depth32;
-            descriptor.storageMode = StorageMode::Managed;
+            descriptor.storageMode = StorageMode::Private;
             descriptor.usage       = Texture::Usage::RenderTarget;
             return descriptor;
         }
