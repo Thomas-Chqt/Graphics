@@ -22,9 +22,9 @@ set_target_properties(texturedSquare PROPERTIES
 )
 
 if(GFX_BUILD_METAL)
-    set_target_properties(texturedSquare PROPERTIES FOLDER "exemples/texturedSquare")
+    set_target_properties(texturedSquare PROPERTIES FOLDER "examples/texturedSquare")
 else()
-    set_target_properties(texturedSquare PROPERTIES FOLDER "exemples")
+    set_target_properties(texturedSquare PROPERTIES FOLDER "examples")
 endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp" "*.h")
@@ -46,7 +46,7 @@ target_link_libraries(texturedSquare PRIVATE Graphics)
 if(GFX_BUILD_METAL)
     add_custom_target(MTLShaderLib_texturedSquare DEPENDS ${MTL_SHADER_LIB})
 
-    set_target_properties(MTLShaderLib_texturedSquare PROPERTIES FOLDER "exemples/texturedSquare")
+    set_target_properties(MTLShaderLib_texturedSquare PROPERTIES FOLDER "examples/texturedSquare")
 
     file(GLOB MTL_SHADER_LIB_SRCS "${MTL_SHADER_DIR}/*.metal")
     file(GLOB MTL_SHADER_LIB_HEAD "${MTL_SHADER_DIR}/*.metal.h")
