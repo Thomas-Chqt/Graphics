@@ -2,7 +2,7 @@
 # CMakeLists.txt
 #
 # Author: Thomas Choquet <thomas.publique@icloud.com>
-# Date: 2024/07/12 17:43:26
+# Date: 2024/07/06 17:43:47
 # ---------------------------------------------------
 
 if(GFX_BUILD_METAL)
@@ -14,48 +14,48 @@ if(GFX_BUILD_OPENGL)
 endif()
 set(RESSOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ressources")
 
-add_executable(offscreenRenderPass)
+add_executable(materialEditor)
 
-set_target_properties(offscreenRenderPass PROPERTIES 
+set_target_properties(materialEditor PROPERTIES 
     CXX_STANDARD          11
     CXX_STANDARD_REQUIRED ON
 )
 
 if(GFX_BUILD_METAL)
-    set_target_properties(offscreenRenderPass PROPERTIES FOLDER "exemples/offscreenRenderPass")
+    set_target_properties(materialEditor PROPERTIES FOLDER "examples/materialEditor")
 else()
-    set_target_properties(offscreenRenderPass PROPERTIES FOLDER "exemples")
+    set_target_properties(materialEditor PROPERTIES FOLDER "examples")
 endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp" "*.h")
-target_sources(offscreenRenderPass PRIVATE ${EXE_SRCS})
+target_sources(materialEditor PRIVATE ${EXE_SRCS})
 
-target_include_directories(offscreenRenderPass PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(materialEditor PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 if(GFX_BUILD_METAL)
-    target_compile_definitions(offscreenRenderPass PRIVATE "MTL_SHADER_LIB=\"${MTL_SHADER_LIB}\"")
+    target_compile_definitions(materialEditor PRIVATE "MTL_SHADER_LIB=\"${MTL_SHADER_LIB}\"")
 endif()
 if(GFX_BUILD_OPENGL)
-    target_compile_definitions(offscreenRenderPass PRIVATE "OPENGL_SHADER_DIR=\"${OPENGL_SHADER_DIR}\"")
+    target_compile_definitions(materialEditor PRIVATE "OPENGL_SHADER_DIR=\"${OPENGL_SHADER_DIR}\"")
 endif()
-target_compile_definitions(offscreenRenderPass PRIVATE "RESSOURCES_DIR=\"${RESSOURCES_DIR}\"")
+target_compile_definitions(materialEditor PRIVATE "RESSOURCES_DIR=\"${RESSOURCES_DIR}\"")
 
-target_link_libraries(offscreenRenderPass PRIVATE Graphics)
+target_link_libraries(materialEditor PRIVATE Graphics assimp)
 
 
 if(GFX_BUILD_METAL)
-    add_custom_target(MTLShaderLib_offscreenRenderPass DEPENDS ${MTL_SHADER_LIB})
+    add_custom_target(MTLShaderLib_materialEditor DEPENDS ${MTL_SHADER_LIB})
 
-    set_target_properties(MTLShaderLib_offscreenRenderPass PROPERTIES FOLDER "exemples/offscreenRenderPass")
+    set_target_properties(MTLShaderLib_materialEditor PROPERTIES FOLDER "examples/materialEditor")
 
     file(GLOB MTL_SHADER_LIB_SRCS "${MTL_SHADER_DIR}/*.metal")
     file(GLOB MTL_SHADER_LIB_HEAD "${MTL_SHADER_DIR}/*.metal.h")
-    target_sources(MTLShaderLib_offscreenRenderPass PRIVATE ${MTL_SHADER_LIB_SRCS} ${MTL_SHADER_LIB_HEAD})
+    target_sources(MTLShaderLib_materialEditor PRIVATE ${MTL_SHADER_LIB_SRCS} ${MTL_SHADER_LIB_HEAD})
 
-    add_dependencies(offscreenRenderPass MTLShaderLib_offscreenRenderPass)
+    add_dependencies(materialEditor MTLShaderLib_materialEditor)
     
 
-    get_target_property(EXE_INCLUDE_DIRS offscreenRenderPass INCLUDE_DIRECTORIES)
+    get_target_property(EXE_INCLUDE_DIRS materialEditor INCLUDE_DIRECTORIES)
     foreach(dir IN LISTS EXE_INCLUDE_DIRS)
         list(APPEND MTL_SHADER_BUILD_FLAGS "-I${dir}")
     endforeach()

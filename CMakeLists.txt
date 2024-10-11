@@ -13,7 +13,7 @@ enable_testing()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build using shared libraries" FORCE)
 
-option(GFX_BUILD_EXEMPLES "Build Graphics exemples executables" OFF)
+option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_BUILD_IMGUI    "Build with imgui capabilities"       OFF)
 option(GFX_INSTALL        "Enable Graphics install command"     ON)
 
@@ -129,7 +129,6 @@ if (GFX_BUILD_OPENGL)
     FetchContent_Declare(glad
         GIT_REPOSITORY https://github.com/Thomas-Chqt/GLAD.git
         GIT_TAG        d12a9405aeba141e7c6808ebba218a944326f72b
-        GIT_SHALLOW    1
     )
     FetchContent_MakeAvailable(glad)
     set_target_properties(glad PROPERTIES FOLDER "dependencies")
@@ -148,7 +147,6 @@ if(GFX_BUILD_IMGUI)
     FetchContent_Declare(imgui
         GIT_REPOSITORY https://github.com/Thomas-Chqt/imgui.git
         GIT_TAG        fabbe27effebeeb452c243b9b3dd6d139f6313d5
-        GIT_SHALLOW    1
     )
     FetchContent_MakeAvailable(imgui)
     set_target_properties(imgui PROPERTIES FOLDER "dependencies")
@@ -164,8 +162,8 @@ if(GFX_BUILD_IMGUI)
     target_link_libraries(Graphics PUBLIC imgui)
 endif()
 
-if(GFX_BUILD_EXEMPLES)
-    add_subdirectory("exemples")
+if(GFX_BUILD_EXAMPLES)
+    add_subdirectory("examples")
 endif()
 
 if(GFX_INSTALL)

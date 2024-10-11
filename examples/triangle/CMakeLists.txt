@@ -20,9 +20,9 @@ set_target_properties(triangle PROPERTIES
 )
 
 if(GFX_BUILD_METAL)
-    set_target_properties(triangle PROPERTIES FOLDER "exemples/triangle")
+    set_target_properties(triangle PROPERTIES FOLDER "examples/triangle")
 else()
-    set_target_properties(triangle PROPERTIES FOLDER "exemples")
+    set_target_properties(triangle PROPERTIES FOLDER "examples")
 endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp" "*.h")
@@ -50,7 +50,7 @@ if(GFX_BUILD_METAL)
     add_custom_target(MTLShaderLib_triangle DEPENDS ${MTL_SHADER_LIB} SOURCES "${CMAKE_CURRENT_BINARY_DIR}/triangle.air")
 
     set_target_properties(MTLShaderLib_triangle PROPERTIES
-        FOLDER "exemples/triangle"
+        FOLDER "examples/triangle"
     )
 
     target_sources(MTLShaderLib_triangle PRIVATE "triangle.metal")

@@ -10,7 +10,7 @@ add_executable(imguiDemo)
 set_target_properties(imguiDemo PROPERTIES 
     CXX_STANDARD          11
     CXX_STANDARD_REQUIRED ON
-    FOLDER                "exemples"
+    FOLDER                "examples"
 )
 
 target_sources(imguiDemo PRIVATE "main.cpp")
