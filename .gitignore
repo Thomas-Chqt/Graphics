@@ -1,5 +1,6 @@
 .cache
 .vscode
+build
 build/
 build.nosync/
 .leak_suppr

@@ -8,12 +8,16 @@
  */
 
 #include "Window/GLFW/GLFWWindow.hpp"
+#define GLFW_EXPO
 #include "GLFW/glfw3.h"
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
-
 #ifdef GFX_BUILD_IMGUI
     #include <imgui_impl_glfw.h>
+#endif
+#ifdef GFX_BUILD_NFD
+    #include "nfd.h"
+    #include "nfd_glfw3.h"
 #endif
 
 namespace gfx
@@ -54,6 +58,13 @@ void GLFWWindow::getContentScale(float* xscale, float* yscale) const
 {
     ::glfwGetWindowContentScale(m_glfwWindow, xscale, yscale);
 }
+
+#ifdef GFX_BUILD_NFD
+void GLFWWindow::NFD_getNativeWindowFor(nfdwindowhandle_t& parentWindow) const
+{
+    NFD_GetNativeWindowFromGLFWWindow(m_glfwWindow, &parentWindow);
+}
+#endif
 
 GLFWWindow::~GLFWWindow()
 {

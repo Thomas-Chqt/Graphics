@@ -16,6 +16,9 @@
 #include "UtilsCPP/Func.hpp"
 #include "Window/Window_internal.hpp"
 #include "UtilsCPP/Dictionary.hpp"
+#ifdef GFX_BUILD_NFD
+    #include "nfd.h"
+#endif
 
 namespace gfx
 {
@@ -44,6 +47,10 @@ public:
     void getWindowSize(utils::uint32* width, utils::uint32* height) const override;
     void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const override;
     void getContentScale(float* xscale, float* yscale) const override;
+
+    #ifdef GFX_BUILD_NFD
+        void NFD_getNativeWindowFor(nfdwindowhandle_t&) const override;
+    #endif
 
     ~GLFWWindow() override;
 

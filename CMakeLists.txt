@@ -15,6 +15,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build using shared libraries" FORCE)
 
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_BUILD_IMGUI    "Build with imgui capabilities"       OFF)
+option(GFX_BUILD_NFD     "Build native file dialog extended"   OFF)
 option(GFX_INSTALL        "Enable Graphics install command"     ON)
 
 if (APPLE)
@@ -77,25 +78,29 @@ add_subdirectory("src")
 
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 
-if (GFX_BUILD_IMGUI)
-    target_compile_definitions(Graphics PUBLIC GFX_BUILD_IMGUI)
-endif()
-
 if(GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
-    target_compile_definitions(Graphics PUBLIC GFX_USING_GLFW)
-    target_compile_definitions(Graphics PUBLIC GLFW_INCLUDE_NONE)
+    target_compile_definitions(Graphics PUBLIC "GFX_USING_GLFW")
+    target_compile_definitions(Graphics PUBLIC "GLFW_INCLUDE_NONE")
 endif()
 
 if (GFX_BUILD_METAL)
-    target_compile_definitions(Graphics PUBLIC GFX_BUILD_METAL)
-endif()
-if (GFX_BUILD_OPENGL)
-    if(APPLE)
-        target_compile_definitions(Graphics PUBLIC GL_SILENCE_DEPRECATION)
-    endif()
-    target_compile_definitions(Graphics PUBLIC GFX_BUILD_OPENGL)
+    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_METAL")
 endif()
 
+if (GFX_BUILD_OPENGL)
+    if(APPLE)
+        target_compile_definitions(Graphics PUBLIC "GL_SILENCE_DEPRECATION")
+    endif()
+    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_OPENGL")
+endif()
+
+if (GFX_BUILD_IMGUI)
+    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_IMGUI")
+endif()
+
+if(GFX_BUILD_NFD)
+    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_NFD")
+endif()
 
 add_subdirectory("dependencies")
 
@@ -161,6 +166,17 @@ if(GFX_BUILD_IMGUI)
         target_link_libraries(imgui PRIVATE glad)
     endif()
     target_link_libraries(Graphics PUBLIC imgui)
+endif()
+
+if(GFX_BUILD_NFD)
+    FetchContent_Declare(NFD
+        GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
+        GIT_TAG        v1.2.1
+        GIT_SHALLOW    1
+    )
+    FetchContent_MakeAvailable(NFD)
+    set_target_properties(nfd PROPERTIES FOLDER "dependencies")
+    target_link_libraries(Graphics PUBLIC nfd)
 endif()
 
 if(GFX_BUILD_EXAMPLES)

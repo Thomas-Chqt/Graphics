@@ -34,3 +34,7 @@ endif()
 if(GFX_BUILD_IMGUI)
     add_subdirectory(materialEditor)
 endif()
+
+if(GFX_BUILD_NFDE AND GFX_BUILD_IMGUI)
+    add_subdirectory(NFDe)
+endif()
