@@ -9,6 +9,7 @@
 
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
 
+#include <cassert>
 #include <utility>
 #include "GraphicAPI/OpenGL/OpenGLShader.hpp"
 #include "Graphics/GraphicPipeline.hpp"
@@ -81,10 +82,11 @@ OpenGLGraphicPipeline::~OpenGLGraphicPipeline()
     glDeleteProgram(m_shaderProgramID);
 }
 
-utils::uint32 OpenGLGraphicPipeline::getSamplerUniformIndex(const utils::String& name) const
+utils::uint32 OpenGLGraphicPipeline::getUniformLocation(const utils::String& name) const
 {
-    utils::uint32 idx = 0;
+    GLint idx = 0;
     GL_CALL(idx = glGetUniformLocation(m_shaderProgramID, (const char*)name));
+    assert(idx >= 0);
     return idx;
 }
 

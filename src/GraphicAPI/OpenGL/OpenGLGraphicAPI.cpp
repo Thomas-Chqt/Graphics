@@ -223,6 +223,34 @@ void OpenGLGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer,
     GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)idx, buffer.forceDynamicCast<OpenGLBuffer>()->bufferID()));
 }
 
+void OpenGLGraphicAPI::setVertexUniform(const math::mat4x4& mat, utils::uint64 idx)
+{
+    assert(m_graphicPipeline);
+
+    GLfloat glMatrix[4][4];
+    glMatrix[0][0] = mat[0][0];
+    glMatrix[0][1] = mat[0][1];
+    glMatrix[0][2] = mat[0][2];
+    glMatrix[0][3] = mat[0][3];
+
+    glMatrix[1][0] = mat[1][0];
+    glMatrix[1][1] = mat[1][1];
+    glMatrix[1][2] = mat[1][2];
+    glMatrix[1][3] = mat[1][3];
+
+    glMatrix[2][0] = mat[2][0];
+    glMatrix[2][1] = mat[2][1];
+    glMatrix[2][2] = mat[2][2];
+    glMatrix[2][3] = mat[2][3];
+
+    glMatrix[3][0] = mat[3][0];
+    glMatrix[3][1] = mat[3][1];
+    glMatrix[3][2] = mat[3][2];
+    glMatrix[3][3] = mat[3][3];
+
+    GL_CALL(glUniformMatrix4fv(idx, 1, GL_FALSE, &glMatrix[0][0]))
+}
+
 void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx)
 {
     setFragmentTexture(texture, idx, newSampler(Sampler::Descriptor()), 0);

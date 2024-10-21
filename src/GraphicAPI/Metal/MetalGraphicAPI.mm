@@ -184,6 +184,11 @@ void MetalGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, ut
     [m_commandEncoder setVertexBuffer:it->val->mtlBuffer() offset:0 atIndex:idx];
 }}
 
+void MetalGraphicAPI::setVertexUniform(const math::mat4x4& mat, utils::uint64 idx) { @autoreleasepool
+{
+    [m_commandEncoder setVertexBytes:&mat length:sizeof(math::mat4x4) atIndex:idx];
+}}
+
 void MetalGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx) { @autoreleasepool
 {
     utils::Dictionary<utils::uint64, utils::SharedPtr<MetalBuffer>>::Iterator it = m_fragmentBuffers.find(idx);
