@@ -66,7 +66,7 @@ endif()
 
 add_library(Graphics STATIC)
 
-set_target_properties(Graphics PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON)
+set_target_properties(Graphics PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 
 
 file(GLOB_RECURSE GRAPHICS_SRC "include/Graphics/*.hpp")

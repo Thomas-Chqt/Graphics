@@ -11,9 +11,11 @@
 # define GLFWWINDOW_HPP
 
 #include <GLFW/glfw3.h>
+#include <filesystem>
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
+#include "UtilsCPP/Set.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Window/Window_internal.hpp"
 #include "UtilsCPP/Dictionary.hpp"
@@ -50,6 +52,8 @@ public:
     void getContentScale(float* xscale, float* yscale) const override;
     void getFrameBufferScaleFactor(float* xScale, float* yScale) const override;
 
+    bool popDroppedFile(std::filesystem::path& dst) override;
+
     ~GLFWWindow() override;
 
 protected:
@@ -57,6 +61,7 @@ protected:
 
     ::GLFWwindow* m_glfwWindow = nullptr; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes, misc-non-private-member-variables-in-classes)
     utils::Dictionary<void*, utils::Array<utils::Func<void(Event&)>>> m_eventCallbacks; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes, misc-non-private-member-variables-in-classes)
+    utils::Set<std::filesystem::path> m_droppedFilePool;
 
 public:
     GLFWWindow& operator = (const GLFWWindow&) = delete;

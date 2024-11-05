@@ -14,6 +14,7 @@
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
 #include "UtilsCPP/Types.hpp"
+#include <filesystem>
 
 namespace gfx
 {
@@ -42,6 +43,8 @@ public:
     virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const = 0;
     virtual void getContentScale(float* xScale, float* yScale) const = 0;
     virtual void getFrameBufferScaleFactor(float* xScale, float* yScale) const = 0;
+
+    virtual bool popDroppedFile(std::filesystem::path& dst) = 0;
 
     virtual ~Window() = default;
 

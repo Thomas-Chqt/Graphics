@@ -13,10 +13,13 @@
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <cassert>
+#include <filesystem>
 
 #ifdef GFX_BUILD_IMGUI
     #include <imgui_impl_glfw.h>
 #endif
+
+namespace fs = std::filesystem;
 
 namespace gfx
 {
@@ -83,6 +86,14 @@ void GLFWWindow::getFrameBufferScaleFactor(float* xscale, float* yscale) const
 
     *xscale = (float)fbWidth / (float)width;
     *yscale = (float)fbHeight / (float)height;
+}
+
+bool GLFWWindow::popDroppedFile(std::filesystem::path& dst)
+{
+    if (m_droppedFilePool.isEmpty())
+        return false;
+    dst = m_droppedFilePool.pop(m_droppedFilePool.begin());
+    return true;
 }
 
 GLFWWindow::~GLFWWindow()
@@ -214,6 +225,17 @@ void GLFWWindow::setupGLFWcallback()
         {
             for (auto& callback : callbacks.val)
                 callback(windowRequestCloseEvent);
+        }
+    });
+
+    ::glfwSetDropCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int count, const char** paths){
+        GLFWWindow& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        for (int i = 0; i < count; i++)
+        {
+            fs::path path = fs::path(paths[i]);
+            assert(path.is_absolute());
+            assert(fs::exists(path));
+            gfxWindow.m_droppedFilePool.insert(path);
         }
     });
 }
