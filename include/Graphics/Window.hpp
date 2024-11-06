@@ -13,6 +13,7 @@
 #include "Graphics/RenderTarget.hpp"
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
+#include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
 #include <filesystem>
 
@@ -45,6 +46,9 @@ public:
     virtual void getFrameBufferScaleFactor(float* xScale, float* yScale) const = 0;
 
     virtual bool popDroppedFile(std::filesystem::path& dst) = 0;
+
+    virtual void setClipboardString(const utils::String&) const = 0;
+    virtual utils::String getClipboardString() const = 0;
 
     virtual ~Window() = default;
 

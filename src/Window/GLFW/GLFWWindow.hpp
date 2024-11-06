@@ -54,6 +54,9 @@ public:
 
     bool popDroppedFile(std::filesystem::path& dst) override;
 
+    void setClipboardString(const utils::String&) const override;
+    utils::String getClipboardString() const override;
+
     ~GLFWWindow() override;
 
 protected:

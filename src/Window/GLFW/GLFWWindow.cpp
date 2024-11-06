@@ -96,6 +96,16 @@ bool GLFWWindow::popDroppedFile(std::filesystem::path& dst)
     return true;
 }
 
+void GLFWWindow::setClipboardString(const utils::String& str) const
+{
+    ::glfwSetClipboardString(m_glfwWindow, str);
+}
+
+utils::String GLFWWindow::getClipboardString() const
+{
+    return ::glfwGetClipboardString(m_glfwWindow);
+}
+
 GLFWWindow::~GLFWWindow()
 {
     ::glfwDestroyWindow(m_glfwWindow);
