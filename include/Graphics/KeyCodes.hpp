@@ -10,28 +10,28 @@
 #ifndef KEYCODES_HPP
 # define KEYCODES_HPP
 
-#ifdef GFX_USING_GLFW
-    #define ESC_KEY        256
+// Using GLFW key codes
 
-    #define ONE_KEY        49
-    #define TWO_KEY        50
+#define ESC_KEY        256
 
-    #define W_KEY          87
-    #define A_KEY          65
-    #define S_KEY          83
-    #define D_KEY          68
+#define ONE_KEY        49
+#define TWO_KEY        50
 
-    #define SPACE_KEY      32
+#define W_KEY          87
+#define A_KEY          65
+#define S_KEY          83
+#define D_KEY          68
 
-    #define UP_KEY         265
-    #define LEFT_KEY       263
-    #define DOWN_KEY       264
-    #define RIGHT_KEY      262
+#define SPACE_KEY      32
 
-    #define MOUSE_L        0
-    #define MOUSE_R        1
+#define UP_KEY         265
+#define LEFT_KEY       263
+#define DOWN_KEY       264
+#define RIGHT_KEY      262
 
-    #define LEFT_SHIFT_KEY 340
-#endif
+#define MOUSE_L        0
+#define MOUSE_R        1
+
+#define LEFT_SHIFT_KEY 340
 
 #endif // KEYCODES_HPP
