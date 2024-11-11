@@ -15,7 +15,7 @@ endif()
 add_executable(triangle)
 
 set_target_properties(triangle PROPERTIES 
-    CXX_STANDARD          11
+    CXX_STANDARD          17
     CXX_STANDARD_REQUIRED ON
 )
 
