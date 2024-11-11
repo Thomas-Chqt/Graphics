@@ -13,7 +13,7 @@ enable_testing()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build using shared libraries" FORCE)
 
-option(GFX_BUILD_EXEMPLES "Build Graphics exemples executables" OFF)
+option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_BUILD_IMGUI    "Build with imgui capabilities"       OFF)
 option(GFX_INSTALL        "Enable Graphics install command"     ON)
 
@@ -82,8 +82,8 @@ if (GFX_BUILD_IMGUI)
 endif()
 
 if(GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
-    target_compile_definitions(Graphics PUBLIC GFX_USING_GLFW)
-    target_compile_definitions(Graphics PUBLIC GLFW_INCLUDE_NONE)
+    target_compile_definitions(Graphics PRIVATE GFX_USING_GLFW)
+    target_compile_definitions(Graphics PRIVATE GLFW_INCLUDE_NONE)
 endif()
 
 if (GFX_BUILD_METAL)
@@ -91,7 +91,7 @@ if (GFX_BUILD_METAL)
 endif()
 if (GFX_BUILD_OPENGL)
     if(APPLE)
-        target_compile_definitions(Graphics PUBLIC GL_SILENCE_DEPRECATION)
+        target_compile_definitions(Graphics PRIVATE GL_SILENCE_DEPRECATION)
     endif()
     target_compile_definitions(Graphics PUBLIC GFX_BUILD_OPENGL)
 endif()
@@ -100,9 +100,10 @@ endif()
 add_subdirectory("dependencies")
 
 if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
-    set(GLFW_BUILD_TESTS OFF)
-    set(GLFW_BUILD_DOCS  OFF)
-    set(GLFW_INSTALL     OFF)
+    set(GLFW_BUILD_TESTS    OFF)
+    set(GLFW_BUILD_DOCS     OFF)
+    set(GLFW_INSTALL        OFF)
+    set(GLFW_BUILD_EXAMPLES OFF)
 
     FetchContent_Declare(glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -162,8 +163,8 @@ if(GFX_BUILD_IMGUI)
     target_link_libraries(Graphics PUBLIC imgui)
 endif()
 
-if(GFX_BUILD_EXEMPLES)
-    add_subdirectory("exemples")
+if(GFX_BUILD_EXAMPLES)
+    add_subdirectory("examples")
 endif()
 
 if(GFX_INSTALL)
