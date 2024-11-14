@@ -27,6 +27,7 @@ int toOpenGLSamplerAddressMode(Sampler::AddressMode addressMode)
         return GL_MIRRORED_REPEAT;
         break;
     }
+    UNREACHABLE
 }
 
 int toOpenGLSamplerMinMagFilter(Sampler::MinMagFilter filter)
@@ -40,6 +41,7 @@ int toOpenGLSamplerMinMagFilter(Sampler::MinMagFilter filter)
         return GL_LINEAR;
         break;
     }
+    UNREACHABLE
 }
 
 

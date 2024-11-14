@@ -11,8 +11,6 @@ include(FetchContent)
 
 enable_testing()
 
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build using shared libraries" FORCE)
-
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_BUILD_IMGUI    "Build with imgui capabilities"       OFF)
 option(GFX_INSTALL        "Enable Graphics install command"     ON)
@@ -50,18 +48,6 @@ if (APPLE AND GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
 endif()
 if(GFX_BUILD_METAL)
     enable_language(OBJCXX)
-endif()
-
-if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-endif()
-
-if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
-endif()
-
-if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 endif()
 
 add_library(Graphics STATIC)

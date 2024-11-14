@@ -94,7 +94,7 @@ void OpenGLGraphicAPI::initImgui(ImGuiConfigFlags flags)
     #ifdef __APPLE__
         ImGui_ImplOpenGL3_Init("#version 150");
     #else
-        ImGui_ImplOpenGL3_Init("#version 130");
+        ImGui_ImplOpenGL3_Init("#version 150");
     #endif
 }
 #endif

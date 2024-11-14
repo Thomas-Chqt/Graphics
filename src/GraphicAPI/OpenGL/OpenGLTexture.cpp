@@ -28,6 +28,7 @@ GLenum toOpenglTextureType(Texture::Type type)
     case Texture::Type::textureCube:
         return GL_TEXTURE_CUBE_MAP;
     }
+    UNREACHABLE
 }
 
 OpenGLTexture::OpenGLTexture(const Texture::Descriptor& desc)

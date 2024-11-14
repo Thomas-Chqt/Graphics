@@ -72,7 +72,7 @@ void OpenGLGraphicPipeline::enableVertexLayout()
     {
         const auto& attribute = m_descriptor.vertexLayout.attributes[i];
         GL_CALL(glEnableVertexAttribArray(i))
-        GL_CALL(glVertexAttribPointer(i, TO_OPENGL_VERTEX_ATTRIBUTE_FORMAT(attribute.format), (int)m_descriptor.vertexLayout.stride, (const void*)attribute.offset)) // NOLINT(performance-no-int-to-ptr)
+        GL_CALL(glVertexAttribPointer(i, TO_OPENGL_VERTEX_ATTRIBUTE_FORMAT(attribute.format), (int)m_descriptor.vertexLayout.stride, (const void*)(uintptr_t)attribute.offset)) // NOLINT(performance-no-int-to-ptr)
     }
 }
 
