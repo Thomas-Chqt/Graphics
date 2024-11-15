@@ -19,22 +19,26 @@ set(ASSIMP_BUILD_GLTF_IMPORTER ON)
 FetchContent_MakeAvailable(assimp)
 set_target_properties(assimp PROPERTIES FOLDER "dependencies")
 
-add_subdirectory(triangle)
+add_subdirectory("triangle")
 
 if(GFX_BUILD_IMGUI)
-    add_subdirectory(imguiDemo)
+    add_subdirectory("imguiDemo")
 endif()
 
-add_subdirectory(texturedSquare)
+add_subdirectory("texturedSquare")
 
 if(GFX_BUILD_IMGUI)
-    add_subdirectory(offscreenRenderPass)
+    add_subdirectory("offscreenRenderPass")
 endif()
 
 if(GFX_BUILD_IMGUI)
-    add_subdirectory(materialEditor)
+    add_subdirectory("materialEditor")
+endif()
+
+if(GFX_BUILD_NFDE)
+    add_subdirectory("NFDe")
 endif()
 
 if(GFX_BUILD_NFDE AND GFX_BUILD_IMGUI)
-    add_subdirectory(NFDe)
+    add_subdirectory("NFDeChildWindow")
 endif()

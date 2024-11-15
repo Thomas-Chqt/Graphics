@@ -12,12 +12,17 @@
 #include "UtilsCPP/String.hpp"
 
 #include <GLFW/glfw3.h>
+#include <cassert>
 
 #ifdef GFX_BUILD_METAL
     #include "Window/GLFW/GLFWMetalWindow.hpp"
 #endif
 #ifdef GFX_BUILD_OPENGL
     #include "Window/GLFW/GLFWOpenGLWindow.hpp"
+#endif
+
+#ifdef GFX_BUILD_NFDE
+    #include "nfd.hpp"
 #endif
 
 using utils::SharedPtr;
@@ -87,6 +92,9 @@ void GLFWPlatform::pollEvents()
 
 GLFWPlatform::~GLFWPlatform()
 {
+#ifdef GFX_BUILD_NFDE
+        NFD::Quit();
+#endif
     ::glfwTerminate();
 }
 
@@ -99,6 +107,11 @@ GLFWPlatform::GLFWPlatform()
 
     if(::glfwInit() != GLFW_TRUE)
         throw GLFWInitError();
+    
+#ifdef GFX_BUILD_NFDE
+    if (NFD::Init() != NFD_OKAY)
+        assert(false && "FD_Init() != NFD_OKAY");//TODO error handling
+#endif
 }
 
 }

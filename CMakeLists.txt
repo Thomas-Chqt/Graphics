@@ -7,6 +7,8 @@
 
 cmake_minimum_required(VERSION 3.16)
 
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
 include(FetchContent)
 
 enable_testing()
@@ -15,7 +17,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build using shared libraries" FORCE)
 
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_BUILD_IMGUI    "Build with imgui capabilities"       OFF)
-option(GFX_BUILD_NFD     "Build native file dialog extended"   OFF)
+option(GFX_BUILD_NFDE     "Build native file dialog extended"   OFF)
 option(GFX_INSTALL        "Enable Graphics install command"     ON)
 
 if (APPLE)
@@ -80,7 +82,10 @@ target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 
 if(GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
     target_compile_definitions(Graphics PUBLIC "GFX_USING_GLFW")
-    target_compile_definitions(Graphics PUBLIC "GLFW_INCLUDE_NONE")
+    target_compile_definitions(Graphics PRIVATE "GLFW_INCLUDE_NONE")
+    if (GLFW_BUILD_WAYLAND)
+        target_compile_definitions(Graphics PRIVATE "GLFW_BUILD_WAYLAND")
+    endif()
 endif()
 
 if (GFX_BUILD_METAL)
@@ -89,7 +94,7 @@ endif()
 
 if (GFX_BUILD_OPENGL)
     if(APPLE)
-        target_compile_definitions(Graphics PUBLIC "GL_SILENCE_DEPRECATION")
+        target_compile_definitions(Graphics PRIVATE "GL_SILENCE_DEPRECATION")
     endif()
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_OPENGL")
 endif()
@@ -98,23 +103,25 @@ if (GFX_BUILD_IMGUI)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_IMGUI")
 endif()
 
-if(GFX_BUILD_NFD)
-    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_NFD")
+if(GFX_BUILD_NFDE)
+    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_NFDE")
 endif()
 
 add_subdirectory("dependencies")
 
 if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
-    set(GLFW_BUILD_TESTS    OFF)
-    set(GLFW_BUILD_DOCS     OFF)
-    set(GLFW_INSTALL        OFF)
-    set(GLFW_BUILD_EXAMPLES OFF)
-
     FetchContent_Declare(glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git
         GIT_TAG        3.4
         GIT_SHALLOW    1
     )
+    set(GLFW_BUILD_TESTS    OFF)
+    set(GLFW_BUILD_DOCS     OFF)
+    set(GLFW_INSTALL        OFF)
+    set(GLFW_BUILD_EXAMPLES OFF)
+    if(NOT GLFW_BUILD_WAYLAND)
+        set(GLFW_BUILD_WAYLAND OFF)
+    endif()
     FetchContent_MakeAvailable(glfw)
 
     get_target_property(GLFW_FOLDER glfw FOLDER)
@@ -142,6 +149,10 @@ if (GFX_BUILD_OPENGL)
 endif()
 
 if(GFX_BUILD_IMGUI)
+    FetchContent_Declare(imgui
+        GIT_REPOSITORY https://github.com/Thomas-Chqt/imgui.git
+        GIT_TAG        fabbe27effebeeb452c243b9b3dd6d139f6313d5
+    )
     if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
         set(IM_BUILD_GLFW ON)
     endif()
@@ -150,10 +161,6 @@ if(GFX_BUILD_IMGUI)
     if(NOT GFX_INSTALL)
         set(IM_INSTALL OFF)
     endif()
-    FetchContent_Declare(imgui
-        GIT_REPOSITORY https://github.com/Thomas-Chqt/imgui.git
-        GIT_TAG        fabbe27effebeeb452c243b9b3dd6d139f6313d5
-    )
     FetchContent_MakeAvailable(imgui)
     set_target_properties(imgui PROPERTIES FOLDER "dependencies")
     if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
@@ -168,13 +175,19 @@ if(GFX_BUILD_IMGUI)
     target_link_libraries(Graphics PUBLIC imgui)
 endif()
 
-if(GFX_BUILD_NFD)
-    FetchContent_Declare(NFD
+if(GFX_BUILD_NFDE)
+    FetchContent_Declare(NFDe
         GIT_REPOSITORY https://github.com/btzy/nativefiledialog-extended.git
         GIT_TAG        v1.2.1
         GIT_SHALLOW    1
     )
-    FetchContent_MakeAvailable(NFD)
+    set(NFD_BUILD_TESTS      OFF)
+    set(NFD_BUILD_SDL2_TESTS OFF)
+    set(NFD_INSTALL          OFF)
+    if(NOT NFD_PORTAL)
+        set(NFD_PORTAL ON)
+    endif()
+    FetchContent_MakeAvailable(NFDe)
     set_target_properties(nfd PROPERTIES FOLDER "dependencies")
     target_link_libraries(Graphics PUBLIC nfd)
 endif()

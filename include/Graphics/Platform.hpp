@@ -16,9 +16,6 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/UniquePtr.hpp"
 #include "Window.hpp"
-#ifdef GFX_BUILD_NFD
-    #include "nfd.hpp"
-#endif
 
 namespace gfx
 {
@@ -59,10 +56,6 @@ protected:
 
 private:
     static utils::UniquePtr<Platform> s_shared;
-
-    #ifdef GFX_BUILD_NFD
-        NFD::Guard nfdGuard;
-    #endif
 
 public:
     Platform& operator = (const Platform&) = delete;

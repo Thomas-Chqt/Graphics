@@ -13,7 +13,7 @@
 #include "UtilsCPP/Func.hpp"
 #include "Event.hpp"
 #include "UtilsCPP/Types.hpp"
-#ifdef GFX_BUILD_NFD
+#ifdef GFX_BUILD_NFDE
     #include "nfd.h"
 #endif
 
@@ -41,8 +41,8 @@ public:
     virtual void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const = 0;
     virtual void getContentScale(float* xScale, float* yScale) const = 0;
 
-    #ifdef GFX_BUILD_NFD
-        virtual void NFD_getNativeWindowFor(nfdwindowhandle_t&) const = 0;
+    #ifdef GFX_BUILD_NFDE
+        virtual nfdwindowhandle_t getNFDwindowHandle() const = 0;
     #endif
 
     virtual ~Window() = default;

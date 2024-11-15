@@ -48,8 +48,8 @@ public:
     void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const override;
     void getContentScale(float* xscale, float* yscale) const override;
 
-    #ifdef GFX_BUILD_NFD
-        void NFD_getNativeWindowFor(nfdwindowhandle_t&) const override;
+    #ifdef GFX_BUILD_NFDE
+        nfdwindowhandle_t getNFDwindowHandle() const override;
     #endif
 
     ~GLFWWindow() override;

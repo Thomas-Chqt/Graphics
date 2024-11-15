@@ -8,15 +8,23 @@
  */
 
 #include "Window/GLFW/GLFWWindow.hpp"
-#define GLFW_EXPO
+
 #include "GLFW/glfw3.h"
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
 #ifdef GFX_BUILD_IMGUI
     #include <imgui_impl_glfw.h>
 #endif
-#ifdef GFX_BUILD_NFD
-    #include "nfd.h"
+#ifdef GFX_BUILD_NFDE
+    #if defined(__APPLE__)
+        #define GLFW_EXPOSE_NATIVE_COCOA
+    #elif defined(_WIN32)
+        #define GLFW_EXPOSE_NATIVE_WIN32
+    #elif defined(GLFW_BUILD_WAYLAND)
+        #define GLFW_EXPOSE_NATIVE_WAYLAND
+    #else
+        #define GLFW_EXPOSE_NATIVE_X11
+    #endif
     #include "nfd_glfw3.h"
 #endif
 
@@ -59,10 +67,12 @@ void GLFWWindow::getContentScale(float* xscale, float* yscale) const
     ::glfwGetWindowContentScale(m_glfwWindow, xscale, yscale);
 }
 
-#ifdef GFX_BUILD_NFD
-void GLFWWindow::NFD_getNativeWindowFor(nfdwindowhandle_t& parentWindow) const
+#ifdef GFX_BUILD_NFDE
+nfdwindowhandle_t GLFWWindow::getNFDwindowHandle() const
 {
-    NFD_GetNativeWindowFromGLFWWindow(m_glfwWindow, &parentWindow);
+    nfdwindowhandle_t handle;
+    NFD_GetNativeWindowFromGLFWWindow(m_glfwWindow, &handle);
+    return handle;
 }
 #endif
 
