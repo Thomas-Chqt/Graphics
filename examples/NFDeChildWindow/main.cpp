@@ -11,7 +11,7 @@
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
 #include "nfd.hpp"
-#include <future>
+// #include <future>
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -32,11 +32,14 @@ int main()
                 if (event.keyCode() == ESC_KEY)
                     running = false;
             });
+            event.dispatch<gfx::WindowRequestCloseEvent>([&](gfx::WindowRequestCloseEvent& event) {
+                running = false;
+            });
         });
 
         std::string textContent;
-        std::future<std::pair<nfdresult_t, NFD::UniquePath>> fut;
-        bool isPresented = false;
+        // std::future<std::pair<nfdresult_t, NFD::UniquePath>> fut;
+        // bool isPresented = false;
 
         while (running)
         {
@@ -53,27 +56,27 @@ int main()
 
                     if (ImGui::Button("select"))
                     {
-                        if (isPresented == false)
-                        {
+                        // if (isPresented == false)
+                        // {
                             nfdwindowhandle_t handle = window->getNFDwindowHandle();
-                            fut = std::async([handle](){
-                                std::pair<nfdresult_t, NFD::UniquePath> res;
-                                res.first = NFD::OpenDialog(res.second, nullptr, 0, nullptr, handle);
-                                return res;
-                            });
-                            isPresented = true;
-                        }
-                    }
+                        //     fut = std::async([handle](){
+                                std::pair<nfdresult_t, NFD::UniquePath> result;
+                                result.first = NFD::OpenDialog(result.second, nullptr, 0, nullptr, handle);
+                            //     return result;
+                            // });
+                            // isPresented = true;
+                    //     }
+                    // }
 
-                    if (isPresented)
-                    {
-                        if (fut.wait_for(std::chrono::nanoseconds(1)) == std::future_status::ready)
-                        {
-                            std::pair<nfdresult_t, NFD::UniquePath> result = fut.get();
+                    // if (isPresented)
+                    // {
+                        // if (fut.wait_for(std::chrono::nanoseconds(1)) == std::future_status::ready)
+                        // {
+                            // std::pair<nfdresult_t, NFD::UniquePath> result = fut.get();
                             if (result.first == NFD_OKAY)
                                 textContent = result.second.get();
-                            isPresented = false;   
-                        }
+                        //     isPresented = false;   
+                        // }
                     }
                 }
                 graphicAPI->endRenderPass();
