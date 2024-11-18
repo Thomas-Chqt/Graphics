@@ -122,6 +122,18 @@ int main()
                 case ESC_KEY:
                     running = false;
                     break;
+                case LEFT_KEY:
+                    camera.orientationY += 0.1F;
+                    break;
+                case RIGHT_KEY:
+                    camera.orientationY -= 0.1F;
+                    break;
+                case UP_KEY:
+                    camera.orientationX += 0.1F;
+                    break;
+                case DOWN_KEY:
+                    camera.orientationX -= 0.1F;
+                    break;
                 }
             });
 
@@ -152,6 +164,11 @@ int main()
                         {
                             ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
                             ImGui::EndMenuBar();
+                        }
+                        ImGui::SeparatorText("Camera");
+                        {
+                            ImGui::DragFloat("RotationX", &camera.orientationX, 0.001, -(2*PI), 2*PI);
+                            ImGui::DragFloat("RotationY", &camera.orientationY, 0.001, -(2*PI), 2*PI);
                         }
                         ImGui::SeparatorText("Light");
                         {
