@@ -28,7 +28,7 @@ if(TARGET zlibstatic OR TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
         set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "dependencies/assimp")
     endif()
 else()
-    set_target_properties(assimp PROPERTIES FOLDER "assimp")
+    set_target_properties(assimp PROPERTIES FOLDER "dependencies")
 endif()
 
 add_subdirectory(triangle)
