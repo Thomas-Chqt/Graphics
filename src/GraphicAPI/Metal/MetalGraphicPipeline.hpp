@@ -39,13 +39,15 @@ public:
 
     MetalGraphicPipeline(const id<MTLDevice>&, const GraphicPipeline::Descriptor&);
 
-    inline utils::uint64 getVertexBufferIndex(const utils::String& name) override { return m_vertexBufferBindingsIndices[name]; }
-    inline utils::uint64 getVertexTextureIndex(const utils::String& name) override { return m_vertexTextureBindingsIndices[name]; }
-    inline utils::uint64 getVertexSamplerIndex(const utils::String& name) override { return m_vertexSamplerBindingsIndices[name]; }
+    inline utils::uint64 getVertexBufferIndex(const utils::String& name) const override { return m_vertexBufferBindingsIndices[name]; }
+    inline utils::uint64 getVertexTextureIndex(const utils::String& name) const override { return m_vertexTextureBindingsIndices[name]; }
+    inline utils::uint64 getVertexSamplerIndex(const utils::String& name) const override { return m_vertexSamplerBindingsIndices[name]; }
 
-    inline utils::uint64 getFragmentBufferIndex(const utils::String& name) override { return m_fragmentBufferBindingsIndices[name]; }
-    inline utils::uint64 getFragmentTextureIndex(const utils::String& name) override { return m_fragmentTextureBindingsIndices[name]; }
-    inline utils::uint64 getFragmentSamplerIndex(const utils::String& name) override { return m_fragmentSamplerBindingsIndices[name]; }
+    inline utils::uint64 getVertexUniformIndex(const utils::String& name) const override { return getVertexBufferIndex(name); };
+
+    inline utils::uint64 getFragmentBufferIndex(const utils::String& name) const override { return m_fragmentBufferBindingsIndices[name]; }
+    inline utils::uint64 getFragmentTextureIndex(const utils::String& name) const override { return m_fragmentTextureBindingsIndices[name]; }
+    inline utils::uint64 getFragmentSamplerIndex(const utils::String& name) const override { return m_fragmentSamplerBindingsIndices[name]; }
 
     const id<MTLRenderPipelineState>& renderPipelineState() { return m_renderPipelineState; };
     const id<MTLDepthStencilState>& depthStencilState() { return m_depthStencilState; };

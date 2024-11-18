@@ -22,6 +22,7 @@
 #include "Graphics/Sampler.hpp"
 #include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
+#include "UtilsCPP/RuntimeError.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "Graphics/Window.hpp"
 #include <glad/glad.h>
@@ -93,7 +94,7 @@ void OpenGLGraphicAPI::initImgui(ImGuiConfigFlags flags)
     #ifdef __APPLE__
         ImGui_ImplOpenGL3_Init("#version 150");
     #else
-        ImGui_ImplOpenGL3_Init("#version 130");
+        ImGui_ImplOpenGL3_Init("#version 150");
     #endif
 }
 #endif
@@ -116,6 +117,38 @@ void OpenGLGraphicAPI::beginRenderPass()
     }
 }
 
+void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuff)
+{
+    m_window->makeContextCurrent();
+
+    m_frameBuffer = fBuff.forceDynamicCast<OpenGLFrameBuffer>();
+
+    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer->frameBufferID()))
+
+    GLenum fBuffStatus;
+    GL_CALL(fBuffStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER));
+    if (fBuffStatus != GL_FRAMEBUFFER_COMPLETE)
+        throw utils::RuntimeError("framebuffer not complete");
+    
+    GL_CALL(glViewport(0, 0, m_frameBuffer->glColorTexture()->width(), m_frameBuffer->glColorTexture()->height()))
+
+    if (m_nextPassLoadAction == LoadAction::clear)
+    {
+        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a))
+        GL_CALL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT))
+    }
+}
+
+void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<RenderTarget>& rt)
+{
+    if (auto win = rt.dynamicCast<Window>())
+        beginRenderPass();
+    else if (auto fb = rt.dynamicCast<FrameBuffer>())
+        beginRenderPass(fb);
+    else
+        UNREACHABLE;
+}
+
 #ifdef GFX_BUILD_IMGUI
 void OpenGLGraphicAPI::beginImguiRenderPass()
 {
@@ -129,22 +162,6 @@ void OpenGLGraphicAPI::beginImguiRenderPass()
     m_isImguiFrame = true;
 }
 #endif
-
-void OpenGLGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& fBuff)
-{
-    m_window->makeContextCurrent();
-
-    m_frameBuffer = fBuff.forceDynamicCast<OpenGLFrameBuffer>();
-    
-    GL_CALL(glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer->frameBufferID()))
-    GL_CALL(glViewport(0, 0, m_frameBuffer->glColorTexture()->width(), m_frameBuffer->glColorTexture()->height()))
-
-    if (m_nextPassLoadAction == LoadAction::clear)
-    {
-        GL_CALL(glClearColor(m_nextPassClearColor.r, m_nextPassClearColor.g,  m_nextPassClearColor.b, m_nextPassClearColor.a))
-        GL_CALL(glClear(GL_COLOR_BUFFER_BIT))
-    }
-}
 
 void OpenGLGraphicAPI::useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>& graphicsPipeline)
 {
@@ -206,6 +223,34 @@ void OpenGLGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer,
     GL_CALL(glBindBufferBase(GL_UNIFORM_BUFFER, (GLuint)idx, buffer.forceDynamicCast<OpenGLBuffer>()->bufferID()));
 }
 
+void OpenGLGraphicAPI::setVertexUniform(const math::mat4x4& mat, utils::uint64 idx)
+{
+    assert(m_graphicPipeline);
+
+    GLfloat glMatrix[4][4];
+    glMatrix[0][0] = mat[0][0];
+    glMatrix[0][1] = mat[0][1];
+    glMatrix[0][2] = mat[0][2];
+    glMatrix[0][3] = mat[0][3];
+
+    glMatrix[1][0] = mat[1][0];
+    glMatrix[1][1] = mat[1][1];
+    glMatrix[1][2] = mat[1][2];
+    glMatrix[1][3] = mat[1][3];
+
+    glMatrix[2][0] = mat[2][0];
+    glMatrix[2][1] = mat[2][1];
+    glMatrix[2][2] = mat[2][2];
+    glMatrix[2][3] = mat[2][3];
+
+    glMatrix[3][0] = mat[3][0];
+    glMatrix[3][1] = mat[3][1];
+    glMatrix[3][2] = mat[3][2];
+    glMatrix[3][3] = mat[3][3];
+
+    GL_CALL(glUniformMatrix4fv(idx, 1, GL_FALSE, &glMatrix[0][0]))
+}
+
 void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& texture, utils::uint64 idx)
 {
     setFragmentTexture(texture, idx, newSampler(Sampler::Descriptor()), 0);
@@ -226,12 +271,12 @@ void OpenGLGraphicAPI::setFragmentTexture(const utils::SharedPtr<Texture>& textu
     GL_CALL(glActiveTexture(GL_TEXTURE0 + m_nextTextureUnit));
     GL_CALL(glBindTexture(glTexture->textureType(), glTexture->textureID()));
 
-    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MIN_FILTER, glSampler->minFilter());
-    glTexParameteri(glTexture->textureType(), GL_TEXTURE_MAG_FILTER, glSampler->magFilter());
-	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_S, 	 glSampler->sAddressMode());
-	glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_T,     glSampler->tAddressMode());
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_MIN_FILTER, glSampler->minFilter()));
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_MAG_FILTER, glSampler->magFilter()));
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_S, 	 glSampler->sAddressMode()));
+    GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_T,     glSampler->tAddressMode()));
     if (glTexture->textureType() == GL_TEXTURE_CUBE_MAP)
-        glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_R, glSampler->rAddressMode());
+        GL_CALL(glTexParameteri(glTexture->textureType(), GL_TEXTURE_WRAP_R, glSampler->rAddressMode()));
 
     GL_CALL(glUniform1i((GLint)idx, m_nextTextureUnit));
     m_nextTextureUnit++;

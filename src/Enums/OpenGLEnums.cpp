@@ -9,6 +9,7 @@
 
 #include "Graphics/Enums.hpp"
 #include "UtilsCPP/Types.hpp"
+#include "UtilsCPP/Macros.hpp"
 
 #include <glad/glad.h>
 
@@ -26,6 +27,7 @@ utils::uint32 toOpenGLPixelFormat(PixelFormat pxFormat)
     case PixelFormat::Depth32:
         return GL_DEPTH_COMPONENT;
     }
+    UNREACHABLE
 }
 
 utils::uint32 toOpenGLInternalPixelFormat(PixelFormat pxFormat)
@@ -38,6 +40,7 @@ utils::uint32 toOpenGLInternalPixelFormat(PixelFormat pxFormat)
     case PixelFormat::Depth32:
         return GL_DEPTH_COMPONENT;
     }
+    UNREACHABLE
 }
 
 int toOpenGLVertexAttributeFormatSize(VertexAttributeFormat format)
@@ -49,6 +52,7 @@ int toOpenGLVertexAttributeFormatSize(VertexAttributeFormat format)
     case VertexAttributeFormat::vec3f:
         return 3;
     }
+    UNREACHABLE
 }
 
 utils::uint32 toOpenGLVertexAttributeFormatType(VertexAttributeFormat format)
@@ -59,6 +63,7 @@ utils::uint32 toOpenGLVertexAttributeFormatType(VertexAttributeFormat format)
     case VertexAttributeFormat::vec3f:
         return GL_FLOAT;
     }
+    UNREACHABLE
 }
 
 utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat format)
@@ -69,6 +74,7 @@ utils::uint8 toOpenGLVertexAttributeFormatNormalized(VertexAttributeFormat forma
     case VertexAttributeFormat::vec3f:
         return GL_FALSE;
     }
+    UNREACHABLE
 }
 
 }

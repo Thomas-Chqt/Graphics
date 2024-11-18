@@ -13,12 +13,14 @@
 #include "GraphicPipeline.hpp"
 #include "Buffer.hpp"
 #include "FrameBuffer.hpp"
+#include "Graphics/RenderTarget.hpp"
 #include "Sampler.hpp"
 #include "Shader.hpp"
 #include "Texture.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/Types.hpp"
 #include "Math/Vector.hpp"
+#include "Math/Matrix.hpp"
 
 #ifdef GFX_BUILD_IMGUI
     #include <imgui.h>
@@ -51,6 +53,7 @@ public:
 
     virtual void beginRenderPass() = 0;
     virtual void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) = 0;
+    virtual void beginRenderPass(const utils::SharedPtr<RenderTarget>&) = 0;
     #ifdef GFX_BUILD_IMGUI
         virtual void beginImguiRenderPass() = 0;
     #endif
@@ -58,6 +61,7 @@ public:
     virtual void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) = 0;
 
     virtual void setVertexBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) = 0;
+    virtual void setVertexUniform(const math::mat4x4&, utils::uint64 idx) = 0;
 
     virtual void setFragmentBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) = 0;
     virtual void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 idx) = 0;

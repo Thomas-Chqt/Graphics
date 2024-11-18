@@ -35,6 +35,12 @@ public:
     inline GLuint textureID() const { return m_textureID; };
     inline GLenum textureType() const { return m_textureType; }
 
+    #ifdef GFX_BUILD_IMGUI
+    inline void* imguiTextureId() const override { return (void*)(uintptr_t)(utils::uint64)textureID(); }
+    inline ImVec2 imguiUV0() const override { return ImVec2(0, 1); }
+    inline ImVec2 imguiUV1() const override { return ImVec2(1, 0); }
+    #endif
+
     ~OpenGLTexture() override;
 
 private:

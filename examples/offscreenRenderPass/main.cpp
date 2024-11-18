@@ -10,11 +10,11 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Event.hpp"
-#include "Graphics/FrameBuffer.hpp"
 #include "Graphics/GraphicAPI.hpp"
 #include "Graphics/GraphicPipeline.hpp"
 #include "Graphics/KeyCodes.hpp"
 #include "Graphics/Platform.hpp"
+#include "Graphics/Sampler.hpp"
 #include "Graphics/Shader.hpp"
 #include "Graphics/Texture.hpp"
 #include "Graphics/VertexLayout.hpp"
@@ -23,11 +23,12 @@
 #include "UtilsCPP/SharedPtr.hpp"
 #include "UtilsCPP/String.hpp"
 #include "UtilsCPP/Types.hpp"
-#include <imgui.h>
 #include <cstddef>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 720
 
 struct Vertex
 {
@@ -44,7 +45,7 @@ utils::SharedPtr<gfx::Shader> createVertexShader(const gfx::GraphicAPI& api)
         shaderDescriptor.mtlFunction = "texturedSquare_vs";
     #endif
     #ifdef GFX_BUILD_OPENGL
-        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.vs");
+        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/vertexShader.vs");
     #endif
     return api.newShader(shaderDescriptor);
 }
@@ -58,7 +59,7 @@ utils::SharedPtr<gfx::Shader> createFragmentShader(const gfx::GraphicAPI& api)
         shaderDescriptor.mtlFunction = "texturedSquare_fs";
     #endif
     #ifdef GFX_BUILD_OPENGL
-        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/texturedSquare.fs");
+        shaderDescriptor.openglCode = utils::String::contentOfFile(OPENGL_SHADER_DIR"/fragmentShader.fs");
     #endif
     return api.newShader(shaderDescriptor);
 }
@@ -112,10 +113,28 @@ utils::SharedPtr<gfx::Buffer> createIndexBuffer(const gfx::GraphicAPI& api)
     return api.newBuffer(bufferDescriptor);
 }
 
-utils::SharedPtr<gfx::Texture> createColorTexture(const gfx::GraphicAPI& api)
+utils::SharedPtr<gfx::Texture> createGrassTexture(const gfx::GraphicAPI& api)
+{
+    int width = 0;
+    int height = 0;
+    stbi_uc* imgBytes = stbi_load(RESSOURCES_DIR"/mc_grass.jpg", &width, &height, nullptr, STBI_rgb_alpha);
+
+    gfx::Texture::Descriptor textureDescriptor;
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
+
+    utils::SharedPtr<gfx::Texture> texture = api.newTexture(textureDescriptor);
+    texture->replaceContent(imgBytes);
+
+    stbi_image_free(imgBytes);
+
+    return texture;
+}
+
+utils::SharedPtr<gfx::Texture> createFBuffColorTexture(const gfx::GraphicAPI& api)
 {
     gfx::Texture::Descriptor textureDescriptor;
-    textureDescriptor.width = WINDOW_WIDTH;
+    textureDescriptor.width = WINDOW_HEIGHT;
     textureDescriptor.height = WINDOW_HEIGHT;
     textureDescriptor.pixelFormat = gfx::PixelFormat::BGRA;
     textureDescriptor.usage = gfx::Texture::Usage::ShaderReadAndRenderTarget;
@@ -127,8 +146,8 @@ utils::SharedPtr<gfx::Texture> createColorTexture(const gfx::GraphicAPI& api)
 utils::SharedPtr<gfx::FrameBuffer> createFrameBuffer(const gfx::GraphicAPI& api)
 {
     gfx::FrameBuffer::Descriptor frameBufferDescriptor;
-    frameBufferDescriptor.colorTexture = createColorTexture(api);
-    frameBufferDescriptor.depthTexture = api.newTexture(gfx::Texture::Descriptor::depthTextureDescriptor(WINDOW_WIDTH, WINDOW_HEIGHT));
+    frameBufferDescriptor.colorTexture = createFBuffColorTexture(api);
+    frameBufferDescriptor.depthTexture = api.newTexture(gfx::Texture::Descriptor::depthTextureDescriptor(WINDOW_HEIGHT, WINDOW_HEIGHT));
 
     return api.newFrameBuffer(frameBufferDescriptor);
 }
@@ -142,12 +161,15 @@ int main()
         graphicAPI->initImgui();
 
         utils::SharedPtr<gfx::GraphicPipeline> graphicPipeline = createGraphicPipeline(*graphicAPI);
+        utils::uint64 textureBindingIndex = graphicPipeline->getFragmentTextureIndex("inputTexture");
 
         utils::SharedPtr<gfx::Buffer> vertexBuffer = createVertexBuffer(*graphicAPI);
         utils::SharedPtr<gfx::Buffer> indexBuffer = createIndexBuffer(*graphicAPI);
 
-        utils::SharedPtr<gfx::FrameBuffer> offscreenFameBuffer = createFrameBuffer(*graphicAPI);
+        utils::SharedPtr<gfx::Texture> grasstexture = createGrassTexture(*graphicAPI);
 
+        utils::SharedPtr<gfx::FrameBuffer> offscreenFameBuffer = createFrameBuffer(*graphicAPI);
+        
         bool running = true;
 
         window->addEventCallBack([&](gfx::Event& event) {
@@ -157,24 +179,31 @@ int main()
             });
         });
 
-        utils::uint64 textureBindingIndex = graphicPipeline->getFragmentTextureIndex("texture1");
-        
         while (running)
         {
             gfx::Platform::shared().pollEvents();
             
             graphicAPI->beginFrame();
-            {   
+            {
                 graphicAPI->setClearColor(RED);
+                graphicAPI->setLoadAction(gfx::LoadAction::clear);
+
                 graphicAPI->beginRenderPass(offscreenFameBuffer);
+                {
+                    graphicAPI->useGraphicsPipeline(graphicPipeline);
+
+                    graphicAPI->setFragmentTexture(grasstexture, textureBindingIndex);
+
+                    graphicAPI->setVertexBuffer(vertexBuffer, 0);
+                    graphicAPI->drawIndexedVertices(indexBuffer);
+                }
                 graphicAPI->endRenderPass();
 
                 graphicAPI->setClearColor(BLACK);
+                graphicAPI->setLoadAction(gfx::LoadAction::clear);
 
-                graphicAPI->beginImguiRenderPass();
+                graphicAPI->beginRenderPass();
                 {
-                    ImGui::ShowDemoWindow();
-
                     graphicAPI->useGraphicsPipeline(graphicPipeline);
 
                     graphicAPI->setFragmentTexture(offscreenFameBuffer->colorTexture(), textureBindingIndex);
@@ -183,11 +212,16 @@ int main()
                     graphicAPI->drawIndexedVertices(indexBuffer);
                 }
                 graphicAPI->endRenderPass();
+
+                // graphicAPI->setLoadAction(gfx::LoadAction::load);
+                // graphicAPI->beginImguiRenderPass();
+                // {
+                //     ImGui::ShowDemoWindow();
+                // }
+                // graphicAPI->endRenderPass();
             }
             graphicAPI->endFrame();
         }
-
-        graphicAPI->terminateImGui();
     }
     gfx::Platform::terminate();
 }

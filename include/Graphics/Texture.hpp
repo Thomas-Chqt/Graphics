@@ -13,6 +13,10 @@
 #include "Enums.hpp"
 #include "UtilsCPP/Types.hpp"
 
+#ifdef GFX_BUILD_IMGUI
+    #include <imgui.h>
+#endif
+
 namespace gfx
 {
 
@@ -88,6 +92,12 @@ public:
 
     inline void replaceContent(const void* data) { replaceRegion({0, 0, width(), height()}, data); }
     inline void replaceSliceContent(utils::uint32 slice, const void* data) { replaceRegion({0, 0, width(), height()}, slice, data); }
+
+    #ifdef GFX_BUILD_IMGUI
+    virtual void* imguiTextureId() const = 0;
+    virtual ImVec2 imguiUV0() const = 0;
+    virtual ImVec2 imguiUV1() const = 0;
+    #endif
 
     virtual ~Texture() = default;
 

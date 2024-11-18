@@ -140,6 +140,16 @@ void MetalGraphicAPI::beginRenderPass(const utils::SharedPtr<FrameBuffer>& targe
         throw RenderCommandEncoderCreationError();
 }}
 
+void MetalGraphicAPI::beginRenderPass(const utils::SharedPtr<RenderTarget>& rt)
+{
+    if (auto win = rt.dynamicCast<Window>())
+        beginRenderPass();
+    else if (auto fb = rt.dynamicCast<FrameBuffer>())
+        beginRenderPass(fb);
+    else
+        UNREACHABLE;
+}
+
 #ifdef GFX_BUILD_IMGUI
 void MetalGraphicAPI::beginImguiRenderPass() { @autoreleasepool
 {
@@ -172,6 +182,11 @@ void MetalGraphicAPI::setVertexBuffer(const utils::SharedPtr<Buffer>& buffer, ut
         it = m_vertexBuffers.insert(idx, utils::SharedPtr<MetalBuffer>());
     it->val = buffer.forceDynamicCast<MetalBuffer>();
     [m_commandEncoder setVertexBuffer:it->val->mtlBuffer() offset:0 atIndex:idx];
+}}
+
+void MetalGraphicAPI::setVertexUniform(const math::mat4x4& mat, utils::uint64 idx) { @autoreleasepool
+{
+    [m_commandEncoder setVertexBytes:&mat length:sizeof(math::mat4x4) atIndex:idx];
 }}
 
 void MetalGraphicAPI::setFragmentBuffer(const utils::SharedPtr<Buffer>& buffer, utils::uint64 idx) { @autoreleasepool

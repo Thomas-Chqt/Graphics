@@ -10,13 +10,14 @@
 #ifndef FRAMEBUFFER_HPP
 #define FRAMEBUFFER_HPP
 
+#include "Graphics/RenderTarget.hpp"
 #include "Texture.hpp"
 #include "UtilsCPP/SharedPtr.hpp"
 
 namespace gfx
 {
 
-class FrameBuffer
+class FrameBuffer : public RenderTarget
 {
 public:
     struct Descriptor
@@ -28,6 +29,9 @@ public:
 public:
     FrameBuffer(const FrameBuffer&) = delete;
     FrameBuffer(FrameBuffer&&)      = delete;
+
+    virtual utils::uint32 width() override = 0;
+    virtual utils::uint32 height() override = 0;
 
     virtual void setColorTexture(const utils::SharedPtr<Texture>&) = 0;
     virtual utils::SharedPtr<Texture> colorTexture() = 0;

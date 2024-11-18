@@ -11,13 +11,34 @@
 #include "GLFW/glfw3.h"
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
+#include "UtilsCPP/Types.hpp"
+#include <cassert>
+#include <filesystem>
 
 #ifdef GFX_BUILD_IMGUI
     #include <imgui_impl_glfw.h>
 #endif
 
+namespace fs = std::filesystem;
+
 namespace gfx
 {
+
+utils::uint32 GLFWWindow::width()
+{
+    int w, h;
+    ::glfwGetFramebufferSize(m_glfwWindow, &w, &h);
+    assert(w >= 0);
+    return static_cast<utils::uint32>(w);
+}
+
+utils::uint32 GLFWWindow::height()
+{
+    int w, h;
+    ::glfwGetFramebufferSize(m_glfwWindow, &w, &h);
+    assert(h >= 0);
+    return static_cast<utils::uint32>(h);
+}
 
 void GLFWWindow::addEventCallBack(const utils::Func<void(Event&)>& cb, void* id)
 {
@@ -53,6 +74,36 @@ void GLFWWindow::getFrameBufferSize(utils::uint32* width, utils::uint32* height)
 void GLFWWindow::getContentScale(float* xscale, float* yscale) const
 {
     ::glfwGetWindowContentScale(m_glfwWindow, xscale, yscale);
+}
+
+void GLFWWindow::getFrameBufferScaleFactor(float* xscale, float* yscale) const
+{
+    int width, height;
+    ::glfwGetWindowSize(m_glfwWindow, &width, &height);
+
+    int fbWidth, fbHeight;
+    glfwGetFramebufferSize(m_glfwWindow, &fbWidth, &fbHeight);
+
+    *xscale = (float)fbWidth / (float)width;
+    *yscale = (float)fbHeight / (float)height;
+}
+
+bool GLFWWindow::popDroppedFile(std::filesystem::path& dst)
+{
+    if (m_droppedFilePool.isEmpty())
+        return false;
+    dst = m_droppedFilePool.pop(m_droppedFilePool.begin());
+    return true;
+}
+
+void GLFWWindow::setClipboardString(const utils::String& str) const
+{
+    ::glfwSetClipboardString(m_glfwWindow, str);
+}
+
+utils::String GLFWWindow::getClipboardString() const
+{
+    return ::glfwGetClipboardString(m_glfwWindow);
 }
 
 GLFWWindow::~GLFWWindow()
@@ -184,6 +235,17 @@ void GLFWWindow::setupGLFWcallback()
         {
             for (auto& callback : callbacks.val)
                 callback(windowRequestCloseEvent);
+        }
+    });
+
+    ::glfwSetDropCallback(m_glfwWindow, [](::GLFWwindow* glfwWindow, int count, const char** paths){
+        GLFWWindow& gfxWindow = *static_cast<GLFWWindow*>(glfwGetWindowUserPointer(glfwWindow));
+        for (int i = 0; i < count; i++)
+        {
+            fs::path path = fs::path(paths[i]);
+            assert(path.is_absolute());
+            assert(fs::exists(path));
+            gfxWindow.m_droppedFilePool.insert(path);
         }
     });
 }

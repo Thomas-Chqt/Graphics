@@ -11,9 +11,12 @@
 # define GLFWWINDOW_HPP
 
 #include <GLFW/glfw3.h>
+#include <filesystem>
 #include "Graphics/Event.hpp"
 #include "UtilsCPP/Array.hpp"
 #include "UtilsCPP/Func.hpp"
+#include "UtilsCPP/Set.hpp"
+#include "UtilsCPP/Types.hpp"
 #include "Window/Window_internal.hpp"
 #include "UtilsCPP/Dictionary.hpp"
 
@@ -26,6 +29,9 @@ public:
     GLFWWindow()                  = default;
     GLFWWindow(const GLFWWindow&) = delete;
     GLFWWindow(GLFWWindow&&)      = delete;
+
+    utils::uint32 width() override;
+    utils::uint32 height() override;
 
     void addEventCallBack(const utils::Func<void(Event&)>& cb, void* id) override;
     inline void clearCallbacks(void* id) override { m_eventCallbacks.remove(id); }
@@ -44,6 +50,12 @@ public:
     void getWindowSize(utils::uint32* width, utils::uint32* height) const override;
     void getFrameBufferSize(utils::uint32* width, utils::uint32* height) const override;
     void getContentScale(float* xscale, float* yscale) const override;
+    void getFrameBufferScaleFactor(float* xScale, float* yScale) const override;
+
+    bool popDroppedFile(std::filesystem::path& dst) override;
+
+    void setClipboardString(const utils::String&) const override;
+    utils::String getClipboardString() const override;
 
     ~GLFWWindow() override;
 
@@ -52,6 +64,7 @@ protected:
 
     ::GLFWwindow* m_glfwWindow = nullptr; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes, misc-non-private-member-variables-in-classes)
     utils::Dictionary<void*, utils::Array<utils::Func<void(Event&)>>> m_eventCallbacks; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes, misc-non-private-member-variables-in-classes)
+    utils::Set<std::filesystem::path> m_droppedFilePool;
 
 public:
     GLFWWindow& operator = (const GLFWWindow&) = delete;

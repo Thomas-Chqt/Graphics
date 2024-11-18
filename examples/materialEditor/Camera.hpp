@@ -12,9 +12,9 @@
 
 struct Camera
 {
-    float orientationX;
-    float orientationY;
-    float distance;
+    float orientationX = 0;
+    float orientationY = 0;
+    float distance = 1;
 };
 
 #endif // CAMERA_HPP

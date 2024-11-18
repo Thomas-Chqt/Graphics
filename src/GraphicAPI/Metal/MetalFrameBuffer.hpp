@@ -27,6 +27,9 @@ public:
 
     MetalFrameBuffer(const FrameBuffer::Descriptor&);
 
+    inline utils::uint32 width() override { return colorTexture()->width(); }
+    inline utils::uint32 height() override { return colorTexture()->height(); }
+
     void setColorTexture(const utils::SharedPtr<Texture>&) override;
     inline utils::SharedPtr<Texture> colorTexture() override { return m_colorTexture.staticCast<Texture>(); };
 

@@ -9,6 +9,7 @@
 
 #include "GraphicAPI/OpenGL/OpenGLGraphicPipeline.hpp"
 
+#include <cassert>
 #include <utility>
 #include "GraphicAPI/OpenGL/OpenGLShader.hpp"
 #include "Graphics/GraphicPipeline.hpp"
@@ -71,7 +72,7 @@ void OpenGLGraphicPipeline::enableVertexLayout()
     {
         const auto& attribute = m_descriptor.vertexLayout.attributes[i];
         GL_CALL(glEnableVertexAttribArray(i))
-        GL_CALL(glVertexAttribPointer(i, TO_OPENGL_VERTEX_ATTRIBUTE_FORMAT(attribute.format), (int)m_descriptor.vertexLayout.stride, (const void*)attribute.offset)) // NOLINT(performance-no-int-to-ptr)
+        GL_CALL(glVertexAttribPointer(i, TO_OPENGL_VERTEX_ATTRIBUTE_FORMAT(attribute.format), (int)m_descriptor.vertexLayout.stride, (const void*)(uintptr_t)attribute.offset)) // NOLINT(performance-no-int-to-ptr)
     }
 }
 
@@ -81,10 +82,11 @@ OpenGLGraphicPipeline::~OpenGLGraphicPipeline()
     glDeleteProgram(m_shaderProgramID);
 }
 
-utils::uint32 OpenGLGraphicPipeline::getSamplerUniformIndex(const utils::String& name) const
+utils::uint32 OpenGLGraphicPipeline::getUniformLocation(const utils::String& name) const
 {
-    utils::uint32 idx = 0;
+    GLint idx = 0;
     GL_CALL(idx = glGetUniformLocation(m_shaderProgramID, (const char*)name));
+    assert(idx >= 0);
     return idx;
 }
 

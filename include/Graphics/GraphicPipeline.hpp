@@ -40,13 +40,15 @@ public:
     GraphicPipeline(const GraphicPipeline&) = delete;
     GraphicPipeline(GraphicPipeline&&)      = delete;
 
-    virtual utils::uint64 getVertexBufferIndex(const utils::String& name) = 0;
-    virtual utils::uint64 getVertexTextureIndex(const utils::String& name) = 0;
-    virtual utils::uint64 getVertexSamplerIndex(const utils::String& name) = 0;
+    virtual utils::uint64 getVertexBufferIndex(const utils::String& name) const = 0;
+    virtual utils::uint64 getVertexTextureIndex(const utils::String& name) const = 0;
+    virtual utils::uint64 getVertexSamplerIndex(const utils::String& name) const = 0;
 
-    virtual utils::uint64 getFragmentBufferIndex(const utils::String& name) = 0;
-    virtual utils::uint64 getFragmentTextureIndex(const utils::String& name) = 0;
-    virtual utils::uint64 getFragmentSamplerIndex(const utils::String& name) = 0;
+    virtual utils::uint64 getVertexUniformIndex(const utils::String& name) const = 0;
+
+    virtual utils::uint64 getFragmentBufferIndex(const utils::String& name) const = 0;
+    virtual utils::uint64 getFragmentTextureIndex(const utils::String& name) const = 0;
+    virtual utils::uint64 getFragmentSamplerIndex(const utils::String& name) const = 0;
 
     virtual ~GraphicPipeline() = default;
 

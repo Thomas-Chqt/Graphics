@@ -17,7 +17,7 @@ set(RESSOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/ressources")
 add_executable(offscreenRenderPass)
 
 set_target_properties(offscreenRenderPass PROPERTIES 
-    CXX_STANDARD          11
+    CXX_STANDARD          17
     CXX_STANDARD_REQUIRED ON
 )
 

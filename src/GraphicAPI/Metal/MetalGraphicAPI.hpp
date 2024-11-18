@@ -78,6 +78,7 @@ public:
 
     void beginRenderPass() override;
     void beginRenderPass(const utils::SharedPtr<FrameBuffer>&) override;
+    void beginRenderPass(const utils::SharedPtr<RenderTarget>&) override;
     #ifdef GFX_BUILD_IMGUI
         void beginImguiRenderPass() override;
     #endif
@@ -85,6 +86,7 @@ public:
     void useGraphicsPipeline(const utils::SharedPtr<GraphicPipeline>&) override;
 
     void setVertexBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
+    void setVertexUniform(const math::mat4x4&, utils::uint64 idx) override;
 
     void setFragmentBuffer(const utils::SharedPtr<Buffer>&, utils::uint64 idx) override;
     void setFragmentTexture(const utils::SharedPtr<Texture>&, utils::uint64 idx) override;
