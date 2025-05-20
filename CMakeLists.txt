@@ -39,6 +39,7 @@ if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_OPENGL)
     message(FATAL_ERROR "One graphic api must be enable")
 endif()
 
+set(FETCHCONTENT_QUIET FALSE)
 
 project(Graphics)
 enable_language(CXX)
@@ -90,6 +91,7 @@ if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
         GIT_REPOSITORY https://github.com/glfw/glfw.git
         GIT_TAG        3.4
         GIT_SHALLOW    1
+        GIT_PROGRESS   TRUE
     )
     set(GLFW_BUILD_TESTS    OFF)
     set(GLFW_BUILD_DOCS     OFF)
@@ -118,6 +120,7 @@ if (GFX_BUILD_OPENGL)
     FetchContent_Declare(glad
         GIT_REPOSITORY https://github.com/Thomas-Chqt/GLAD.git
         GIT_TAG        d12a9405aeba141e7c6808ebba218a944326f72b
+        GIT_PROGRESS   TRUE
     )
     FetchContent_MakeAvailable(glad)
     set_target_properties(glad PROPERTIES FOLDER "dependencies")
@@ -128,6 +131,7 @@ if(GFX_BUILD_IMGUI)
     FetchContent_Declare(imgui
         GIT_REPOSITORY https://github.com/Thomas-Chqt/imgui.git
         GIT_TAG        fabbe27effebeeb452c243b9b3dd6d139f6313d5
+        GIT_PROGRESS   TRUE
     )
     if (GFX_USED_WINDOW_LIBRARY STREQUAL "GLFW")
         set(IM_BUILD_GLFW ON)
