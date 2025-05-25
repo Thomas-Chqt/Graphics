@@ -16,6 +16,7 @@ option(BUILD_SHARED_LIBS "Build using shared libraries"    OFF)
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_ENABLE_IMGUI   "Build with imgui capabilities"       OFF)
 option(GFX_ENABLE_GLFW    "Build with glfw capabilities"        OFF)
+option(GFX_USE_UTILSCPP   "Use the UtilsCPP library"            OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
 
 if (APPLE)
@@ -76,6 +77,10 @@ endif()
 
 if (GFX_ENABLE_GLFW)
     target_compile_definitions(Graphics PUBLIC "GFX_GLFW_ENABLED")
+endif()
+
+if (GFX_USE_UTILSCPP)
+    target_compile_definitions(Graphics PUBLIC "GFX_USE_UTILSCPP")
 endif()
 
 add_subdirectory("dependencies")

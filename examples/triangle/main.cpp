@@ -9,7 +9,14 @@
 
 #include <GLFW/glfw3.h>
 #include "Graphics/Device.hpp"
-#include "UtilsCPP/UniquePtr.hpp"
+
+#if defined(GFX_USE_UTILSCPP)
+    #include "UtilsCPP/memory.hpp"
+    namespace ext = utl;
+#else
+    #include <memory>
+    namespace ext = std;
+#endif
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -18,7 +25,7 @@ int main()
 {
     glfwInit();
 
-    utils::UniquePtr<gfx::Device> device = gfx::Device::createDevice();
+    ext::unique_ptr<gfx::Device> device = gfx::Device::createDevice();
 
     GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
 

@@ -8,48 +8,54 @@
  */
 
 #include "Graphics/Device.hpp"
-#include "UtilsCPP/UniquePtr.hpp"
-#include "UtilsCPP/String.hpp"
 
-#if defined (GFX_BUILD_METAL)
+#if defined(GFX_USE_UTILSCPP)
+    #include "UtilsCPP/memory.hpp"
+    namespace ext = utl;
+#else
+    #include <memory>
+    namespace ext = std;
+#endif
+
+#if defined(GFX_BUILD_METAL)
     #include "Metal/MetalDevice.hpp"
 #endif
 
-#if defined (GFX_BUILD_VULKAN)
+#if defined(GFX_BUILD_VULKAN)
     #include "Vulkan/VulkanDevice.hpp"
 #endif
 
 namespace gfx
 {
 
-utils::UniquePtr<Device> Device::createDevice()
+ext::unique_ptr<Device> Device::createDevice()
 {
-    #if defined (GFX_BUILD_METAL) && defined (GFX_BUILD_VULKAN)
-        if (const char* val = std::getenv("GFX_USED_API"))
-        {
-            if (utils::String(val) == utils::String("VULKAN"))
-                return createVulkanDevice();
-        }
-        return createMetalDevice();
-    #elif defined (GFX_BUILD_METAL)
-        return createMetalDevice();
-    #elif defined (GFX_BUILD_VULKAN)
-        return createVulkanDevice()
-    #endif
+#if defined(GFX_BUILD_METAL) && defined(GFX_BUILD_VULKAN)
+    //if (const char* val = std::getenv("GFX_USED_API"))
+    //{
+    //    if (utils::String(val) == utils::String("VULKAN"))
+    //        return createVulkanDevice();
+    //}
+    return createMetalDevice();
+#elif defined(GFX_BUILD_METAL)
+    return createMetalDevice();
+#elif defined(GFX_BUILD_VULKAN)
+    return createVulkanDevice()
+#endif
 }
 
-#if defined (GFX_BUILD_METAL)
-utils::UniquePtr<Device> Device::createMetalDevice(void)
+#if defined(GFX_BUILD_METAL)
+ext::unique_ptr<Device> Device::createMetalDevice(void)
 {
-    return utils::UniquePtr<Device>(new MetalDevice);
+    return ext::unique_ptr<Device>(new MetalDevice);
 }
 #endif
 
-#if defined (GFX_BUILD_VULKAN)
-utils::UniquePtr<Device> Device::createVulkanDevice(void)
+#if defined(GFX_BUILD_VULKAN)
+ext::unique_ptr<Device> Device::createVulkanDevice(void)
 {
-    return utils::UniquePtr<Device>(new VulkanDevice);
+    return ext::unique_ptr<Device>(new VulkanDevice);
 }
 #endif
 
-}
+} // namespace gfx
