@@ -17,7 +17,12 @@ option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_ENABLE_IMGUI   "Build with imgui capabilities"       OFF)
 option(GFX_ENABLE_GLFW    "Build with glfw capabilities"        OFF)
 option(GFX_USE_UTILSCPP   "Use the UtilsCPP library"            OFF)
+option(GFX_USE_MATH       "Use a custom math library"           OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
+
+if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
+    message(FATAL_ERROR "Not implemented")
+endif()
 
 if (APPLE)
     option(GFX_BUILD_METAL "Build the metal backed" ON)
@@ -56,10 +61,21 @@ add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARE
 
 target_compile_features(Graphics PUBLIC cxx_std_20)
 
-file(GLOB_RECURSE GRAPHICS_SRC "include/*.hpp")
-target_sources(Graphics PRIVATE ${GRAPHICS_SRC})
+file(GLOB_RECURSE GFX_SRC "include/*.hpp")
+target_sources(Graphics PRIVATE ${GFX_SRC})
 
-add_subdirectory("src")
+file(GLOB GFX_SRC "src/*.cpp" "src/*.hpp")
+target_sources(Graphics PRIVATE ${GFX_SRC})
+
+if (GFX_BUILD_METAL)
+    file(GLOB_RECURSE GFX_SRC "src/Metal/*.cpp" "src/Metal/*.mm" "src/Metal/*.hpp")
+    target_sources(Graphics PRIVATE ${GFX_SRC})
+endif()
+
+if (GFX_BUILD_VULKAN)
+    file(GLOB_RECURSE GFX_SRC "src/Vulkan/*.cpp" "src/Metal/*.hpp")
+    target_sources(Graphics PRIVATE ${GFX_SRC})
+endif()
 
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 
@@ -83,7 +99,33 @@ if (GFX_USE_UTILSCPP)
     target_compile_definitions(Graphics PUBLIC "GFX_USE_UTILSCPP")
 endif()
 
-add_subdirectory("dependencies")
+if (GFX_USE_MATH)
+    target_compile_definitions(Graphics PUBLIC "GFX_USE_MATH")
+endif()
+
+if (GFX_USE_UTILSCPP)
+    if(NOT TARGET UtilsCPP)
+        find_program(GIT_PATH git REQUIRED)
+        execute_process(COMMAND ${GIT_PATH} submodule update --init dependencies/UtilsCPP WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+        set(UTILSCPP_BUILD_TESTS OFF)
+        set(UTILSCPP_INSTALL ${GFX_INSTALL})
+        add_subdirectory(UtilsCPP)
+        set_target_properties(UtilsCPP PROPERTIES FOLDER "dependencies")
+    endif()
+    target_link_libraries(Graphics PUBLIC UtilsCPP)
+
+    if (GFX_USE_MATH)
+        if(NOT TARGET Math)
+            find_program(GIT_PATH git REQUIRED)
+            execute_process(COMMAND ${GIT_PATH} submodule update --init dependencies/Math WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+            set(MATH_BUILD_TESTS OFF)
+            set(MATH_INSTALL ${GFX_INSTALL})
+            add_subdirectory(Math)
+            set_target_properties(Math PROPERTIES FOLDER "dependencies")
+        endif()
+        target_link_libraries(Graphics PUBLIC Math)
+    endif()
+endif()
 
 if (GFX_BUILD_METAL)
     target_link_libraries(Graphics PRIVATE ${METAL_FRAMEWORK})

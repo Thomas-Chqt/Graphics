@@ -14,6 +14,7 @@
     namespace ext = utl;
 #else
     #include <memory>
+    #include <string>
     namespace ext = std;
 #endif
 
@@ -31,11 +32,11 @@ namespace gfx
 ext::unique_ptr<Device> Device::createDevice()
 {
 #if defined(GFX_BUILD_METAL) && defined(GFX_BUILD_VULKAN)
-    //if (const char* val = std::getenv("GFX_USED_API"))
-    //{
-    //    if (utils::String(val) == utils::String("VULKAN"))
-    //        return createVulkanDevice();
-    //}
+    if (const char* val = std::getenv("GFX_USED_API"))
+    {
+        if (ext::string(val) == ext::string("VULKAN"))
+            return createVulkanDevice();
+    }
     return createMetalDevice();
 #elif defined(GFX_BUILD_METAL)
     return createMetalDevice();
