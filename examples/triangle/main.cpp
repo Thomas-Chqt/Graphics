@@ -8,7 +8,7 @@
  */
 
 #include <GLFW/glfw3.h>
-#include "Graphics/Device.hpp"
+#include "Graphics/Instance.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
@@ -25,7 +25,7 @@ int main()
 {
     glfwInit();
 
-    ext::unique_ptr<gfx::Device> device = gfx::Device::createDevice();
+    ext::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
 
     GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
 

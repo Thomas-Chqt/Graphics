@@ -18,19 +18,21 @@ namespace gfx
 class VulkanDevice : public Device
 {
 public:
-    VulkanDevice()                    = default;
+    VulkanDevice() = delete;
     VulkanDevice(const VulkanDevice&) = delete;
-    VulkanDevice(VulkanDevice&&)      = delete;
-    
+    VulkanDevice(VulkanDevice&&) = delete;
+
+    VulkanDevice(const Device::Descriptor&);
+
     ~VulkanDevice() = default;
 
 private:
-    
+
 public:
-    VulkanDevice& operator = (const VulkanDevice&) = delete;
-    VulkanDevice& operator = (VulkanDevice&&)      = delete;
+    VulkanDevice& operator=(const VulkanDevice&) = delete;
+    VulkanDevice& operator=(VulkanDevice&&) = delete;
 };
 
-}
+} // namespace gfx
 
 #endif // VULKANDEVICE_HPP

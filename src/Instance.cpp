@@ -1,62 +1,62 @@
 /*
  * ---------------------------------------------------
- * Device.cpp
+ * Instance.cpp
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
- * Date: 2025/05/21 22:16:47
+ * Date: 2025/05/27 13:49:51
  * ---------------------------------------------------
  */
 
-#include "Graphics/Device.hpp"
+#include "Graphics/Instance.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
-    #include <memory>
     #include <string>
+    #include <memory>
     namespace ext = std;
 #endif
 
 #if defined(GFX_BUILD_METAL)
-    #include "Metal/MetalDevice.hpp"
+    #include "Metal/MetalInstance.hpp"
 #endif
 
 #if defined(GFX_BUILD_VULKAN)
-    #include "Vulkan/VulkanDevice.hpp"
+    #include "Vulkan/VulkanInstance.hpp"
 #endif
 
 namespace gfx
 {
 
-ext::unique_ptr<Device> Device::createDevice()
+ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 {
 #if defined(GFX_BUILD_METAL) && defined(GFX_BUILD_VULKAN)
     if (const char* val = std::getenv("GFX_USED_API"))
     {
         if (ext::string(val) == ext::string("VULKAN"))
-            return createVulkanDevice();
+            return newVulkanInstance(desc);
     }
-    return createMetalDevice();
+    return newMetalInstance(desc);
 #elif defined(GFX_BUILD_METAL)
-    return createMetalDevice();
+    return newMetalInstance(desc);
 #elif defined(GFX_BUILD_VULKAN)
-    return createVulkanDevice()
+    return newVulkanInstance(desc)
 #endif
 }
 
 #if defined(GFX_BUILD_METAL)
-ext::unique_ptr<Device> Device::createMetalDevice(void)
+ext::unique_ptr<Instance> Instance::newMetalInstance(const Descriptor& desc)
 {
-    return ext::unique_ptr<Device>(new MetalDevice);
+    return ext::make_unique<MetalInstance>(desc);
 }
 #endif
 
 #if defined(GFX_BUILD_VULKAN)
-ext::unique_ptr<Device> Device::createVulkanDevice(void)
+ext::unique_ptr<Instance> Instance::newVulkanInstance(const Descriptor& desc)
 {
-    return ext::unique_ptr<Device>(new VulkanDevice);
+    return ext::make_unique<VulkanInstance>(desc);
 }
 #endif
 
-} // namespace gfx
+}
