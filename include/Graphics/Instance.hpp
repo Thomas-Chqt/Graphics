@@ -14,10 +14,12 @@
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
-namespace ext = utl;
+    namespace ext = utl;
 #else
     #include <memory>
-namespace ext = std;
+    #include <string>
+    #include <vector>
+    namespace ext = std;
 #endif
 
 namespace gfx
@@ -28,7 +30,10 @@ class Instance
 public:
     struct Descriptor
     {
-        // all the instance options
+        ext::string appName;
+        int appVersion[3];
+        ext::string engineName;
+        int engineVersion[3];
     };
 
 public:
@@ -44,6 +49,7 @@ public:
     static ext::unique_ptr<Instance> newVulkanInstance(const Descriptor&);
 #endif
 
+    virtual const ext::vector<Device::Info> listAvailableDevices() = 0;
     virtual ext::unique_ptr<Device> newDevice(const Device::Descriptor&) = 0;
 
     virtual ~Instance() = default;

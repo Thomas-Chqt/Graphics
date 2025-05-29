@@ -15,6 +15,8 @@
 #else
     #include <string>
     #include <memory>
+    #include <cstdlib>
+    #include <iostream>
     namespace ext = std;
 #endif
 
@@ -32,10 +34,14 @@ namespace gfx
 ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 {
 #if defined(GFX_BUILD_METAL) && defined(GFX_BUILD_VULKAN)
-    if (const char* val = std::getenv("GFX_USED_API"))
+    if (const char* val = ext::getenv("GFX_USED_API"))
     {
         if (ext::string(val) == ext::string("VULKAN"))
+        {
+            ext::cout << "using vulkan" << std::endl;
             return newVulkanInstance(desc);
+        }
+        ext::cout << "using metal" << std::endl;
     }
     return newMetalInstance(desc);
 #elif defined(GFX_BUILD_METAL)

@@ -14,11 +14,20 @@
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
-namespace ext = utl;
+    namespace ext = utl;
 #else
     #include <memory>
-namespace ext = std;
+    #include <vector>
+    namespace ext = std;
 #endif
+
+#ifdef __OBJC__
+    #import <Metal/Metal.h>
+#else
+    template<typename T>
+    using id = T*;
+    class MTLDevice;
+#endif // __OBJC__
 
 namespace gfx
 {
@@ -32,11 +41,19 @@ public:
 
     MetalInstance(const Instance::Descriptor&);
 
+    const ext::vector<Device::Info> listAvailableDevices() override;
+
     ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
     ~MetalInstance() = default;
 
 private:
+    const ext::string m_appName;
+    const int m_appVersion[3];
+    const ext::string m_engineName;
+    const int m_engineVersion[3];
+
+    ext::vector<id<MTLDevice>> m_mtlDevices;
 
 public:
     MetalInstance& operator=(const MetalInstance&) = delete;

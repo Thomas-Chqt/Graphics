@@ -10,6 +10,16 @@
 #ifndef DEVICE_HPP
 #define DEVICE_HPP
 
+#include <cstdint>
+
+#if defined(GFX_USE_UTILSCPP)
+    #include "UtilsCPP/memory.hpp"
+    namespace ext = utl;
+#else
+    #include <string>
+    namespace ext = std;
+#endif
+
 namespace gfx
 {
 
@@ -19,6 +29,12 @@ public:
     struct Descriptor
     {
         //
+    };
+
+    struct Info
+    {
+        uint32_t id;
+        ext::string name;
     };
 
 public:

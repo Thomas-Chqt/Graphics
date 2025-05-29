@@ -18,8 +18,6 @@ target_sources(triangle PRIVATE ${EXE_SRCS})
 
 target_include_directories(triangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(FETCHCONTENT_QUIET FALSE)
-
 FetchContent_Declare(glfw3
     GIT_REPOSITORY    https://github.com/glfw/glfw.git
     GIT_TAG           3.4

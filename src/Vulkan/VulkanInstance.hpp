@@ -11,13 +11,14 @@
 #define VULKANINSTANCE_HPP
 
 #include "Graphics/Instance.hpp"
+#include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
-namespace ext = utl;
+    namespace ext = utl;
 #else
     #include <memory>
-namespace ext = std;
+    namespace ext = std;
 #endif
 
 namespace gfx
@@ -32,11 +33,13 @@ public:
 
     VulkanInstance(const Instance::Descriptor&);
 
+    const ext::vector<Device::Info> listAvailableDevices() override;
     ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
-    ~VulkanInstance() = default;
+    ~VulkanInstance();
 
 private:
+    vk::Instance m_vkInstance;
 
 public:
     VulkanInstance& operator=(const VulkanInstance&) = delete;
