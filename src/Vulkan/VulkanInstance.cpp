@@ -13,6 +13,8 @@
 #include "Graphics/Instance.hpp"
 
 #include "Vulkan/VulkanInstance.hpp"
+#include "Vulkan/VulkanSurface.hpp"
+#include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
 #include <vulkan/vulkan.hpp>
@@ -33,7 +35,14 @@
 
 #if defined(GFX_GLFW_ENABLED)
     #include <dlLoad/dlLoad.h>
+    class GLFWwindow;
     #define glfwGetRequiredInstanceExtensions ((const char** (*)(uint32_t* count))::getSym(DL_DEFAULT, "glfwGetRequiredInstanceExtensions"))
+#endif
+
+#if !defined (NDEBUG)
+    constexpr bool enableValidationLayers = true;
+#else
+    constexpr bool enableValidationLayers = false;
 #endif
 
 namespace gfx
@@ -65,17 +74,21 @@ bool hasLayers(const ext::array<const char*, S>& wantedLayers)
 {
     std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
 
-    for (const char* wantedLayer : wantedLayers) {
+    for (const char* wantedLayer : wantedLayers)
+    {
         bool layerFound = false;
 
-        for (const vk::LayerProperties& availableLayer : availableLayers) {
-            if (strcmp(wantedLayer, availableLayer.layerName) == 0) {
+        for (const vk::LayerProperties& availableLayer : availableLayers)
+        {
+            if (strcmp(wantedLayer, availableLayer.layerName) == 0)
+            {
                 layerFound = true;
                 break;
             }
         }
 
-        if (!layerFound) {
+        if (!layerFound)
+        {
             return false;
         }
     }
@@ -85,11 +98,6 @@ bool hasLayers(const ext::array<const char*, S>& wantedLayers)
 
 VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
 {
-#if !defined (NDEBUG)
-    constexpr bool enableValidationLayers = true;
-#else
-    constexpr bool enableValidationLayers = false;
-#endif
 
     vk::ApplicationInfo appInfo = {
         .pApplicationName = desc.appName.c_str(),
@@ -113,13 +121,14 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
     instanceInfo.flags |= vk::InstanceCreateFlags::BitsType::eEnumeratePortabilityKHR;
 #endif
 
+    vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo;
     if constexpr (enableValidationLayers)
     {
         constexpr ext::array<const char*, 1> layers = {"VK_LAYER_KHRONOS_validation"};
         if (hasLayers(layers) == false)
             throw ext::runtime_error("required layer not present");
         instanceInfo.setPEnabledLayerNames(layers);
-        vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo = {
+        debugCreateInfo = {
             .messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
                                vk::DebugUtilsMessageSeverityFlagBitsEXT::eError,
@@ -136,21 +145,73 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
     }
 
     m_vkInstance = vk::createInstance(instanceInfo);
+
+    if constexpr (enableValidationLayers)
+    {
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vkInstance, "vkCreateDebugUtilsMessengerEXT");
+        if (func == nullptr || func(m_vkInstance, debugCreateInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
+            throw ext::runtime_error("failed to set up debug messenger!");
+    }
 }
 
-const ext::vector<Device::Info> VulkanInstance::listAvailableDevices()
+#if defined(GFX_GLFW_ENABLED)
+ext::unique_ptr<Surface> VulkanInstance::createSurface(GLFWwindow* glfwWindow)
 {
-    return {};
+    return ext::make_unique<VulkanSurface>(m_vkInstance, glfwWindow);
+}
+#endif
+
+ext::vector<ext::unique_ptr<PhysicalDevice>> VulkanInstance::listPhysicalDevices()
+{
+    ext::vector<ext::unique_ptr<PhysicalDevice>> phyDevices;
+    ext::vector<vk::PhysicalDevice> vkPhyDevices = m_vkInstance.enumeratePhysicalDevices();
+    for (auto vkPhyDevice : vkPhyDevices)
+        phyDevices.push_back(std::make_unique<VulkanPhysicalDevice>(vkPhyDevice));
+    return phyDevices;
+}
+
+ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc, const PhysicalDevice& phyDevice)
+{
+    if (phyDevice.isSuitable(desc) == false)
+        throw ext::runtime_error("device not suitable");
+
+    const VulkanPhysicalDevice* vulkanPhyDevice = dynamic_cast<const VulkanPhysicalDevice*>(&phyDevice);
+    assert(vulkanPhyDevice);
+
+    return ext::make_unique<VulkanDevice>(*vulkanPhyDevice, desc);
 }
 
 ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc)
 {
-    return ext::make_unique<VulkanDevice>(desc);
+    ext::unique_ptr<VulkanPhysicalDevice> vulkanPhyDevice = findSuitableDevice(desc);
+    if (vulkanPhyDevice == nullptr)
+        throw ext::runtime_error("no suitable device found");
+
+    return ext::make_unique<VulkanDevice>(*vulkanPhyDevice, desc);
 }
 
 VulkanInstance::~VulkanInstance()
 {
+    if constexpr (enableValidationLayers)
+    {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr)
+            func(m_vkInstance, m_debugMessenger, nullptr);
+    }
     m_vkInstance.destroy();
+}
+    
+ext::unique_ptr<VulkanPhysicalDevice> VulkanInstance::findSuitableDevice(const Device::Descriptor& desc)
+{
+    ext::vector<ext::unique_ptr<PhysicalDevice>> phyDevices = listPhysicalDevices();
+    for (auto& phyDevice : phyDevices)
+    {
+        if (phyDevice->isSuitable(desc) == false)
+            continue;
+        if (VulkanPhysicalDevice* vulkanPhyDevice = dynamic_cast<VulkanPhysicalDevice*>(phyDevice.release()))
+            return ext::unique_ptr<VulkanPhysicalDevice>(vulkanPhyDevice);
+    }
+    return nullptr;
 }
 
 } // namespace gfx

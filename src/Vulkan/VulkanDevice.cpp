@@ -7,14 +7,21 @@
  * ---------------------------------------------------
  */
 
-#include "Vulkan/VulkanDevice.hpp"
 #include "Graphics/Device.hpp"
+
+#include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanPhysicalDevice.hpp"
 
 namespace gfx
 {
 
-VulkanDevice::VulkanDevice(const Device::Descriptor&)
+VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const Device::Descriptor& desc)
 {
+}
+
+VulkanDevice::~VulkanDevice()
+{
+    m_vkDevice.destroy();
 }
 
 }

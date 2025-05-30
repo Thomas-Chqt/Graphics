@@ -12,6 +12,10 @@
 
 #include "Graphics/Device.hpp"
 
+#include "Vulkan/VulkanPhysicalDevice.hpp"
+
+#include <vulkan/vulkan.hpp>
+
 namespace gfx
 {
 
@@ -22,11 +26,12 @@ public:
     VulkanDevice(const VulkanDevice&) = delete;
     VulkanDevice(VulkanDevice&&) = delete;
 
-    VulkanDevice(const Device::Descriptor&);
+    VulkanDevice(const VulkanPhysicalDevice&, const Device::Descriptor&);
 
-    ~VulkanDevice() = default;
+    ~VulkanDevice();
 
 private:
+    vk::Device m_vkDevice;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

@@ -7,14 +7,21 @@
  * ---------------------------------------------------
  */
 
-#include <GLFW/glfw3.h>
 #include "Graphics/Instance.hpp"
+#include "Graphics/PhysicalDevice.hpp"
+#include "Graphics/Device.hpp"
+#include "Graphics/Surface.hpp"
+
+#include <GLFW/glfw3.h>
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>
+    #include <vector>
+    #include <iostream>
+    #include <cassert>
     namespace ext = std;
 #endif
 
@@ -24,10 +31,25 @@
 int main()
 {
     glfwInit();
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
 
     ext::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
+    assert(instance);
 
-    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
+    ext::unique_ptr<gfx::Surface> surface = instance->createSurface(window);
+    assert(surface);
+
+    ext::vector<ext::unique_ptr<gfx::PhysicalDevice>> phyDevices = instance->listPhysicalDevices();
+    assert(phyDevices.empty() == false);
+
+    for (auto& device : phyDevices)
+    {
+        ext::cout << device->name() << ext::endl;   
+    }
+    
+    ext::unique_ptr<gfx::Device> device = instance->newDevice(gfx::Device::Descriptor{}, *phyDevices[0]);
+    assert(device);
 
     while (glfwWindowShouldClose(window) == false)
     {

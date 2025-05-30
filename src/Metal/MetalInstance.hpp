@@ -11,6 +11,11 @@
 #define METALINSTANCE_HPP
 
 #include "Graphics/Instance.hpp"
+#include "Graphics/Surface.hpp"
+#include "Graphics/PhysicalDevice.hpp"
+#include "Graphics/Device.hpp"
+
+#include "Metal/MetalPhysicalDevice.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
@@ -19,6 +24,10 @@
     #include <memory>
     #include <vector>
     namespace ext = std;
+#endif
+
+#if defined(GFX_GLFW_ENABLED)
+    class GLFWwindow;
 #endif
 
 #ifdef __OBJC__
@@ -41,19 +50,24 @@ public:
 
     MetalInstance(const Instance::Descriptor&);
 
-    const ext::vector<Device::Info> listAvailableDevices() override;
+#if defined(GFX_GLFW_ENABLED)
+    ext::unique_ptr<Surface> createSurface(GLFWwindow*) override;
+#endif
 
+    ext::vector<ext::unique_ptr<PhysicalDevice>> listPhysicalDevices() override;
+
+    ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice&) override;
     ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
     ~MetalInstance() = default;
 
 private:
+    ext::unique_ptr<MetalPhysicalDevice> findSuitableDevice(const Device::Descriptor&);
+
     const ext::string m_appName;
     const int m_appVersion[3];
     const ext::string m_engineName;
     const int m_engineVersion[3];
-
-    ext::vector<id<MTLDevice>> m_mtlDevices;
 
 public:
     MetalInstance& operator=(const MetalInstance&) = delete;

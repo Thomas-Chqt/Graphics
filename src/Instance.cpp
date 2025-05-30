@@ -38,10 +38,10 @@ ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
     {
         if (ext::string(val) == ext::string("VULKAN"))
         {
-            ext::cout << "using vulkan" << std::endl;
+            ext::cout << "using vulkan" << ext::endl;
             return newVulkanInstance(desc);
         }
-        ext::cout << "using metal" << std::endl;
+        ext::cout << "using metal" << ext::endl;
     }
     return newMetalInstance(desc);
 #elif defined(GFX_BUILD_METAL)

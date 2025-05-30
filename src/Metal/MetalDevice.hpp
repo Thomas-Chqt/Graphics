@@ -11,14 +11,15 @@
 #define METAL_DEVICE_HPP
 
 #include "Graphics/Device.hpp"
+#include "Metal/MetalPhysicalDevice.hpp"
 
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
-template<typename T>
-using id = T*;
-class MTLDevice;
-class MTLCommandQueue;
+    template<typename T>
+    using id = T*;
+    class MTLDevice;
+    class MTLCommandQueue;
 #endif // __OBJC__
 
 namespace gfx
@@ -31,9 +32,9 @@ public:
     MetalDevice(const MetalDevice&) = delete;
     MetalDevice(MetalDevice&&) = delete;
 
-    MetalDevice(const Device::Descriptor&);
+    MetalDevice(const MetalPhysicalDevice&, const Device::Descriptor&);
 
-    ~MetalDevice() = default;
+    ~MetalDevice();
 
 private:
     id<MTLDevice> m_mtlDevice = nullptr;

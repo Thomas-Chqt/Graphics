@@ -11,6 +11,12 @@
 #define VULKANINSTANCE_HPP
 
 #include "Graphics/Instance.hpp"
+#include "Graphics/Surface.hpp"
+#include "Graphics/PhysicalDevice.hpp"
+#include "Graphics/Device.hpp"
+
+#include "Vulkan/VulkanPhysicalDevice.hpp"
+
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
@@ -19,6 +25,10 @@
 #else
     #include <memory>
     namespace ext = std;
+#endif
+
+#if defined(GFX_GLFW_ENABLED)
+    class GLFWwindow;
 #endif
 
 namespace gfx
@@ -33,13 +43,22 @@ public:
 
     VulkanInstance(const Instance::Descriptor&);
 
-    const ext::vector<Device::Info> listAvailableDevices() override;
+#if defined(GFX_GLFW_ENABLED)
+    ext::unique_ptr<Surface> createSurface(GLFWwindow*) override;
+#endif
+
+    ext::vector<ext::unique_ptr<PhysicalDevice>> listPhysicalDevices() override;
+
+    ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice&) override;
     ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
     ~VulkanInstance();
 
 private:
+    ext::unique_ptr<VulkanPhysicalDevice> findSuitableDevice(const Device::Descriptor&);
+
     vk::Instance m_vkInstance;
+    VkDebugUtilsMessengerEXT m_debugMessenger;
 
 public:
     VulkanInstance& operator=(const VulkanInstance&) = delete;
