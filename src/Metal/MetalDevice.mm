@@ -23,12 +23,14 @@ MetalDevice::MetalDevice(const MetalPhysicalDevice& phyDevice, const Device::Des
 {
     assert(phyDevice.isSuitable(desc));
     m_mtlDevice = [phyDevice.mtlDevice() retain];
-    m_commandQueue = [m_mtlDevice newCommandQueue];
+    for (auto& [_, count] : desc.queues)
+        m_queues.push_back([m_mtlDevice newCommandQueue]);
 }}
 
 MetalDevice::~MetalDevice()
 {
-    [m_commandQueue release];
+    for (auto& queue : m_queues)
+        [queue release];
     [m_mtlDevice release];
 }
 

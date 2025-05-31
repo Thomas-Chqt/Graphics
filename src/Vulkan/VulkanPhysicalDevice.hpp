@@ -18,11 +18,26 @@
     namespace ext = utl;
 #else
     #include <string>
+    #include <cstdint>
+    #include <vector>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
+
+class VulkanPhysicalDevice;
+
+struct QueueFamily
+{
+    QueueCapabilityFlag flags;
+    uint32_t count;
+    uint32_t index;
+
+    bool isCapableOf(const QueueCapability&, const VulkanPhysicalDevice&) const;
+
+    bool operator<(const QueueFamily& other) const { return index < other.index; }
+};
 
 class VulkanPhysicalDevice : public PhysicalDevice
 {
@@ -35,6 +50,9 @@ public:
     ext::string name() const override;
 
     bool isSuitable(const Device::Descriptor&) const override;
+
+    const vk::PhysicalDevice& vkDevice() const { return m_vkPhyDevice; }
+    ext::vector<QueueFamily> getQueueFamilies() const;
 
     ~VulkanPhysicalDevice() = default;
 

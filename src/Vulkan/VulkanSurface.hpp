@@ -31,6 +31,8 @@ public:
     VulkanSurface(vk::Instance&, GLFWwindow*);
 #endif
 
+    const vk::SurfaceKHR& vkSurface() const { return m_vkSurface; }
+
     ~VulkanSurface();
 
 private:

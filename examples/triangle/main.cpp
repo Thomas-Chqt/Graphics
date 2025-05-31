@@ -40,15 +40,7 @@ int main()
     ext::unique_ptr<gfx::Surface> surface = instance->createSurface(window);
     assert(surface);
 
-    ext::vector<ext::unique_ptr<gfx::PhysicalDevice>> phyDevices = instance->listPhysicalDevices();
-    assert(phyDevices.empty() == false);
-
-    for (auto& device : phyDevices)
-    {
-        ext::cout << device->name() << ext::endl;   
-    }
-    
-    ext::unique_ptr<gfx::Device> device = instance->newDevice(gfx::Device::Descriptor{}, *phyDevices[0]);
+    ext::unique_ptr<gfx::Device> device = instance->newDevice(gfx::Device::Descriptor::singleQueuePatern(surface.get()));
     assert(device);
 
     while (glfwWindowShouldClose(window) == false)

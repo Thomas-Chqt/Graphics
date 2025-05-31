@@ -16,6 +16,16 @@
 
 #include <vulkan/vulkan.hpp>
 
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <vector>
+    #include <map>
+    namespace ext = std;
+#endif
+
+using VulkanQueue = void*;
+
 namespace gfx
 {
 
@@ -32,6 +42,7 @@ public:
 
 private:
     vk::Device m_vkDevice;
+    ext::map<QueueFamily, ext::vector<vk::Queue>> m_queues;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

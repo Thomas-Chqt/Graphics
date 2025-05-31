@@ -13,6 +13,13 @@
 #include "Graphics/Device.hpp"
 #include "Metal/MetalPhysicalDevice.hpp"
 
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <vector>
+    namespace ext = std;
+#endif
+
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
@@ -38,7 +45,7 @@ public:
 
 private:
     id<MTLDevice> m_mtlDevice = nullptr;
-    id<MTLCommandQueue> m_commandQueue = nullptr;
+    ext::vector<id<MTLCommandQueue>> m_queues;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;
