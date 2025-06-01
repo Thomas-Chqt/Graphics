@@ -41,6 +41,7 @@ public:
     ~VulkanDevice();
 
 private:
+    const VulkanPhysicalDevice* m_physicalDevice;
     vk::Device m_vkDevice;
     ext::map<QueueFamily, ext::vector<vk::Queue>> m_queues;
 

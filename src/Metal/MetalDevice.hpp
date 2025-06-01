@@ -44,7 +44,7 @@ public:
     ~MetalDevice();
 
 private:
-    id<MTLDevice> m_mtlDevice = nullptr;
+    const MetalPhysicalDevice* m_physicalDevice;
     ext::vector<id<MTLCommandQueue>> m_queues;
 
 public:

@@ -56,6 +56,7 @@ ext::map<QueueFamily, uint32_t> getQueueFamilyRequirements(const VulkanPhysicalD
 }
 
 VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const Device::Descriptor& desc)
+    : m_physicalDevice(&phyDevice)
 {
     ext::map<QueueFamily, uint32_t> queueFamilyRequirements = getQueueFamilyRequirements(phyDevice, desc);
     ext::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
@@ -80,7 +81,10 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const Device::
     for (auto& [capability, _] : desc.queues)
     {
         if (capability.surfaceSupport.empty() == false)
+        {
             deviceExtensions.push_back(vk::KHRSwapchainExtensionName);
+            break;
+        }
     }
 
     vk::PhysicalDeviceFeatures deviceFeatures{};

@@ -11,10 +11,8 @@
 #define GFX_ENUMS_HPP
 
 #if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
 #else
     #include <cstdint>
-    namespace ext = std;
 #endif
 
 namespace gfx

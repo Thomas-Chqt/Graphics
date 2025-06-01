@@ -8,7 +8,6 @@
  */
 
 #include "Graphics/Instance.hpp"
-#include "Graphics/PhysicalDevice.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Surface.hpp"
 
@@ -19,8 +18,6 @@
     namespace ext = utl;
 #else
     #include <memory>
-    #include <vector>
-    #include <iostream>
     #include <cassert>
     namespace ext = std;
 #endif

@@ -59,10 +59,9 @@ public:
     virtual ext::unique_ptr<Surface> createSurface(GLFWwindow*) = 0;
 #endif
 
-    virtual ext::vector<ext::unique_ptr<PhysicalDevice>> listPhysicalDevices() = 0;
+    virtual const ext::vector<PhysicalDevice*> listPhysicalDevices() = 0;
 
-    virtual ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice&) = 0;
-    virtual ext::unique_ptr<Device> newDevice(const Device::Descriptor&) = 0;
+    virtual ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice* = nullptr) = 0;
 
     virtual ~Instance() = default;
 

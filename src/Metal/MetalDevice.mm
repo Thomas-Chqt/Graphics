@@ -19,19 +19,21 @@
 namespace gfx
 {
 
-MetalDevice::MetalDevice(const MetalPhysicalDevice& phyDevice, const Device::Descriptor& desc) { @autoreleasepool
+MetalDevice::MetalDevice(const MetalPhysicalDevice& phyDevice, const Device::Descriptor& desc)
+    : m_physicalDevice(&phyDevice)
 {
-    assert(phyDevice.isSuitable(desc));
-    m_mtlDevice = [phyDevice.mtlDevice() retain];
-    for (auto& [_, count] : desc.queues)
-        m_queues.push_back([m_mtlDevice newCommandQueue]);
-}}
+    @autoreleasepool
+    {
+        assert(phyDevice.isSuitable(desc));
+        for (auto& [_, count] : desc.queues)
+            m_queues.push_back([phyDevice.mtlDevice() newCommandQueue]);
+    }
+}
 
 MetalDevice::~MetalDevice()
 {
     for (auto& queue : m_queues)
         [queue release];
-    [m_mtlDevice release];
 }
 
 }

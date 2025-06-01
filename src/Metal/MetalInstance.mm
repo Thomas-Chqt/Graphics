@@ -43,57 +43,59 @@ MetalInstance::MetalInstance(const Instance::Descriptor& desc)
       m_engineName(desc.engineName),
       m_engineVersion{desc.engineVersion[0], desc.engineVersion[1], desc.engineVersion[2]}
 {
+    @autoreleasepool
+    {
+#if defined(TARGET_OS_OSX)
+        NSArray<id<MTLDevice>>* mtlDevices = [MTLCopyAllDevices() autorelease];
+#else
+        NSArray<id<MTLDevice>>* mtlDevices = @[ MTLCreateSystemDefaultDevice() ];
+#endif
+        for (id<MTLDevice> mtlDevice in mtlDevices)
+            m_physicalDevices.push_back(ext::make_unique<MetalPhysicalDevice>([mtlDevice retain]));
+    }
 }
 
-ext::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow) { @autoreleasepool
+ext::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow)
 {
     return ext::make_unique<MetalSurface>(glfwWindow);
-}}
-
-ext::vector<ext::unique_ptr<PhysicalDevice>> MetalInstance::listPhysicalDevices() { @autoreleasepool
-{
-    ext::vector<ext::unique_ptr<PhysicalDevice>> physicalDevices;
-#if defined(TARGET_OS_OSX)
-    NSArray<id<MTLDevice>>* mtlDevices = [MTLCopyAllDevices() autorelease];
-#else
-    NSArray<id<MTLDevice>>* mtlDevices = @[MTLCreateSystemDefaultDevice()];
-#endif
-    for (id<MTLDevice> mtlDevice in mtlDevices)
-        physicalDevices.push_back(ext::make_unique<MetalPhysicalDevice>([mtlDevice retain]));
-    return physicalDevices;
-}}
-
-ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc, const PhysicalDevice& phyDevice) { @autoreleasepool
-{
-    if (phyDevice.isSuitable(desc) == false)
-        throw ext::runtime_error("device not suitable");
-
-    const MetalPhysicalDevice* metalPhyDevice = dynamic_cast<const MetalPhysicalDevice*>(&phyDevice);
-    assert(metalPhyDevice);
-
-    return ext::make_unique<MetalDevice>(*metalPhyDevice, desc);
-}}
-
-ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc)
-{
-    ext::unique_ptr<MetalPhysicalDevice> metalPhyDevice = findSuitableDevice(desc);
-    if (metalPhyDevice == nullptr)
-        throw ext::runtime_error("no suitable device found");
-
-    return ext::make_unique<MetalDevice>(*metalPhyDevice, desc);
 }
 
-ext::unique_ptr<MetalPhysicalDevice> MetalInstance::findSuitableDevice(const Device::Descriptor& desc) { @autoreleasepool
+const ext::vector<PhysicalDevice*> MetalInstance::listPhysicalDevices()
 {
-    ext::vector<ext::unique_ptr<PhysicalDevice>> phyDevices = listPhysicalDevices();
+    ext::vector<PhysicalDevice*> ret;
+    for (auto& phyDevice : m_physicalDevices)
+        ret.push_back(phyDevice.get());
+    return ret;
+}
+
+ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc, const PhysicalDevice* phyDevice)
+{
+    const MetalPhysicalDevice* mtlPhyDevice;
+    if (phyDevice != nullptr)
+    {
+        if (phyDevice->isSuitable(desc) == false)
+            throw ext::runtime_error("device not suitable");
+        mtlPhyDevice = dynamic_cast<const MetalPhysicalDevice*>(phyDevice);
+    }
+    else
+    {
+        mtlPhyDevice = findSuitableDevice(desc);
+    }
+    assert(mtlPhyDevice);
+    return ext::make_unique<MetalDevice>(*mtlPhyDevice, desc);
+}
+
+MetalPhysicalDevice* MetalInstance::findSuitableDevice(const Device::Descriptor& desc)
+{
+    // TODO : better device selection
+    ext::vector<PhysicalDevice*> phyDevices = listPhysicalDevices();
     for (auto& phyDevice : phyDevices)
     {
         if (phyDevice->isSuitable(desc) == false)
             continue;
-        if (MetalPhysicalDevice* metalPhyDevice = dynamic_cast<MetalPhysicalDevice*>(phyDevice.release()))
-            return ext::unique_ptr<MetalPhysicalDevice>(metalPhyDevice);
+        return dynamic_cast<MetalPhysicalDevice*>(phyDevice);
     }
     return nullptr;
-}}
+}
 
 } // namespace gfx

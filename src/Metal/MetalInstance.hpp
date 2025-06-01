@@ -54,20 +54,21 @@ public:
     ext::unique_ptr<Surface> createSurface(GLFWwindow*) override;
 #endif
 
-    ext::vector<ext::unique_ptr<PhysicalDevice>> listPhysicalDevices() override;
+    const ext::vector<PhysicalDevice*> listPhysicalDevices() override;
 
-    ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice&) override;
-    ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
+    ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice* = nullptr) override;
 
     ~MetalInstance() = default;
 
 private:
-    ext::unique_ptr<MetalPhysicalDevice> findSuitableDevice(const Device::Descriptor&);
+    MetalPhysicalDevice* findSuitableDevice(const Device::Descriptor&);
 
     const ext::string m_appName;
     const int m_appVersion[3];
     const ext::string m_engineName;
     const int m_engineVersion[3];
+
+    ext::vector<ext::unique_ptr<MetalPhysicalDevice>> m_physicalDevices;
 
 public:
     MetalInstance& operator=(const MetalInstance&) = delete;

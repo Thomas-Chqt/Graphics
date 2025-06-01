@@ -47,18 +47,18 @@ public:
     ext::unique_ptr<Surface> createSurface(GLFWwindow*) override;
 #endif
 
-    ext::vector<ext::unique_ptr<PhysicalDevice>> listPhysicalDevices() override;
+    const ext::vector<PhysicalDevice*> listPhysicalDevices() override;
 
-    ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice&) override;
-    ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
+    ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice* = nullptr) override;
 
     ~VulkanInstance();
 
 private:
-    ext::unique_ptr<VulkanPhysicalDevice> findSuitableDevice(const Device::Descriptor&);
+    VulkanPhysicalDevice* findSuitableDevice(const Device::Descriptor&);
 
     vk::Instance m_vkInstance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
+    ext::vector<ext::unique_ptr<VulkanPhysicalDevice>> m_physicalDevices;
 
 public:
     VulkanInstance& operator=(const VulkanInstance&) = delete;
