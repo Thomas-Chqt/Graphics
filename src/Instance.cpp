@@ -13,10 +13,10 @@
     #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
-    #include <string>
+    #include <string> // IWYU pragma: keep
     #include <memory>
     #include <cstdlib>
-    #include <iostream>
+    #include <iostream> // IWYU pragma: keep
     namespace ext = std;
 #endif
 
@@ -47,7 +47,7 @@ ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 #elif defined(GFX_BUILD_METAL)
     return newMetalInstance(desc);
 #elif defined(GFX_BUILD_VULKAN)
-    return newVulkanInstance(desc)
+    return newVulkanInstance(desc);
 #endif
 }
 

@@ -11,7 +11,10 @@ if (APPLE)
     enable_language(OBJC)
 endif()
 
-set_target_properties(triangle PROPERTIES FOLDER "examples/triangle")
+set_target_properties(triangle PROPERTIES
+    FOLDER         "examples/triangle"
+    #ENABLE_EXPORTS ON
+)
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(triangle PRIVATE ${EXE_SRCS})
