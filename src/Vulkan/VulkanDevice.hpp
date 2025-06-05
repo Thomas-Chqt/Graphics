@@ -11,6 +11,7 @@
 #define VULKANDEVICE_HPP
 
 #include "Graphics/Device.hpp"
+#include "Graphics/Swapchain.hpp"
 
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 
@@ -21,6 +22,7 @@
 #else
     #include <vector>
     #include <map>
+    #include <memory>
     namespace ext = std;
 #endif
 
@@ -37,6 +39,13 @@ public:
     VulkanDevice(VulkanDevice&&) = delete;
 
     VulkanDevice(const VulkanPhysicalDevice&, const Device::Descriptor&);
+
+    inline const VulkanPhysicalDevice& physicalDevice(void) const override { return *m_physicalDevice; }
+
+    ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
+    ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
+
+    inline const vk::Device& vkDevice(void) const { return m_vkDevice; }
 
     ~VulkanDevice();
 

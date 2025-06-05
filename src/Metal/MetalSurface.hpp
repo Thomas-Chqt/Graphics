@@ -36,6 +36,11 @@ public:
     MetalSurface(GLFWwindow*);
 #endif
 
+    const ext::set<PixelFormat> supportedPixelFormats(const PhysicalDevice&) const override;
+    const ext::set<PresentMode> supportedPresentModes(const PhysicalDevice&) const override;
+
+    CAMetalLayer* mtlLayer() const { return m_mtlLayer; }
+
     ~MetalSurface();
 
 private:

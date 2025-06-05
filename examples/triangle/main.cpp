@@ -9,7 +9,10 @@
 
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
+#include "Graphics/RenderPass.hpp"
 #include "Graphics/Surface.hpp"
+#include "Graphics/Enums.hpp"
+#include "Graphics/Swapchain.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -19,6 +22,8 @@
 #else
     #include <memory>
     #include <cassert>
+    #include <set>
+    #include <cstdint>
     namespace ext = std;
 #endif
 
@@ -40,10 +45,27 @@ int main()
     ext::unique_ptr<gfx::Device> device = instance->newDevice(gfx::Device::Descriptor::singleQueuePatern(surface.get()));
     assert(device);
 
-    while (glfwWindowShouldClose(window) == false)
-    {
-        glfwPollEvents();
-    }
+    assert(surface->supportedPixelFormats(device->physicalDevice()).contains(gfx::PixelFormat::BGRA8Unorm));
+    assert(surface->supportedPresentModes(device->physicalDevice()).contains(gfx::PresentMode::fifo));
+
+    gfx::RenderPass::Descriptor renderPassDescriptor = {
+        .colorAttachments = {
+            gfx::AttachmentDescriptor{ .format = gfx::PixelFormat::BGRA8Unorm, .loadAction = gfx::LoadAction::clear }
+        }
+    };
+    ext::unique_ptr<gfx::RenderPass> renderPass = device->newRenderPass(renderPassDescriptor);
+    assert(renderPass);
+    
+    int width, height;
+    ::glfwGetFramebufferSize(window, &width, &height);
+    gfx::Swapchain::Descriptor swapchainDescriptor = {
+        .surface = surface.get(),
+        .width = (uint32_t)width, .height = (uint32_t)height,
+        .renderPass = renderPass.get()
+    };
+    ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
+
+    glfwPollEvents();
 
     glfwDestroyWindow(window);
     glfwTerminate();

@@ -10,9 +10,13 @@
 #define VULKAN_HPP_NO_CONSTRUCTORS
 
 #include "Graphics/Device.hpp"
+#include "Graphics/Swapchain.hpp"
+#include "Graphics/RenderPass.hpp"
 
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
+#include "Vulkan/VulkanSwapchain.hpp"
+#include "Vulkan/VulkanRenderPass.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -23,6 +27,7 @@
     #include <cstdint>
     #include <cassert>
     #include <map>
+    #include <memory>
     namespace ext = std;
 #endif
 
@@ -102,6 +107,16 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const Device::
         for (int i = 0; auto& queue : queues)
             queue = m_vkDevice.getQueue(family.index, i++);
     }
+}
+
+ext::unique_ptr<RenderPass> VulkanDevice::newRenderPass(const RenderPass::Descriptor& desc) const
+{
+    return ext::make_unique<VulkanRenderPass>(*this, desc);
+}
+
+ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
+{
+    return ext::make_unique<VulkanSwapchain>(*this, desc);
 }
 
 VulkanDevice::~VulkanDevice()

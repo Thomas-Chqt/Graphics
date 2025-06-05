@@ -40,6 +40,24 @@ inline QueueCapabilityFlag operator~(QueueCapabilityFlag a)
     return static_cast<QueueCapabilityFlag>(~static_cast<uint32_t>(a));
 }
 
+enum class PixelFormat
+{
+    BGRA8Unorm,
+    BGRA8Unorm_sRGB
+};
+
+enum class PresentMode
+{
+    fifo,
+    mailbox
+};
+
+enum class LoadAction
+{
+    load,
+    clear
+};
+
 } // namespace gfx
 
 #endif // GFX_ENUMS_HPP

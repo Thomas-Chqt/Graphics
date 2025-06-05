@@ -41,10 +41,18 @@ public:
 
     MetalDevice(const MetalPhysicalDevice&, const Device::Descriptor&);
 
+    inline const MetalPhysicalDevice& physicalDevice(void) const override { return *m_physicalDevice; }
+
+    ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
+    ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
+
+    const id<MTLDevice>& mtlDevice(void) const { return m_mtlDevice; }
+
     ~MetalDevice();
 
 private:
     const MetalPhysicalDevice* m_physicalDevice;
+    id<MTLDevice> m_mtlDevice;
     ext::vector<id<MTLCommandQueue>> m_queues;
 
 public:

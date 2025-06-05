@@ -7,6 +7,9 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/Enums.hpp"
+#include "Graphics/PhysicalDevice.hpp"
+
 #include "Metal/MetalSurface.hpp"
 
 #include <AppKit/NSWindow.h>
@@ -21,15 +24,31 @@
 namespace gfx
 {
 
+#if defined(GFX_GLFW_ENABLED)
 MetalSurface::MetalSurface(GLFWwindow* glfwWindow) { @autoreleasepool
 {
     m_mtlLayer = [[CAMetalLayer layer] retain];
 
     NSWindow* nswindow = glfwGetCocoaWindow(glfwWindow);
-    
     nswindow.contentView.layer = m_mtlLayer;
     nswindow.contentView.wantsLayer = YES;
 }}
+#endif
+
+const ext::set<PixelFormat> MetalSurface::supportedPixelFormats(const PhysicalDevice&) const
+{
+    return {
+        PixelFormat::BGRA8Unorm,
+        PixelFormat::BGRA8Unorm_sRGB,
+    };
+}
+
+const ext::set<PresentMode> MetalSurface::supportedPresentModes(const PhysicalDevice&) const
+{
+    return {
+        PresentMode::fifo
+    };
+}
 
 MetalSurface::~MetalSurface() { @autoreleasepool
 {

@@ -11,7 +11,9 @@
 #define DEVICE_HPP
 
 #include "Graphics/Enums.hpp"
+#include "Graphics/RenderPass.hpp"
 #include "Graphics/Surface.hpp"
+#include "Graphics/Swapchain.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -19,11 +21,14 @@
     #include <vector>
     #include <utility>
     #include <cstdint>
+    #include <memory>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
+
+class PhysicalDevice;
 
 struct QueueCapability
 {
@@ -57,6 +62,11 @@ public:
 public:
     Device(const Device&) = delete;
     Device(Device&&) = delete;
+
+    virtual const PhysicalDevice& physicalDevice(void) const = 0;
+
+    virtual ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const = 0;
+    virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
 
     virtual ~Device() = default;
 

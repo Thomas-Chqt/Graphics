@@ -11,6 +11,7 @@
 #define VULKANSURFACE_HPP
 
 #include "Graphics/Surface.hpp"
+
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_GLFW_ENABLED)
@@ -19,6 +20,8 @@
 
 namespace gfx
 {
+
+class PhysicalDevice;
 
 class VulkanSurface : public Surface
 {
@@ -31,12 +34,15 @@ public:
     VulkanSurface(vk::Instance&, GLFWwindow*);
 #endif
 
+    const ext::set<PixelFormat> supportedPixelFormats(const PhysicalDevice&) const override;
+    const ext::set<PresentMode> supportedPresentModes(const PhysicalDevice&) const override;
+
     const vk::SurfaceKHR& vkSurface() const { return m_vkSurface; }
 
     ~VulkanSurface();
 
 private:
-    vk::Instance& m_vkInstance;
+    vk::Instance* m_vkInstance;
     vk::SurfaceKHR m_vkSurface;
 
 public:
