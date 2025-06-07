@@ -26,6 +26,8 @@ public:
     VulkanRenderPass(VulkanRenderPass&&)      = delete;
 
     VulkanRenderPass(const VulkanDevice&, const RenderPass::Descriptor&);
+
+    const vk::RenderPass& vkRenderPass(void) const { return m_vkRenderPass; }
     
     ~VulkanRenderPass();
 

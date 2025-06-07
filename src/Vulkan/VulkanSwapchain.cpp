@@ -10,11 +10,14 @@
 #define VULKAN_HPP_NO_CONSTRUCTORS
 
 #include "Graphics/Swapchain.hpp"
+#include "Graphics/Framebuffer.hpp"
 
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanEnums.hpp"
+#include "Vulkan/VulkanFramebuffer.hpp"
+#include "Vulkan/VulkanTexture.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -26,7 +29,9 @@
     #include <algorithm>
     #include <limits>
     #include <cstddef>
-    #include <array>
+    #include <memory>
+    #include <cstdint>
+    #include <stdexcept>
     namespace ext = std;
 #endif
 
@@ -51,23 +56,6 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice& device, const Swapchain::De
     ext::vector<vk::PresentModeKHR> surfacePresentModes = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
     assert(ext::ranges::any_of(surfacePresentModes, [&desc](auto& m){return m == toVkPresentModeKHR(desc.presentMode);}));
 
-    createSwapchain(desc);
-    createImageViews(desc);
-    createFramebuffers(desc);
-}
-
-VulkanSwapchain::~VulkanSwapchain()
-{
-    for (auto& imageView : m_imageViews)
-        m_device->vkDevice().destroyImageView(imageView);
-    m_device->vkDevice().destroySwapchainKHR(m_vkSwapchain);
-}
-
-void VulkanSwapchain::createSwapchain(const Swapchain::Descriptor& desc)
-{
-    const vk::SurfaceKHR& vkSurface = dynamic_cast<const VulkanSurface&>(*desc.surface).vkSurface();
-    vk::SurfaceCapabilitiesKHR surfaceCapabilities = m_device->physicalDevice().vkDevice().getSurfaceCapabilitiesKHR(vkSurface);
-
     vk::Extent2D extent;
     if (surfaceCapabilities.currentExtent.width != ext::numeric_limits<uint32_t>::max())
         extent = surfaceCapabilities.currentExtent;
@@ -90,33 +78,40 @@ void VulkanSwapchain::createSwapchain(const Swapchain::Descriptor& desc)
         .clipped = VK_TRUE};
 
     m_vkSwapchain = m_device->vkDevice().createSwapchainKHR(swapchainCreateInfo);
-    m_swapchainImageFormat = vk::SurfaceFormatKHR(toVkFormat(desc.pixelFormat), toVkColorSpaceKHR(desc.pixelFormat));
-    m_swapchainExtent = extent;
-}
 
-void VulkanSwapchain::createImageViews(const Swapchain::Descriptor& desc)
-{
     std::vector<vk::Image> swapChainImages = m_device->vkDevice().getSwapchainImagesKHR(m_vkSwapchain);
-    m_imageViews.resize(swapChainImages.size());
+    m_swapchainTextures.resize(swapChainImages.size());
+    m_frameBuffers.resize(swapChainImages.size());
 
     for (size_t i = 0; auto& image : swapChainImages)
     {
-        vk::ImageViewCreateInfo imageViewCreateInfo = {
-            .image = image,
-            .viewType = vk::ImageViewType::e2D,
-            .format = m_swapchainImageFormat.format,
-            .subresourceRange = vk::ImageSubresourceRange{
-                .aspectMask = vk::ImageAspectFlagBits::eColor,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = 1}};
-        m_imageViews[i++] = m_device->vkDevice().createImageView(imageViewCreateInfo);
+        m_swapchainTextures[i] = ext::make_shared<VulkanTexture>(image, Texture::Descriptor{.pixelFormat = desc.pixelFormat});
+        Framebuffer::Descriptor framebufferDescriptor = {
+            .width = extent.width, .height = extent.height,
+            .renderPass = desc.renderPass,
+            .colorAttachments = { m_swapchainTextures[i] }
+        };
+        m_frameBuffers[i++] = ext::make_unique<VulkanFramebuffer>(*m_device, framebufferDescriptor);
     }
 }
 
-void VulkanSwapchain::createFramebuffers(const Swapchain::Descriptor& desc)
+const Framebuffer& VulkanSwapchain::nextFrameBuffer(void)
 {
+    vk::ResultValue<uint32_t> result = m_device->vkDevice().acquireNextImageKHR(m_vkSwapchain, ext::numeric_limits<uint64_t>::max(), nullptr, nullptr);
+    switch (result.result)
+    {
+    case vk::Result::eSuccess:
+        return *m_frameBuffers[result.value];
+    default:
+        throw ext::runtime_error("error");
+    }
+}
+
+VulkanSwapchain::~VulkanSwapchain()
+{
+    m_frameBuffers.clear();
+    m_swapchainTextures.clear();
+    m_device->vkDevice().destroySwapchainKHR(m_vkSwapchain);
 }
 
 } // namespace gfx

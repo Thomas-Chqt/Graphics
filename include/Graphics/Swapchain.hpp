@@ -10,15 +10,14 @@
 #ifndef SWAPCHAIN_HPP
 #define SWAPCHAIN_HPP
 
+#include "Graphics/Framebuffer.hpp"
 #include "Graphics/RenderPass.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
 #else
     #include <cstdint>
-    namespace ext = std;
 #endif
 
 namespace gfx
@@ -29,17 +28,20 @@ class Swapchain
 public:
     struct Descriptor
     {
-        Surface*/*not null*/ surface;
+        Surface* /*not null*/ surface;
         uint32_t width, height;
         uint32_t imageCount = 3;
         PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
         PresentMode presentMode = PresentMode::fifo;
-        RenderPass*/*not null*/ renderPass;
+        RenderPass* renderPass;
+        bool createDepthAttachments = false;
     };
 
 public:
     Swapchain(const Swapchain&) = delete;
     Swapchain(Swapchain&&) = delete;
+
+    virtual const Framebuffer& nextFrameBuffer(void) = 0;
 
     virtual ~Swapchain() = default;
 

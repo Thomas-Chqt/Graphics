@@ -36,6 +36,19 @@ MTLPixelFormat toMTLPixelFormat(PixelFormat pxf)
     }
 }
 
+PixelFormat toPixelFormat(MTLPixelFormat pxf)
+{
+    switch (pxf)
+    {
+    case MTLPixelFormatBGRA8Unorm:
+        return PixelFormat::BGRA8Unorm;
+    case MTLPixelFormatBGRA8Unorm_sRGB:
+        return PixelFormat::BGRA8Unorm_sRGB;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
 MTLLoadAction toMTLLoadAction(LoadAction lac)
 {
     switch (lac)

@@ -23,6 +23,7 @@ namespace gfx
 {
 
 MTLPixelFormat toMTLPixelFormat(PixelFormat);
+PixelFormat toPixelFormat(MTLPixelFormat);
 
 MTLLoadAction toMTLLoadAction(LoadAction);
 

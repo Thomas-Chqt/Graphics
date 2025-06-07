@@ -7,6 +7,7 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/Framebuffer.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/RenderPass.hpp"
@@ -66,6 +67,8 @@ int main()
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
 
     glfwPollEvents();
+
+    const gfx::Framebuffer& framebuffer = swapchain->nextFrameBuffer();
 
     glfwDestroyWindow(window);
     glfwTerminate();

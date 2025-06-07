@@ -12,13 +12,16 @@
 
 #include "Graphics/Swapchain.hpp"
 
+#include "Graphics/Texture.hpp"
 #include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanFramebuffer.hpp"
 
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
+    #include <memory>
     #include <vector>
     namespace ext = std;
 #endif
@@ -34,20 +37,16 @@ public:
 
     VulkanSwapchain(const VulkanDevice&, const Swapchain::Descriptor&);
 
+    const Framebuffer& nextFrameBuffer(void) override;
+
     ~VulkanSwapchain();
 
 private:
-    void createSwapchain(const Swapchain::Descriptor&);
-    void createImageViews(const Swapchain::Descriptor&);
-    void createFramebuffers( const Swapchain::Descriptor&);
-
     const VulkanDevice* m_device;
 
     vk::SwapchainKHR m_vkSwapchain;
-    vk::SurfaceFormatKHR m_swapchainImageFormat;
-    vk::Extent2D m_swapchainExtent;
-
-    ext::vector<vk::ImageView> m_imageViews;
+    ext::vector<ext::shared_ptr<Texture>> m_swapchainTextures;
+    ext::vector<ext::unique_ptr<VulkanFramebuffer>> m_frameBuffers;
 
 public:
     VulkanSwapchain& operator=(const VulkanSwapchain&) = delete;
