@@ -12,17 +12,18 @@
 #include "Graphics/Swapchain.hpp"
 
 #include "Metal/MetalDevice.hpp"
+#include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalRenderPass.hpp"
 #include "Metal/MetalSwapchain.hpp"
 
 #include <Metal/Metal.h>
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <cassert>
     #include <memory>
+    #include <mutex>
     namespace ext = std;
 #endif
 
@@ -51,13 +52,18 @@ ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor
     return ext::make_unique<MetalSwapchain>(*this, desc);
 }
 
-MetalDevice::~MetalDevice()
+ext::unique_ptr<CommandBuffer> MetalDevice::newCommandBuffer()
 {
-    @autoreleasepool
-    {
+    assert(m_queues.size() == 1);
+    ext::lock_guard<ext::mutex> lock(m_commandPoolsMutex);
+    return ext::make_unique<MetalCommandBuffer>(m_queues[0]);
+}
+
+MetalDevice::~MetalDevice() { @autoreleasepool
+{
         for (auto& queue : m_queues)
             [queue release];
         [m_mtlDevice release];
-    }
-}
+}}
+
 }

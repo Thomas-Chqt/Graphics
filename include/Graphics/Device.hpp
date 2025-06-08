@@ -10,6 +10,7 @@
 #ifndef DEVICE_HPP
 #define DEVICE_HPP
 
+#include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/RenderPass.hpp"
 #include "Graphics/Surface.hpp"
@@ -67,6 +68,8 @@ public:
 
     virtual ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const = 0;
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
+
+    virtual ext::unique_ptr<CommandBuffer> newCommandBuffer() = 0;
 
     virtual ~Device() = default;
 

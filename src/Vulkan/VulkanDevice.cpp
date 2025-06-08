@@ -17,6 +17,7 @@
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanRenderPass.hpp"
+#include "Vulkan/VulkanCommandBuffer.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -28,6 +29,10 @@
     #include <cassert>
     #include <map>
     #include <memory>
+    #include <thread>
+    #include <mutex>
+    #include <functional>
+    #include <utility>
     namespace ext = std;
 #endif
 
@@ -119,8 +124,39 @@ ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descripto
     return ext::make_unique<VulkanSwapchain>(*this, desc);
 }
 
+ext::unique_ptr<CommandBuffer> VulkanDevice::newCommandBuffer()
+{
+    assert(m_queues.size() == 1);
+
+    static thread_local ext::map<uintptr_t, vk::CommandPool*> commandPools = {
+        ext::make_pair(uintptr_t(this), &makeThreadCommandPool(ext::this_thread::get_id()))
+    };
+
+    if (commandPools.contains(uintptr_t(this)) == false)
+        commandPools[uintptr_t(this)] = &makeThreadCommandPool(ext::this_thread::get_id());
+    
+    return ext::make_unique<VulkanCommandBuffer>(*this, *commandPools[uintptr_t(this)]);
+}
+
+vk::CommandPool& VulkanDevice::makeThreadCommandPool(ext::thread::id id)
+{
+    assert(m_queues.size() == 1);
+    auto& [family, queue] = *m_queues.begin();
+    vk::CommandPoolCreateInfo commandPoolCreateInfo = {
+        .queueFamilyIndex = family.index
+    };
+    ext::unique_ptr<vk::CommandPool, ext::function<void(vk::CommandPool*)>> newPool(new vk::CommandPool(m_vkDevice.createCommandPool(commandPoolCreateInfo)), [this](vk::CommandPool* pool){ 
+        m_vkDevice.destroyCommandPool(*pool);
+        delete pool;
+    });
+    ext::lock_guard<ext::mutex> lock(m_commandPoolsMutex);
+    m_commandPools[family][m_frameIndex][id] = ext::move(newPool);
+    return *m_commandPools[family][m_frameIndex][id].get();
+}
+
 VulkanDevice::~VulkanDevice()
 {
+    m_commandPools.clear();
     m_vkDevice.destroy();
 }
 

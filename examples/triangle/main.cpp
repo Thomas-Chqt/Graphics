@@ -7,6 +7,7 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
@@ -67,6 +68,9 @@ int main()
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
 
     glfwPollEvents();
+
+    ext::unique_ptr<gfx::CommandBuffer> commandBuffer = device->newCommandBuffer();
+    assert(commandBuffer);
 
     const gfx::Framebuffer& framebuffer = swapchain->nextFrameBuffer();
 

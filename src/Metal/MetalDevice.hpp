@@ -17,6 +17,7 @@
     namespace ext = utl;
 #else
     #include <vector>
+    #include <mutex>
     namespace ext = std;
 #endif
 
@@ -46,6 +47,8 @@ public:
     ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
 
+    ext::unique_ptr<CommandBuffer> newCommandBuffer() override;
+
     const id<MTLDevice>& mtlDevice(void) const { return m_mtlDevice; }
 
     ~MetalDevice();
@@ -53,7 +56,9 @@ public:
 private:
     const MetalPhysicalDevice* m_physicalDevice;
     id<MTLDevice> m_mtlDevice;
+
     ext::vector<id<MTLCommandQueue>> m_queues;
+    ext::mutex m_commandPoolsMutex;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;
