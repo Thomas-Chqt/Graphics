@@ -21,7 +21,7 @@
 namespace gfx
 {
 
-class PhysicalDevice;
+class Device;
 
 class VulkanSurface : public Surface
 {
@@ -34,8 +34,8 @@ public:
     VulkanSurface(vk::Instance&, GLFWwindow*);
 #endif
 
-    const ext::set<PixelFormat> supportedPixelFormats(const PhysicalDevice&) const override;
-    const ext::set<PresentMode> supportedPresentModes(const PhysicalDevice&) const override;
+    const ext::set<PixelFormat> supportedPixelFormats(const Device&) const override;
+    const ext::set<PresentMode> supportedPresentModes(const Device&) const override;
 
     const vk::SurfaceKHR& vkSurface() const { return m_vkSurface; }
 

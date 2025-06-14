@@ -9,14 +9,14 @@
 
 #define VULKAN_HPP_NO_CONSTRUCTORS
 
-#include "Graphics/Device.hpp"
-#include "Graphics/Swapchain.hpp"
 #include "Graphics/RenderPass.hpp"
+#include "Graphics/Swapchain.hpp"
+#include "Graphics/CommandBuffer.hpp"
 
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
-#include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanRenderPass.hpp"
+#include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 
 #include <vulkan/vulkan.hpp>
@@ -31,87 +31,37 @@
     #include <memory>
     #include <thread>
     #include <mutex>
-    #include <functional>
-    #include <utility>
+    #include <ranges>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
 
-// get the list of queue family and the number of queue in each family required to satisfy the queue capabilities in Device::Descriptor
-ext::map<QueueFamily, uint32_t> getQueueFamilyRequirements(const VulkanPhysicalDevice& phyDevice, const Device::Descriptor& desc)
-{
-    ext::map<QueueFamily, uint32_t> requirements;
-    ext::vector<QueueFamily> queueFamilies = phyDevice.getQueueFamilies();
-
-    for (auto& [capability, count] : desc.queues)
-    {
-        uint32_t remaingCount = count;
-        for (auto& family : queueFamilies)
-        {
-            if (family.isCapableOf(capability, phyDevice) && family.count > 0)
-            {
-                uint32_t nbrTaken = ext::min(family.count, remaingCount); // nbr of queues taken from the family
-                requirements[family] += nbrTaken;
-                family.count -= nbrTaken;
-                remaingCount -= nbrTaken;
-                if (remaingCount == 0)
-                    break;
-            }
-        }
-        assert(remaingCount == 0); // should not hapend because checked in `isSuitable`
-    }
-    return requirements;
-}
-
-VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const Device::Descriptor& desc)
+VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const VulkanDevice::Descriptor& desc)
     : m_physicalDevice(&phyDevice)
 {
-    ext::map<QueueFamily, uint32_t> queueFamilyRequirements = getQueueFamilyRequirements(phyDevice, desc);
-    ext::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-    ext::vector<ext::vector<float>> queuePriorities = ext::vector<ext::vector<float>>(queueFamilyRequirements.size());
+    assert((phyDevice.getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty() == false);
 
-    for (int i = 0; auto& [family, count] : getQueueFamilyRequirements(phyDevice, desc))
-    {
-        auto& queuePriority = queuePriorities[i++];
-        queuePriority.resize(count);
-        queueCreateInfos.push_back({.queueFamilyIndex = family.index,
-                                    .queueCount = count,
-                                    .pQueuePriorities = &queuePriority[0]});
-        m_queues[family] = ext::vector<vk::Queue>(count);
-    }
+    m_queueFamily = (phyDevice.getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).front();
 
-    std::vector<const char*> deviceExtensions;
-
-#if defined(__APPLE__)
-    deviceExtensions.push_back("VK_KHR_portability_subset");
-#endif
-
-    for (auto& [capability, _] : desc.queues)
-    {
-        if (capability.surfaceSupport.empty() == false)
-        {
-            deviceExtensions.push_back(vk::KHRSwapchainExtensionName);
-            break;
-        }
-    }
+    float queuePriority = 1.0f;
+    vk::DeviceQueueCreateInfo queueCreateInfo = {
+        .queueFamilyIndex = m_queueFamily.index,
+        .queueCount = 1,                      
+        .pQueuePriorities = &queuePriority};
 
     vk::PhysicalDeviceFeatures deviceFeatures{};
 
     vk::DeviceCreateInfo deviceCreateInfo = {
-        .enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size()),
-        .ppEnabledExtensionNames = deviceExtensions.data(),
-        .pEnabledFeatures = &deviceFeatures};
-    deviceCreateInfo.setQueueCreateInfos(queueCreateInfos);
+        .enabledExtensionCount = static_cast<uint32_t>(desc.deviceExtensions.size()),
+        .ppEnabledExtensionNames = desc.deviceExtensions.data(),
+        .pEnabledFeatures = &deviceFeatures,
+        .queueCreateInfoCount = 1,
+        .pQueueCreateInfos = &queueCreateInfo};
 
-    m_vkDevice = phyDevice.vkDevice().createDevice(deviceCreateInfo);
-
-    for (auto& [family, queues] : m_queues)
-    {
-        for (int i = 0; auto& queue : queues)
-            queue = m_vkDevice.getQueue(family.index, i++);
-    }
+    m_vkDevice = phyDevice.createDevice(deviceCreateInfo);
+    m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
 }
 
 ext::unique_ptr<RenderPass> VulkanDevice::newRenderPass(const RenderPass::Descriptor& desc) const
@@ -126,37 +76,35 @@ ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descripto
 
 ext::unique_ptr<CommandBuffer> VulkanDevice::newCommandBuffer()
 {
-    assert(m_queues.size() == 1);
-
-    static thread_local ext::map<uintptr_t, vk::CommandPool*> commandPools = {
-        ext::make_pair(uintptr_t(this), &makeThreadCommandPool(ext::this_thread::get_id()))
-    };
+    static thread_local ext::map<uintptr_t, CommandPools*> commandPools;
 
     if (commandPools.contains(uintptr_t(this)) == false)
-        commandPools[uintptr_t(this)] = &makeThreadCommandPool(ext::this_thread::get_id());
+        commandPools[uintptr_t(this)] = &makeThreadCommandPools(ext::this_thread::get_id());
     
-    return ext::make_unique<VulkanCommandBuffer>(*this, *commandPools[uintptr_t(this)]);
+    return ext::make_unique<VulkanCommandBuffer>(*this, (*commandPools[uintptr_t(this)])[m_frameIndex]);
 }
 
-vk::CommandPool& VulkanDevice::makeThreadCommandPool(ext::thread::id id)
+CommandPools& VulkanDevice::makeThreadCommandPools(ext::thread::id id)
 {
-    assert(m_queues.size() == 1);
-    auto& [family, queue] = *m_queues.begin();
     vk::CommandPoolCreateInfo commandPoolCreateInfo = {
-        .queueFamilyIndex = family.index
+        .queueFamilyIndex = m_queueFamily.index
     };
-    ext::unique_ptr<vk::CommandPool, ext::function<void(vk::CommandPool*)>> newPool(new vk::CommandPool(m_vkDevice.createCommandPool(commandPoolCreateInfo)), [this](vk::CommandPool* pool){ 
-        m_vkDevice.destroyCommandPool(*pool);
-        delete pool;
-    });
     ext::lock_guard<ext::mutex> lock(m_commandPoolsMutex);
-    m_commandPools[family][m_frameIndex][id] = ext::move(newPool);
-    return *m_commandPools[family][m_frameIndex][id].get();
+    m_commandPools[id] = {
+        m_vkDevice.createCommandPool(commandPoolCreateInfo),
+        m_vkDevice.createCommandPool(commandPoolCreateInfo),
+        m_vkDevice.createCommandPool(commandPoolCreateInfo)
+    };
+    return m_commandPools[id];
 }
 
 VulkanDevice::~VulkanDevice()
 {
-    m_commandPools.clear();
+    for (auto& [_, pools] : m_commandPools)
+    {
+        for (auto& pool : pools)
+            m_vkDevice.destroyCommandPool(pool);
+    }
     m_vkDevice.destroy();
 }
 

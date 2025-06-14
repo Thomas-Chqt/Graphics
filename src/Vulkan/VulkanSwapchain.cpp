@@ -14,6 +14,7 @@
 
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanFramebuffer.hpp"
@@ -46,7 +47,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice& device, const Swapchain::De
 
     assert(desc.renderPass);
 
-    const vk::PhysicalDevice& vkPhysicalDevice = m_device->physicalDevice().vkDevice();
+    const VulkanPhysicalDevice& vkPhysicalDevice = m_device->physicalDevice();
     vk::SurfaceCapabilitiesKHR surfaceCapabilities = vkPhysicalDevice.getSurfaceCapabilitiesKHR(vkSurface);
     // TODO : chech image count
 

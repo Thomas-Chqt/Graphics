@@ -11,6 +11,7 @@
 #define METALSURFACE_HPP
 
 #include "Graphics/Surface.hpp"
+#include "Graphics/Enums.hpp"
 
 #ifdef __OBJC__
     #import <QuartzCore/CAMetalLayer.h>
@@ -36,8 +37,8 @@ public:
     MetalSurface(GLFWwindow*);
 #endif
 
-    const ext::set<PixelFormat> supportedPixelFormats(const PhysicalDevice&) const override;
-    const ext::set<PresentMode> supportedPresentModes(const PhysicalDevice&) const override;
+    const ext::set<PixelFormat> supportedPixelFormats(const Device&) const override;
+    const ext::set<PresentMode> supportedPresentModes(const Device&) const override;
 
     CAMetalLayer* mtlLayer() const { return m_mtlLayer; }
 

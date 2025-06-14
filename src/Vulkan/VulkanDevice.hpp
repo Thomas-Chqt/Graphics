@@ -11,9 +11,11 @@
 #define VULKANDEVICE_HPP
 
 #include "Graphics/Device.hpp"
+#include "Graphics/RenderPass.hpp"
 #include "Graphics/Swapchain.hpp"
+#include "Graphics/CommandBuffer.hpp"
 
-#include "Vulkan/VulkanPhysicalDevice.hpp"
+#include "Vulkan/QueueFamily.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -31,49 +33,49 @@
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 3;
 
+using CommandPools = ext::array<vk::CommandPool, MAX_FRAMES_IN_FLIGHT>;
+
 namespace gfx
 {
 
-using CommandPoolMap = ext::map<
-    QueueFamily,  // one pool for each QueueFamily
-    ext::array<   // one pool for each frame in flight
-        ext::map< // one pool for each thread
-            ext::thread::id,
-            ext::unique_ptr<vk::CommandPool, ext::function<void(vk::CommandPool*)>>
-        >,
-        MAX_FRAMES_IN_FLIGHT
-    >
->;
+class VulkanPhysicalDevice;
 
 class VulkanDevice : public Device
 {
+public:
+    struct Descriptor
+    {
+        const Device::Descriptor* deviceDescriptor;
+        ext::vector<const char*> deviceExtensions;
+    };
+
 public:
     VulkanDevice() = delete;
     VulkanDevice(const VulkanDevice&) = delete;
     VulkanDevice(VulkanDevice&&) = delete;
 
-    VulkanDevice(const VulkanPhysicalDevice&, const Device::Descriptor&);
-
-    inline const VulkanPhysicalDevice& physicalDevice(void) const override { return *m_physicalDevice; }
+    VulkanDevice(const VulkanPhysicalDevice&, const Descriptor&);
 
     ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     ext::unique_ptr<CommandBuffer> newCommandBuffer() override;
 
     inline const vk::Device& vkDevice(void) const { return m_vkDevice; }
-    vk::CommandPool& makeThreadCommandPool(ext::thread::id);
+    inline const VulkanPhysicalDevice& physicalDevice(void) const { return *m_physicalDevice; }
 
     ~VulkanDevice();
 
 private:
+    CommandPools& makeThreadCommandPools(ext::thread::id);
+
     const VulkanPhysicalDevice* m_physicalDevice;
     vk::Device m_vkDevice;
-    ext::map<QueueFamily, ext::vector<vk::Queue>> m_queues;
+    vk::Queue m_queue;
+    QueueFamily m_queueFamily;
 
     int m_frameIndex = 0;
 
-    // 3 (frame in flight) pool for each queue familly and each thread
-    CommandPoolMap m_commandPools;
+    ext::map<ext::thread::id, CommandPools> m_commandPools;
     ext::mutex m_commandPoolsMutex;
 
 public:

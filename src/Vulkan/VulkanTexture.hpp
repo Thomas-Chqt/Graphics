@@ -17,9 +17,7 @@
 #include <Vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
 #else
-    namespace ext = std;
 #endif
 
 namespace gfx

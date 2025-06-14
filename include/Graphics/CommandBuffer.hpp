@@ -10,6 +10,10 @@
 #ifndef COMMANDBUFFER_HPP
 #define COMMANDBUFFER_HPP
 
+#if defined(GFX_USE_UTILSCPP)
+#else
+#endif
+
 namespace gfx
 {
 

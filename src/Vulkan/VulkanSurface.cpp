@@ -7,9 +7,10 @@
  * ---------------------------------------------------
  */
 
-#include "Graphics/PhysicalDevice.hpp"
+#include "Graphics/Device.hpp"
 
 #include "Vulkan/VulkanSurface.hpp"
+#include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 
@@ -43,13 +44,12 @@ VulkanSurface::VulkanSurface(vk::Instance& instance, GLFWwindow* glfwWindow) : m
 }
 #endif
 
-const ext::set<PixelFormat> VulkanSurface::supportedPixelFormats(const PhysicalDevice& phyDevice) const
+const ext::set<PixelFormat> VulkanSurface::supportedPixelFormats(const Device& _device) const
 {
-    const VulkanPhysicalDevice* physicalDevice = dynamic_cast<const VulkanPhysicalDevice*>(&phyDevice);
-    assert(physicalDevice);
+    const VulkanDevice& device = dynamic_cast<const VulkanDevice&>(_device);
 
     ext::set<PixelFormat> pixelFormats;
-    for (const vk::SurfaceFormatKHR& format : physicalDevice->vkDevice().getSurfaceFormatsKHR(m_vkSurface))
+    for (const vk::SurfaceFormatKHR& format : device.physicalDevice().getSurfaceFormatsKHR(m_vkSurface))
     {
         switch (format.format)
         {
@@ -63,13 +63,12 @@ const ext::set<PixelFormat> VulkanSurface::supportedPixelFormats(const PhysicalD
     return pixelFormats;
 }
 
-const ext::set<PresentMode> VulkanSurface::supportedPresentModes(const PhysicalDevice& phyDevice) const
+const ext::set<PresentMode> VulkanSurface::supportedPresentModes(const Device& _device) const
 {
-    const VulkanPhysicalDevice* physicalDevice = dynamic_cast<const VulkanPhysicalDevice*>(&phyDevice);
-    assert(physicalDevice);
+    const VulkanDevice& device = dynamic_cast<const VulkanDevice&>(_device);
 
     ext::set<PresentMode> modes;
-    for (const vk::PresentModeKHR& mode : physicalDevice->vkDevice().getSurfacePresentModesKHR(m_vkSurface))
+    for (const vk::PresentModeKHR& mode : device.physicalDevice().getSurfacePresentModesKHR(m_vkSurface))
     {
         switch (mode)
         {

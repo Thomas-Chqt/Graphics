@@ -9,16 +9,13 @@
 #ifndef VULKANPHYSICALDEVICE_HPP
 #define VULKANPHYSICALDEVICE_HPP
 
-#include "Graphics/PhysicalDevice.hpp"
-#include "Graphics/Device.hpp"
+#include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/QueueFamily.hpp"
 
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
 #else
-    #include <string>
-    #include <cstdint>
     #include <vector>
     namespace ext = std;
 #endif
@@ -26,42 +23,15 @@
 namespace gfx
 {
 
-class VulkanPhysicalDevice;
-
-struct QueueFamily
-{
-    QueueCapabilityFlag flags;
-    uint32_t count;
-    uint32_t index;
-
-    bool isCapableOf(const QueueCapability&, const VulkanPhysicalDevice&) const;
-
-    bool operator<(const QueueFamily& other) const { return index < other.index; }
-};
-
-class VulkanPhysicalDevice : public PhysicalDevice
+class VulkanPhysicalDevice : public vk::PhysicalDevice
 {
 public:
-    VulkanPhysicalDevice(const VulkanPhysicalDevice&) = delete;
-    VulkanPhysicalDevice(VulkanPhysicalDevice&&) = delete;
+    using vk::PhysicalDevice::PhysicalDevice;
 
-    VulkanPhysicalDevice(vk::PhysicalDevice);
+    bool isSuitable(const VulkanDevice::Descriptor&) const;
 
-    ext::string name() const override;
-
-    bool isSuitable(const Device::Descriptor&) const override;
-
-    const vk::PhysicalDevice& vkDevice() const { return m_vkPhyDevice; }
     ext::vector<QueueFamily> getQueueFamilies() const;
-
-    ~VulkanPhysicalDevice() = default;
-
-private:
-    vk::PhysicalDevice m_vkPhyDevice;
-
-public:
-    VulkanPhysicalDevice& operator=(const VulkanPhysicalDevice&) = delete;
-    VulkanPhysicalDevice& operator=(VulkanPhysicalDevice&&) = delete;
+    bool suportExtensions(const ext::vector<const char*>& extensionNames) const;
 };
 
 } // namespace gfx

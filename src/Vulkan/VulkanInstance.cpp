@@ -30,6 +30,9 @@
     #include <stdint.h>
     #include <stdexcept>
     #include <cassert>
+    #include <cstddef>
+    #include <cstdint>
+    #include <ranges>
     namespace ext = std;
 #endif
 
@@ -152,10 +155,6 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         if (func == nullptr || func(m_vkInstance, debugCreateInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
             throw ext::runtime_error("failed to set up debug messenger!");
     }
-
-    ext::vector<vk::PhysicalDevice> vkPhyDevices = m_vkInstance.enumeratePhysicalDevices();
-    for (auto vkPhyDevice : vkPhyDevices)
-        m_physicalDevices.push_back(std::make_unique<VulkanPhysicalDevice>(vkPhyDevice));
 }
 
 #if defined(GFX_GLFW_ENABLED)
@@ -165,29 +164,23 @@ ext::unique_ptr<Surface> VulkanInstance::createSurface(GLFWwindow* glfwWindow)
 }
 #endif
 
-const ext::vector<PhysicalDevice*> VulkanInstance::listPhysicalDevices()
+ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc)
 {
-    ext::vector<PhysicalDevice*> ret;
-    for (auto& phyDevice : m_physicalDevices)
-        ret.push_back(phyDevice.get());
-    return ret;
-}
+    VulkanDevice::Descriptor vulkandeviceDescriptor = {
+        .deviceDescriptor = &desc,
+    };
 
-ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc, const PhysicalDevice* phyDevice)
-{
-    const VulkanPhysicalDevice* vkPhyDevice;
-    if (phyDevice != nullptr)
-    {
-        if (phyDevice->isSuitable(desc) == false)
-            throw ext::runtime_error("device not suitable");
-        vkPhyDevice = dynamic_cast<const VulkanPhysicalDevice*>(phyDevice);
-    }
-    else
-    {
-        vkPhyDevice = findSuitableDevice(desc);
-    }
-    assert(vkPhyDevice);
-    return ext::make_unique<VulkanDevice>(*vkPhyDevice, desc);
+#if defined(__APPLE__)
+    vulkandeviceDescriptor.deviceExtensions.push_back("VK_KHR_portability_subset");
+#endif
+    if (desc.queueCaps.present.empty() == false)
+        vulkandeviceDescriptor.deviceExtensions.push_back(vk::KHRSwapchainExtensionName);
+
+    ext::vector<VulkanPhysicalDevice*> physicalDevices = findSuitableDevices(vulkandeviceDescriptor);
+    if (physicalDevices.empty())
+        throw ext::runtime_error("no suitable device found");
+
+    return ext::make_unique<VulkanDevice>(*physicalDevices.front(), vulkandeviceDescriptor);
 }
 
 VulkanInstance::~VulkanInstance()
@@ -201,17 +194,18 @@ VulkanInstance::~VulkanInstance()
     m_vkInstance.destroy();
 }
     
-VulkanPhysicalDevice* VulkanInstance::findSuitableDevice(const Device::Descriptor& desc)
+ext::vector<VulkanPhysicalDevice*> VulkanInstance::findSuitableDevices(const VulkanDevice::Descriptor& desc)
 {
-    // TODO : better device selection
-    ext::vector<PhysicalDevice*> phyDevices = listPhysicalDevices();
-    for (auto& phyDevice : phyDevices)
-    {
-        if (phyDevice->isSuitable(desc) == false)
-            continue;
-        return dynamic_cast<VulkanPhysicalDevice*>(phyDevice);
-    }
-    return nullptr;
+    auto physicalDevices = m_vkInstance.enumeratePhysicalDevices()
+        | ext::views::transform([](auto& d){ return VulkanPhysicalDevice(d); });
+
+    m_physicalDevices = ext::vector<VulkanPhysicalDevice>(physicalDevices.begin(), physicalDevices.end());
+    
+    auto suitableDevices = m_physicalDevices
+        | ext::views::filter([&desc](auto d) { return d.isSuitable(desc); })
+        | ext::views::transform([](auto& d) { return &d; });
+
+    return ext::vector<VulkanPhysicalDevice*>(suitableDevices.begin(), suitableDevices.end());
 }
 
 } // namespace gfx

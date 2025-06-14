@@ -43,12 +43,20 @@ int main()
 
     ext::unique_ptr<gfx::Surface> surface = instance->createSurface(window);
     assert(surface);
-
-    ext::unique_ptr<gfx::Device> device = instance->newDevice(gfx::Device::Descriptor::singleQueuePatern(surface.get()));
+    
+    gfx::Device::Descriptor deviceDescriptor = {
+        .queueCaps = {
+            .graphics = true,
+            .compute = true,
+            .transfer = true,
+            .present = { surface.get() }
+        }
+    };
+    ext::unique_ptr<gfx::Device> device = instance->newDevice(deviceDescriptor);
     assert(device);
 
-    assert(surface->supportedPixelFormats(device->physicalDevice()).contains(gfx::PixelFormat::BGRA8Unorm));
-    assert(surface->supportedPresentModes(device->physicalDevice()).contains(gfx::PresentMode::fifo));
+    assert(surface->supportedPixelFormats(*device).contains(gfx::PixelFormat::BGRA8Unorm));
+    assert(surface->supportedPresentModes(*device).contains(gfx::PresentMode::fifo));
 
     gfx::RenderPass::Descriptor renderPassDescriptor = {
         .colorAttachments = {

@@ -10,17 +10,14 @@
 #ifndef INSTANCE_HPP
 #define INSTANCE_HPP
 
-#include "Graphics/PhysicalDevice.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Surface.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>
     #include <string>
-    #include <vector>
     namespace ext = std;
 #endif
 
@@ -59,9 +56,7 @@ public:
     virtual ext::unique_ptr<Surface> createSurface(GLFWwindow*) = 0;
 #endif
 
-    virtual const ext::vector<PhysicalDevice*> listPhysicalDevices() = 0;
-
-    virtual ext::unique_ptr<Device> newDevice(const Device::Descriptor&, const PhysicalDevice* = nullptr) = 0;
+    virtual ext::unique_ptr<Device> newDevice(const Device::Descriptor&) = 0;
 
     virtual ~Instance() = default;
 

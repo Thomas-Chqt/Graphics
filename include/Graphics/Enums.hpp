@@ -12,33 +12,10 @@
 
 #if defined(GFX_USE_UTILSCPP)
 #else
-    #include <cstdint>
 #endif
 
 namespace gfx
 {
-
-enum class QueueCapabilityFlag : uint32_t
-{
-    Graphics = 1 << 1,
-    Compute = 1 << 2,
-    Transfer = 1 << 3
-};
-
-inline QueueCapabilityFlag operator|(QueueCapabilityFlag a, QueueCapabilityFlag b)
-{
-    return static_cast<QueueCapabilityFlag>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-}
-
-inline QueueCapabilityFlag operator&(QueueCapabilityFlag a, QueueCapabilityFlag b)
-{
-    return static_cast<QueueCapabilityFlag>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-}
-
-inline QueueCapabilityFlag operator~(QueueCapabilityFlag a)
-{
-    return static_cast<QueueCapabilityFlag>(~static_cast<uint32_t>(a));
-}
 
 enum class PixelFormat
 {

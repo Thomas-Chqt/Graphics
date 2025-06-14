@@ -22,7 +22,7 @@
 namespace gfx
 {
 
-class PhysicalDevice;
+class Device;
 
 class Surface
 {
@@ -30,8 +30,8 @@ public:
     Surface(const Surface&) = delete;
     Surface(Surface&&) = delete;
 
-    virtual const ext::set<PixelFormat> supportedPixelFormats(const PhysicalDevice&) const = 0;
-    virtual const ext::set<PresentMode> supportedPresentModes(const PhysicalDevice&) const = 0;
+    virtual const ext::set<PixelFormat> supportedPixelFormats(const Device&) const = 0;
+    virtual const ext::set<PresentMode> supportedPresentModes(const Device&) const = 0;
 
     virtual ~Surface() = default;
 

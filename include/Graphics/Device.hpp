@@ -11,17 +11,13 @@
 #define DEVICE_HPP
 
 #include "Graphics/CommandBuffer.hpp"
-#include "Graphics/Enums.hpp"
 #include "Graphics/RenderPass.hpp"
-#include "Graphics/Surface.hpp"
 #include "Graphics/Swapchain.hpp"
+#include "Graphics/QueueCapabilities.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
-    #include <vector>
-    #include <utility>
-    #include <cstdint>
     #include <memory>
     namespace ext = std;
 #endif
@@ -29,42 +25,17 @@
 namespace gfx
 {
 
-class PhysicalDevice;
-
-struct QueueCapability
-{
-    QueueCapabilityFlag flags;
-    ext::vector<Surface*> surfaceSupport;
-};
-
 class Device
 {
 public:
     struct Descriptor
     {
-        ext::vector<ext::pair<QueueCapability, uint32_t>> queues;
-
-        inline static Descriptor singleQueuePatern(Surface* s)
-        {
-            return Descriptor
-            {
-                .queues = {
-                    ext::make_pair(gfx::QueueCapability {
-                            .flags = QueueCapabilityFlag::Graphics |
-                                     QueueCapabilityFlag::Compute  |
-                                     QueueCapabilityFlag::Transfer,
-                            .surfaceSupport = { s }
-                    }, 1)
-                }
-            };
-        }
+        QueueCapabilities queueCaps;
     };
 
 public:
     Device(const Device&) = delete;
     Device(Device&&) = delete;
-
-    virtual const PhysicalDevice& physicalDevice(void) const = 0;
 
     virtual ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const = 0;
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;

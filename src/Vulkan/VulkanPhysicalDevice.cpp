@@ -7,77 +7,55 @@
  * ---------------------------------------------------
  */
 
-#include "Graphics/Enums.hpp"
-
 #include "Vulkan/VulkanPhysicalDevice.hpp"
-#include "Graphics/Surface.hpp"
-#include "Vulkan/VulkanSurface.hpp"
 
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
 #else
-    #include <string>
-    #include <cstdint>
     #include <vector>
+    #include <ranges>
+    #include <set>
+    #include <algorithm>
+    #include <string>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
 
-bool QueueFamily::isCapableOf(const QueueCapability& capability, const VulkanPhysicalDevice& phyDevice) const
+bool VulkanPhysicalDevice::isSuitable(const VulkanDevice::Descriptor& desc) const
 {
-    if ((flags & capability.flags) != capability.flags)
+    if ((getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty())
         return false;
-    for (Surface* surface : capability.surfaceSupport)
-    {
-        const VulkanSurface* vkSurface = dynamic_cast<const VulkanSurface*>(surface);
-        if (vkSurface == nullptr)
-            return false;
-        if (phyDevice.vkDevice().getSurfaceSupportKHR(index, vkSurface->vkSurface()) == false)
-            return false;
-    }
+    if (suportExtensions(desc.deviceExtensions) == false)
+        return false;
     return true;
-}
-
-VulkanPhysicalDevice::VulkanPhysicalDevice(vk::PhysicalDevice phyDevice)
-    : m_vkPhyDevice(phyDevice)
-{
-}
-
-ext::string VulkanPhysicalDevice::name() const
-{
-    return "";
-}
-
-bool VulkanPhysicalDevice::isSuitable(const Device::Descriptor&) const
-{
-    return true; // TODO : real check
 }
 
 ext::vector<QueueFamily> VulkanPhysicalDevice::getQueueFamilies() const
 {
     ext::vector<QueueFamily> queueFamilies;
-    ext::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_vkPhyDevice.getQueueFamilyProperties();
-    for (uint32_t i = 0; auto& familyProp : queueFamilyProperties)
+    for (uint32_t i = 0; auto& familyProp : vk::PhysicalDevice::getQueueFamilyProperties())
     {
-        QueueCapabilityFlag flags;
-        if ((familyProp.queueFlags & vk::QueueFlagBits::eGraphics) != vk::QueueFlagBits(0))
-            flags = flags | QueueCapabilityFlag::Graphics;
-        if ((familyProp.queueFlags & vk::QueueFlagBits::eCompute) != vk::QueueFlagBits(0))
-            flags = flags | QueueCapabilityFlag::Compute;
-        if ((familyProp.queueFlags & vk::QueueFlagBits::eTransfer) != vk::QueueFlagBits(0))
-            flags = flags | QueueCapabilityFlag::Transfer;
-        queueFamilies.push_back(QueueFamily{
-            .flags = flags,
-            .count = familyProp.queueCount,
-            .index = i
-        });
+        QueueFamily queueFamily(familyProp);
+        queueFamily.index = i;
+        queueFamily.device = this;
+        queueFamilies.push_back(queueFamily);
         i++;
     }
     return queueFamilies;
+}
+
+bool VulkanPhysicalDevice::suportExtensions(const ext::vector<const char*>& extensionNames) const
+{
+    ext::vector<vk::ExtensionProperties> availableExtensions = vk::PhysicalDevice::enumerateDeviceExtensionProperties();
+    ext::set<ext::string> availableExtensionNames;
+    for (auto extensionName : availableExtensions | ext::views::transform([](auto& e){ return e.extensionName; }))
+        availableExtensionNames.insert(extensionName);
+    if (ext::ranges::all_of(extensionNames, [&availableExtensionNames](const char* name){ return availableExtensionNames.contains(name); }))
+        return true;
+    return false;
 }
 
 }

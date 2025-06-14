@@ -11,12 +11,13 @@
 #define METAL_DEVICE_HPP
 
 #include "Graphics/Device.hpp"
-#include "Metal/MetalPhysicalDevice.hpp"
+#include "Graphics/RenderPass.hpp"
+#include "Graphics/Swapchain.hpp"
+#include "Graphics/CommandBuffer.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
-    #include <vector>
     #include <mutex>
     namespace ext = std;
 #endif
@@ -40,9 +41,7 @@ public:
     MetalDevice(const MetalDevice&) = delete;
     MetalDevice(MetalDevice&&) = delete;
 
-    MetalDevice(const MetalPhysicalDevice&, const Device::Descriptor&);
-
-    inline const MetalPhysicalDevice& physicalDevice(void) const override { return *m_physicalDevice; }
+    MetalDevice(id<MTLDevice>&);
 
     ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
@@ -54,11 +53,9 @@ public:
     ~MetalDevice();
 
 private:
-    const MetalPhysicalDevice* m_physicalDevice;
     id<MTLDevice> m_mtlDevice;
-
-    ext::vector<id<MTLCommandQueue>> m_queues;
-    ext::mutex m_commandPoolsMutex;
+    id<MTLCommandQueue> m_queue;
+    ext::mutex m_queueMtx;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

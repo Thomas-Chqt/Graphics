@@ -28,7 +28,7 @@ class Swapchain
 public:
     struct Descriptor
     {
-        Surface* /*not null*/ surface;
+        Surface* surface;
         uint32_t width, height;
         uint32_t imageCount = 3;
         PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;

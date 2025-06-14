@@ -11,14 +11,14 @@
 
 #include "Metal/MetalFramebuffer.hpp"
 #include "Metal/MetalTexture.hpp"
-#include <algorithm>
-#include <utility>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <memory>
     #include <cassert>
+    #include <algorithm>
+    #include <utility>
     namespace ext = std;
 #endif
 
@@ -28,8 +28,7 @@ namespace gfx
 MetalFramebuffer::MetalFramebuffer(const Framebuffer::Descriptor& desc)
 {
     m_colorAttachments.resize(desc.colorAttachments.size());
-    uint32_t i = 0;
-    for (auto& attachment : desc.colorAttachments) {
+    for (uint32_t i = 0; auto& attachment : desc.colorAttachments) {
         m_colorAttachments[i] = ext::dynamic_pointer_cast<MetalTexture>(attachment);
         assert(m_colorAttachments[i]);
         i++;

@@ -10,18 +10,18 @@
 #include "Graphics/Device.hpp"
 #include "Graphics/RenderPass.hpp"
 #include "Graphics/Swapchain.hpp"
+#include "Graphics/CommandBuffer.hpp"
 
 #include "Metal/MetalDevice.hpp"
-#include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalRenderPass.hpp"
 #include "Metal/MetalSwapchain.hpp"
+#include "Metal/MetalCommandBuffer.hpp"
 
 #include <Metal/Metal.h>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
-    #include <cassert>
     #include <memory>
     #include <mutex>
     namespace ext = std;
@@ -30,17 +30,11 @@
 namespace gfx
 {
 
-MetalDevice::MetalDevice(const MetalPhysicalDevice& phyDevice, const Device::Descriptor& desc)
-    : m_physicalDevice(&phyDevice)
+MetalDevice::MetalDevice(id<MTLDevice>& device) { @autoreleasepool
 {
-    @autoreleasepool
-    {
-        m_mtlDevice = [phyDevice.mtlDevice() retain];
-        assert(phyDevice.isSuitable(desc));
-        for (auto& [_, count] : desc.queues)
-            m_queues.push_back([phyDevice.mtlDevice() newCommandQueue]);
-    }
-}
+    m_mtlDevice = [device retain];
+    m_queue = [device newCommandQueue];
+}}
 
 ext::unique_ptr<RenderPass> MetalDevice::newRenderPass(const RenderPass::Descriptor& desc) const
 {
@@ -54,16 +48,14 @@ ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor
 
 ext::unique_ptr<CommandBuffer> MetalDevice::newCommandBuffer()
 {
-    assert(m_queues.size() == 1);
-    ext::lock_guard<ext::mutex> lock(m_commandPoolsMutex);
-    return ext::make_unique<MetalCommandBuffer>(m_queues[0]);
+    ext::lock_guard<ext::mutex> lock(m_queueMtx);
+    return ext::make_unique<MetalCommandBuffer>(m_queue);
 }
 
 MetalDevice::~MetalDevice() { @autoreleasepool
 {
-        for (auto& queue : m_queues)
-            [queue release];
-        [m_mtlDevice release];
+    [m_queue release];
+    [m_mtlDevice release];
 }}
 
 }

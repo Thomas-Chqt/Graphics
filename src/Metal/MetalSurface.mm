@@ -8,7 +8,6 @@
  */
 
 #include "Graphics/Enums.hpp"
-#include "Graphics/PhysicalDevice.hpp"
 
 #include "Metal/MetalSurface.hpp"
 
@@ -35,7 +34,7 @@ MetalSurface::MetalSurface(GLFWwindow* glfwWindow) { @autoreleasepool
 }}
 #endif
 
-const ext::set<PixelFormat> MetalSurface::supportedPixelFormats(const PhysicalDevice&) const
+const ext::set<PixelFormat> MetalSurface::supportedPixelFormats(const Device&) const
 {
     return {
         PixelFormat::BGRA8Unorm,
@@ -43,7 +42,7 @@ const ext::set<PixelFormat> MetalSurface::supportedPixelFormats(const PhysicalDe
     };
 }
 
-const ext::set<PresentMode> MetalSurface::supportedPresentModes(const PhysicalDevice&) const
+const ext::set<PresentMode> MetalSurface::supportedPresentModes(const Device&) const
 {
     return {
         PresentMode::fifo
