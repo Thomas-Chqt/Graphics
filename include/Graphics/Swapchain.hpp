@@ -16,8 +16,11 @@
 #include "Graphics/Enums.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
 #else
     #include <cstdint>
+    #include <memory>
+    namespace ext = std;
 #endif
 
 namespace gfx
@@ -41,7 +44,7 @@ public:
     Swapchain(const Swapchain&) = delete;
     Swapchain(Swapchain&&) = delete;
 
-    virtual const Framebuffer& nextFrameBuffer(void) = 0;
+    virtual ext::shared_ptr<Framebuffer> nextFrameBuffer(void) = 0;
 
     virtual ~Swapchain() = default;
 

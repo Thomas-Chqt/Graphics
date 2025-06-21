@@ -15,6 +15,8 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
 
+#include "Metal/MetalCommandBuffer.hpp"
+
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
@@ -46,7 +48,14 @@ public:
     ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
 
-    ext::unique_ptr<CommandBuffer> newCommandBuffer() override;
+    void beginFrame(void) override;
+ 
+    CommandBuffer& commandBuffer(void) override;
+
+    void submitCommandBuffer(const CommandBuffer&) override;
+    void presentSwapchain(const Swapchain&) override;
+
+    void endFrame(void) override;
 
     const id<MTLDevice>& mtlDevice(void) const { return m_mtlDevice; }
 
@@ -56,6 +65,8 @@ private:
     id<MTLDevice> m_mtlDevice;
     id<MTLCommandQueue> m_queue;
     ext::mutex m_queueMtx;
+
+    MetalCommandBuffer m_commandBuffer;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

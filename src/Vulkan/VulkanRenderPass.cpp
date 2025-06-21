@@ -31,7 +31,7 @@ namespace gfx
 {
 
 VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass::Descriptor& desc)
-    : m_device(&device)
+    : m_device(&device), m_colorAttachmentsDesc(desc.colorAttachments), m_depthAttachmentDesc(desc.depthAttachment)
 {
     ext::vector<vk::AttachmentDescription> attachments;
 
@@ -61,9 +61,10 @@ VulkanRenderPass::VulkanRenderPass(const VulkanDevice& device, const RenderPass:
     if (desc.depthAttachment.has_value())
     {
         auto& attachmentDescriptor = desc.depthAttachment.value();
+
         auto initialLayout = vk::ImageLayout::eUndefined;
         if (attachmentDescriptor.loadAction == LoadAction::load)
-            initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+            initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
         attachments.push_back(vk::AttachmentDescription{
             .format = toVkFormat(attachmentDescriptor.format),

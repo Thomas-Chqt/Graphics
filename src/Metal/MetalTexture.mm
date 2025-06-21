@@ -21,6 +21,16 @@ MetalTexture::MetalTexture(id<MTLTexture> mtltexture)
 {
 }
 
+uint32_t MetalTexture::width() const { @autoreleasepool
+{
+    return m_mtlTexture.width;
+}}
+
+uint32_t MetalTexture::height() const { @autoreleasepool
+{
+    return m_mtlTexture.height;
+}}
+
 PixelFormat MetalTexture::pixelFormat(void) const { @autoreleasepool
 {
     return toPixelFormat([m_mtlTexture pixelFormat]);   

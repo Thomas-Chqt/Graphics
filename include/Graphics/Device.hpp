@@ -40,7 +40,14 @@ public:
     virtual ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const = 0;
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
 
-    virtual ext::unique_ptr<CommandBuffer> newCommandBuffer() = 0;
+    virtual void beginFrame(void) = 0;
+ 
+    virtual CommandBuffer& commandBuffer(void) = 0;
+
+    virtual void submitCommandBuffer(const CommandBuffer&) = 0;
+    virtual void presentSwapchain(const Swapchain&) = 0;
+
+    virtual void endFrame(void) = 0;
 
     virtual ~Device() = default;
 

@@ -86,23 +86,33 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice& device, const Swapchain::De
 
     for (size_t i = 0; auto& image : swapChainImages)
     {
-        m_swapchainTextures[i] = ext::make_shared<VulkanTexture>(image, Texture::Descriptor{.pixelFormat = desc.pixelFormat});
+        m_swapchainTextures[i] = ext::make_shared<VulkanTexture>(image, Texture::Descriptor{
+            .width = extent.width, .height = extent.height,
+            .pixelFormat = desc.pixelFormat
+        });
         Framebuffer::Descriptor framebufferDescriptor = {
             .width = extent.width, .height = extent.height,
             .renderPass = desc.renderPass,
             .colorAttachments = { m_swapchainTextures[i] }
         };
-        m_frameBuffers[i++] = ext::make_unique<VulkanFramebuffer>(*m_device, framebufferDescriptor);
+        m_frameBuffers[i] = ext::make_shared<VulkanFramebuffer>(*m_device, framebufferDescriptor);
+        i++;
     }
 }
 
-const Framebuffer& VulkanSwapchain::nextFrameBuffer(void)
+ext::shared_ptr<Framebuffer> VulkanSwapchain::nextFrameBuffer(void)
 {
-    vk::ResultValue<uint32_t> result = m_device->vkDevice().acquireNextImageKHR(m_vkSwapchain, ext::numeric_limits<uint64_t>::max(), nullptr, nullptr);
+    const vk::Device& device = m_device->vkDevice();
+    uint64_t timeout = ext::numeric_limits<uint64_t>::max();
+    const vk::Semaphore& semaphore = m_device->imageAvailableSemaphore();
+
+    auto result = device.acquireNextImageKHR(m_vkSwapchain, timeout, semaphore, nullptr);
+
     switch (result.result)
     {
     case vk::Result::eSuccess:
-        return *m_frameBuffers[result.value];
+        m_imageIndex = result.value;
+        return m_frameBuffers[m_imageIndex];
     default:
         throw ext::runtime_error("error");
     }

@@ -19,6 +19,7 @@
     #include <cstdint>
     #include <vector>
     #include <memory>
+    #include <cstddef>
     namespace ext = std;
 #endif
 
@@ -39,6 +40,15 @@ public:
 public:
     Framebuffer(const Framebuffer&) = delete;
     Framebuffer(Framebuffer&&)      = delete;
+
+    virtual ext::vector<ext::shared_ptr<Texture>> colorAttachments(void) = 0;
+    virtual const ext::vector<ext::shared_ptr<Texture>> colorAttachments(void) const = 0;
+
+    virtual ext::shared_ptr<Texture> colorAttachment(size_t) = 0;
+    virtual const ext::shared_ptr<Texture> colorAttachment(size_t) const = 0;
+
+    virtual ext::shared_ptr<Texture> depthAttachment(void) = 0;
+    virtual const ext::shared_ptr<Texture> depthAttachment(void) const = 0;
 
     virtual ~Framebuffer() = default;
 

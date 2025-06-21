@@ -60,10 +60,14 @@ int main()
 
     gfx::RenderPass::Descriptor renderPassDescriptor = {
         .colorAttachments = {
-            gfx::AttachmentDescriptor{ .format = gfx::PixelFormat::BGRA8Unorm, .loadAction = gfx::LoadAction::clear }
+            gfx::AttachmentDescriptor{
+                .format = gfx::PixelFormat::BGRA8Unorm,
+                .loadAction = gfx::LoadAction::clear,
+                .clearColor = { 0.0f, 0.0f, 0.0f}
+            }
         }
     };
-    ext::unique_ptr<gfx::RenderPass> renderPass = device->newRenderPass(renderPassDescriptor);
+    ext::shared_ptr<gfx::RenderPass> renderPass = device->newRenderPass(renderPassDescriptor);
     assert(renderPass);
     
     int width, height;
@@ -71,16 +75,30 @@ int main()
     gfx::Swapchain::Descriptor swapchainDescriptor = {
         .surface = surface.get(),
         .width = (uint32_t)width, .height = (uint32_t)height,
-        .renderPass = renderPass.get()
+        .imageCount = 3,
+        .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
+        .presentMode = gfx::PresentMode::fifo,
+        .renderPass = renderPass.get(),
+        .createDepthAttachments = false
     };
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
 
     glfwPollEvents();
+    while (!glfwWindowShouldClose(window))
+    {
+        device->beginFrame();
 
-    ext::unique_ptr<gfx::CommandBuffer> commandBuffer = device->newCommandBuffer();
-    assert(commandBuffer);
+        gfx::CommandBuffer& commandBuffer = device->commandBuffer();
+        commandBuffer.beginRenderPass(renderPass, swapchain->nextFrameBuffer());
+        commandBuffer.endRenderPass();
 
-    const gfx::Framebuffer& framebuffer = swapchain->nextFrameBuffer();
+        device->submitCommandBuffer(commandBuffer);
+        device->presentSwapchain(*swapchain);
+        
+        device->endFrame();
+
+        glfwPollEvents();
+    }
 
     glfwDestroyWindow(window);
     glfwTerminate();

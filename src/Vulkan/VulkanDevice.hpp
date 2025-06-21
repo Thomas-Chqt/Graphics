@@ -16,24 +16,21 @@
 #include "Graphics/CommandBuffer.hpp"
 
 #include "Vulkan/QueueFamily.hpp"
+#include "Vulkan/VulkanCommandBuffer.hpp"
+#include "Vulkan/VulkanSwapchain.hpp"
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_handles.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <vector>
-    #include <map>
     #include <memory>
-    #include <thread>
-    #include <mutex>
-    #include <array>
     namespace ext = std;
 #endif
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 3;
-
-using CommandPools = ext::array<vk::CommandPool, MAX_FRAMES_IN_FLIGHT>;
 
 namespace gfx
 {
@@ -58,25 +55,34 @@ public:
 
     ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
-    ext::unique_ptr<CommandBuffer> newCommandBuffer() override;
+
+    void beginFrame(void) override;
+
+    CommandBuffer& commandBuffer(void) override;
+ 
+    void submitCommandBuffer(const CommandBuffer&) override;
+    void presentSwapchain(const Swapchain&) override;
+
+    void endFrame(void) override;
 
     inline const vk::Device& vkDevice(void) const { return m_vkDevice; }
     inline const VulkanPhysicalDevice& physicalDevice(void) const { return *m_physicalDevice; }
+    inline const vk::Semaphore& imageAvailableSemaphore(void) const { return m_imageAvailableSemaphore; }
 
     ~VulkanDevice();
 
 private:
-    CommandPools& makeThreadCommandPools(ext::thread::id);
-
     const VulkanPhysicalDevice* m_physicalDevice;
     vk::Device m_vkDevice;
-    vk::Queue m_queue;
     QueueFamily m_queueFamily;
+    vk::Queue m_queue;
 
-    int m_frameIndex = 0;
-
-    ext::map<ext::thread::id, CommandPools> m_commandPools;
-    ext::mutex m_commandPoolsMutex;
+    vk::CommandPool m_commandPool;
+    VulkanCommandBuffer m_commandBuffer;
+    const VulkanSwapchain* m_presentedSwapchain;
+    vk::Semaphore m_imageAvailableSemaphore;
+    vk::Semaphore m_renderFinisedSemaphore;
+    vk::Fence m_renderFinisedFence;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

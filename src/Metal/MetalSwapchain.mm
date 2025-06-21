@@ -13,6 +13,7 @@
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalEnums.hpp"
+#include "Metal/MetalFramebuffer.hpp"
 #include "Metal/MetalSurface.hpp"
 #include "Metal/MetalTexture.hpp"
 
@@ -40,18 +41,20 @@ MetalSwapchain::MetalSwapchain(const MetalDevice& mtlDevice, const Swapchain::De
     m_mtlLayer.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
 }}
     
-const Framebuffer& MetalSwapchain::nextFrameBuffer(void) { @autoreleasepool
+ext::shared_ptr<Framebuffer> MetalSwapchain::nextFrameBuffer(void) { @autoreleasepool
 {
-    m_currentDrawable = [m_mtlLayer nextDrawable];
+    if (m_currentDrawable)
+        [m_currentDrawable release];
+    m_currentDrawable = [[m_mtlLayer nextDrawable] retain];
     
-    m_currentFramebuffer = MetalFramebuffer(
+    ext::shared_ptr<MetalFramebuffer> framebuffer(new MetalFramebuffer(
         { ext::make_shared<MetalTexture>(m_currentDrawable.texture) },
         m_depthAttachments.empty() ? nullptr : m_depthAttachments[m_drawableIndex]
-    );
+    ));
 
     m_drawableIndex = (m_drawableIndex + 1) % 3;
 
-    return m_currentFramebuffer;
+    return framebuffer;
 }}
 
 MetalSwapchain::~MetalSwapchain() { @autoreleasepool

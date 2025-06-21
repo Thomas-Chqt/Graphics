@@ -27,6 +27,7 @@ struct AttachmentDescriptor
 {
     PixelFormat format;
     LoadAction loadAction = LoadAction::load;
+    union { float clearColor[4]; float clearDepth; };
 };
 
 class RenderPass

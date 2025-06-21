@@ -32,6 +32,8 @@ public:
     
     MetalTexture(id<MTLTexture>);
 
+    uint32_t width() const override;
+    uint32_t height() const override;
     PixelFormat pixelFormat(void) const override;
 
     const id<MTLTexture>& mtltexture(void) const { return m_mtlTexture; }

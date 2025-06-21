@@ -46,11 +46,33 @@ ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor
     return ext::make_unique<MetalSwapchain>(*this, desc);
 }
 
-ext::unique_ptr<CommandBuffer> MetalDevice::newCommandBuffer()
+void MetalDevice::beginFrame(void) { @autoreleasepool
 {
-    ext::lock_guard<ext::mutex> lock(m_queueMtx);
-    return ext::make_unique<MetalCommandBuffer>(m_queue);
+    [m_commandBuffer.mtlCommandBuffer() waitUntilCompleted];
+    m_commandBuffer = MetalCommandBuffer(m_queue);
+}}
+
+CommandBuffer& MetalDevice::commandBuffer(void)
+{
+    return m_commandBuffer;
 }
+
+void MetalDevice::submitCommandBuffer(const CommandBuffer&)
+{
+    // no op
+}
+
+void MetalDevice::presentSwapchain(const Swapchain& _swapchain) { @autoreleasepool
+{
+    const MetalSwapchain& swapchain = dynamic_cast<const MetalSwapchain&>(_swapchain);
+
+    [m_commandBuffer.mtlCommandBuffer() presentDrawable:swapchain.currentDrawable()];
+}}
+
+void MetalDevice::endFrame(void) { @autoreleasepool
+{
+    [m_commandBuffer.mtlCommandBuffer() commit];
+}}
 
 MetalDevice::~MetalDevice() { @autoreleasepool
 {

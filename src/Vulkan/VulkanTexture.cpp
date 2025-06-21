@@ -8,6 +8,7 @@
  */
 
 #include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanDevice.hpp"
 
 #include <Vulkan/vulkan.hpp>
 
@@ -15,13 +16,15 @@ namespace gfx
 {
 
 VulkanTexture::VulkanTexture(vk::Image vkImage, const Texture::Descriptor& desc)
-    : m_shouldDestroyImage(false), m_vkImage(vkImage), m_pixelFormat(desc.pixelFormat) 
+    : m_vkImage(vkImage),
+      m_width(desc.width), m_height(desc.height),
+      m_pixelFormat(desc.pixelFormat) 
 {
 }
 
 VulkanTexture::~VulkanTexture()
 {
-    if (m_shouldDestroyImage)
+    if (m_device)
         m_device->vkDevice().destroyImage(m_vkImage);
 }
 

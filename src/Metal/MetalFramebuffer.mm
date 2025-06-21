@@ -44,6 +44,22 @@ MetalFramebuffer::MetalFramebuffer(const ext::vector<ext::shared_ptr<MetalTextur
 {
 }
 
+ext::vector<ext::shared_ptr<Texture>> MetalFramebuffer::colorAttachments(void)
+{
+    ext::vector<ext::shared_ptr<Texture>> attachments(m_colorAttachments.size());
+    for (size_t i = 0; auto& attachment : m_colorAttachments)
+        attachments[i] = attachment;
+    return attachments;
+};
+
+const ext::vector<ext::shared_ptr<Texture>> MetalFramebuffer::colorAttachments(void) const 
+{
+    ext::vector<ext::shared_ptr<Texture>> attachments(m_colorAttachments.size());
+    for (size_t i = 0; auto& attachment : m_colorAttachments)
+        attachments[i] = attachment;
+    return attachments;
+};
+
 MetalFramebuffer& MetalFramebuffer::operator = (MetalFramebuffer&& other)
 {
     if (&other != this)

@@ -24,11 +24,15 @@ MetalRenderPass::MetalRenderPass(const RenderPass::Descriptor& desc)
     {
         m_mtlRenderPassDescriptor.colorAttachments[i].loadAction = toMTLLoadAction(colorAttachment.loadAction);
         m_mtlRenderPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
+        m_mtlRenderPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(
+            colorAttachment.clearColor[0], colorAttachment.clearColor[1],
+            colorAttachment.clearColor[2], colorAttachment.clearColor[3]);
     }
     if (desc.depthAttachment.has_value())
     {
         m_mtlRenderPassDescriptor.depthAttachment.loadAction = toMTLLoadAction(desc.depthAttachment.value().loadAction);
         m_mtlRenderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
+        m_mtlRenderPassDescriptor.depthAttachment.clearDepth = desc.depthAttachment.value().clearDepth;
     }
 }
 

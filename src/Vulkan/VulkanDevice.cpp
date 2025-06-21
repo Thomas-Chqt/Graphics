@@ -27,11 +27,9 @@
     #include <vector>
     #include <cstdint>
     #include <cassert>
-    #include <map>
     #include <memory>
-    #include <thread>
-    #include <mutex>
     #include <ranges>
+    #include <stdexcept>
     namespace ext = std;
 #endif
 
@@ -62,6 +60,17 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const VulkanDe
 
     m_vkDevice = phyDevice.createDevice(deviceCreateInfo);
     m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
+
+    vk::CommandPoolCreateInfo commandPoolCreateInfo = {
+        .queueFamilyIndex = m_queueFamily.index
+    };
+
+    m_commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
+    m_commandBuffer = VulkanCommandBuffer(*this, m_commandPool);
+
+    m_imageAvailableSemaphore = m_vkDevice.createSemaphore(vk::SemaphoreCreateInfo{});
+    m_renderFinisedSemaphore = m_vkDevice.createSemaphore(vk::SemaphoreCreateInfo{});
+    m_renderFinisedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
 }
 
 ext::unique_ptr<RenderPass> VulkanDevice::newRenderPass(const RenderPass::Descriptor& desc) const
@@ -74,37 +83,94 @@ ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descripto
     return ext::make_unique<VulkanSwapchain>(*this, desc);
 }
 
-ext::unique_ptr<CommandBuffer> VulkanDevice::newCommandBuffer()
+void VulkanDevice::beginFrame(void) 
 {
-    static thread_local ext::map<uintptr_t, CommandPools*> commandPools;
+    if (m_vkDevice.waitForFences(m_renderFinisedFence, true, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
+        throw ext::runtime_error("failed to wait for fence");
+    m_vkDevice.resetFences(m_renderFinisedFence);
 
-    if (commandPools.contains(uintptr_t(this)) == false)
-        commandPools[uintptr_t(this)] = &makeThreadCommandPools(ext::this_thread::get_id());
-    
-    return ext::make_unique<VulkanCommandBuffer>(*this, (*commandPools[uintptr_t(this)])[m_frameIndex]);
+    m_commandBuffer.reset();
+    m_vkDevice.resetCommandPool(m_commandPool);
 }
 
-CommandPools& VulkanDevice::makeThreadCommandPools(ext::thread::id id)
+CommandBuffer& VulkanDevice::commandBuffer(void)
 {
-    vk::CommandPoolCreateInfo commandPoolCreateInfo = {
-        .queueFamilyIndex = m_queueFamily.index
+    return m_commandBuffer;
+}
+
+void VulkanDevice::submitCommandBuffer(const CommandBuffer& _commandBuffer)
+{
+    const VulkanCommandBuffer& commandBuffer = dynamic_cast<const VulkanCommandBuffer&>(_commandBuffer);
+    assert(&commandBuffer == &m_commandBuffer);
+}
+
+void VulkanDevice::presentSwapchain(const Swapchain& _swapchain)
+{
+    const VulkanSwapchain& swapchain = dynamic_cast<const VulkanSwapchain&>(_swapchain);
+
+    vk::ImageMemoryBarrier imageMemoryBarrier = {
+        .newLayout = vk::ImageLayout::ePresentSrcKHR,
+        .srcQueueFamilyIndex = m_queueFamily.index,
+        .dstQueueFamilyIndex = m_queueFamily.index,
+        .subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor,
+        .subresourceRange.baseMipLevel = 0,
+        .subresourceRange.levelCount = 1,
+        .subresourceRange.baseArrayLayer = 0,
+        .subresourceRange.layerCount = 1,
+        .srcAccessMask = vk::AccessFlagBits{},
+        .dstAccessMask = vk::AccessFlagBits::eTransferWrite
     };
-    ext::lock_guard<ext::mutex> lock(m_commandPoolsMutex);
-    m_commandPools[id] = {
-        m_vkDevice.createCommandPool(commandPoolCreateInfo),
-        m_vkDevice.createCommandPool(commandPoolCreateInfo),
-        m_vkDevice.createCommandPool(commandPoolCreateInfo)
+
+    m_commandBuffer.addImageMemoryBarrier(swapchain.currentTexture(), imageMemoryBarrier);
+
+    m_presentedSwapchain = &swapchain;
+}
+
+void VulkanDevice::endFrame(void)
+{
+    m_commandBuffer.vkCommandBuffer().end();
+
+    vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
+    vk::SubmitInfo submitInfo = {
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &m_imageAvailableSemaphore,
+        .pWaitDstStageMask = waitStages,
+        .commandBufferCount = 1,
+        .pCommandBuffers = &m_commandBuffer.vkCommandBuffer(),
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores = &m_renderFinisedSemaphore
     };
-    return m_commandPools[id];
+    
+    m_queue.submit(submitInfo, m_renderFinisedFence);
+
+    vk::PresentInfoKHR presentInfo = {
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &m_renderFinisedSemaphore,
+        .swapchainCount = 1,
+        .pSwapchains = &m_presentedSwapchain->vkSwapchain(),
+        .pImageIndices = &m_presentedSwapchain->currentImageIndex()
+    };
+
+    vk::Result result = m_queue.presentKHR(&presentInfo);
+    if (result != vk::Result::eSuccess)
+        throw std::runtime_error("failed to present swap chain image!");
 }
 
 VulkanDevice::~VulkanDevice()
 {
-    for (auto& [_, pools] : m_commandPools)
-    {
-        for (auto& pool : pools)
-            m_vkDevice.destroyCommandPool(pool);
-    }
+    (void)m_vkDevice.waitForFences(m_renderFinisedFence, true, ext::numeric_limits<uint64_t>::max());
+    m_vkDevice.resetFences(m_renderFinisedFence);
+
+    m_commandBuffer.reset();
+    m_vkDevice.resetCommandPool(m_commandPool);
+
+    m_vkDevice.destroyFence(m_renderFinisedFence);
+
+    m_vkDevice.destroySemaphore(m_renderFinisedSemaphore);
+    m_vkDevice.destroySemaphore(m_imageAvailableSemaphore);
+
+    m_vkDevice.destroyCommandPool(m_commandPool);
+
     m_vkDevice.destroy();
 }
 

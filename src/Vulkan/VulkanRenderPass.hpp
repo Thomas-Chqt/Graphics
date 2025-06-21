@@ -12,12 +12,20 @@
 
 #include "Graphics/RenderPass.hpp"
 
-#include "Vulkan/VulkanDevice.hpp"
-
 #include <vulkan/vulkan.hpp>
+
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <vector>
+    #include <optional>
+    namespace ext = std;
+#endif
 
 namespace gfx
 {
+
+class VulkanDevice;
 
 class VulkanRenderPass : public RenderPass
 {
@@ -28,12 +36,18 @@ public:
     VulkanRenderPass(const VulkanDevice&, const RenderPass::Descriptor&);
 
     const vk::RenderPass& vkRenderPass(void) const { return m_vkRenderPass; }
+
+    inline const ext::vector<AttachmentDescriptor>& colorAttachmentsDesc(void) const { return m_colorAttachmentsDesc; }
+    inline const ext::optional<AttachmentDescriptor>& depthAttachmentDesc() const { return m_depthAttachmentDesc; }
     
     ~VulkanRenderPass();
 
 private:
     const VulkanDevice* m_device;
     vk::RenderPass m_vkRenderPass;
+
+    ext::vector<AttachmentDescriptor> m_colorAttachmentsDesc;
+    ext::optional<AttachmentDescriptor> m_depthAttachmentDesc;
     
 public:
     VulkanRenderPass& operator = (const VulkanRenderPass&) = delete;

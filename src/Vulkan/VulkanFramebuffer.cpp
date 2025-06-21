@@ -34,22 +34,21 @@ namespace gfx
 VulkanFramebuffer::VulkanFramebuffer(const VulkanDevice& device, const Framebuffer::Descriptor& desc)
     : m_device(&device)
 {
-    m_attachments.resize(desc.colorAttachments.size() + (desc.depthAttachment ? 1 : 0));
-    m_imageViews.resize(m_attachments.size());
+    m_colorAttachments.resize(desc.colorAttachments.size());
+    m_imageViews.resize(desc.colorAttachments.size() + (desc.depthAttachment ? 1 : 0));
 
-    uint32_t i = 0;
-    for (auto& attachment : desc.colorAttachments) {
-        m_attachments[i] = ext::dynamic_pointer_cast<VulkanTexture>(attachment);
-        assert(m_attachments[i]);
+    for (uint32_t i = 0; auto& attachment : desc.colorAttachments) {
+        m_colorAttachments[i] = ext::dynamic_pointer_cast<VulkanTexture>(attachment);
+        assert(m_colorAttachments[i]);
         i++;
     }
     if (desc.depthAttachment) {
-        m_attachments[i] = ext::dynamic_pointer_cast<VulkanTexture>(desc.depthAttachment);
-        assert(m_attachments[i]);
-        i++;
+        m_depthAttachment = ext::dynamic_pointer_cast<VulkanTexture>(desc.depthAttachment);
+        assert(m_depthAttachment);
     }
 
-    for (size_t i = 0; auto& attachment : m_attachments)
+    size_t i = 0;
+    for (auto& attachment : m_colorAttachments)
     {
         vk::ImageViewCreateInfo imageCreateInfo {
             .image = attachment->vkImage(),
@@ -65,7 +64,24 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanDevice& device, const Framebuff
                 .baseMipLevel = 0, .levelCount = 1,
                 .baseArrayLayer = 0, .layerCount = 1}
         };
-
+        m_imageViews[i++] = m_device->vkDevice().createImageView(imageCreateInfo);
+    }
+    if (auto* depthAttachment = m_depthAttachment.get())
+    {
+        vk::ImageViewCreateInfo imageCreateInfo {
+            .image = depthAttachment->vkImage(),
+            .viewType = vk::ImageViewType::e2D,
+            .format = toVkFormat(depthAttachment->pixelFormat()),
+            .components = {
+                .r = vk::ComponentSwizzle::eIdentity,
+                .g = vk::ComponentSwizzle::eIdentity,
+                .b = vk::ComponentSwizzle::eIdentity,
+                .a = vk::ComponentSwizzle::eIdentity},
+            .subresourceRange = {
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0, .levelCount = 1,
+                .baseArrayLayer = 0, .layerCount = 1}
+        };
         m_imageViews[i++] = m_device->vkDevice().createImageView(imageCreateInfo);
     }
 
@@ -81,6 +97,22 @@ VulkanFramebuffer::VulkanFramebuffer(const VulkanDevice& device, const Framebuff
 
     m_vkFramebuffer = m_device->vkDevice().createFramebuffer(framebufferCreateInfo);
 }
+
+ext::vector<ext::shared_ptr<Texture>> VulkanFramebuffer::colorAttachments(void)
+{
+    ext::vector<ext::shared_ptr<Texture>> attachments(m_colorAttachments.size());
+    for (size_t i = 0; auto& attachment : m_colorAttachments)
+        attachments[i] = attachment;
+    return attachments;
+};
+
+const ext::vector<ext::shared_ptr<Texture>> VulkanFramebuffer::colorAttachments(void) const 
+{
+    ext::vector<ext::shared_ptr<Texture>> attachments(m_colorAttachments.size());
+    for (size_t i = 0; auto& attachment : m_colorAttachments)
+        attachments[i] = attachment;
+    return attachments;
+};
 
 VulkanFramebuffer::~VulkanFramebuffer()
 {

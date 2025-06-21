@@ -28,6 +28,8 @@ public:
     MetalRenderPass(MetalRenderPass&&)      = delete;
 
     MetalRenderPass(const RenderPass::Descriptor&);
+
+    inline const MTLRenderPassDescriptor* mtlRenderPassDescriptor() const { return m_mtlRenderPassDescriptor; }
     
     ~MetalRenderPass();
 

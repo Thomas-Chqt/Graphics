@@ -14,11 +14,11 @@
 
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalTexture.hpp"
-#include "Metal/MetalFramebuffer.hpp"
 
 #ifdef __OBJC__
     #import <QuartzCore/CAMetalLayer.h>
 #else
+    #define nil nullptr
     template<typename T> using id = T*;
     class CAMetalLayer;
     class CAMetalDrawable;
@@ -43,7 +43,9 @@ public:
 
     MetalSwapchain(const MetalDevice&, const Swapchain::Descriptor&);
 
-    const Framebuffer& nextFrameBuffer(void) override;
+    ext::shared_ptr<Framebuffer> nextFrameBuffer(void) override;
+
+    inline const id<CAMetalDrawable>& currentDrawable(void) const { return m_currentDrawable; }
 
     ~MetalSwapchain();
 
@@ -52,8 +54,7 @@ private:
     ext::vector<ext::shared_ptr<MetalTexture>> m_depthAttachments;
     
     int m_drawableIndex = 0;
-    id<CAMetalDrawable> m_currentDrawable;
-    MetalFramebuffer m_currentFramebuffer;
+    id<CAMetalDrawable> m_currentDrawable = nil;
 
 public:
     MetalSwapchain& operator=(const MetalSwapchain&) = delete;

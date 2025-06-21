@@ -7,6 +7,9 @@
  * ---------------------------------------------------
  */
 
+#ifndef METALFRAMEBUFFER_HPP
+#define METALFRAMEBUFFER_HPP
+
 #include "Graphics/Framebuffer.hpp"
 
 #include "Metal/MetalTexture.hpp"
@@ -32,6 +35,15 @@ public:
     MetalFramebuffer(const Framebuffer::Descriptor&);
     MetalFramebuffer(const ext::vector<ext::shared_ptr<MetalTexture>>& colorAttachments, const ext::shared_ptr<MetalTexture>& depthAttachment);
 
+    ext::vector<ext::shared_ptr<Texture>> colorAttachments(void) override;
+    const ext::vector<ext::shared_ptr<Texture>> colorAttachments(void) const override;
+
+    inline ext::shared_ptr<Texture> colorAttachment(size_t i) override { return m_colorAttachments[i]; };
+    inline const ext::shared_ptr<Texture> colorAttachment(size_t i) const override { return m_colorAttachments[i]; };
+
+    inline ext::shared_ptr<Texture> depthAttachment(void) override { return m_depthAttachment; };
+    inline const ext::shared_ptr<Texture> depthAttachment(void) const override { return m_depthAttachment; };
+
     ~MetalFramebuffer() = default;
 
 private:
@@ -44,3 +56,5 @@ public:
 };
 
 }
+
+#endif // METALFRAMEBUFFER_HPP
