@@ -7,17 +7,15 @@
  * ---------------------------------------------------
  */
 
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #define VULKAN_HPP_NO_CONSTRUCTORS
 
-#include "Graphics/RenderPass.hpp"
 #include "Graphics/Framebuffer.hpp"
 
 #include "Vulkan/VulkanCommandBuffer.hpp"
-#include "Vulkan/VulkanDevice.hpp"
-#include "Vulkan/VulkanRenderPass.hpp"
-#include "Vulkan/VulkanFramebuffer.hpp"
-#include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanEnums.hpp"
+#include "Vulkan/QueueFamily.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -28,127 +26,110 @@
     #include <array>
     #include <memory>
     #include <optional>
+    #include <utility>
+    #include <cstddef>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
 
-VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice& device, const vk::CommandPool& pool)
-    : m_device(&device)
+VulkanCommandBuffer::VulkanCommandBuffer(vk::CommandBuffer&& commandBuffer, const QueueFamily& queueFamily)
+    : m_vkCommandBuffer(std::move(commandBuffer)), m_queueFamily(queueFamily)
 {
-    vk::CommandBufferAllocateInfo commandBufferAllocateInfo = {
-        .commandPool = pool,
-        .level = vk::CommandBufferLevel::ePrimary,
-        .commandBufferCount = 1
-    };
-    m_vkCommandBuffer = device.vkDevice().allocateCommandBuffers(commandBufferAllocateInfo).front();
 }
 
-void VulkanCommandBuffer::beginRenderPass(const ext::shared_ptr<RenderPass>& _renderPass, const ext::shared_ptr<Framebuffer>& _framebuffer)
+void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 {
-    const ext::shared_ptr<VulkanRenderPass> renderPass = ext::dynamic_pointer_cast<VulkanRenderPass>(_renderPass);
-    const ext::shared_ptr<VulkanFramebuffer> framebuffer = ext::dynamic_pointer_cast<VulkanFramebuffer>(_framebuffer);
+    ext::vector<vk::RenderingAttachmentInfo> colorAttachmentInfos(framebuffer.colorAttachments.size());
+    ext::optional<vk::RenderingAttachmentInfo> depthAttachmentInfo;
+    ext::vector<vk::ImageMemoryBarrier> imageMemoryBarriers;
 
-    ext::vector<vk::ClearValue> clearValues;
-    clearValues.reserve(renderPass->colorAttachmentsDesc().size() + (renderPass->depthAttachmentDesc().has_value() ? 1 : 0));
-    for (auto& colorAttachmentDesc : renderPass->colorAttachmentsDesc())
+    for (size_t i = 0; auto& colorAttachment : framebuffer.colorAttachments)
     {
-        vk::ClearValue clearColor = {
-            .color.float32 = ext::array<float, 4>{
-                colorAttachmentDesc.clearColor[0],
-                colorAttachmentDesc.clearColor[1],
-                colorAttachmentDesc.clearColor[2],
-                colorAttachmentDesc.clearColor[3]
-            }
-        };
-        clearValues.push_back(clearColor);
-    }
-    if (renderPass->depthAttachmentDesc().has_value())
-    {
-        auto& depthAttachmentDesc = renderPass->depthAttachmentDesc().value();
-        vk::ClearValue clearDepth = {
-            .depthStencil.depth = depthAttachmentDesc.clearDepth
-        };
-        clearValues.push_back(clearDepth);
+        const VulkanTexture& vkTexture = dynamic_cast<const VulkanTexture&>(*colorAttachment.texture);
+        colorAttachmentInfos[i] = vk::RenderingAttachmentInfo{}
+            .setLoadOp(toVkAttachmentLoadOp(colorAttachment.loadAction))
+            .setClearValue(vk::ClearValue{
+                .color.float32 = ext::array<float, 4>{
+                    colorAttachment.clearColor[0],
+                    colorAttachment.clearColor[1],
+                    colorAttachment.clearColor[2],
+                    colorAttachment.clearColor[3]}})
+            .setImageView(vkTexture.vkImageView())
+            .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+        auto imageMemoryBarrier = vk::ImageMemoryBarrier{}
+            .setSrcAccessMask(vk::AccessFlagBits{})
+            .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+            .setOldLayout(vk::ImageLayout::eUndefined)
+            .setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
+            .setSrcQueueFamilyIndex(m_queueFamily.index)
+            .setDstQueueFamilyIndex(m_queueFamily.index)
+            .setImage(vkTexture.vkImage())
+            .setSubresourceRange({
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            });
+        imageMemoryBarriers.push_back(imageMemoryBarrier);
     }
 
-    vk::RenderPassBeginInfo renderPassBeginInfo = {
-        .renderPass = renderPass->vkRenderPass(),
-        .framebuffer = framebuffer->vkFramebuffer(),
-        .renderArea = {
+    if (auto& depthAttachment = framebuffer.depthAttachment)
+    {
+        const VulkanTexture& vkTexture = dynamic_cast<const VulkanTexture&>(*depthAttachment->texture);
+        depthAttachmentInfo = vk::RenderingAttachmentInfo{}
+            .setLoadOp(toVkAttachmentLoadOp(depthAttachment->loadAction))
+            .setClearValue({.depthStencil.depth = depthAttachment->clearDepth})
+            .setImageView(vkTexture.vkImageView())
+            .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+        auto imageMemoryBarrier = vk::ImageMemoryBarrier{}
+            .setSrcAccessMask(vk::AccessFlagBits{})
+            .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+            .setOldLayout(vk::ImageLayout::eUndefined)
+            .setNewLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+            .setSrcQueueFamilyIndex(m_queueFamily.index)
+            .setDstQueueFamilyIndex(m_queueFamily.index)
+            .setImage(vkTexture.vkImage())
+            .setSubresourceRange({
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            });
+        imageMemoryBarriers.push_back(imageMemoryBarrier);
+
+    }
+
+    auto renderingInfo = vk::RenderingInfo{}
+        .setRenderArea(vk::Rect2D{
             .offset = {0, 0},
             .extent = {
-                .width = framebuffer->colorAttachment(0)->width(),
-                .height = framebuffer->colorAttachment(0)->height(),
-            },
-        },
-    };
-    renderPassBeginInfo.setClearValues(clearValues);
+                .width = framebuffer.colorAttachments[0].texture->width(),
+                .height = framebuffer.colorAttachments[0].texture->height()
+            }
+        })
+        .setLayerCount(1)
+        .setViewMask(0)
+        .setColorAttachments(colorAttachmentInfos)
+        .setPDepthAttachment(depthAttachmentInfo ? &depthAttachmentInfo.value() : nullptr);
 
-    m_usedRenderPasses.push_back(renderPass);
+    if (ext::exchange(m_isBegin, true) == false)
+        m_vkCommandBuffer.begin(vk::CommandBufferBeginInfo{});
 
-    m_usedFramebuffers.push_back(framebuffer);
-    for (auto& colorAttachment : framebuffer->vkColorAttachments()) {
-        m_imageTransitions[colorAttachment.get()].first = vk::ImageLayout::eColorAttachmentOptimal;
-        m_imageTransitions[colorAttachment.get()].second = vk::ImageLayout::eGeneral;
-    }
-    if (auto depthAttachement = framebuffer->vkDepthAttachment()) {
-        m_imageTransitions[depthAttachement.get()].first = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-        m_imageTransitions[depthAttachement.get()].second = vk::ImageLayout::eGeneral;
-    }
+    m_vkCommandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer, {},
+                                      nullptr, nullptr, imageMemoryBarriers);
 
-    m_vkCommandBuffer.begin(vk::CommandBufferBeginInfo{});
-    m_vkCommandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+    m_vkCommandBuffer.beginRenderingKHR(renderingInfo);
 }
 
 void VulkanCommandBuffer::endRenderPass(void)
 {
-    m_vkCommandBuffer.endRenderPass();
-}
-
-ext::optional<vk::ImageLayout> VulkanCommandBuffer::imageSrcLayout(const VulkanTexture& texture)
-{
-    auto it = m_imageTransitions.find((VulkanTexture*)&texture);
-    if (it == m_imageTransitions.end())
-        return ext::nullopt;
-    return it->second.first;
-}
-
-ext::optional<vk::ImageLayout> VulkanCommandBuffer::imageDstLayout(const VulkanTexture& texture)
-{
-    auto it = m_imageTransitions.find((VulkanTexture*)&texture);
-    if (it == m_imageTransitions.end())
-        return ext::nullopt;
-    return it->second.second;
-}
-
-void VulkanCommandBuffer::addImageMemoryBarrier(const VulkanTexture& texture, const vk::ImageMemoryBarrier& _barrier)
-{
-    auto it = m_imageTransitions.find((VulkanTexture*)&texture);
-    if (it == m_imageTransitions.end())
-        return;
-    
-    vk::ImageMemoryBarrier barrier = _barrier;
-    barrier.setOldLayout(it->second.second);
-    barrier.setImage(texture.vkImage());
-
-    it->second.second = barrier.newLayout;
-
-    m_vkCommandBuffer.pipelineBarrier(
-        vk::PipelineStageFlagBits::eColorAttachmentOutput,
-        vk::PipelineStageFlagBits::eTransfer,
-        {},
-        nullptr,
-        nullptr,
-        barrier);
-}
-
-void VulkanCommandBuffer::reset(void)
-{
-    m_imageTransitions.clear();
-    m_usedFramebuffers.clear();
-    m_usedRenderPasses.clear();
+    m_vkCommandBuffer.endRenderingKHR();
 }
 
 }

@@ -51,7 +51,7 @@ public:
     ~VulkanInstance();
 
 private:
-    ext::vector<VulkanPhysicalDevice*> findSuitableDevices(const VulkanDevice::Descriptor&);
+    ext::vector<VulkanPhysicalDevice*> findSuitableDevices(VulkanDevice::Descriptor&);
 
     vk::Instance m_vkInstance;
     VkDebugUtilsMessengerEXT m_debugMessenger;

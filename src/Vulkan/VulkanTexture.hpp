@@ -32,20 +32,23 @@ public:
     VulkanTexture(const VulkanTexture&) = delete;
     VulkanTexture(VulkanTexture&&) = delete;
 
-    VulkanTexture(vk::Image, const Texture::Descriptor&);
+    VulkanTexture(const VulkanDevice&, vk::Image, const Texture::Descriptor&);
 
     inline uint32_t width() const override { return m_width; }
     inline uint32_t height() const override { return m_height; }
     inline PixelFormat pixelFormat(void) const override { return m_pixelFormat; };
 
-    inline const vk::Image vkImage() const { return m_vkImage; }
+    inline const vk::Image& vkImage() const { return m_vkImage; }
+    inline const vk::ImageView& vkImageView() const { return m_vkImageView; }
 
     ~VulkanTexture();
 
-private:
+protected:
     const VulkanDevice* m_device = nullptr;
 
     vk::Image m_vkImage;
+    vk::ImageView m_vkImageView;
+    bool m_shouldDestroyImg;
     
     uint32_t m_width, m_height;
     PixelFormat m_pixelFormat;

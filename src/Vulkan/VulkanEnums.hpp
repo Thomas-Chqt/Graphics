@@ -11,6 +11,7 @@
 #define VULKANENUMS_HPP
 
 #include "Graphics/Enums.hpp"
+
 #include <vulkan/vulkan.hpp>
 
 namespace gfx

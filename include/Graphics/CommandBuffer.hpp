@@ -11,7 +11,6 @@
 #define COMMANDBUFFER_HPP
 
 #include "Graphics/Framebuffer.hpp"
-#include "Graphics/RenderPass.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
 #else
@@ -24,22 +23,19 @@ class CommandBuffer
 {
 public:
     CommandBuffer(const CommandBuffer&) = delete;
+    CommandBuffer(CommandBuffer&&) = delete;
 
-public:
-    virtual void beginRenderPass(const ext::shared_ptr<RenderPass>&, const ext::shared_ptr<Framebuffer>&) = 0;
+    virtual void beginRenderPass(const Framebuffer&) = 0;
     virtual void endRenderPass(void) = 0;
 
     virtual ~CommandBuffer() = default;
 
 protected:
     CommandBuffer() = default;
-    CommandBuffer(CommandBuffer&&) = default;
 
 public:
     CommandBuffer& operator=(const CommandBuffer&) = delete;
-
-protected:
-    CommandBuffer& operator=(CommandBuffer&&) = default;
+    CommandBuffer& operator=(CommandBuffer&&) = delete;
 };
 
 } // namespace gfx

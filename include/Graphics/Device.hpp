@@ -11,7 +11,7 @@
 #define DEVICE_HPP
 
 #include "Graphics/CommandBuffer.hpp"
-#include "Graphics/RenderPass.hpp"
+#include "Graphics/Drawable.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/QueueCapabilities.hpp"
 
@@ -37,17 +37,18 @@ public:
     Device(const Device&) = delete;
     Device(Device&&) = delete;
 
-    virtual ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const = 0;
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
 
     virtual void beginFrame(void) = 0;
  
-    virtual CommandBuffer& commandBuffer(void) = 0;
+    virtual ext::unique_ptr<CommandBuffer> commandBuffer(void) = 0;
 
-    virtual void submitCommandBuffer(const CommandBuffer&) = 0;
-    virtual void presentSwapchain(const Swapchain&) = 0;
+    virtual void submitCommandBuffer(ext::unique_ptr<CommandBuffer>&&) = 0;
+    virtual void presentDrawable(const ext::shared_ptr<Drawable>&) = 0;
 
     virtual void endFrame(void) = 0;
+
+    virtual void waitIdle(void) = 0;
 
     virtual ~Device() = default;
 

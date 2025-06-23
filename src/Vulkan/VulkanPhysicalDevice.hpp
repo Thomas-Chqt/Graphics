@@ -6,6 +6,7 @@
  * Date: 2025/05/30 14:46:35
  * ---------------------------------------------------
  */
+
 #ifndef VULKANPHYSICALDEVICE_HPP
 #define VULKANPHYSICALDEVICE_HPP
 
@@ -28,7 +29,7 @@ class VulkanPhysicalDevice : public vk::PhysicalDevice
 public:
     using vk::PhysicalDevice::PhysicalDevice;
 
-    bool isSuitable(const VulkanDevice::Descriptor&) const;
+    bool isSuitable(VulkanDevice::Descriptor&) const;
 
     ext::vector<QueueFamily> getQueueFamilies() const;
     bool suportExtensions(const ext::vector<const char*>& extensionNames) const;

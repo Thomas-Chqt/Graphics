@@ -10,10 +10,9 @@
 #ifndef SWAPCHAIN_HPP
 #define SWAPCHAIN_HPP
 
-#include "Graphics/Framebuffer.hpp"
-#include "Graphics/RenderPass.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Drawable.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -36,15 +35,13 @@ public:
         uint32_t imageCount = 3;
         PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
         PresentMode presentMode = PresentMode::fifo;
-        RenderPass* renderPass;
-        bool createDepthAttachments = false;
     };
 
 public:
     Swapchain(const Swapchain&) = delete;
     Swapchain(Swapchain&&) = delete;
 
-    virtual ext::shared_ptr<Framebuffer> nextFrameBuffer(void) = 0;
+    virtual ext::shared_ptr<Drawable> nextDrawable(void) = 0;
 
     virtual ~Swapchain() = default;
 

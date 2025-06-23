@@ -8,6 +8,7 @@
  */
 
 #define VULKAN_HPP_NO_CONSTRUCTORS
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 
 #include "Graphics/Device.hpp"
 #include "Graphics/Instance.hpp"
@@ -18,6 +19,8 @@
 #include "Vulkan/VulkanDevice.hpp"
 
 #include <vulkan/vulkan.hpp>
+
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
@@ -101,6 +104,12 @@ bool hasLayers(const ext::array<const char*, S>& wantedLayers)
 
 VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
 {
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+    
+    uint32_t instanceVersion = vk::enumerateInstanceVersion();
+    if (VK_VERSION_MAJOR(instanceVersion) < 1 || VK_VERSION_MINOR(instanceVersion) < 2) {
+        throw ext::runtime_error("instance version is lower than 1.2");
+    }
 
     vk::ApplicationInfo appInfo = {
         .pApplicationName = desc.appName.c_str(),
@@ -111,7 +120,7 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         .engineVersion = VK_MAKE_VERSION(desc.engineVersion[0],
                                          desc.engineVersion[1],
                                          desc.engineVersion[2]),
-        .apiVersion = VK_API_VERSION_1_1
+        .apiVersion = VK_VERSION_MINOR(instanceVersion) >= 3 ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2 
     };
 
     ext::vector<const char*> extensions = getRequiredExtensions(enableValidationLayers);
@@ -149,12 +158,10 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
 
     m_vkInstance = vk::createInstance(instanceInfo);
 
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkInstance);
+
     if constexpr (enableValidationLayers)
-    {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vkInstance, "vkCreateDebugUtilsMessengerEXT");
-        if (func == nullptr || func(m_vkInstance, debugCreateInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
-            throw ext::runtime_error("failed to set up debug messenger!");
-    }
+        m_debugMessenger = m_vkInstance.createDebugUtilsMessengerEXT(debugCreateInfo);
 }
 
 #if defined(GFX_GLFW_ENABLED)
@@ -186,15 +193,11 @@ ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc
 VulkanInstance::~VulkanInstance()
 {
     if constexpr (enableValidationLayers)
-    {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_vkInstance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr)
-            func(m_vkInstance, m_debugMessenger, nullptr);
-    }
+        m_vkInstance.destroyDebugUtilsMessengerEXT(m_debugMessenger);
     m_vkInstance.destroy();
 }
     
-ext::vector<VulkanPhysicalDevice*> VulkanInstance::findSuitableDevices(const VulkanDevice::Descriptor& desc)
+ext::vector<VulkanPhysicalDevice*> VulkanInstance::findSuitableDevices(VulkanDevice::Descriptor& desc)
 {
     auto physicalDevices = m_vkInstance.enumeratePhysicalDevices()
         | ext::views::transform([](auto& d){ return VulkanPhysicalDevice(d); });

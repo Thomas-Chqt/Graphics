@@ -102,7 +102,7 @@ endif()
 
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`
 
-target_compile_features(Graphics PUBLIC cxx_std_20)
+target_compile_features(Graphics PUBLIC cxx_std_23)
 
 file(GLOB_RECURSE GFX_SRC "include/*.hpp")
 target_sources(Graphics PRIVATE ${GFX_SRC})

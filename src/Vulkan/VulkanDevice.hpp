@@ -11,16 +11,15 @@
 #define VULKANDEVICE_HPP
 
 #include "Graphics/Device.hpp"
-#include "Graphics/RenderPass.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
+#include "Graphics/Drawable.hpp"
 
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
-#include "Vulkan/VulkanSwapchain.hpp"
+#include "Vulkan/VulkanDrawable.hpp"
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_handles.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -30,7 +29,7 @@
     namespace ext = std;
 #endif
 
-constexpr int MAX_FRAMES_IN_FLIGHT = 3;
+constexpr int MAX_FRAMES_IN_FLIGHT = 1;
 
 namespace gfx
 {
@@ -53,21 +52,21 @@ public:
 
     VulkanDevice(const VulkanPhysicalDevice&, const Descriptor&);
 
-    ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
 
     void beginFrame(void) override;
 
-    CommandBuffer& commandBuffer(void) override;
+    ext::unique_ptr<CommandBuffer> commandBuffer(void) override;
  
-    void submitCommandBuffer(const CommandBuffer&) override;
-    void presentSwapchain(const Swapchain&) override;
+    void submitCommandBuffer(ext::unique_ptr<CommandBuffer>&&) override;
+    void presentDrawable(const ext::shared_ptr<Drawable>&) override;
 
     void endFrame(void) override;
 
+    void waitIdle(void) override;
+
     inline const vk::Device& vkDevice(void) const { return m_vkDevice; }
     inline const VulkanPhysicalDevice& physicalDevice(void) const { return *m_physicalDevice; }
-    inline const vk::Semaphore& imageAvailableSemaphore(void) const { return m_imageAvailableSemaphore; }
 
     ~VulkanDevice();
 
@@ -78,11 +77,11 @@ private:
     vk::Queue m_queue;
 
     vk::CommandPool m_commandPool;
-    VulkanCommandBuffer m_commandBuffer;
-    const VulkanSwapchain* m_presentedSwapchain;
-    vk::Semaphore m_imageAvailableSemaphore;
-    vk::Semaphore m_renderFinisedSemaphore;
-    vk::Fence m_renderFinisedFence;
+    vk::Fence m_frameCompletedFence;
+    ext::vector<vk::CommandBuffer> m_vkCommandBuffers;
+    int m_nextVkCommandBuffer = 0;
+    ext::vector<ext::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
+    ext::vector<ext::shared_ptr<VulkanDrawable>> m_presentedDrawables;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

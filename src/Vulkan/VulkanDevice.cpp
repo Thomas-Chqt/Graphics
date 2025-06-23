@@ -9,15 +9,15 @@
 
 #define VULKAN_HPP_NO_CONSTRUCTORS
 
-#include "Graphics/RenderPass.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
+#include "Graphics/Drawable.hpp"
 
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
-#include "Vulkan/VulkanRenderPass.hpp"
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
+#include "Vulkan/VulkanDrawable.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -30,6 +30,8 @@
     #include <memory>
     #include <ranges>
     #include <stdexcept>
+    #include <cstddef>
+    #include <cstring>
     namespace ext = std;
 #endif
 
@@ -51,12 +53,16 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const VulkanDe
 
     vk::PhysicalDeviceFeatures deviceFeatures{};
 
-    vk::DeviceCreateInfo deviceCreateInfo = {
-        .enabledExtensionCount = static_cast<uint32_t>(desc.deviceExtensions.size()),
-        .ppEnabledExtensionNames = desc.deviceExtensions.data(),
-        .pEnabledFeatures = &deviceFeatures,
-        .queueCreateInfoCount = 1,
-        .pQueueCreateInfos = &queueCreateInfo};
+    auto dynamicRenderingFeature = vk::PhysicalDeviceDynamicRenderingFeatures{}
+        .setDynamicRendering(vk::True);
+
+    auto deviceCreateInfo = vk::DeviceCreateInfo{}
+        .setEnabledExtensionCount(static_cast<uint32_t>(desc.deviceExtensions.size()))
+        .setPpEnabledExtensionNames(desc.deviceExtensions.data())
+        .setPEnabledFeatures(&deviceFeatures)
+        .setQueueCreateInfos(queueCreateInfo);
+    if (ext::ranges::find_if(desc.deviceExtensions, [](const char* s) { return ::strcmp(s, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0; }) != desc.deviceExtensions.end())
+        deviceCreateInfo.setPNext(&dynamicRenderingFeature);
 
     m_vkDevice = phyDevice.createDevice(deviceCreateInfo);
     m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
@@ -66,111 +72,139 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const VulkanDe
     };
 
     m_commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
-    m_commandBuffer = VulkanCommandBuffer(*this, m_commandPool);
-
-    m_imageAvailableSemaphore = m_vkDevice.createSemaphore(vk::SemaphoreCreateInfo{});
-    m_renderFinisedSemaphore = m_vkDevice.createSemaphore(vk::SemaphoreCreateInfo{});
-    m_renderFinisedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
-}
-
-ext::unique_ptr<RenderPass> VulkanDevice::newRenderPass(const RenderPass::Descriptor& desc) const
-{
-    return ext::make_unique<VulkanRenderPass>(*this, desc);
+    m_frameCompletedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
 }
 
 ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
 {
-    return ext::make_unique<VulkanSwapchain>(*this, desc);
+    ext::vector<ext::shared_ptr<VulkanDrawable>> drawables(MAX_FRAMES_IN_FLIGHT);
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        drawables[i] = std::make_shared<VulkanDrawable>(*this);
+    return ext::make_unique<VulkanSwapchain>(*this, std::move(drawables), desc);
 }
 
 void VulkanDevice::beginFrame(void) 
 {
-    if (m_vkDevice.waitForFences(m_renderFinisedFence, true, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
+    if (m_vkDevice.waitForFences(m_frameCompletedFence, true, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
         throw ext::runtime_error("failed to wait for fence");
-    m_vkDevice.resetFences(m_renderFinisedFence);
-
-    m_commandBuffer.reset();
+    m_vkDevice.resetFences(m_frameCompletedFence);
+    
+    for (const auto& cmdBuf : m_submittedCommandBuffers)
+    {
+        if (m_nextVkCommandBuffer > 0)
+            m_vkCommandBuffers[--m_nextVkCommandBuffer] = ext::move(cmdBuf->vkCommandBuffer());
+        else
+            m_vkCommandBuffers.push_back(ext::move(cmdBuf->vkCommandBuffer()));
+    }
+    m_submittedCommandBuffers.clear();
     m_vkDevice.resetCommandPool(m_commandPool);
 }
 
-CommandBuffer& VulkanDevice::commandBuffer(void)
+ext::unique_ptr<CommandBuffer> VulkanDevice::commandBuffer(void)
 {
-    return m_commandBuffer;
+    if (m_nextVkCommandBuffer < m_vkCommandBuffers.size())
+        return ext::make_unique<VulkanCommandBuffer>(ext::move(m_vkCommandBuffers[m_nextVkCommandBuffer++]), m_queueFamily);
+    else {
+        auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
+            .setCommandPool(m_commandPool)
+            .setLevel(vk::CommandBufferLevel::ePrimary)
+            .setCommandBufferCount(1);
+        vk::CommandBuffer vkCommandBuffer = m_vkDevice.allocateCommandBuffers(commandBufferAllocateInfo).front();
+        return ext::make_unique<VulkanCommandBuffer>(ext::move(vkCommandBuffer), m_queueFamily);
+    }
 }
 
-void VulkanDevice::submitCommandBuffer(const CommandBuffer& _commandBuffer)
+void VulkanDevice::submitCommandBuffer(ext::unique_ptr<CommandBuffer>&& commandBuffer)
 {
-    const VulkanCommandBuffer& commandBuffer = dynamic_cast<const VulkanCommandBuffer&>(_commandBuffer);
-    assert(&commandBuffer == &m_commandBuffer);
+    assert(dynamic_cast<VulkanCommandBuffer*>(commandBuffer.get()));
+    m_submittedCommandBuffers.push_back(ext::unique_ptr<VulkanCommandBuffer>(dynamic_cast<VulkanCommandBuffer*>(commandBuffer.release())));
 }
 
-void VulkanDevice::presentSwapchain(const Swapchain& _swapchain)
+void VulkanDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable)
 {
-    const VulkanSwapchain& swapchain = dynamic_cast<const VulkanSwapchain&>(_swapchain);
+    auto drawable = ext::dynamic_pointer_cast<VulkanDrawable>(_drawable);
+    auto imageMemoryBarrier = vk::ImageMemoryBarrier{}
+        .setSrcAccessMask(vk::AccessFlagBits{})
+        .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+        .setOldLayout(vk::ImageLayout::eColorAttachmentOptimal)
+        .setNewLayout(vk::ImageLayout::ePresentSrcKHR)
+        .setSrcQueueFamilyIndex(m_queueFamily.index)
+        .setDstQueueFamilyIndex(m_queueFamily.index)
+        .setImage(drawable->swapchainImage()->vkImage())
+        .setSubresourceRange({
+            .aspectMask = vk::ImageAspectFlagBits::eColor,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        });
 
-    vk::ImageMemoryBarrier imageMemoryBarrier = {
-        .newLayout = vk::ImageLayout::ePresentSrcKHR,
-        .srcQueueFamilyIndex = m_queueFamily.index,
-        .dstQueueFamilyIndex = m_queueFamily.index,
-        .subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor,
-        .subresourceRange.baseMipLevel = 0,
-        .subresourceRange.levelCount = 1,
-        .subresourceRange.baseArrayLayer = 0,
-        .subresourceRange.layerCount = 1,
-        .srcAccessMask = vk::AccessFlagBits{},
-        .dstAccessMask = vk::AccessFlagBits::eTransferWrite
-    };
+    m_submittedCommandBuffers.back()->vkCommandBuffer().pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                                                                        vk::PipelineStageFlagBits::eTransfer,
+                                                                        {}, nullptr, nullptr, imageMemoryBarrier);
 
-    m_commandBuffer.addImageMemoryBarrier(swapchain.currentTexture(), imageMemoryBarrier);
-
-    m_presentedSwapchain = &swapchain;
+    m_presentedDrawables.push_back(ext::dynamic_pointer_cast<VulkanDrawable>(drawable));
 }
 
 void VulkanDevice::endFrame(void)
 {
-    m_commandBuffer.vkCommandBuffer().end();
+    for (size_t i = 0; auto& buffer : m_submittedCommandBuffers)
+        buffer->vkCommandBuffer().end();
 
-    vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-    vk::SubmitInfo submitInfo = {
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &m_imageAvailableSemaphore,
-        .pWaitDstStageMask = waitStages,
-        .commandBufferCount = 1,
-        .pCommandBuffers = &m_commandBuffer.vkCommandBuffer(),
-        .signalSemaphoreCount = 1,
-        .pSignalSemaphores = &m_renderFinisedSemaphore
-    };
+    ext::vector<vk::Semaphore> waitSemaphores = m_presentedDrawables
+        | ext::views::transform([](auto& d){return d->imageAvailableSemaphore();})
+        | ext::ranges::to<ext::vector>();
+
+    ext::vector<vk::PipelineStageFlags> waitStages (m_presentedDrawables.size(), vk::PipelineStageFlagBits::eColorAttachmentOutput);
+
+    ext::vector<vk::CommandBuffer> vkCommandBuffers = m_submittedCommandBuffers
+        | ext::views::transform([](auto& b){return b->vkCommandBuffer();})
+        | ext::ranges::to<ext::vector>();
+
+    ext::vector<vk::Semaphore> signalSemaphores = m_presentedDrawables
+        | ext::views::transform([](auto& d){return d->swapchainImage()->imagePresentableSemaphore();})
+        | ext::ranges::to<ext::vector>();
+
+    auto submitInfo = vk::SubmitInfo{}
+        .setWaitSemaphores(waitSemaphores)
+        .setPWaitDstStageMask(waitStages.data())
+        .setCommandBuffers(vkCommandBuffers)
+        .setSignalSemaphores(signalSemaphores);
     
-    m_queue.submit(submitInfo, m_renderFinisedFence);
+    m_queue.submit(submitInfo, m_frameCompletedFence);
+    
+    ext::vector<vk::SwapchainKHR> swapchains = m_presentedDrawables
+        | ext::views::transform([](auto& d){return d->swapchainImage()->swapchain().vkSwapchain();})
+        | ext::ranges::to<ext::vector>();
 
-    vk::PresentInfoKHR presentInfo = {
-        .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &m_renderFinisedSemaphore,
-        .swapchainCount = 1,
-        .pSwapchains = &m_presentedSwapchain->vkSwapchain(),
-        .pImageIndices = &m_presentedSwapchain->currentImageIndex()
-    };
+    ext::vector<uint32_t> imageIndices = m_presentedDrawables
+        | ext::views::transform([](auto& d){return d->swapchainImage()->imageIndex();})
+        | ext::ranges::to<ext::vector>();
+
+    auto presentInfo = vk::PresentInfoKHR{}
+        .setWaitSemaphores(signalSemaphores)
+        .setSwapchains(swapchains)
+        .setImageIndices(imageIndices);
 
     vk::Result result = m_queue.presentKHR(&presentInfo);
+
+    m_presentedDrawables.clear();
+
     if (result != vk::Result::eSuccess)
         throw std::runtime_error("failed to present swap chain image!");
 }
 
+void VulkanDevice::waitIdle(void)
+{
+    m_vkDevice.waitIdle();
+}
+
 VulkanDevice::~VulkanDevice()
 {
-    (void)m_vkDevice.waitForFences(m_renderFinisedFence, true, ext::numeric_limits<uint64_t>::max());
-    m_vkDevice.resetFences(m_renderFinisedFence);
+    m_submittedCommandBuffers.clear();
 
-    m_commandBuffer.reset();
-    m_vkDevice.resetCommandPool(m_commandPool);
-
-    m_vkDevice.destroyFence(m_renderFinisedFence);
-
-    m_vkDevice.destroySemaphore(m_renderFinisedSemaphore);
-    m_vkDevice.destroySemaphore(m_imageAvailableSemaphore);
-
+    m_vkDevice.destroyFence(m_frameCompletedFence);
     m_vkDevice.destroyCommandPool(m_commandPool);
-
     m_vkDevice.destroy();
 }
 

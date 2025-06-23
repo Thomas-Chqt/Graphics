@@ -8,10 +8,10 @@
  */
 
 #include "Graphics/CommandBuffer.hpp"
+#include "Graphics/Drawable.hpp"
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
-#include "Graphics/RenderPass.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
@@ -36,6 +36,7 @@ int main()
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
     GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
 
     ext::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
@@ -43,7 +44,7 @@ int main()
 
     ext::unique_ptr<gfx::Surface> surface = instance->createSurface(window);
     assert(surface);
-    
+
     gfx::Device::Descriptor deviceDescriptor = {
         .queueCaps = {
             .graphics = true,
@@ -58,18 +59,6 @@ int main()
     assert(surface->supportedPixelFormats(*device).contains(gfx::PixelFormat::BGRA8Unorm));
     assert(surface->supportedPresentModes(*device).contains(gfx::PresentMode::fifo));
 
-    gfx::RenderPass::Descriptor renderPassDescriptor = {
-        .colorAttachments = {
-            gfx::AttachmentDescriptor{
-                .format = gfx::PixelFormat::BGRA8Unorm,
-                .loadAction = gfx::LoadAction::clear,
-                .clearColor = { 0.0f, 0.0f, 0.0f}
-            }
-        }
-    };
-    ext::shared_ptr<gfx::RenderPass> renderPass = device->newRenderPass(renderPassDescriptor);
-    assert(renderPass);
-    
     int width, height;
     ::glfwGetFramebufferSize(window, &width, &height);
     gfx::Swapchain::Descriptor swapchainDescriptor = {
@@ -78,27 +67,38 @@ int main()
         .imageCount = 3,
         .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
         .presentMode = gfx::PresentMode::fifo,
-        .renderPass = renderPass.get(),
-        .createDepthAttachments = false
     };
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
 
-    glfwPollEvents();
-    while (!glfwWindowShouldClose(window))
+    while (glfwWindowShouldClose(window) == false)
     {
         device->beginFrame();
+        
+        ext::shared_ptr<gfx::Drawable> drawable = swapchain->nextDrawable();
+        ext::unique_ptr<gfx::CommandBuffer> commandBuffer = device->commandBuffer();
 
-        gfx::CommandBuffer& commandBuffer = device->commandBuffer();
-        commandBuffer.beginRenderPass(renderPass, swapchain->nextFrameBuffer());
-        commandBuffer.endRenderPass();
+        gfx::Framebuffer framebuffer = {
+            .colorAttachments = {
+                gfx::Framebuffer::Attachment{
+                    .loadAction = gfx::LoadAction::clear,
+                    .clearColor = {0.0f, 0.0f, 0.0f, 0.0f },
+                    .texture = drawable->texture()
+                } 
+            }
+        };
 
-        device->submitCommandBuffer(commandBuffer);
-        device->presentSwapchain(*swapchain);
+        commandBuffer->beginRenderPass(framebuffer);
+        commandBuffer->endRenderPass();
+
+        device->submitCommandBuffer(std::move(commandBuffer));
+        device->presentDrawable(drawable);
         
         device->endFrame();
 
         glfwPollEvents();
     }
+
+    device->waitIdle();
 
     glfwDestroyWindow(window);
     glfwTerminate();

@@ -16,19 +16,19 @@
 namespace gfx
 {
 
-MetalTexture::MetalTexture(id<MTLTexture> mtltexture)
-    : m_shouldDestroyTexture(false), m_mtlTexture(mtltexture)
+MetalTexture::MetalTexture(const id<MTLTexture>& mtltexture) { @autoreleasepool
 {
-}
+    m_mtlTexture = [mtltexture retain];
+}}
 
 uint32_t MetalTexture::width() const { @autoreleasepool
 {
-    return m_mtlTexture.width;
+    return static_cast<uint32_t>(m_mtlTexture.width);
 }}
 
 uint32_t MetalTexture::height() const { @autoreleasepool
 {
-    return m_mtlTexture.height;
+    return static_cast<uint32_t>(m_mtlTexture.height);
 }}
 
 PixelFormat MetalTexture::pixelFormat(void) const { @autoreleasepool
@@ -36,10 +36,9 @@ PixelFormat MetalTexture::pixelFormat(void) const { @autoreleasepool
     return toPixelFormat([m_mtlTexture pixelFormat]);   
 }}
 
-MetalTexture::~MetalTexture()
+MetalTexture::~MetalTexture() { @autoreleasepool
 {
-    if (m_shouldDestroyTexture)
-        [m_mtlTexture release];
-}
+    [m_mtlTexture release];
+}}
 
 }

@@ -19,7 +19,7 @@
     template<typename T> using id = T*;
     class MTLTexture;
 #endif // __OBJC__
-//
+
 namespace gfx
 {
 
@@ -30,7 +30,7 @@ public:
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&)      = delete;
     
-    MetalTexture(id<MTLTexture>);
+    MetalTexture(const id<MTLTexture>&);
 
     uint32_t width() const override;
     uint32_t height() const override;
@@ -41,8 +41,6 @@ public:
     ~MetalTexture();
 
 private:
-    bool m_shouldDestroyTexture;
-
     id<MTLTexture> m_mtlTexture = nullptr;
     
 public:

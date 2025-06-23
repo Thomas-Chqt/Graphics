@@ -11,16 +11,15 @@
 #define METAL_DEVICE_HPP
 
 #include "Graphics/Device.hpp"
-#include "Graphics/RenderPass.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
+#include "Graphics/Drawable.hpp"
 
 #include "Metal/MetalCommandBuffer.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
-    #include <mutex>
     namespace ext = std;
 #endif
 
@@ -45,28 +44,28 @@ public:
 
     MetalDevice(id<MTLDevice>&);
 
-    ext::unique_ptr<RenderPass> newRenderPass(const RenderPass::Descriptor&) const override;
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
 
     void beginFrame(void) override;
  
-    CommandBuffer& commandBuffer(void) override;
+    ext::unique_ptr<CommandBuffer> commandBuffer(void) override;
 
-    void submitCommandBuffer(const CommandBuffer&) override;
-    void presentSwapchain(const Swapchain&) override;
+    void submitCommandBuffer(ext::unique_ptr<CommandBuffer>&&) override;
+    void presentDrawable(const ext::shared_ptr<Drawable>&) override;
 
     void endFrame(void) override;
 
-    const id<MTLDevice>& mtlDevice(void) const { return m_mtlDevice; }
+    void waitIdle(void) override;
+
+    inline const id<MTLDevice>& mtlDevice(void) const { return m_mtlDevice; }
 
     ~MetalDevice();
 
 private:
     id<MTLDevice> m_mtlDevice;
     id<MTLCommandQueue> m_queue;
-    ext::mutex m_queueMtx;
 
-    MetalCommandBuffer m_commandBuffer;
+    ext::vector<ext::unique_ptr<MetalCommandBuffer>> m_submittedCommandBuffers;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;
