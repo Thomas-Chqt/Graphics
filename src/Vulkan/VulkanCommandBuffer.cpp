@@ -51,11 +51,15 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
         colorAttachmentInfos[i] = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(colorAttachment.loadAction))
             .setClearValue(vk::ClearValue{
-                .color.float32 = ext::array<float, 4>{
-                    colorAttachment.clearColor[0],
-                    colorAttachment.clearColor[1],
-                    colorAttachment.clearColor[2],
-                    colorAttachment.clearColor[3]}})
+                .color{
+                    .float32 = ext::array<float, 4>{
+                        colorAttachment.clearColor[0],
+                        colorAttachment.clearColor[1],
+                        colorAttachment.clearColor[2],
+                        colorAttachment.clearColor[3]
+                    }
+                }
+            })
             .setImageView(vkTexture.vkImageView())
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
@@ -82,7 +86,11 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
         const VulkanTexture& vkTexture = dynamic_cast<const VulkanTexture&>(*depthAttachment->texture);
         depthAttachmentInfo = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(depthAttachment->loadAction))
-            .setClearValue({.depthStencil.depth = depthAttachment->clearDepth})
+            .setClearValue({
+                .depthStencil{
+                    .depth = depthAttachment->clearDepth
+                }
+            })
             .setImageView(vkTexture.vkImageView())
             .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 

@@ -13,7 +13,7 @@
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
 
-#include <Vulkan/vulkan.hpp>
+#include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
 #else

@@ -13,7 +13,7 @@
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 
-#include <Vulkan/vulkan.hpp>
+#include <vulkan/vulkan.hpp>
 
 namespace gfx
 {
