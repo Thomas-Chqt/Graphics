@@ -5,7 +5,24 @@
 # Date: 2024/06/06 16:59:39
 # ---------------------------------------------------
 
+include(${ADD_SHADER_LIB_PATH})
+
 add_executable(triangle)
+
+set(SHADER_TARGETS)
+
+if (GFX_BUILD_METAL)
+    list(APPEND SHADER_TARGETS "metal")
+endif()
+if (GFX_BUILD_VULKAN)
+    list(APPEND SHADER_TARGETS "spirv")
+endif()
+
+add_shader_lib(triangle_shader
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader.slang"
+    TARGETS ${SHADER_TARGETS}
+)
+add_dependencies(triangle triangle_shader)
 
 if (APPLE)
     enable_language(OBJC)

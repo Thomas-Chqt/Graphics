@@ -44,11 +44,11 @@ def compile_metal_shader(input_code: bytes) -> bytes:
     with open(lib_file, "rb") as f:
         return f.read()
 
-def main() -> None:
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compile and pack Slang shaders.")
-    parser.add_argument("input", nargs="+", help="Input Slang shader files.")
+    parser.add_argument("-t", "--targets", nargs="+", required=True, help="Compilation targets.")
     parser.add_argument("-o", "--output", required=True, help="Output packed file.")
-    parser.add_argument("--targets", nargs="+", default=[t.value for t in SlangTarget], help="Compilation targets.")
+    parser.add_argument("input", nargs="+", help="Input Slang shader files.")
     args = parser.parse_args()
 
     compiled_shaders: Dict[SlangTarget, bytes] = {}
@@ -65,6 +65,3 @@ def main() -> None:
             f.write(target.value.encode('utf-8'))
             f.write(struct.pack("I", len(shader_data)))
             f.write(shader_data)
-
-if __name__ == "__main__":
-    main()

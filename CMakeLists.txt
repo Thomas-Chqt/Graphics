@@ -87,6 +87,9 @@ if (GFX_USE_UTILSCPP)
     endif()
 endif()
 
+set(GFXSC_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/gfxsc.py CACHE PATH "path to the gfx shader compiler" FORCE)
+set(ADD_SHADER_LIB_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/add_shader_lib.cmake CACHE PATH "path to the add_shader_lib cmake file" FORCE)
+
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     FetchContent_Declare(dlLoad
         GIT_REPOSITORY    https://github.com/Thomas-Chqt/dlLoad.git
