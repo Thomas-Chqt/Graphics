@@ -18,11 +18,11 @@ if (GFX_BUILD_VULKAN)
     list(APPEND SHADER_TARGETS "spirv")
 endif()
 
-add_shader_lib(triangle_shader
+add_shader_lib(shader
     SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader.slang"
     TARGETS ${SHADER_TARGETS}
 )
-add_dependencies(triangle triangle_shader)
+get_target_property(SHADER_SLIB shader SLIB_OUTPUT)
 
 if (APPLE)
     enable_language(OBJC)
@@ -37,6 +37,8 @@ file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(triangle PRIVATE ${EXE_SRCS})
 
 target_include_directories(triangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+
+target_compile_definitions(triangle PRIVATE "SHADER_SLIB=\"${SHADER_SLIB}\"")
 
 FetchContent_Declare(glfw3
     GIT_REPOSITORY    https://github.com/glfw/glfw.git
@@ -62,3 +64,4 @@ if (TARGET update_mappings)
 endif()
 
 target_link_libraries(triangle PRIVATE Graphics glfw)
+add_dependencies(triangle shader)
