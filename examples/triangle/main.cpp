@@ -12,6 +12,7 @@
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
+#include "Graphics/ShaderLib.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
@@ -69,14 +70,15 @@ int main()
         .presentMode = gfx::PresentMode::fifo,
     };
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
+    ext::unique_ptr<gfx::ShaderLib> shaderLib = device->newShaderLib(SHADER_SLIB);
 
     while (glfwWindowShouldClose(window) == false)
     {
         device->beginFrame();
         
-        ext::shared_ptr<gfx::Drawable> drawable = swapchain->nextDrawable();
         ext::unique_ptr<gfx::CommandBuffer> commandBuffer = device->commandBuffer();
 
+        ext::shared_ptr<gfx::Drawable> drawable = swapchain->nextDrawable();
         gfx::Framebuffer framebuffer = {
             .colorAttachments = {
                 gfx::Framebuffer::Attachment{

@@ -14,11 +14,13 @@
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/QueueCapabilities.hpp"
+#include "Graphics/ShaderLib.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <memory>
+    #include <filesystem>
     namespace ext = std;
 #endif
 
@@ -38,6 +40,7 @@ public:
     Device(Device&&) = delete;
 
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
+    virtual ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const = 0;
 
     virtual void beginFrame(void) = 0;
  

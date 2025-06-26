@@ -18,6 +18,7 @@
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
+#include "Vulkan/VulkanShaderLib.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -81,6 +82,11 @@ ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descripto
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         drawables[i] = std::make_shared<VulkanDrawable>(*this);
     return ext::make_unique<VulkanSwapchain>(*this, std::move(drawables), desc);
+}
+
+ext::unique_ptr<ShaderLib> VulkanDevice::newShaderLib(const ext::filesystem::path& path) const
+{
+    return ext::make_unique<VulkanShaderLib>(*this, path);
 }
 
 void VulkanDevice::beginFrame(void) 

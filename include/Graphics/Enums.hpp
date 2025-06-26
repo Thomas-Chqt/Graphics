@@ -35,6 +35,13 @@ enum class LoadAction
     clear
 };
 
+enum class BlendOperation
+{
+    blendingOff,
+    srcA_plus_1_minus_srcA,
+    one_minus_srcA_plus_srcA
+};
+
 } // namespace gfx
 
 #endif // GFX_ENUMS_HPP

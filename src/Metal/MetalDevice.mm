@@ -16,6 +16,7 @@
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
+#include "Metal/MetalShaderLib.hpp"
 
 #include <Metal/Metal.h>
 
@@ -38,6 +39,11 @@ MetalDevice::MetalDevice(id<MTLDevice>& device) { @autoreleasepool
 ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
 {
     return ext::make_unique<MetalSwapchain>(*this, desc);
+}
+
+ext::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const ext::filesystem::path& path) const
+{
+    return ext::make_unique<MetalShaderLib>(*this, path);
 }
 
 void MetalDevice::beginFrame(void) { @autoreleasepool

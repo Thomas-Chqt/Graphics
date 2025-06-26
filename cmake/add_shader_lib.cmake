@@ -1,8 +1,4 @@
-# Example:
-#   add_shader(myShader SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader.slang" TARGETS spirv metal)
-# OR
-#   add_shader(myShader)
-#   set_target_properties(myShader PROPERTIES SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader.slang" TARGETS "spirv;metal")
+#add_shader(myShader SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader.slang" TARGETS spirv metal)
 
 function(add_shader_lib SLIB_NAME)
     cmake_parse_arguments(SLIB "" "" "SOURCES;TARGETS" ${ARGN})

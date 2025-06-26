@@ -54,6 +54,8 @@ public:
 
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
 
+    ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;
+
     void beginFrame(void) override;
 
     ext::unique_ptr<CommandBuffer> commandBuffer(void) override;
