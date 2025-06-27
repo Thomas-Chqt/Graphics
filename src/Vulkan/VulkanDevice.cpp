@@ -46,6 +46,10 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const VulkanDe
 
     m_queueFamily = (phyDevice.getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).front();
 
+    ext::vector<const char*> enabledExtensions = desc.deviceExtensions;
+    if (phyDevice.getProperties().apiVersion < VK_API_VERSION_1_3)
+        enabledExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
     float queuePriority = 1.0f;
     vk::DeviceQueueCreateInfo queueCreateInfo = {
         .queueFamilyIndex = m_queueFamily.index,
@@ -58,12 +62,11 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& phyDevice, const VulkanDe
         .setDynamicRendering(vk::True);
 
     auto deviceCreateInfo = vk::DeviceCreateInfo{}
-        .setEnabledExtensionCount(static_cast<uint32_t>(desc.deviceExtensions.size()))
-        .setPpEnabledExtensionNames(desc.deviceExtensions.data())
+        .setEnabledExtensionCount(static_cast<uint32_t>(enabledExtensions.size()))
+        .setPpEnabledExtensionNames(enabledExtensions.data())
         .setPEnabledFeatures(&deviceFeatures)
-        .setQueueCreateInfos(queueCreateInfo);
-    if (ext::ranges::find_if(desc.deviceExtensions, [](const char* s) { return ::strcmp(s, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0; }) != desc.deviceExtensions.end())
-        deviceCreateInfo.setPNext(&dynamicRenderingFeature);
+        .setQueueCreateInfos(queueCreateInfo)
+        .setPNext(&dynamicRenderingFeature);
 
     m_vkDevice = phyDevice.createDevice(deviceCreateInfo);
     m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
@@ -108,15 +111,19 @@ void VulkanDevice::beginFrame(void)
 
 ext::unique_ptr<CommandBuffer> VulkanDevice::commandBuffer(void)
 {
+    bool useDynamicRenderingExt = false;
+    if (m_physicalDevice->getProperties().apiVersion < VK_API_VERSION_1_3)
+        useDynamicRenderingExt = true;
+
     if (m_nextVkCommandBuffer < m_vkCommandBuffers.size())
-        return ext::make_unique<VulkanCommandBuffer>(ext::move(m_vkCommandBuffers[m_nextVkCommandBuffer++]), m_queueFamily);
+        return ext::make_unique<VulkanCommandBuffer>(ext::move(m_vkCommandBuffers[m_nextVkCommandBuffer++]), m_queueFamily, useDynamicRenderingExt);
     else {
         auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
             .setCommandPool(m_commandPool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
             .setCommandBufferCount(1);
         vk::CommandBuffer vkCommandBuffer = m_vkDevice.allocateCommandBuffers(commandBufferAllocateInfo).front();
-        return ext::make_unique<VulkanCommandBuffer>(ext::move(vkCommandBuffer), m_queueFamily);
+        return ext::make_unique<VulkanCommandBuffer>(ext::move(vkCommandBuffer), m_queueFamily, useDynamicRenderingExt);
     }
 }
 

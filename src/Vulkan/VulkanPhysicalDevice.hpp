@@ -29,7 +29,7 @@ class VulkanPhysicalDevice : public vk::PhysicalDevice
 public:
     using vk::PhysicalDevice::PhysicalDevice;
 
-    bool isSuitable(VulkanDevice::Descriptor&) const;
+    bool isSuitable(const VulkanDevice::Descriptor&) const;
 
     ext::vector<QueueFamily> getQueueFamilies() const;
     bool suportExtensions(const ext::vector<const char*>& extensionNames) const;

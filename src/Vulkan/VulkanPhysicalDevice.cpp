@@ -24,19 +24,18 @@
 namespace gfx
 {
 
-bool VulkanPhysicalDevice::isSuitable(VulkanDevice::Descriptor& desc) const
+bool VulkanPhysicalDevice::isSuitable(const VulkanDevice::Descriptor& desc) const
 {
     if ((getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty())
         return false;
-    if (suportExtensions(desc.deviceExtensions) == false)
-        return false;
+
+    ext::vector<const char*> requiredExtension = desc.deviceExtensions;
     if (vk::PhysicalDevice::getProperties().apiVersion < VK_API_VERSION_1_3)
-    {
-        if (suportExtensions({VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}) == false)
-            return false;
-        else
-            desc.deviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    }
+        requiredExtension.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+
+    if (suportExtensions(requiredExtension) == false)
+        return false;
+
     return true;
 }
 

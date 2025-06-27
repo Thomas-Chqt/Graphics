@@ -197,7 +197,7 @@ VulkanInstance::~VulkanInstance()
     m_vkInstance.destroy();
 }
     
-ext::vector<VulkanPhysicalDevice*> VulkanInstance::findSuitableDevices(VulkanDevice::Descriptor& desc)
+ext::vector<VulkanPhysicalDevice*> VulkanInstance::findSuitableDevices(const VulkanDevice::Descriptor& desc)
 {
     auto physicalDevices = m_vkInstance.enumeratePhysicalDevices()
         | ext::views::transform([](auto& d){ return VulkanPhysicalDevice(d); });

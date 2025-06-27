@@ -34,8 +34,8 @@
 namespace gfx
 {
 
-VulkanCommandBuffer::VulkanCommandBuffer(vk::CommandBuffer&& commandBuffer, const QueueFamily& queueFamily)
-    : m_vkCommandBuffer(std::move(commandBuffer)), m_queueFamily(queueFamily)
+VulkanCommandBuffer::VulkanCommandBuffer(vk::CommandBuffer&& commandBuffer, const QueueFamily& queueFamily, bool useDynamicRenderingExt)
+    : m_vkCommandBuffer(std::move(commandBuffer)), m_queueFamily(queueFamily), m_useDynamicRenderingExt(useDynamicRenderingExt)
 {
 }
 
@@ -131,13 +131,19 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 
     m_vkCommandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput, vk::PipelineStageFlagBits::eTransfer, {},
                                       nullptr, nullptr, imageMemoryBarriers);
-
-    m_vkCommandBuffer.beginRenderingKHR(renderingInfo);
+    
+    if (m_useDynamicRenderingExt)
+        m_vkCommandBuffer.beginRenderingKHR(renderingInfo);
+    else
+        m_vkCommandBuffer.beginRendering(renderingInfo);
 }
 
 void VulkanCommandBuffer::endRenderPass(void)
 {
-    m_vkCommandBuffer.endRenderingKHR();
+    if (m_useDynamicRenderingExt)
+        m_vkCommandBuffer.endRenderingKHR();
+    else
+        m_vkCommandBuffer.endRendering();
 }
 
 }

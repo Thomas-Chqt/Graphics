@@ -31,7 +31,7 @@ public:
     VulkanCommandBuffer(const VulkanCommandBuffer&) = delete;
     VulkanCommandBuffer(VulkanCommandBuffer&&) = delete;
 
-    VulkanCommandBuffer(vk::CommandBuffer&&, const QueueFamily&);
+    VulkanCommandBuffer(vk::CommandBuffer&&, const QueueFamily&, bool useDynamicRenderingExt);
 
     void beginRenderPass(const Framebuffer&) override;
     void endRenderPass(void) override;
@@ -44,6 +44,7 @@ public:
 private:
     vk::CommandBuffer m_vkCommandBuffer;
     QueueFamily m_queueFamily;
+    bool m_useDynamicRenderingExt;
     bool m_isBegin = false;
 
 public:
