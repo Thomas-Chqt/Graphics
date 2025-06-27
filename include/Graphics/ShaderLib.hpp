@@ -10,12 +10,15 @@
 #ifndef SHADERLIB_HPP
 #define SHADERLIB_HPP
 
+#include "Graphics/ShaderFunction.hpp"
+
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <filesystem>
     #include <cstddef>
     #include <vector>
+    #include <string>
     namespace ext = std;
 #endif
 
@@ -28,6 +31,8 @@ public:
     ShaderLib() = delete;
     ShaderLib(const ShaderLib&) = delete;
     ShaderLib(ShaderLib&&) = delete;
+
+    virtual ShaderFunction& getFunction(const ext::string&) = 0;
 
     virtual ~ShaderLib() = default;
 

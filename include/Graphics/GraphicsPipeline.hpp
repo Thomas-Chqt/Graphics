@@ -10,14 +10,13 @@
 #ifndef GRAPHICSPIPELINE_HPP
 #define GRAPHICSPIPELINE_HPP
 
-#include "Graphics/ShaderLib.hpp"
+#include "Graphics/ShaderFunction.hpp"
 #include "Graphics/Enums.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <vector>
-    #include <string>
     #include <optional>
     namespace ext = std;
 #endif
@@ -25,18 +24,13 @@
 namespace gfx
 {
 
-struct ShaderStage
-{
-    ShaderLib* shaderLib;
-    ext::string functionName;
-};
-
 class GraphicsPipeline
 {
 public:
     struct Descriptor
     {
-        ext::vector<ShaderStage> shaderStages;
+        ShaderFunction* vertexShader;
+        ShaderFunction* fragmentShader;
 
         ext::vector<PixelFormat> colorAttachmentPxFormats;
         ext::optional<PixelFormat> depthAttachmentPxFormat;
@@ -50,7 +44,7 @@ public:
 
     virtual ~GraphicsPipeline() = default;
 
-private:
+protected:
     GraphicsPipeline() = default;
 
 public:

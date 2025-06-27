@@ -12,17 +12,21 @@
 
 #include "Graphics/ShaderLib.hpp"
 
+#include "Metal/MetalShaderFunction.hpp"
+
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
     template<typename T> using id = T*;
     class MTLLibrary;
+    class MTLFunction;
 #endif // __OBJC__
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <filesystem>
+    #include <map>
     namespace ext = std;
 #endif
 
@@ -40,10 +44,14 @@ public:
 
     MetalShaderLib(const MetalDevice& device, const ext::filesystem::path& filepath);
 
+    MetalShaderFunction& getFunction(const ext::string&) override;
+
     ~MetalShaderLib();
 
 private:
     id<MTLLibrary> m_mtlLibrary;
+
+    ext::map<ext::string, MetalShaderFunction> m_shaderFunctions;
 
 public:
     MetalShaderLib& operator=(const MetalShaderLib&) = delete;

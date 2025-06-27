@@ -7,21 +7,25 @@
  * ---------------------------------------------------
  */
 
-#include "MetalShaderLib.hpp"
-#include "MetalDevice.hpp"
+#include "Metal/MetalShaderLib.hpp"
+#include "Metal/MetalShaderFunction.hpp"
+#include "Metal/MetalDevice.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <filesystem>
     #include <stdexcept>
+    #include <utility>
+    #include <string>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
 
-MetalShaderLib::MetalShaderLib(const MetalDevice& device, const ext::filesystem::path& filepath) : ShaderLib(filepath)
+MetalShaderLib::MetalShaderLib(const MetalDevice& device, const ext::filesystem::path& filepath)
+    : ShaderLib(filepath) { @autoreleasepool
 {
     if (m_metalBytes.empty())
         throw ext::runtime_error("No Metal shader found in the package");
@@ -33,11 +37,20 @@ MetalShaderLib::MetalShaderLib(const MetalDevice& device, const ext::filesystem:
 
     if (error != nil)
         throw ext::runtime_error([error.localizedDescription cStringUsingEncoding:NSUTF8StringEncoding]);
-}
+}}
 
-MetalShaderLib::~MetalShaderLib()
+MetalShaderFunction& MetalShaderLib::getFunction(const ext::string& name) { @autoreleasepool
 {
+    auto it = m_shaderFunctions.find(name);
+    if (it == m_shaderFunctions.end())
+        auto res = m_shaderFunctions.emplace(ext::make_pair(name, MetalShaderFunction(m_mtlLibrary, name))).first;
+    return it->second;
+}}
+
+MetalShaderLib::~MetalShaderLib() { @autoreleasepool
+{ 
+    m_shaderFunctions.clear();
     [m_mtlLibrary release];
-}
+}}
 
 } // namespace gfx

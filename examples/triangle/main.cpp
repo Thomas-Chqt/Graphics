@@ -10,6 +10,7 @@
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Framebuffer.hpp"
+#include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/ShaderLib.hpp"
@@ -70,7 +71,13 @@ int main()
         .presentMode = gfx::PresentMode::fifo,
     };
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
+
     ext::unique_ptr<gfx::ShaderLib> shaderLib = device->newShaderLib(SHADER_SLIB);
+    gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
+        .vertexShader = &shaderLib->getFunction("vertexMain"),
+        .fragmentShader = &shaderLib->getFunction("fragmentMain"),
+        .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+    };
 
     while (glfwWindowShouldClose(window) == false)
     {

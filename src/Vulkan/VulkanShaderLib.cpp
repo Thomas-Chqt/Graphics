@@ -9,12 +9,14 @@
 
 #include "Vulkan/VulkanShaderLib.hpp"
 #include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanShaderFunction.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <filesystem>
     #include <stdexcept>
+    #include <utility>
     namespace ext = std;
 #endif
 
@@ -34,8 +36,17 @@ VulkanShaderLib::VulkanShaderLib(const VulkanDevice& device, const ext::filesyst
     m_vkShaderModule = m_device->vkDevice().createShaderModule(shaderModuleCreateInfo);
 }
 
+VulkanShaderFunction& VulkanShaderLib::getFunction(const ext::string& name)
+{
+    auto it = m_shaderFunctions.find(name);
+    if (it == m_shaderFunctions.end())
+        auto res = m_shaderFunctions.emplace(ext::make_pair(name, VulkanShaderFunction(&m_vkShaderModule, name))).first;
+    return it->second;
+}
+
 VulkanShaderLib::~VulkanShaderLib()
 {
+    m_shaderFunctions.clear();
     m_device->vkDevice().destroyShaderModule(m_vkShaderModule);
 }
 

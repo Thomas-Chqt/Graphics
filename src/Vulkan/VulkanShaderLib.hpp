@@ -12,12 +12,16 @@
 
 #include "Graphics/ShaderLib.hpp"
 
+#include "Vulkan/VulkanShaderFunction.hpp"
+
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <filesystem>
+    #include <string>
+    #include <map>
     namespace ext = std;
 #endif
 
@@ -35,11 +39,15 @@ public:
 
     VulkanShaderLib(const VulkanDevice&, const ext::filesystem::path&);
 
+    VulkanShaderFunction& getFunction(const ext::string&) override;
+
     ~VulkanShaderLib();
 
 private:
     const VulkanDevice* m_device;
     vk::ShaderModule m_vkShaderModule;
+
+    ext::map<ext::string, VulkanShaderFunction> m_shaderFunctions;
 
 public:
     VulkanShaderLib& operator=(const VulkanShaderLib&) = delete;
