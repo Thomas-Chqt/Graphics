@@ -33,6 +33,9 @@ public:
 
     VulkanShaderFunction(const vk::ShaderModule*, const ext::string&);
 
+    const vk::ShaderModule& shaderModule(void) const { return *m_shaderModule; }
+    const ext::string& name(void) const { return m_name; }
+
     ~VulkanShaderFunction() = default;
 
 private:

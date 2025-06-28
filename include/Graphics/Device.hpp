@@ -12,6 +12,7 @@
 
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
+#include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/QueueCapabilities.hpp"
 #include "Graphics/ShaderLib.hpp"
@@ -41,6 +42,7 @@ public:
 
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
     virtual ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const = 0;
+    virtual ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const = 0;
 
     virtual void beginFrame(void) = 0;
  

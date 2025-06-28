@@ -45,8 +45,8 @@ public:
     MetalDevice(id<MTLDevice>&);
 
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
-
     ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;
+    ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const override;
 
     void beginFrame(void) override;
  

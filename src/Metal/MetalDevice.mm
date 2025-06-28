@@ -13,6 +13,7 @@
 #include "Graphics/Drawable.hpp"
 
 #include "Metal/MetalDevice.hpp"
+#include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
@@ -44,6 +45,11 @@ ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor
 ext::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const ext::filesystem::path& path) const
 {
     return ext::make_unique<MetalShaderLib>(*this, path);
+}
+
+ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
+{
+    return ext::make_unique<MetalGraphicsPipeline>(*this, desc);
 }
 
 void MetalDevice::beginFrame(void) { @autoreleasepool

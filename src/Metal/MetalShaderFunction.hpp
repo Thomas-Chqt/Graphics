@@ -39,6 +39,8 @@ public:
     MetalShaderFunction(MetalShaderFunction&&);
 
     MetalShaderFunction(const id<MTLLibrary>&, const ext::string&);
+    
+    inline id<MTLFunction> mtlFunction(void) { return m_mtlFunction; }
 
     ~MetalShaderFunction();
 
