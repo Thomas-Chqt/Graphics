@@ -39,101 +39,134 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
-int main()
+class Application
 {
-#if __XCODE__
-    sleep(1); // XCODE BUG https://github.com/glfw/glfw/issues/2634
-#endif
-    auto res = glfwInit();
-    assert(res == GLFW_TRUE);
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
-    GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
-    assert(window);
-
-    ext::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
-    assert(instance);
-
-    ext::unique_ptr<gfx::Surface> surface = instance->createSurface(window);
-    assert(surface);
-
-    gfx::Device::Descriptor deviceDescriptor = {
-        .queueCaps = {
-            .graphics = true,
-            .compute = true,
-            .transfer = true,
-            .present = { surface.get() }
-        }
-    };
-    ext::unique_ptr<gfx::Device> device = instance->newDevice(deviceDescriptor);
-    assert(device);
-
-    assert(surface->supportedPixelFormats(*device).contains(gfx::PixelFormat::BGRA8Unorm));
-    assert(surface->supportedPresentModes(*device).contains(gfx::PresentMode::fifo));
-
-    int width, height;
-    ::glfwGetFramebufferSize(window, &width, &height);
-    gfx::Swapchain::Descriptor swapchainDescriptor = {
-        .surface = surface.get(),
-        .width = (uint32_t)width, .height = (uint32_t)height,
-        .imageCount = 3,
-        .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
-        .presentMode = gfx::PresentMode::fifo,
-    };
-    ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
-    assert(swapchain);
-
-    ext::unique_ptr<gfx::ShaderLib> shaderLib = device->newShaderLib(SHADER_SLIB);
-    assert(shaderLib);
-
-    gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
-        .vertexShader = &shaderLib->getFunction("vertexMain"),
-        .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-        .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
-    };
-    ext::shared_ptr<gfx::GraphicsPipeline> graphicsPipeline = device->newGraphicsPipeline(gfxPipelineDescriptor);
-    assert(graphicsPipeline);
-
-    while (glfwWindowShouldClose(window) == false)
+public:
+    void init()
     {
-        device->beginFrame();
-        
-        ext::unique_ptr<gfx::CommandBuffer> commandBuffer = device->commandBuffer();
-        assert(commandBuffer);
+#if __XCODE__
+        sleep(1); // XCODE BUG https://github.com/glfw/glfw/issues/2634
+#endif
+        auto res = glfwInit();
+        assert(res == GLFW_TRUE);
 
-        ext::shared_ptr<gfx::Drawable> drawable = swapchain->nextDrawable();
-        assert(drawable);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+        m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
+        assert(m_window);
 
-        gfx::Framebuffer framebuffer = {
-            .colorAttachments = {
-                gfx::Framebuffer::Attachment{
-                    .loadAction = gfx::LoadAction::clear,
-                    .clearColor = {0.0f, 0.0f, 0.0f, 0.0f },
-                    .texture = drawable->texture()
-                } 
+        glfwSetWindowUserPointer(m_window, this);
+        glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){ static_cast<Application*>(glfwGetWindowUserPointer(window))->createSwapchain(); });
+
+        m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
+        assert(m_instance);
+
+        m_surface = m_instance->createSurface(m_window);
+        assert(m_surface);
+
+        gfx::Device::Descriptor deviceDescriptor = {
+            .queueCaps = {
+                .graphics = true,
+                .compute = true,
+                .transfer = true,
+                .present = { m_surface.get() }
             }
         };
+        m_device = m_instance->newDevice(deviceDescriptor);
+        assert(m_device);
 
-        commandBuffer->beginRenderPass(framebuffer);
+        assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
+        assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
         
-        commandBuffer->usePipeline(graphicsPipeline);
+        createSwapchain();
 
-        commandBuffer->drawVertices(0, 3);
+        ext::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
+        assert(shaderLib);
 
-        commandBuffer->endRenderPass();
-
-        device->submitCommandBuffer(std::move(commandBuffer));
-        device->presentDrawable(drawable);
-        
-        device->endFrame();
-
-        glfwPollEvents();
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
+            .vertexShader = &shaderLib->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib->getFunction("fragmentMain"),
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+        };
+        m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
+        assert(m_graphicsPipeline);
     }
 
-    device->waitIdle();
+    void loop()
+    {
+        while (glfwWindowShouldClose(m_window) == false)
+        {
+            m_device->beginFrame();
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    return 0;
+            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_device->commandBuffer();
+            assert(commandBuffer);
+
+            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            assert(drawable);
+
+            gfx::Framebuffer framebuffer = {
+                .colorAttachments = {
+                    gfx::Framebuffer::Attachment{
+                        .loadAction = gfx::LoadAction::clear,
+                        .clearColor = {0.0f, 0.0f, 0.0f, 0.0f },
+                        .texture = drawable->texture()
+                    } 
+                }
+            };
+
+            commandBuffer->beginRenderPass(framebuffer);
+
+            commandBuffer->usePipeline(m_graphicsPipeline);
+
+            commandBuffer->drawVertices(0, 3);
+
+            commandBuffer->endRenderPass();
+
+            m_device->submitCommandBuffer(std::move(commandBuffer));
+            m_device->presentDrawable(drawable);
+
+            m_device->endFrame();
+
+            glfwPollEvents();
+        }
+    }
+
+    void clean()
+    {
+        m_device->waitIdle();
+
+        glfwDestroyWindow(m_window);
+        glfwTerminate();
+    }
+
+private:
+    GLFWwindow* m_window;
+    ext::unique_ptr<gfx::Instance> m_instance;
+    ext::unique_ptr<gfx::Surface> m_surface;
+    ext::unique_ptr<gfx::Device> m_device;
+    ext::unique_ptr<gfx::Swapchain> m_swapchain;
+    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+
+    void createSwapchain()
+    {
+        int width, height;
+        ::glfwGetFramebufferSize(m_window, &width, &height);
+        gfx::Swapchain::Descriptor swapchainDescriptor = {
+            .surface = m_surface.get(),
+            .width = (uint32_t)width, .height = (uint32_t)height,
+            .imageCount = 3,
+            .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
+            .presentMode = gfx::PresentMode::fifo,
+        };
+        m_swapchain = m_device->newSwapchain(swapchainDescriptor);
+        assert(m_swapchain);
+    }
+};
+
+int main()
+{
+    Application app;
+    app.init();
+    app.loop();
+    app.clean();
 }
