@@ -12,7 +12,11 @@ class SlangTarget(Enum):
     METAL = "metal"
 
 def compile_shader(input_files: list[str], target: SlangTarget) -> bytes:
-        command = ["slangc", "-target", target.value] + input_files
+        slangc_path = os.environ.get("SLANGC_PATH", "slangc")
+        command = [slangc_path, "-target", target.value]
+        if target == SlangTarget.METAL:
+            command += ["-D", "INVERT_Y"]
+        command += input_files
 
         try:
             result = subprocess.run(command, check=True, capture_output=True)
@@ -23,6 +27,7 @@ def compile_shader(input_files: list[str], target: SlangTarget) -> bytes:
             exit(1)
 
 def compile_metal_shader(input_code: bytes) -> bytes:
+    xcrun_path = os.environ.get("XCRUN_PATH", "xcrun")
     tmp_dir = tempfile.gettempdir()
     unique_id = str(uuid.uuid4())
 
@@ -34,8 +39,8 @@ def compile_metal_shader(input_code: bytes) -> bytes:
         f.write(input_code.decode('utf-8'))
 
     try:
-        subprocess.run(["xcrun", "-sdk", "macosx", "metal", "-c", "-Wall", "-Werror", "-Wextra", "-o", air_file, msl_file], check=True)
-        subprocess.run(["xcrun", "-sdk", "macosx", "metallib", "-o", lib_file, air_file], check=True)
+        subprocess.run([xcrun_path, "-sdk", "macosx", "metal", "-c", "-Wall", "-Werror", "-Wextra", "-o", air_file, msl_file], check=True)
+        subprocess.run([xcrun_path, "-sdk", "macosx", "metallib", "-o", lib_file, air_file], check=True)
     except subprocess.CalledProcessError as e:
         if hasattr(e, 'stderr') and e.stderr:
             print(e.stderr.decode('utf-8', errors='replace'))

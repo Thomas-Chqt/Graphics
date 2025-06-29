@@ -68,6 +68,11 @@ void MetalCommandBuffer::usePipeline(const ext::shared_ptr<GraphicsPipeline>& _g
         [m_commandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
 }}
 
+void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autoreleasepool
+{
+    [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
+}}
+
 void MetalCommandBuffer::endRenderPass(void) { @autoreleasepool
 {
     assert(m_commandEncoder);

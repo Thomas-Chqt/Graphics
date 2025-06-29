@@ -46,6 +46,8 @@ public:
 
     void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) override;
 
+    void drawVertices(uint32_t start, uint32_t count) override;
+
     void endRenderPass(void) override;
 
     const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }

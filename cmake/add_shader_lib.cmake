@@ -11,6 +11,17 @@ function(add_shader_lib SLIB_NAME)
         message(FATAL_ERROR "add_shader_lib: TARGETS is required")
     endif()
 
+    find_program(SLANGC_EXECUTABLE slangc REQUIRED)
+    
+    set(ENV_VARS "")
+    list(APPEND ENV_VARS "SLANGC_PATH=${SLANGC_EXECUTABLE}")
+
+    list(FIND SLIB_TARGETS "metal" metal_target_index)
+    if(metal_target_index GREATER -1)
+        find_program(XCRUN_EXECUTABLE xcrun REQUIRED)
+        list(APPEND ENV_VARS "XCRUN_PATH=${XCRUN_EXECUTABLE}")
+    endif()
+
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
     set(SLIB_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${SLIB_NAME}.slib")
@@ -22,7 +33,8 @@ function(add_shader_lib SLIB_NAME)
 
     add_custom_command(
         OUTPUT ${SLIB_OUTPUT}
-        COMMAND ${Python3_EXECUTABLE} ${GFXSC_PATH}
+        COMMAND ${CMAKE_COMMAND} -E env ${ENV_VARS}
+            ${Python3_EXECUTABLE} ${GFXSC_PATH}
             -t ${SLIB_TARGETS}
             -o ${SLIB_OUTPUT}
             ${SLIB_SOURCES}

@@ -61,8 +61,8 @@ ext::vector<const char*> getRequiredExtensions(bool enableValidationLayers)
 #if defined(GFX_GLFW_ENABLED)
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    assert(glfwExtensions);
-    extensions.insert(extensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount);
+    if (glfwExtensionCount > 0)
+        extensions.insert(extensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount);
 #endif
 
     if (enableValidationLayers)

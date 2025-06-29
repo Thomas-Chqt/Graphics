@@ -34,10 +34,12 @@ MetalInstance::MetalInstance(const Instance::Descriptor& desc)
 {
 }
 
+#if defined(GFX_GLFW_ENABLED)
 ext::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow)
 {
     return ext::make_unique<MetalSurface>(glfwWindow);
 }
+#endif
 
 ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc) { @autoreleasepool
 {

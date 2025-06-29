@@ -31,15 +31,26 @@
     namespace ext = std;
 #endif
 
+#if __XCODE__
+    #include <unistd.h>
+#endif
+
+
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
 int main()
 {
-    glfwInit();
+#if __XCODE__
+    sleep(1); // XCODE BUG https://github.com/glfw/glfw/issues/2634
+#endif
+    auto res = glfwInit();
+    assert(res == GLFW_TRUE);
+
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
     GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
+    assert(window);
 
     ext::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
     assert(instance);
@@ -71,8 +82,10 @@ int main()
         .presentMode = gfx::PresentMode::fifo,
     };
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
+    assert(swapchain);
 
     ext::unique_ptr<gfx::ShaderLib> shaderLib = device->newShaderLib(SHADER_SLIB);
+    assert(shaderLib);
 
     gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
         .vertexShader = &shaderLib->getFunction("vertexMain"),
@@ -80,14 +93,18 @@ int main()
         .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
     };
     ext::shared_ptr<gfx::GraphicsPipeline> graphicsPipeline = device->newGraphicsPipeline(gfxPipelineDescriptor);
+    assert(graphicsPipeline);
 
     while (glfwWindowShouldClose(window) == false)
     {
         device->beginFrame();
         
         ext::unique_ptr<gfx::CommandBuffer> commandBuffer = device->commandBuffer();
+        assert(commandBuffer);
 
         ext::shared_ptr<gfx::Drawable> drawable = swapchain->nextDrawable();
+        assert(drawable);
+
         gfx::Framebuffer framebuffer = {
             .colorAttachments = {
                 gfx::Framebuffer::Attachment{
@@ -101,6 +118,8 @@ int main()
         commandBuffer->beginRenderPass(framebuffer);
         
         commandBuffer->usePipeline(graphicsPipeline);
+
+        commandBuffer->drawVertices(0, 3);
 
         commandBuffer->endRenderPass();
 

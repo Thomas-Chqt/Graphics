@@ -157,6 +157,11 @@ void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<GraphicsPipeline>& _
     m_vkCommandBuffer.setScissor(0, m_scissor);
 }
 
+void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
+{
+    m_vkCommandBuffer.draw(count, 1, start, 0);
+}
+
 void VulkanCommandBuffer::endRenderPass(void)
 {
     if (m_useDynamicRenderingExt)

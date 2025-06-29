@@ -39,6 +39,9 @@ target_sources(triangle PRIVATE ${EXE_SRCS})
 target_include_directories(triangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 target_compile_definitions(triangle PRIVATE "SHADER_SLIB=\"${SHADER_SLIB}\"")
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+    target_compile_definitions(triangle PRIVATE "__XCODE__")
+endif()
 
 FetchContent_Declare(glfw3
     GIT_REPOSITORY    https://github.com/glfw/glfw.git

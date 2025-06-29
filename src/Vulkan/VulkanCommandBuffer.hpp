@@ -39,6 +39,8 @@ public:
 
     void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) override;
 
+    void drawVertices(uint32_t start, uint32_t count) override;
+
     void endRenderPass(void) override;
 
     const vk::CommandBuffer& vkCommandBuffer(void) const { return m_vkCommandBuffer; }

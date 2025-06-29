@@ -16,6 +16,7 @@
 #if defined(GFX_USE_UTILSCPP)
 #else
     #include <memory>
+    #include <cstdint>
 #endif
 
 namespace gfx
@@ -30,6 +31,8 @@ public:
     virtual void beginRenderPass(const Framebuffer&) = 0;
 
     virtual void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) = 0;
+
+    virtual void drawVertices(uint32_t start, uint32_t count) = 0;
 
     virtual void endRenderPass(void) = 0;
 
