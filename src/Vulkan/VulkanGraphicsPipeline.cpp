@@ -62,6 +62,10 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         .setTopology(vk::PrimitiveTopology::eTriangleList)
         .setPrimitiveRestartEnable(false);
 
+    auto viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo()
+        .setViewportCount(1)
+        .setScissorCount(1);
+
     auto rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo()
         .setDepthClampEnable(false)
         .setRasterizerDiscardEnable(false)
@@ -130,6 +134,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         .setStages(shaderStages)
         .setPVertexInputState(&vertexInputStateCreateInfo)
         .setPInputAssemblyState(&inputAssemblyStateCreateInfo)
+        .setPViewportState(&viewportStateCreateInfo)
         .setPRasterizationState(&rasterizationStateCreateInfo)
         .setPMultisampleState(&multisampleStateCreateInfo)
         .setPColorBlendState(&colorBlendStateCreateInfo)

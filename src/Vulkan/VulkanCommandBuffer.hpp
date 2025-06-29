@@ -12,6 +12,7 @@
 
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Framebuffer.hpp"
+#include "Graphics/GraphicsPipeline.hpp"
 
 #include "Vulkan/QueueFamily.hpp"
 
@@ -19,6 +20,7 @@
 
 #if defined(GFX_USE_UTILSCPP)
 #else
+    #include <memory>
 #endif
 
 namespace gfx
@@ -34,6 +36,9 @@ public:
     VulkanCommandBuffer(vk::CommandBuffer&&, const QueueFamily&, bool useDynamicRenderingExt);
 
     void beginRenderPass(const Framebuffer&) override;
+
+    void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) override;
+
     void endRenderPass(void) override;
 
     const vk::CommandBuffer& vkCommandBuffer(void) const { return m_vkCommandBuffer; }
@@ -46,6 +51,9 @@ private:
     QueueFamily m_queueFamily;
     bool m_useDynamicRenderingExt;
     bool m_isBegin = false;
+
+    vk::Viewport m_viewport;
+    vk::Rect2D m_scissor;
 
 public:
     VulkanCommandBuffer& operator = (const VulkanCommandBuffer&) = delete;

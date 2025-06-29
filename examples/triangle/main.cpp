@@ -73,11 +73,13 @@ int main()
     ext::unique_ptr<gfx::Swapchain> swapchain = device->newSwapchain(swapchainDescriptor);
 
     ext::unique_ptr<gfx::ShaderLib> shaderLib = device->newShaderLib(SHADER_SLIB);
+
     gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
         .vertexShader = &shaderLib->getFunction("vertexMain"),
         .fragmentShader = &shaderLib->getFunction("fragmentMain"),
         .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
     };
+    ext::shared_ptr<gfx::GraphicsPipeline> graphicsPipeline = device->newGraphicsPipeline(gfxPipelineDescriptor);
 
     while (glfwWindowShouldClose(window) == false)
     {
@@ -97,6 +99,9 @@ int main()
         };
 
         commandBuffer->beginRenderPass(framebuffer);
+        
+        commandBuffer->usePipeline(graphicsPipeline);
+
         commandBuffer->endRenderPass();
 
         device->submitCommandBuffer(std::move(commandBuffer));

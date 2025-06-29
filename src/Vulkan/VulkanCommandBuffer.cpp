@@ -16,6 +16,7 @@
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/QueueFamily.hpp"
+#include "VulkanGraphicsPipeline.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -113,14 +114,23 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 
     }
 
+    m_viewport = vk::Viewport{}
+        .setX(0)
+        .setY(0)
+        .setWidth(framebuffer.colorAttachments[0].texture->width())
+        .setHeight(framebuffer.colorAttachments[0].texture->height())
+        .setMinDepth(0)
+        .setMaxDepth(1);
+
+    m_scissor = vk::Rect2D{}
+        .setOffset({0, 0})
+        .setExtent({
+            .width = framebuffer.colorAttachments[0].texture->width(),
+            .height = framebuffer.colorAttachments[0].texture->height()
+        });
+
     auto renderingInfo = vk::RenderingInfo{}
-        .setRenderArea(vk::Rect2D{
-            .offset = {0, 0},
-            .extent = {
-                .width = framebuffer.colorAttachments[0].texture->width(),
-                .height = framebuffer.colorAttachments[0].texture->height()
-            }
-        })
+        .setRenderArea(m_scissor)
         .setLayerCount(1)
         .setViewMask(0)
         .setColorAttachments(colorAttachmentInfos)
@@ -136,6 +146,15 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
         m_vkCommandBuffer.beginRenderingKHR(renderingInfo);
     else
         m_vkCommandBuffer.beginRendering(renderingInfo);
+}
+
+void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<GraphicsPipeline>& _graphicsPipeline)
+{
+    ext::shared_ptr<VulkanGraphicsPipeline> graphicsPipeline = ext::dynamic_pointer_cast<VulkanGraphicsPipeline>(_graphicsPipeline);
+    
+    m_vkCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline->vkPipeline());
+    m_vkCommandBuffer.setViewport(0, m_viewport);
+    m_vkCommandBuffer.setScissor(0, m_scissor);
 }
 
 void VulkanCommandBuffer::endRenderPass(void)

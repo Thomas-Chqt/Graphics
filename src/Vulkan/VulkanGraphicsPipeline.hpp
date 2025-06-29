@@ -28,6 +28,8 @@ public:
 
     VulkanGraphicsPipeline(const VulkanDevice*, const GraphicsPipeline::Descriptor&);
 
+    inline const vk::Pipeline& vkPipeline(void) const { return m_vkPipeline; }
+
     ~VulkanGraphicsPipeline();
 
 private:

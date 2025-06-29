@@ -11,9 +11,11 @@
 #define COMMANDBUFFER_HPP
 
 #include "Graphics/Framebuffer.hpp"
+#include "Graphics/GraphicsPipeline.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
 #else
+    #include <memory>
 #endif
 
 namespace gfx
@@ -26,6 +28,9 @@ public:
     CommandBuffer(CommandBuffer&&) = delete;
 
     virtual void beginRenderPass(const Framebuffer&) = 0;
+
+    virtual void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) = 0;
+
     virtual void endRenderPass(void) = 0;
 
     virtual ~CommandBuffer() = default;

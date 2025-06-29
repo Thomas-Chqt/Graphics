@@ -12,8 +12,10 @@
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
+#include "MetalGraphicsPipeline.hpp"
 
 #import <Metal/Metal.h>
+#include <memory>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -54,6 +56,16 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
     }
 
     m_commandEncoder = [[m_mtlCommandBuffer renderCommandEncoderWithDescriptor: renderPassDescriptor] retain];
+}}
+
+void MetalCommandBuffer::usePipeline(const ext::shared_ptr<GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
+{
+    ext::shared_ptr<MetalGraphicsPipeline> graphicsPipeline = ext::dynamic_pointer_cast<MetalGraphicsPipeline>(_graphicsPipeline);
+    assert(graphicsPipeline);
+
+    [m_commandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
+    if (graphicsPipeline->depthStencilState() != nil)
+        [m_commandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
 }}
 
 void MetalCommandBuffer::endRenderPass(void) { @autoreleasepool

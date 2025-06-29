@@ -40,7 +40,11 @@ VulkanShaderFunction& VulkanShaderLib::getFunction(const ext::string& name)
 {
     auto it = m_shaderFunctions.find(name);
     if (it == m_shaderFunctions.end())
-        auto res = m_shaderFunctions.emplace(ext::make_pair(name, VulkanShaderFunction(&m_vkShaderModule, name))).first;
+    {
+        auto [newIt, res] = m_shaderFunctions.emplace(ext::make_pair(name, VulkanShaderFunction(&m_vkShaderModule, name)));
+        assert(res);
+        it = newIt;
+    }
     return it->second;
 }
 

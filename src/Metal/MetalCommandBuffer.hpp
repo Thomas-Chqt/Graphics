@@ -12,6 +12,7 @@
 
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Framebuffer.hpp"
+#include "Graphics/GraphicsPipeline.hpp"
 
 #ifdef __OBJC__
     #import <Metal/Metal.h>
@@ -26,6 +27,7 @@
 
 #if defined(GFX_USE_UTILSCPP)
 #else
+    #include <memory>
 #endif
 
 namespace gfx
@@ -41,6 +43,9 @@ public:
     MetalCommandBuffer(const id<MTLCommandQueue>&);
     
     void beginRenderPass(const Framebuffer&) override;
+
+    void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) override;
+
     void endRenderPass(void) override;
 
     const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }

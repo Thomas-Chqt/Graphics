@@ -10,6 +10,7 @@
 #include "Metal/MetalShaderLib.hpp"
 #include "Metal/MetalShaderFunction.hpp"
 #include "Metal/MetalDevice.hpp"
+#include <cassert>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -43,7 +44,11 @@ MetalShaderFunction& MetalShaderLib::getFunction(const ext::string& name) { @aut
 {
     auto it = m_shaderFunctions.find(name);
     if (it == m_shaderFunctions.end())
-        auto res = m_shaderFunctions.emplace(ext::make_pair(name, MetalShaderFunction(m_mtlLibrary, name))).first;
+    {
+        auto [newIt, res] = m_shaderFunctions.emplace(ext::make_pair(name, MetalShaderFunction(m_mtlLibrary, name)));
+        assert(res);
+        it = newIt;
+    }
     return it->second;
 }}
 
