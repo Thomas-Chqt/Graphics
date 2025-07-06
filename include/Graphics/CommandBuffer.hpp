@@ -26,7 +26,6 @@ class CommandBuffer
 {
 public:
     CommandBuffer(const CommandBuffer&) = delete;
-    CommandBuffer(CommandBuffer&&) = delete;
 
     virtual void beginRenderPass(const Framebuffer&) = 0;
 
@@ -40,10 +39,13 @@ public:
 
 protected:
     CommandBuffer() = default;
+    CommandBuffer(CommandBuffer&&) = default;
 
 public:
     CommandBuffer& operator=(const CommandBuffer&) = delete;
-    CommandBuffer& operator=(CommandBuffer&&) = delete;
+
+protected:
+    CommandBuffer& operator=(CommandBuffer&&) = default;
 };
 
 } // namespace gfx

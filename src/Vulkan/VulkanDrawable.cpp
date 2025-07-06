@@ -14,26 +14,35 @@
 
 #include <vulkan/vulkan.hpp>
 
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <memory>
+    #include <cstdint>
+    namespace ext = std;
+#endif
+
 namespace gfx
 {
 
-VulkanDrawable::VulkanDrawable(const VulkanDevice& device)
-    : m_device(&device)
+VulkanDrawable::VulkanDrawable(const VulkanDevice* device)
+    : m_device(device)
 {
-    m_imageAvailableSemaphore = device.vkDevice().createSemaphore(vk::SemaphoreCreateInfo{});
+    m_imageAvailableSemaphore = m_device->vkDevice().createSemaphore(vk::SemaphoreCreateInfo{});
     
 #if !defined (NDEBUG)
     auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
         .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(m_imageAvailableSemaphore)))
         .setObjectType(vk::ObjectType::eSemaphore)
         .setPObjectName("drawable semaphore");
-    device.vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
+    m_device->vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
 #endif
 }
 
-void VulkanDrawable::setSwapchainImage(const ext::shared_ptr<SwapchainImage>& image)
+void VulkanDrawable::setSwapchainImage(const ext::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex)
 {
-    m_swapchainImage = image;
+    m_swapchainImage = swapchainImage;
+    m_imageIndex = imageIndex;
     m_swapchainImage->setImageAvailableSemaphoreRef(&m_imageAvailableSemaphore);
 }
 

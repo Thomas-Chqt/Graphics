@@ -39,20 +39,19 @@ public:
     VulkanSwapchain(const VulkanSwapchain&) = delete;
     VulkanSwapchain(VulkanSwapchain&&) = delete;
 
-    VulkanSwapchain(const VulkanDevice&, ext::vector<ext::shared_ptr<VulkanDrawable>>&&, const Swapchain::Descriptor&);
+    VulkanSwapchain(const VulkanDevice*, const Swapchain::Descriptor&);
 
     ext::shared_ptr<Drawable> nextDrawable(void) override;
-
-    const vk::SwapchainKHR& vkSwapchain(void) const { return m_vkSwapchain; }
 
     ~VulkanSwapchain();
 
 private:
     const VulkanDevice* m_device;
-    ext::vector<ext::shared_ptr<VulkanDrawable>> m_drawables;
-
-    vk::SwapchainKHR m_vkSwapchain;
+    
+    vk::SwapchainKHR* m_vkSwapchain;
     ext::vector<ext::shared_ptr<SwapchainImage>> m_swapchainImages;
+
+    ext::vector<ext::shared_ptr<VulkanDrawable>> m_drawables;
     uint32_t m_nextDrawableIndex = 0;
 
 public:

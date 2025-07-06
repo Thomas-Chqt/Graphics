@@ -15,11 +15,17 @@
 
 #include <vulkan/vulkan.hpp>
 
+#if defined(GFX_USE_UTILSCPP)
+#else
+    #include <utility>
+    namespace ext = std;
+#endif
+
 namespace gfx
 {
 
-SwapchainImage::SwapchainImage(const VulkanDevice& device, vk::Image image, const Descriptor& desc)
-    : VulkanTexture(device, image, desc.textureDescriptor), m_swapchain(desc.swapchain), m_index(desc.index)
+SwapchainImage::SwapchainImage(const VulkanDevice* device, vk::Image&& image, const ext::shared_ptr<vk::SwapchainKHR>& swapchain, const Texture::Descriptor& desc)
+    : VulkanTexture(device, ext::move(image), desc), m_swapchain(swapchain)
 {
     m_imagePresentableSemaphore = m_device->vkDevice().createSemaphore(vk::SemaphoreCreateInfo{});
 
@@ -28,7 +34,7 @@ SwapchainImage::SwapchainImage(const VulkanDevice& device, vk::Image image, cons
         .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(m_imagePresentableSemaphore)))
         .setObjectType(vk::ObjectType::eSemaphore)
         .setPObjectName("swapchain image semaphore");
-    device.vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
+    m_device->vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
 #endif
 }
 

@@ -22,6 +22,7 @@
 #else
     #include <memory>
     #include <filesystem>
+    #include <cstdint>
     namespace ext = std;
 #endif
 
@@ -34,6 +35,7 @@ public:
     struct Descriptor
     {
         QueueCapabilities queueCaps;
+        uint32_t maxFrameInFlight = 3;
     };
 
 public:
@@ -46,14 +48,16 @@ public:
 
     virtual void beginFrame(void) = 0;
  
-    virtual ext::unique_ptr<CommandBuffer> commandBuffer(void) = 0;
+    virtual CommandBuffer& commandBuffer(void) = 0;
 
-    virtual void submitCommandBuffer(ext::unique_ptr<CommandBuffer>&&) = 0;
+    virtual void submitCommandBuffer(CommandBuffer&) = 0;
     virtual void presentDrawable(const ext::shared_ptr<Drawable>&) = 0;
 
     virtual void endFrame(void) = 0;
 
     virtual void waitIdle(void) = 0;
+
+    //virtual uint32_t maxFrameInFlight(void) const = 0;
 
     virtual ~Device() = default;
 

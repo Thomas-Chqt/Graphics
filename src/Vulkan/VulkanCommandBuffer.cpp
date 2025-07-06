@@ -29,6 +29,7 @@
     #include <optional>
     #include <utility>
     #include <cstddef>
+    #include <cassert>
     namespace ext = std;
 #endif
 
@@ -48,7 +49,9 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 
     for (size_t i = 0; auto& colorAttachment : framebuffer.colorAttachments)
     {
-        const VulkanTexture& vkTexture = dynamic_cast<const VulkanTexture&>(*colorAttachment.texture);
+        ext::shared_ptr<VulkanTexture> vkTexture = dynamic_pointer_cast<VulkanTexture>(colorAttachment.texture);
+        assert(vkTexture);
+
         colorAttachmentInfos[i] = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(colorAttachment.loadAction))
             .setClearValue(vk::ClearValue{
@@ -61,8 +64,10 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
                     }
                 }
             })
-            .setImageView(vkTexture.vkImageView())
+            .setImageView(vkTexture->vkImageView())
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
+
+        m_usedTextures.push_back(vkTexture);
 
         auto imageMemoryBarrier = vk::ImageMemoryBarrier{}
             .setSrcAccessMask(vk::AccessFlagBits{})
@@ -71,7 +76,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
             .setNewLayout(vk::ImageLayout::eColorAttachmentOptimal)
             .setSrcQueueFamilyIndex(m_queueFamily.index)
             .setDstQueueFamilyIndex(m_queueFamily.index)
-            .setImage(vkTexture.vkImage())
+            .setImage(vkTexture->vkImage())
             .setSubresourceRange({
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
@@ -84,7 +89,9 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 
     if (auto& depthAttachment = framebuffer.depthAttachment)
     {
-        const VulkanTexture& vkTexture = dynamic_cast<const VulkanTexture&>(*depthAttachment->texture);
+        ext::shared_ptr<VulkanTexture> vkTexture = dynamic_pointer_cast<VulkanTexture>(depthAttachment->texture);
+        assert(vkTexture);
+
         depthAttachmentInfo = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(depthAttachment->loadAction))
             .setClearValue({
@@ -92,8 +99,10 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
                     .depth = depthAttachment->clearDepth
                 }
             })
-            .setImageView(vkTexture.vkImageView())
+            .setImageView(vkTexture->vkImageView())
             .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+
+        m_usedTextures.push_back(vkTexture);
 
         auto imageMemoryBarrier = vk::ImageMemoryBarrier{}
             .setSrcAccessMask(vk::AccessFlagBits{})
@@ -102,7 +111,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
             .setNewLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
             .setSrcQueueFamilyIndex(m_queueFamily.index)
             .setDstQueueFamilyIndex(m_queueFamily.index)
-            .setImage(vkTexture.vkImage())
+            .setImage(vkTexture->vkImage())
             .setSubresourceRange({
                 .aspectMask = vk::ImageAspectFlagBits::eColor,
                 .baseMipLevel = 0,
@@ -155,6 +164,8 @@ void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<GraphicsPipeline>& _
     m_vkCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline->vkPipeline());
     m_vkCommandBuffer.setViewport(0, m_viewport);
     m_vkCommandBuffer.setScissor(0, m_scissor);
+
+    m_usedPipelines.push_back(graphicsPipeline);
 }
 
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
@@ -168,6 +179,12 @@ void VulkanCommandBuffer::endRenderPass(void)
         m_vkCommandBuffer.endRenderingKHR();
     else
         m_vkCommandBuffer.endRendering();
+}
+
+void VulkanCommandBuffer::reset(void)
+{
+    m_usedTextures.clear();
+    m_isBegin = false;
 }
 
 }

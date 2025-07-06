@@ -25,17 +25,21 @@
     namespace ext = utl;
 #else
     #include <memory>
+    #include <queue>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
 
-MetalDevice::MetalDevice(id<MTLDevice>& device) { @autoreleasepool
+MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor& desc) : 
+    m_frameData(desc.maxFrameInFlight), m_currFD(m_frameData.begin())
 {
-    m_mtlDevice = [device retain];
-    m_queue = [device newCommandQueue];
-}}
+    @autoreleasepool {
+        m_mtlDevice = [device retain];
+        m_queue = [device newCommandQueue];
+    }
+}
 
 ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
 {
@@ -54,42 +58,51 @@ ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const Graphic
 
 void MetalDevice::beginFrame(void) { @autoreleasepool
 {
-    if (m_submittedCommandBuffers.empty() == false)
-        [m_submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
-    m_submittedCommandBuffers.clear();
+    if (m_currFD->submittedCommandBuffers.empty() == false)
+        [m_currFD->submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
+    m_currFD->submittedCommandBuffers.clear();
+    while (m_currFD->commandBuffers.empty() == false)
+        m_currFD->commandBuffers.pop();
 }}
 
-ext::unique_ptr<CommandBuffer> MetalDevice::commandBuffer(void)
+CommandBuffer& MetalDevice::commandBuffer(void)
 {
-    return ext::make_unique<MetalCommandBuffer>(m_queue);
+    m_currFD->commandBuffers.emplace(m_queue);
+    return m_currFD->commandBuffers.back();
 }
 
-void MetalDevice::submitCommandBuffer(ext::unique_ptr<CommandBuffer>&& commandBuffer)
+void MetalDevice::submitCommandBuffer(CommandBuffer& commandBuffer)
 {
-    assert(dynamic_cast<MetalCommandBuffer*>(commandBuffer.get()));
-    m_submittedCommandBuffers.push_back(ext::unique_ptr<MetalCommandBuffer>(dynamic_cast<MetalCommandBuffer*>(commandBuffer.release())));
+    assert(dynamic_cast<MetalCommandBuffer*>(&commandBuffer));
+    m_currFD->submittedCommandBuffers.push_back(dynamic_cast<MetalCommandBuffer*>(&commandBuffer));
 }
 
 void MetalDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable) { @autoreleasepool
 {
     ext::shared_ptr<MetalDrawable> drawable = ext::dynamic_pointer_cast<MetalDrawable>(_drawable);
-    [m_submittedCommandBuffers.back()->mtlCommandBuffer() presentDrawable:drawable->mtlDrawable()];
+    [m_currFD->submittedCommandBuffers.back()->mtlCommandBuffer() presentDrawable:drawable->mtlDrawable()];
 }}
 
 void MetalDevice::endFrame(void) { @autoreleasepool
 {
-    for (auto& buff : m_submittedCommandBuffers)
+    for (auto& buff : m_currFD->submittedCommandBuffers)
         [buff->mtlCommandBuffer() commit];
+    m_currFD++;
+    if (m_currFD == m_frameData.end())
+        m_currFD = m_frameData.begin();
 }}
 
 void MetalDevice::waitIdle(void) { @autoreleasepool
 {
-    for (auto& buff : m_submittedCommandBuffers)
-        [buff->mtlCommandBuffer() waitUntilCompleted];
+    for (auto& fd : m_frameData) {
+        if (m_currFD->submittedCommandBuffers.empty() == false)
+            [m_currFD->submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
+    }
 }}
 
 MetalDevice::~MetalDevice() { @autoreleasepool
 {
+    waitIdle();
     [m_queue release];
     [m_mtlDevice release];
 }}

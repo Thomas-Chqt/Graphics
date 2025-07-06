@@ -16,8 +16,10 @@
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
 #else
     #include <cstdint>
+//    namespace ext = std;
 #endif
 
 namespace gfx
@@ -32,7 +34,7 @@ public:
     VulkanTexture(const VulkanTexture&) = delete;
     VulkanTexture(VulkanTexture&&) = delete;
 
-    VulkanTexture(const VulkanDevice&, vk::Image, const Texture::Descriptor&);
+    VulkanTexture(const VulkanDevice*, vk::Image&&, const Texture::Descriptor&);
 
     inline uint32_t width() const override { return m_width; }
     inline uint32_t height() const override { return m_height; }
@@ -46,12 +48,12 @@ public:
 protected:
     const VulkanDevice* m_device = nullptr;
 
+    uint32_t m_width, m_height;
+    PixelFormat m_pixelFormat;
+
     vk::Image m_vkImage;
     vk::ImageView m_vkImageView;
     bool m_shouldDestroyImg;
-    
-    uint32_t m_width, m_height;
-    PixelFormat m_pixelFormat;
 
 public:
     VulkanTexture& operator=(const VulkanTexture&) = delete;

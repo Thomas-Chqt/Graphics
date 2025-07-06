@@ -15,12 +15,17 @@
 #include "Graphics/GraphicsPipeline.hpp"
 
 #include "Vulkan/QueueFamily.hpp"
+#include "Vulkan/VulkanGraphicsPipeline.hpp"
+#include "Vulkan/VulkanTexture.hpp"
 
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
 #else
     #include <memory>
+    #include <vector>
+    namespace ext = std;
 #endif
 
 namespace gfx
@@ -31,7 +36,7 @@ class VulkanCommandBuffer : public CommandBuffer
 public:
     VulkanCommandBuffer() = default;
     VulkanCommandBuffer(const VulkanCommandBuffer&) = delete;
-    VulkanCommandBuffer(VulkanCommandBuffer&&) = delete;
+    VulkanCommandBuffer(VulkanCommandBuffer&&) = default;
 
     VulkanCommandBuffer(vk::CommandBuffer&&, const QueueFamily&, bool useDynamicRenderingExt);
 
@@ -46,6 +51,8 @@ public:
     const vk::CommandBuffer& vkCommandBuffer(void) const { return m_vkCommandBuffer; }
     vk::CommandBuffer& vkCommandBuffer(void) { return m_vkCommandBuffer; }
 
+    void reset(void); // dont reset the vk::buffer, only clean the associated data
+
     ~VulkanCommandBuffer() = default;
 
 private:
@@ -57,9 +64,12 @@ private:
     vk::Viewport m_viewport;
     vk::Rect2D m_scissor;
 
+    ext::vector<ext::shared_ptr<VulkanTexture>> m_usedTextures;
+    ext::vector<ext::shared_ptr<VulkanGraphicsPipeline>> m_usedPipelines;
+
 public:
     VulkanCommandBuffer& operator = (const VulkanCommandBuffer&) = delete;
-    VulkanCommandBuffer& operator = (VulkanCommandBuffer&&) = delete;
+    VulkanCommandBuffer& operator = (VulkanCommandBuffer&&) = default;
 };
 
 }

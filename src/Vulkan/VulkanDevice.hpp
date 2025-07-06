@@ -19,6 +19,7 @@
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
 
+#include <cstdint>
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
@@ -26,10 +27,10 @@
 #else
     #include <vector>
     #include <memory>
+    #include <cstddef>
+    #include <queue>
     namespace ext = std;
 #endif
-
-constexpr int MAX_FRAMES_IN_FLIGHT = 1;
 
 namespace gfx
 {
@@ -58,9 +59,9 @@ public:
 
     void beginFrame(void) override;
 
-    ext::unique_ptr<CommandBuffer> commandBuffer(void) override;
+    CommandBuffer& commandBuffer(void) override;
  
-    void submitCommandBuffer(ext::unique_ptr<CommandBuffer>&&) override;
+    void submitCommandBuffer(CommandBuffer&) override;
     void presentDrawable(const ext::shared_ptr<Drawable>&) override;
 
     void endFrame(void) override;
@@ -69,21 +70,28 @@ public:
 
     inline const vk::Device& vkDevice(void) const { return m_vkDevice; }
     inline const VulkanPhysicalDevice& physicalDevice(void) const { return *m_physicalDevice; }
+    inline uint32_t maxFrameInFlight(void) const { return m_frameData.size(); };
 
     ~VulkanDevice();
 
 private:
+    struct FrameData
+    {
+        vk::CommandPool commandPool;
+        vk::Fence frameCompletedFence;
+        ext::queue<VulkanCommandBuffer> commandBuffers;
+        ext::queue<VulkanCommandBuffer> usedCommandBuffers;
+        ext::vector<VulkanCommandBuffer*> submittedCmdBuffers;
+        ext::vector<ext::shared_ptr<VulkanDrawable>> presentedDrawables;
+    };
+
     const VulkanPhysicalDevice* m_physicalDevice;
     vk::Device m_vkDevice;
     QueueFamily m_queueFamily;
     vk::Queue m_queue;
-
-    vk::CommandPool m_commandPool;
-    vk::Fence m_frameCompletedFence;
-    ext::vector<vk::CommandBuffer> m_vkCommandBuffers;
-    int m_nextVkCommandBuffer = 0;
-    ext::vector<ext::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
-    ext::vector<ext::shared_ptr<VulkanDrawable>> m_presentedDrawables;
+    
+    ext::vector<FrameData> m_frameData;
+    ext::vector<FrameData>::iterator m_currFD;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

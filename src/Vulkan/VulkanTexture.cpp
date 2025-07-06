@@ -15,12 +15,19 @@
 
 #include <vulkan/vulkan.hpp>
 
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <utility>
+    namespace ext = std;
+#endif
+
 namespace gfx
 {
 
-VulkanTexture::VulkanTexture(const VulkanDevice& device, vk::Image vkImage, const Texture::Descriptor& desc)
-    : m_device(&device),
-      m_vkImage(vkImage), m_shouldDestroyImg(false),
+VulkanTexture::VulkanTexture(const VulkanDevice* device, vk::Image&& vkImage, const Texture::Descriptor& desc)
+    : m_device(device),
+      m_vkImage(ext::move(vkImage)), m_shouldDestroyImg(false),
       m_width(desc.width), m_height(desc.height),
       m_pixelFormat(desc.pixelFormat)
 {

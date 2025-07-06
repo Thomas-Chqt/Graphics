@@ -32,14 +32,16 @@
     #include <cstdint>
     #include <stdexcept>
     #include <utility>
+    #include <ranges>
+    #include <map>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
 
-VulkanSwapchain::VulkanSwapchain(const VulkanDevice& device, ext::vector<ext::shared_ptr<VulkanDrawable>>&& drawables, const Descriptor& desc)
-    : m_device(&device), m_drawables(std::move(drawables))
+VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& desc)
+    : m_device(device)
 {
     assert(desc.surface);
     const vk::SurfaceKHR& vkSurface = dynamic_cast<const VulkanSurface&>(*desc.surface).vkSurface();
@@ -65,36 +67,46 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice& device, ext::vector<ext::sh
         extent.height = ext::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
     }
 
-    vk::SwapchainCreateInfoKHR swapchainCreateInfo = {
-        .surface = vkSurface,
-        .minImageCount = desc.imageCount,
-        .imageFormat = toVkFormat(desc.pixelFormat),
-        .imageColorSpace = toVkColorSpaceKHR(desc.pixelFormat),
-        .imageExtent = extent,
-        .imageArrayLayers = 1,
-        .imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
-        .preTransform = surfaceCapabilities.currentTransform,
-        .presentMode = toVkPresentModeKHR(desc.presentMode),
-        .clipped = VK_TRUE};
 
-    m_vkSwapchain = m_device->vkDevice().createSwapchainKHR(swapchainCreateInfo);
+    auto swapchainCreateInfo = vk::SwapchainCreateInfoKHR{}
+        .setSurface(vkSurface)
+        .setMinImageCount(desc.imageCount)
+        .setImageFormat(toVkFormat(desc.pixelFormat))
+        .setImageColorSpace(toVkColorSpaceKHR(desc.pixelFormat))
+        .setImageExtent(extent)
+        .setImageArrayLayers(1)
+        .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+        .setPreTransform(surfaceCapabilities.currentTransform)
+        .setPresentMode(toVkPresentModeKHR(desc.presentMode))
+        .setClipped(vk::True);
+    
+    static ext::map<const vk::SurfaceKHR*, vk::SwapchainKHR*> s_oldSwapchains;
+    if (s_oldSwapchains.contains(&vkSurface))
+        swapchainCreateInfo.setOldSwapchain(*s_oldSwapchains[&vkSurface]);
 
-    std::vector<vk::Image> vkSwapchainImages = m_device->vkDevice().getSwapchainImagesKHR(m_vkSwapchain);
-    m_swapchainImages.resize(vkSwapchainImages.size());
+    auto vkSwapchain = m_device->vkDevice().createSwapchainKHR(swapchainCreateInfo);
+    auto vkSwapchainPtr = ext::shared_ptr<vk::SwapchainKHR>(
+        new vk::SwapchainKHR(ext::move(vkSwapchain)),
+        [device=m_device](vk::SwapchainKHR* ptr){
+            device->vkDevice().destroySwapchainKHR(*ptr);
+            delete ptr;
+        }
+    );
+    m_vkSwapchain = vkSwapchainPtr.get();
+    s_oldSwapchains[&vkSurface] = m_vkSwapchain;
 
-    for (uint32_t i = 0; auto& image : vkSwapchainImages)
-    {
-        SwapchainImage::Descriptor swapchainImageDescriptor = {
-            .textureDescriptor = Texture::Descriptor{
-                .width = extent.width, .height = extent.height,
-                .pixelFormat = desc.pixelFormat
-            },
-            .swapchain = this,
-            .index = i
-        };
-        m_swapchainImages[i] = ext::make_shared<SwapchainImage>(*m_device, image, swapchainImageDescriptor);
-        i++;
-    }
+    Texture::Descriptor swapchainImageTexDesc = {
+        .width = extent.width, .height = extent.height,
+        .pixelFormat = desc.pixelFormat
+    };
+
+    m_swapchainImages = m_device->vkDevice().getSwapchainImagesKHR(*vkSwapchainPtr)
+        | ext::views::transform([&](vk::Image& vkImage) { return ext::make_shared<SwapchainImage>(m_device, ext::move(vkImage), vkSwapchainPtr, swapchainImageTexDesc); })
+        | ext::ranges::to<ext::vector>();
+
+    m_drawables.resize(m_device->maxFrameInFlight());
+    for (int i = 0; i < m_device->maxFrameInFlight(); i++)
+        m_drawables[i] = ext::make_shared<VulkanDrawable>(m_device);
 }
 
 ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable(void)
@@ -105,15 +117,18 @@ ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable(void)
     uint64_t timeout = ext::numeric_limits<uint64_t>::max();
     auto& semaphore = drawable->imageAvailableSemaphore();
 
-    auto result = m_device->vkDevice().acquireNextImageKHR(m_vkSwapchain, timeout, semaphore, nullptr);
+    auto [result, value] = m_device->vkDevice().acquireNextImageKHR(*m_vkSwapchain, timeout, semaphore, nullptr);
 
-    switch (result.result)
+    switch (result)
     {
     case vk::Result::eSuccess:
-        drawable->setSwapchainImage(m_swapchainImages[result.value]);
+        drawable->setSwapchainImage(m_swapchainImages[value], value);
         return drawable;
+    case vk::Result::eSuboptimalKHR:
+    case vk::Result::eErrorOutOfDateKHR:
+        return nullptr;
     default:
-        throw ext::runtime_error("error");
+        throw std::runtime_error("Failed to acquire swapchain image!");
     }
 }
 
@@ -121,7 +136,6 @@ VulkanSwapchain::~VulkanSwapchain()
 {
     m_drawables.clear();
     m_swapchainImages.clear();
-    m_device->vkDevice().destroySwapchainKHR(m_vkSwapchain);
 }
 
 } // namespace gfx

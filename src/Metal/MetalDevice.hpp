@@ -21,6 +21,8 @@
     namespace ext = utl;
 #else
     namespace ext = std;
+    #include <vector>
+    #include <queue>
 #endif
 
 #ifdef __OBJC__
@@ -42,7 +44,7 @@ public:
     MetalDevice(const MetalDevice&) = delete;
     MetalDevice(MetalDevice&&) = delete;
 
-    MetalDevice(id<MTLDevice>&);
+    MetalDevice(id<MTLDevice>&, const Device::Descriptor&);
 
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;
@@ -50,9 +52,9 @@ public:
 
     void beginFrame(void) override;
  
-    ext::unique_ptr<CommandBuffer> commandBuffer(void) override;
+    CommandBuffer& commandBuffer(void) override;
 
-    void submitCommandBuffer(ext::unique_ptr<CommandBuffer>&&) override;
+    void submitCommandBuffer(CommandBuffer&) override;
     void presentDrawable(const ext::shared_ptr<Drawable>&) override;
 
     void endFrame(void) override;
@@ -64,10 +66,17 @@ public:
     ~MetalDevice();
 
 private:
+    struct FrameData
+    {
+        ext::queue<MetalCommandBuffer> commandBuffers;
+        ext::vector<MetalCommandBuffer*> submittedCommandBuffers;
+    };
+
     id<MTLDevice> m_mtlDevice;
     id<MTLCommandQueue> m_queue;
 
-    ext::vector<ext::unique_ptr<MetalCommandBuffer>> m_submittedCommandBuffers;
+    ext::vector<FrameData> m_frameData;
+    ext::vector<FrameData>::iterator m_currFD;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

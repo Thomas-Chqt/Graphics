@@ -51,7 +51,7 @@ ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc)
     for (id<MTLDevice> mtlDevice in mtlDevices)
         m_devices.push_back([mtlDevice retain]);
 
-    return ext::make_unique<MetalDevice>(m_devices.front());
+    return ext::make_unique<MetalDevice>(m_devices.front(), desc);
 }}
 
 } // namespace gfx

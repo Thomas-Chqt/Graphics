@@ -11,8 +11,10 @@
 #define VULKANDRAWABLE_HPP
 
 #include "Graphics/Drawable.hpp"
+#include "Graphics/Texture.hpp"
 
-#include "Vulkan/SwapchainImage.hpp"
+#include "SwapchainImage.hpp"
+#include "Vulkan/VulkanTexture.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -20,6 +22,7 @@
     namespace ext = utl;
 #else
     #include <memory>
+    #include <cstdint>
     namespace ext = std;
 #endif
 
@@ -31,25 +34,31 @@ class VulkanDevice;
 class VulkanDrawable : public Drawable
 {
 public:
+    VulkanDrawable() = delete;
     VulkanDrawable(const VulkanDrawable&) = delete;
     VulkanDrawable(VulkanDrawable&&) = delete;
 
-    VulkanDrawable(const VulkanDevice&);
+    VulkanDrawable(const VulkanDevice*);
+
+    inline ext::shared_ptr<Texture> texture(void) const override { return m_swapchainImage; }
+    inline ext::shared_ptr<SwapchainImage> swapchainImage(void) const { return m_swapchainImage; }
+
+    void setSwapchainImage(const ext::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex);
+
+    inline const vk::SwapchainKHR& swapchain(void) const { return m_swapchainImage->swapchain(); }
+    inline uint32_t imageIndex(void) const { return m_imageIndex; }
+
+    inline const vk::Semaphore& imageAvailableSemaphore(void) const { return m_imageAvailableSemaphore; }
+    inline const vk::Semaphore& imagePresentableSemaphore(void) const { return m_swapchainImage->imagePresentableSemaphore(); }
 
     ~VulkanDrawable();
 
-    inline ext::shared_ptr<Texture> texture(void) const override { return m_swapchainImage; }
-
-    inline const ext::shared_ptr<SwapchainImage>& swapchainImage(void) const { return m_swapchainImage; }
-    
-    const vk::Semaphore& imageAvailableSemaphore(void) const { return m_imageAvailableSemaphore; }
-    void setSwapchainImage(const ext::shared_ptr<SwapchainImage>&);
-
 private:
     const VulkanDevice* m_device;
+    vk::Semaphore m_imageAvailableSemaphore;
 
     ext::shared_ptr<SwapchainImage> m_swapchainImage;
-    vk::Semaphore m_imageAvailableSemaphore;
+    uint32_t m_imageIndex;
 
 public:
     VulkanDrawable& operator=(const VulkanDrawable&) = delete;

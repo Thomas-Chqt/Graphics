@@ -18,43 +18,33 @@
 
 #if defined(GFX_USE_UTILSCPP)
 #else
-    #include <cstdint>
+    #include <memory>
+    namespace ext = std;
 #endif
 
 namespace gfx
 {
 
 class VulkanDevice;
-class VulkanSwapchain;
 
 class SwapchainImage : public VulkanTexture
 {
 public:
-    struct Descriptor
-    {
-        Texture::Descriptor textureDescriptor;
-        VulkanSwapchain* swapchain;
-        uint32_t index;
-    };
+    SwapchainImage(const VulkanDevice*, vk::Image&&, const ext::shared_ptr<vk::SwapchainKHR>&, const Texture::Descriptor&);
 
-public:
-    SwapchainImage(const VulkanDevice&, vk::Image, const Descriptor&);
+    inline const vk::SwapchainKHR& swapchain(void) const { return *m_swapchain; }
 
     inline void setImageAvailableSemaphoreRef(vk::Semaphore* s) { m_imageAvailableSemaphore = s; }
 
     inline const vk::Semaphore& imageAvailableSemaphore(void) const { return *m_imageAvailableSemaphore; }
     inline const vk::Semaphore& imagePresentableSemaphore(void) const { return m_imagePresentableSemaphore; }
 
-    inline const VulkanSwapchain& swapchain(void) const { return *m_swapchain; }
-    inline uint32_t imageIndex(void) const { return m_index; }
-
     ~SwapchainImage();
 
 private:
-    VulkanSwapchain* m_swapchain;
-    uint32_t m_index;
-    vk::Semaphore* m_imageAvailableSemaphore = nullptr;
+    ext::shared_ptr<vk::SwapchainKHR> m_swapchain;
     vk::Semaphore m_imagePresentableSemaphore;
+    vk::Semaphore* m_imageAvailableSemaphore = nullptr;
 
 public:
     SwapchainImage& operator=(const SwapchainImage&) = delete;
