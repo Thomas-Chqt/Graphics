@@ -18,13 +18,17 @@
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 
+#include <ranges>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_handles.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <memory>
-    #include <vector>
+    #include <cstdint>
+    #include <map>
+    #include <set>
     namespace ext = std;
 #endif
 
@@ -38,34 +42,50 @@ public:
     VulkanCommandBuffer(const VulkanCommandBuffer&) = delete;
     VulkanCommandBuffer(VulkanCommandBuffer&&) = default;
 
-    VulkanCommandBuffer(vk::CommandBuffer&&, const QueueFamily&, bool useDynamicRenderingExt);
+    VulkanCommandBuffer(vk::CommandBuffer&&, const QueueFamily&);
 
     void beginRenderPass(const Framebuffer&) override;
 
-    void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) override;
+    void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
 
     void endRenderPass(void) override;
 
     const vk::CommandBuffer& vkCommandBuffer(void) const { return m_vkCommandBuffer; }
-    vk::CommandBuffer& vkCommandBuffer(void) { return m_vkCommandBuffer; }
+    
+    inline void begin(void) { m_vkCommandBuffer.begin(vk::CommandBufferBeginInfo{.flags=vk::CommandBufferUsageFlagBits::eOneTimeSubmit}); }
+    inline void end(void) { m_vkCommandBuffer.end(); }
 
-    void reset(void); // dont reset the vk::buffer, only clean the associated data
+    inline const ext::map<ext::shared_ptr<VulkanTexture>, ImageSyncRequest>& imageSyncRequests() const { return m_imageSyncRequests; }
+    inline const ext::map<ext::shared_ptr<VulkanTexture>, ImageSyncState>& imageFinalSyncStates() const { return m_imageFinalSyncStates; }
+
+    inline void addWaitSemaphore(const vk::Semaphore* s) { m_waitSemaphores.insert(s); }
+    inline void addWaitSemaphores(const std::ranges::range auto& r) { m_waitSemaphores.insert_range(r); }
+
+    inline const ext::set<const vk::Semaphore*>& waitSemaphores() const { return m_waitSemaphores; }
+
+    inline void setSignalSemaphore(const vk::Semaphore* s) { m_signalSemaphore = s; }
+    inline const vk::Semaphore* signalSemaphore() const { return m_signalSemaphore; }
+
+    void clear(void);
 
     ~VulkanCommandBuffer() = default;
 
 private:
     vk::CommandBuffer m_vkCommandBuffer;
     QueueFamily m_queueFamily;
-    bool m_useDynamicRenderingExt;
-    bool m_isBegin = false;
 
     vk::Viewport m_viewport;
     vk::Rect2D m_scissor;
 
-    ext::vector<ext::shared_ptr<VulkanTexture>> m_usedTextures;
-    ext::vector<ext::shared_ptr<VulkanGraphicsPipeline>> m_usedPipelines;
+    ext::set<ext::shared_ptr<const VulkanGraphicsPipeline>> m_usedPipelines;
+
+    ext::map<ext::shared_ptr<VulkanTexture>, ImageSyncRequest> m_imageSyncRequests;
+    ext::map<ext::shared_ptr<VulkanTexture>, ImageSyncState> m_imageFinalSyncStates;
+    
+    ext::set<const vk::Semaphore*> m_waitSemaphores;
+    const vk::Semaphore* m_signalSemaphore = nullptr;
 
 public:
     VulkanCommandBuffer& operator = (const VulkanCommandBuffer&) = delete;

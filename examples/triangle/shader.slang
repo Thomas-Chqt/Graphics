@@ -1,6 +1,6 @@
 /*
  * ---------------------------------------------------
- * vertex.slang
+ * shader.slang
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
  * Date: 2025/06/24 07:33:08

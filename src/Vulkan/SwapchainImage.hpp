@@ -36,7 +36,7 @@ public:
 
     inline void setImageAvailableSemaphoreRef(vk::Semaphore* s) { m_imageAvailableSemaphore = s; }
 
-    inline const vk::Semaphore& imageAvailableSemaphore(void) const { return *m_imageAvailableSemaphore; }
+    inline const vk::Semaphore* imageAvailableSemaphore(void) const override { return m_imageAvailableSemaphore; }
     inline const vk::Semaphore& imagePresentableSemaphore(void) const { return m_imagePresentableSemaphore; }
 
     ~SwapchainImage();

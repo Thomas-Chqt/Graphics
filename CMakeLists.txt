@@ -138,6 +138,8 @@ endif()
 
 if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_VULKAN")
+    target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_NO_CONSTRUCTORS")
+    target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1")
 endif()
 
 if (GFX_ENABLE_IMGUI)

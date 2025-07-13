@@ -29,11 +29,15 @@ bool VulkanPhysicalDevice::isSuitable(const VulkanDevice::Descriptor& desc) cons
     if ((getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty())
         return false;
 
-    ext::vector<const char*> requiredExtension = desc.deviceExtensions;
-    if (vk::PhysicalDevice::getProperties().apiVersion < VK_API_VERSION_1_3)
-        requiredExtension.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    auto requiredExtension = desc.deviceExtensions | ext::views::filter([&](const char* ext) {
+        if (strcmp(ext, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0 && vk::PhysicalDevice::getProperties().apiVersion >= vk::ApiVersion13)
+            return false;
+        if (strcmp(ext, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0 && vk::PhysicalDevice::getProperties().apiVersion >= VK_API_VERSION_1_3)
+            return false;
+        return true;
+    });
 
-    if (suportExtensions(requiredExtension) == false)
+    if (suportExtensions(requiredExtension | ext::ranges::to<ext::vector>()) == false)
         return false;
 
     return true;

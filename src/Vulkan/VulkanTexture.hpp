@@ -13,6 +13,8 @@
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
 
+#include "Vulkan/Sync.hpp"
+
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
@@ -41,7 +43,11 @@ public:
     inline PixelFormat pixelFormat(void) const override { return m_pixelFormat; };
 
     inline const vk::Image& vkImage() const { return m_vkImage; }
+    inline const vk::ImageSubresourceRange& subresourceRange() const { return m_subresourceRange; }
     inline const vk::ImageView& vkImageView() const { return m_vkImageView; }
+
+    inline ImageSyncState& syncState() { return m_syncState; }
+    inline virtual const vk::Semaphore* imageAvailableSemaphore() const { return nullptr; }
 
     ~VulkanTexture();
 
@@ -52,8 +58,12 @@ protected:
     PixelFormat m_pixelFormat;
 
     vk::Image m_vkImage;
-    vk::ImageView m_vkImageView;
     bool m_shouldDestroyImg;
+
+    vk::ImageSubresourceRange m_subresourceRange;
+    vk::ImageView m_vkImageView;
+
+    ImageSyncState m_syncState = ImageSyncState{.layout=vk::ImageLayout::eUndefined};
 
 public:
     VulkanTexture& operator=(const VulkanTexture&) = delete;

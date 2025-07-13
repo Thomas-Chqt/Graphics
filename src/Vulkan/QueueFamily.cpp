@@ -18,6 +18,11 @@
 namespace gfx
 {
 
+QueueFamily::QueueFamily(const vk::QueueFamilyProperties& prop)
+    : vk::QueueFamilyProperties(prop)
+{
+}
+
 bool QueueFamily::hasCapabilities(const QueueCapabilities& capabilities) const
 {
     if (capabilities.graphics && (vk::QueueFamilyProperties::queueFlags & vk::QueueFlagBits::eGraphics) == vk::QueueFlagBits{})

@@ -7,8 +7,6 @@
  * ---------------------------------------------------
  */
 
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-
 #include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanTexture.hpp"

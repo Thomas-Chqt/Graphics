@@ -18,11 +18,12 @@ if (GFX_BUILD_VULKAN)
     list(APPEND SHADER_TARGETS "spirv")
 endif()
 
-add_shader_lib(shader
+add_shader_lib(triangle_shader
     SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader.slang"
     TARGETS ${SHADER_TARGETS}
 )
-get_target_property(SHADER_SLIB shader SLIB_OUTPUT)
+set_target_properties(triangle_shader PROPERTIES FOLDER "examples/triangle/shaders")
+get_target_property(SHADER_SLIB triangle_shader SLIB_OUTPUT)
 
 if (APPLE)
     enable_language(OBJC)
@@ -30,11 +31,14 @@ endif()
 
 set_target_properties(triangle PROPERTIES
     FOLDER         "examples/triangle"
-    #ENABLE_EXPORTS ON
+    ENABLE_EXPORTS ON
 )
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(triangle PRIVATE ${EXE_SRCS})
+if (WIN32)
+    target_sources(triangle PRIVATE triangle.def)
+endif()
 
 target_include_directories(triangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -67,4 +71,4 @@ if (TARGET update_mappings)
 endif()
 
 target_link_libraries(triangle PRIVATE Graphics glfw)
-add_dependencies(triangle shader)
+add_dependencies(triangle triangle_shader)

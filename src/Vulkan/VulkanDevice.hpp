@@ -18,8 +18,8 @@
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
+#include "Vulkan/VulkanTexture.hpp"
 
-#include <cstdint>
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
@@ -29,6 +29,7 @@
     #include <memory>
     #include <cstddef>
     #include <queue>
+    #include <cstdint>
     namespace ext = std;
 #endif
 
@@ -51,7 +52,7 @@ public:
     VulkanDevice(const VulkanDevice&) = delete;
     VulkanDevice(VulkanDevice&&) = delete;
 
-    VulkanDevice(const VulkanPhysicalDevice&, const Descriptor&);
+    VulkanDevice(const VulkanPhysicalDevice*, const Descriptor&);
 
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;

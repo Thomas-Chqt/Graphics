@@ -39,7 +39,7 @@ function(add_shader_lib SLIB_NAME)
             -o ${SLIB_OUTPUT}
             ${SLIB_SOURCES}
         DEPENDS ${SLIB_SOURCES} ${GFXSC_PATH}
-        COMMENT "Compiling shader ${SLIB_NAME}"
+        COMMENT "Building shader ${SLIB_NAME}"
         VERBATIM
     )
 

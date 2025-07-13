@@ -7,8 +7,6 @@
  * ---------------------------------------------------
  */
 
-#define VULKAN_HPP_NO_CONSTRUCTORS
-
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
@@ -31,23 +29,23 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, vk::Image&& vkImage, co
       m_width(desc.width), m_height(desc.height),
       m_pixelFormat(desc.pixelFormat)
 {
+    m_subresourceRange = vk::ImageSubresourceRange{}
+        .setAspectMask(vk::ImageAspectFlagBits::eColor)
+        .setBaseMipLevel(0)
+        .setLevelCount(1)
+        .setBaseArrayLayer(0)
+        .setLayerCount(1);
+
     auto imageViewCreateInfo = vk::ImageViewCreateInfo{}
         .setImage(m_vkImage)
         .setViewType(vk::ImageViewType::e2D)
         .setFormat(toVkFormat(desc.pixelFormat))
-        .setComponents({
-            .r = vk::ComponentSwizzle::eIdentity,
-            .g = vk::ComponentSwizzle::eIdentity,
-            .b = vk::ComponentSwizzle::eIdentity,
-            .a = vk::ComponentSwizzle::eIdentity
-        })
-        .setSubresourceRange({
-            .aspectMask = vk::ImageAspectFlagBits::eColor,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1
-        });
+        .setComponents(vk::ComponentMapping{}
+            .setR(vk::ComponentSwizzle::eIdentity)
+            .setG(vk::ComponentSwizzle::eIdentity)
+            .setB(vk::ComponentSwizzle::eIdentity)
+            .setA(vk::ComponentSwizzle::eIdentity))
+        .setSubresourceRange(m_subresourceRange);
 
     m_vkImageView = m_device->vkDevice().createImageView(imageViewCreateInfo);
 }

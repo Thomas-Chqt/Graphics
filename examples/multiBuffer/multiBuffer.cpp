@@ -1,9 +1,9 @@
 /*
  * ---------------------------------------------------
- * main.cpp
+ * multiBuffer.cpp
  *
- * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/06/06 16:59:24
+ * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
+ * Date: 2025/07/12 13:59:44
  * ---------------------------------------------------
  */
 
@@ -51,7 +51,7 @@ public:
         assert(res == GLFW_TRUE);
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+        // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
         m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
         assert(m_window);
 
@@ -81,16 +81,49 @@ public:
         assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
         
-        ext::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
-        assert(shaderLib);
+        ext::unique_ptr<gfx::ShaderLib> shaderLib1 = m_device->newShaderLib(SHADER1_SLIB);
+        assert(shaderLib1);
 
-        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
-            .vertexShader = &shaderLib->getFunction("vertexMain"),
-            .fragmentShader = &shaderLib->getFunction("fragmentMain"),
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor1 = {
+            .vertexShader = &shaderLib1->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib1->getFunction("fragmentMain"),
             .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
         };
-        m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
-        assert(m_graphicsPipeline);
+        m_graphicsPipeline1 = m_device->newGraphicsPipeline(gfxPipelineDescriptor1);
+        assert(m_graphicsPipeline1);
+
+        ext::unique_ptr<gfx::ShaderLib> shaderLib2 = m_device->newShaderLib(SHADER2_SLIB);
+        assert(shaderLib2);
+
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor2 = {
+            .vertexShader = &shaderLib2->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib2->getFunction("fragmentMain"),
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+        };
+        m_graphicsPipeline2 = m_device->newGraphicsPipeline(gfxPipelineDescriptor2);
+        assert(m_graphicsPipeline2);
+
+        ext::unique_ptr<gfx::ShaderLib> shaderLib3 = m_device->newShaderLib(SHADER3_SLIB);
+        assert(shaderLib3);
+
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor3 = {
+            .vertexShader = &shaderLib3->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib3->getFunction("fragmentMain"),
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+        };
+        m_graphicsPipeline3 = m_device->newGraphicsPipeline(gfxPipelineDescriptor3);
+        assert(m_graphicsPipeline3);
+
+        ext::unique_ptr<gfx::ShaderLib> shaderLib4 = m_device->newShaderLib(SHADER4_SLIB);
+        assert(shaderLib4);
+
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor4 = {
+            .vertexShader = &shaderLib4->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib4->getFunction("fragmentMain"),
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+        };
+        m_graphicsPipeline4 = m_device->newGraphicsPipeline(gfxPipelineDescriptor4);
+        assert(m_graphicsPipeline4);
     }
 
     void loop()
@@ -119,11 +152,6 @@ public:
 
             m_device->beginFrame();
             {
-                gfx::CommandBuffer& commandBuffer = m_device->commandBuffer();
-
-                /*
-                 * pre passes
-                 */
 
                 ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
                 if (drawable == nullptr) {
@@ -141,14 +169,44 @@ public:
                     }
                 };
 
-                commandBuffer.beginRenderPass(framebuffer);
-                {
-                    commandBuffer.usePipeline(m_graphicsPipeline);
-                    commandBuffer.drawVertices(0, 3);
-                }
-                commandBuffer.endRenderPass();
+                gfx::CommandBuffer& commandBuffer1 = m_device->commandBuffer();
 
-                m_device->submitCommandBuffer(commandBuffer);
+                commandBuffer1.beginRenderPass(framebuffer);
+                {
+                    commandBuffer1.usePipeline(m_graphicsPipeline1);
+                    commandBuffer1.drawVertices(0, 6);
+                }
+                commandBuffer1.endRenderPass();
+
+                framebuffer.colorAttachments[0].loadAction = gfx::LoadAction::load;
+
+                commandBuffer1.beginRenderPass(framebuffer);
+                {
+                    commandBuffer1.usePipeline(m_graphicsPipeline2);
+                    commandBuffer1.drawVertices(0, 6);
+                }
+                commandBuffer1.endRenderPass();
+
+                m_device->submitCommandBuffer(commandBuffer1);
+
+                gfx::CommandBuffer& commandBuffer2 = m_device->commandBuffer();
+
+                commandBuffer2.beginRenderPass(framebuffer);
+                {
+                    commandBuffer2.usePipeline(m_graphicsPipeline3);
+                    commandBuffer2.drawVertices(0, 6);
+                }
+                commandBuffer2.endRenderPass();
+
+                commandBuffer2.beginRenderPass(framebuffer);
+                {
+                    commandBuffer2.usePipeline(m_graphicsPipeline4);
+                    commandBuffer2.drawVertices(0, 6);
+                }
+                commandBuffer2.endRenderPass();
+
+                m_device->submitCommandBuffer(commandBuffer2);
+
                 m_device->presentDrawable(drawable);
             }
             m_device->endFrame();
@@ -167,7 +225,10 @@ private:
     ext::unique_ptr<gfx::Surface> m_surface;
     ext::unique_ptr<gfx::Device> m_device;
     ext::unique_ptr<gfx::Swapchain> m_swapchain;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline1;
+    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline2;
+    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline3;
+    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline4;
 };
 
 int main()

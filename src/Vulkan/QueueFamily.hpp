@@ -29,6 +29,9 @@ struct QueueFamily : public vk::QueueFamilyProperties
 public:
     using vk::QueueFamilyProperties::QueueFamilyProperties;
 
+    QueueFamily() = default;
+    QueueFamily(const vk::QueueFamilyProperties&);
+
     uint32_t index;
     const VulkanPhysicalDevice* device;
 

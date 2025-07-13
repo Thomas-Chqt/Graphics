@@ -7,4 +7,5 @@
 
 if (GFX_ENABLE_GLFW)
     add_subdirectory(triangle)
+    add_subdirectory(multiBuffer)
 endif()

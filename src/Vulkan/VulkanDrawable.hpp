@@ -41,6 +41,7 @@ public:
     VulkanDrawable(const VulkanDevice*);
 
     inline ext::shared_ptr<Texture> texture(void) const override { return m_swapchainImage; }
+    inline ext::shared_ptr<VulkanTexture> vulkanTexture(void) const { return m_swapchainImage; }
     inline ext::shared_ptr<SwapchainImage> swapchainImage(void) const { return m_swapchainImage; }
 
     void setSwapchainImage(const ext::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex);

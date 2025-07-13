@@ -7,8 +7,6 @@
  * ---------------------------------------------------
  */
 
-#define VULKAN_HPP_NO_CONSTRUCTORS
-
 #include "Graphics/Drawable.hpp"
 
 #include "Vulkan/VulkanSwapchain.hpp"

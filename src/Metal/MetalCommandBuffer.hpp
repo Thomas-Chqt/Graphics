@@ -44,7 +44,7 @@ public:
     
     void beginRenderPass(const Framebuffer&) override;
 
-    void usePipeline(const ext::shared_ptr<GraphicsPipeline>&) override;
+    void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
 

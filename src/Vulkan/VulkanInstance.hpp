@@ -15,14 +15,12 @@
 #include "Graphics/Device.hpp"
 
 #include "Vulkan/VulkanPhysicalDevice.hpp"
-#include "Vulkan/VulkanDevice.hpp"
 
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
 #else
     #include <memory>
-    #include <vector>
     namespace ext = std;
 #endif
 
@@ -51,11 +49,8 @@ public:
     ~VulkanInstance();
 
 private:
-    ext::vector<VulkanPhysicalDevice*> findSuitableDevices(const VulkanDevice::Descriptor&);
-
     vk::Instance m_vkInstance;
     VkDebugUtilsMessengerEXT m_debugMessenger;
-
     ext::vector<VulkanPhysicalDevice> m_physicalDevices;
 
 public:

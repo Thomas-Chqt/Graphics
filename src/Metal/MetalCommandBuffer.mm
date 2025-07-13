@@ -58,9 +58,9 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
     m_commandEncoder = [[m_mtlCommandBuffer renderCommandEncoderWithDescriptor: renderPassDescriptor] retain];
 }}
 
-void MetalCommandBuffer::usePipeline(const ext::shared_ptr<GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
+void MetalCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
 {
-    ext::shared_ptr<MetalGraphicsPipeline> graphicsPipeline = ext::dynamic_pointer_cast<MetalGraphicsPipeline>(_graphicsPipeline);
+    auto graphicsPipeline = ext::dynamic_pointer_cast<const MetalGraphicsPipeline>(_graphicsPipeline);
     assert(graphicsPipeline);
 
     [m_commandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
