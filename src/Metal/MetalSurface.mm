@@ -16,7 +16,7 @@
 
 #if defined(GFX_GLFW_ENABLED)
     #include <dlLoad/dlLoad.h>
-    class GLFWwindow;
+    struct GLFWwindow;
     #define glfwGetCocoaWindow ((id (*)(GLFWwindow*))::getSym(DL_DEFAULT, "glfwGetCocoaWindow"))
 #endif
 

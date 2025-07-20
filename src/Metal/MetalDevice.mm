@@ -95,8 +95,8 @@ void MetalDevice::endFrame(void) { @autoreleasepool
 void MetalDevice::waitIdle(void) { @autoreleasepool
 {
     for (auto& fd : m_frameData) {
-        if (m_currFD->submittedCommandBuffers.empty() == false)
-            [m_currFD->submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
+        if (fd.submittedCommandBuffers.empty() == false)
+            [fd.submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
     }
 }}
 

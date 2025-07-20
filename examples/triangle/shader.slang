@@ -8,9 +8,9 @@
  */
 
 static float2 positions[3] = {
-    float2( 0.0, -0.5),
-    float2( 0.5,  0.5),
-    float2(-0.5,  0.5)
+    float2( 0.0,  0.5),
+    float2( 0.5, -0.5),
+    float2(-0.5, -0.5)
 };
 
 static float3 colors[3] = {
@@ -33,10 +33,6 @@ VertexStageOutput vertexMain(uint vertexID : SV_VertexID)
 
     output.color = colors[vertexID];
     output.position = float4(positions[vertexID], 0.0, 1.0);
-
-#ifdef INVERT_Y
-    output.position.y = -output.position.y;
-#endif
 
     return output;
 }

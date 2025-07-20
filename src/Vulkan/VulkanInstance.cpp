@@ -39,7 +39,7 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #if defined(GFX_GLFW_ENABLED)
     #include <dlLoad/dlLoad.h>
-    class GLFWwindow;
+    struct GLFWwindow;
     #define glfwGetRequiredInstanceExtensions ((const char** (*)(uint32_t* count))::getSym(DL_DEFAULT, "glfwGetRequiredInstanceExtensions"))
 #endif
 
@@ -148,7 +148,7 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
             vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
             vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
         )
-        .setPfnUserCallback([](vk::DebugUtilsMessageSeverityFlagBitsEXT, vk::DebugUtilsMessageTypeFlagsEXT, const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) -> vk::Bool32 {
+        .setPfnUserCallback([](vk::DebugUtilsMessageSeverityFlagBitsEXT, vk::DebugUtilsMessageTypeFlagsEXT, const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void*) -> vk::Bool32 {
             ext::cerr << pCallbackData->pMessage << ext::endl;
             return vk::False;
         });

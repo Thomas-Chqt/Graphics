@@ -27,7 +27,7 @@
 
 #if defined(GFX_GLFW_ENABLED)
     #include <dlLoad/dlLoad.h>
-    class GLFWwindow;
+    struct GLFWwindow;
     #define glfwCreateWindowSurface ((VkResult (*)(void*, GLFWwindow*, const VkAllocationCallbacks*, uint64_t*))::getSym(DL_DEFAULT, "glfwCreateWindowSurface"))
 #endif
 

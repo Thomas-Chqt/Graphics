@@ -24,7 +24,7 @@
 #endif
 
 #if defined(GFX_GLFW_ENABLED)
-    class GLFWwindow;
+    struct GLFWwindow;
 #endif
 
 #ifdef __OBJC__

@@ -103,7 +103,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         | ext::ranges::to<ext::vector>();
 
     m_drawables.resize(m_device->maxFrameInFlight());
-    for (int i = 0; i < m_device->maxFrameInFlight(); i++)
+    for (uint32_t i = 0; i < m_device->maxFrameInFlight(); i++)
         m_drawables[i] = ext::make_shared<VulkanDrawable>(m_device);
 }
 

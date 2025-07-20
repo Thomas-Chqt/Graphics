@@ -25,7 +25,7 @@
 #endif
 
 #if defined(GFX_GLFW_ENABLED)
-    class GLFWwindow;
+    struct GLFWwindow;
 #endif
 
 namespace gfx

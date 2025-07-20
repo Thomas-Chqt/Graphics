@@ -5,25 +5,27 @@
 # Date: 2024/06/06 16:59:39
 # ---------------------------------------------------
 
-include(${ADD_SHADER_LIB_PATH})
-
-add_executable(triangle)
-
-set(SHADER_TARGETS)
+set(SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader.slib")
 
 if (GFX_BUILD_METAL)
-    list(APPEND SHADER_TARGETS "metal")
+    string(APPEND SHADER_TARGETS "metal")
 endif()
 if (GFX_BUILD_VULKAN)
-    list(APPEND SHADER_TARGETS "spirv")
+    string(APPEND SHADER_TARGETS ",spirv")
 endif()
 
-add_shader_lib(triangle_shader
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader.slang"
-    TARGETS ${SHADER_TARGETS}
+file(GLOB SHADER_SRCS "*.slang")
+
+add_custom_command(
+    OUTPUT ${SHADER_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER_SLIB} ${SHADER_SRCS}
+    DEPENDS gfxsc ${SHADER_SRCS}
+    COMMENT "Building triangle shader"
+    VERBATIM
 )
-set_target_properties(triangle_shader PROPERTIES FOLDER "examples/triangle/shaders")
-get_target_property(SHADER_SLIB triangle_shader SLIB_OUTPUT)
+add_custom_target(triangle_shader ALL DEPENDS ${SHADER_SLIB})
+
+add_executable(triangle)
 
 if (APPLE)
     enable_language(OBJC)

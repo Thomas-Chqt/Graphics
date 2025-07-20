@@ -24,14 +24,6 @@ option(GFX_ENABLE_GLFW     "Build with glfw capabilities"        OFF)
 option(GFX_BUILD_EXAMPLES  "Build Graphics examples executables" OFF)
 option(GFX_INSTALL         "Enable the install command"           ON)
 
-if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
-    message(FATAL_ERROR "Not yet implemented")
-endif()
-
-if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
-    message(FATAL_ERROR "One backed must be build")
-endif()
-
 set(FETCHCONTENT_QUIET FALSE)
 
 enable_language(CXX)
@@ -94,8 +86,13 @@ if (GFX_USE_UTILSCPP)
     endif()
 endif()
 
-set(GFXSC_PATH ${CMAKE_CURRENT_LIST_DIR}/tools/gfxsc.py CACHE PATH "path to the gfx shader compiler" FORCE)
-set(ADD_SHADER_LIB_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/add_shader_lib.cmake CACHE PATH "path to the add_shader_lib cmake file" FORCE)
+if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
+    message(FATAL_ERROR "One backed must be build")
+endif()
+
+if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
+    message(FATAL_ERROR "Not yet implemented")
+endif()
 
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     FetchContent_Declare(dlLoad
@@ -113,6 +110,11 @@ endif()
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`
 
 target_compile_features(Graphics PUBLIC cxx_std_23)
+if(MSVC)
+    target_compile_options(Graphics PRIVATE /W4)
+else()
+    target_compile_options(Graphics PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 file(GLOB_RECURSE GFX_SRC "include/*.hpp")
 target_sources(Graphics PRIVATE ${GFX_SRC})
@@ -176,6 +178,8 @@ endif()
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     target_link_libraries(Graphics PRIVATE dlLoad)
 endif()
+
+add_subdirectory("tools")
 
 if(GFX_BUILD_EXAMPLES)
     add_subdirectory("examples")

@@ -15,8 +15,7 @@
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
-template<typename T>
-    using id = T*;
+    template<typename T> using id = T*;
     #define nil nullptr
 
     class MTLDevice;
@@ -38,8 +37,8 @@ public:
 
     MetalGraphicsPipeline(const MetalDevice&, const GraphicsPipeline::Descriptor&);
 
-    const id<MTLRenderPipelineState> renderPipelineState(void) const { return m_renderPipelineState; }
-    const id<MTLDepthStencilState> depthStencilState(void) const { return m_depthStencilState; }
+    id<MTLRenderPipelineState> renderPipelineState(void) const { return m_renderPipelineState; }
+    id<MTLDepthStencilState> depthStencilState(void) const { return m_depthStencilState; }
 
     ~MetalGraphicsPipeline();
 

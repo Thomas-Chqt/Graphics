@@ -5,46 +5,59 @@
 # Date: 2025/07/12 14:01:42
 # ---------------------------------------------------
 
-include(${ADD_SHADER_LIB_PATH})
-
-add_executable(multiBuffer)
-
-set(SHADER_TARGETS)
-
 if (GFX_BUILD_METAL)
-    list(APPEND SHADER_TARGETS "metal")
+    string(APPEND SHADER_TARGETS "metal")
 endif()
 if (GFX_BUILD_VULKAN)
-    list(APPEND SHADER_TARGETS "spirv")
+    string(APPEND SHADER_TARGETS ",spirv")
 endif()
 
-add_shader_lib(multiBuffer_shader1
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader1.slang"
-    TARGETS ${SHADER_TARGETS}
+set(SHADER1_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader1.slib")
+set(SHADER1_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader1.slang")
+add_custom_command(
+    OUTPUT ${SHADER1_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER1_SLIB} "${SHADER1_SRCS}"
+    DEPENDS gfxsc "${SHADER1_SRCS}"
+    COMMENT "Building multiBuffer shader 1"
+    VERBATIM
 )
-set_target_properties(multiBuffer_shader1 PROPERTIES FOLDER "examples/multiBuffer/shaders")
-get_target_property(SHADER1_SLIB multiBuffer_shader1 SLIB_OUTPUT)
+add_custom_target(multiBuffer_shader1 ALL DEPENDS ${SHADER1_SLIB})
 
-add_shader_lib(multiBuffer_shader2
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader2.slang"
-    TARGETS ${SHADER_TARGETS}
+set(SHADER2_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader2.slib")
+set(SHADER2_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader2.slang")
+add_custom_command(
+    OUTPUT ${SHADER2_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER2_SLIB} "${SHADER2_SRCS}"
+    DEPENDS gfxsc "${SHADER2_SRCS}"
+    COMMENT "Building multiBuffer shader 2"
+    VERBATIM
 )
-set_target_properties(multiBuffer_shader2 PROPERTIES FOLDER "examples/multiBuffer/shaders")
-get_target_property(SHADER2_SLIB multiBuffer_shader2 SLIB_OUTPUT)
+add_custom_target(multiBuffer_shader2 ALL DEPENDS ${SHADER2_SLIB})
 
-add_shader_lib(multiBuffer_shader3
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader3.slang"
-    TARGETS ${SHADER_TARGETS}
+set(SHADER3_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader3.slib")
+set(SHADER3_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader3.slang")
+add_custom_command(
+    OUTPUT ${SHADER3_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER3_SLIB} "${SHADER3_SRCS}"
+    DEPENDS gfxsc "${SHADER3_SRCS}"
+    COMMENT "Building multiBuffer shader 3"
+    VERBATIM
 )
-set_target_properties(multiBuffer_shader3 PROPERTIES FOLDER "examples/multiBuffer/shaders")
-get_target_property(SHADER3_SLIB multiBuffer_shader3 SLIB_OUTPUT)
+add_custom_target(multiBuffer_shader3 ALL DEPENDS ${SHADER3_SLIB})
 
-add_shader_lib(multiBuffer_shader4
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/shader4.slang"
-    TARGETS ${SHADER_TARGETS}
+set(SHADER4_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader4.slib")
+set(SHADER4_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader4.slang")
+add_custom_command(
+    OUTPUT ${SHADER4_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER4_SLIB} "${SHADER4_SRCS}"
+    DEPENDS gfxsc "${SHADER4_SRCS}"
+    COMMENT "Building multiBuffer shader 4"
+    VERBATIM
 )
-set_target_properties(multiBuffer_shader4 PROPERTIES FOLDER "examples/multiBuffer/shaders")
-get_target_property(SHADER4_SLIB multiBuffer_shader4 SLIB_OUTPUT)
+add_custom_target(multiBuffer_shader4 ALL DEPENDS ${SHADER4_SLIB})
+
+
+add_executable(multiBuffer)
 
 if (APPLE)
     enable_language(OBJC)
