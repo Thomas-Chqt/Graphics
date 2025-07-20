@@ -12,50 +12,17 @@ if (GFX_BUILD_VULKAN)
     string(APPEND SHADER_TARGETS ",spirv")
 endif()
 
-set(SHADER1_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader1.slib")
-set(SHADER1_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader1.slang")
+set(SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader.slib")
+file(GLOB SHADER_SRCS "*.slang")
+
 add_custom_command(
-    OUTPUT ${SHADER1_SLIB}
-    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER1_SLIB} "${SHADER1_SRCS}"
-    DEPENDS gfxsc "${SHADER1_SRCS}"
-    COMMENT "Building multiBuffer shader 1"
+    OUTPUT ${SHADER_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER_SLIB} ${SHADER_SRCS}
+    DEPENDS gfxsc ${SHADER_SRCS}
+    COMMENT "Building triangle shader"
     VERBATIM
 )
-add_custom_target(multiBuffer_shader1 ALL DEPENDS ${SHADER1_SLIB})
-
-set(SHADER2_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader2.slib")
-set(SHADER2_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader2.slang")
-add_custom_command(
-    OUTPUT ${SHADER2_SLIB}
-    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER2_SLIB} "${SHADER2_SRCS}"
-    DEPENDS gfxsc "${SHADER2_SRCS}"
-    COMMENT "Building multiBuffer shader 2"
-    VERBATIM
-)
-add_custom_target(multiBuffer_shader2 ALL DEPENDS ${SHADER2_SLIB})
-
-set(SHADER3_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader3.slib")
-set(SHADER3_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader3.slang")
-add_custom_command(
-    OUTPUT ${SHADER3_SLIB}
-    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER3_SLIB} "${SHADER3_SRCS}"
-    DEPENDS gfxsc "${SHADER3_SRCS}"
-    COMMENT "Building multiBuffer shader 3"
-    VERBATIM
-)
-add_custom_target(multiBuffer_shader3 ALL DEPENDS ${SHADER3_SLIB})
-
-set(SHADER4_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader4.slib")
-set(SHADER4_SRCS "${CMAKE_CURRENT_SOURCE_DIR}/shader4.slang")
-add_custom_command(
-    OUTPUT ${SHADER4_SLIB}
-    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SHADER4_SLIB} "${SHADER4_SRCS}"
-    DEPENDS gfxsc "${SHADER4_SRCS}"
-    COMMENT "Building multiBuffer shader 4"
-    VERBATIM
-)
-add_custom_target(multiBuffer_shader4 ALL DEPENDS ${SHADER4_SLIB})
-
+add_custom_target(multiBuffer_shader ALL DEPENDS ${SHADER_SLIB})
 
 add_executable(multiBuffer)
 
@@ -76,10 +43,7 @@ endif()
 
 target_include_directories(multiBuffer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_compile_definitions(multiBuffer PRIVATE "SHADER1_SLIB=\"${SHADER1_SLIB}\"")
-target_compile_definitions(multiBuffer PRIVATE "SHADER2_SLIB=\"${SHADER2_SLIB}\"")
-target_compile_definitions(multiBuffer PRIVATE "SHADER3_SLIB=\"${SHADER3_SLIB}\"")
-target_compile_definitions(multiBuffer PRIVATE "SHADER4_SLIB=\"${SHADER4_SLIB}\"")
+target_compile_definitions(multiBuffer PRIVATE "SHADER_SLIB=\"${SHADER_SLIB}\"")
 if(CMAKE_GENERATOR STREQUAL "Xcode")
     target_compile_definitions(multiBuffer PRIVATE "__XCODE__")
 endif()
@@ -108,4 +72,4 @@ else()
 endif()
 
 target_link_libraries(multiBuffer PRIVATE Graphics glfw)
-add_dependencies(multiBuffer multiBuffer_shader1 multiBuffer_shader2 multiBuffer_shader3 multiBuffer_shader4)
+add_dependencies(multiBuffer multiBuffer_shader)

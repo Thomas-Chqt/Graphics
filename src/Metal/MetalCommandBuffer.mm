@@ -10,6 +10,7 @@
 #include "Graphics/Framebuffer.hpp"
 
 #include "Metal/MetalCommandBuffer.hpp"
+#include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "MetalGraphicsPipeline.hpp"
@@ -63,9 +64,21 @@ void MetalCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipelin
     auto graphicsPipeline = ext::dynamic_pointer_cast<const MetalGraphicsPipeline>(_graphicsPipeline);
     assert(graphicsPipeline);
 
+    m_usedPipelines.insert(graphicsPipeline);
+
     [m_commandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
     if (graphicsPipeline->depthStencilState() != nil)
         [m_commandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
+}}
+
+void MetalCommandBuffer::useVertexBuffer(const ext::shared_ptr<const Buffer>& aBuffer) { @autoreleasepool
+{
+    auto buffer = ext::dynamic_pointer_cast<const MetalBuffer>(aBuffer);
+    assert(buffer);
+
+    m_usedBuffers.insert(buffer);
+
+    [m_commandEncoder setVertexBuffer:buffer->mtlBuffer() offset:0 atIndex:0];
 }}
 
 void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autoreleasepool

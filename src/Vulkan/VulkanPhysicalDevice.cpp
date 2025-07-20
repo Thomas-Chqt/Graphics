@@ -18,6 +18,7 @@
     #include <set>
     #include <algorithm>
     #include <string>
+    #include <stdexcept>
     namespace ext = std;
 #endif
 
@@ -66,6 +67,18 @@ bool VulkanPhysicalDevice::suportExtensions(const ext::vector<const char*>& exte
     if (ext::ranges::all_of(extensionNames, [&availableExtensionNames](const char* name){ return availableExtensionNames.contains(name); }))
         return true;
     return false;
+}
+
+uint32_t VulkanPhysicalDevice::findSuitableMemoryTypeIdx(vk::MemoryPropertyFlags properties, uint32_t mask) const
+{
+    vk::PhysicalDeviceMemoryProperties memProperties = vk::PhysicalDevice::getMemoryProperties();
+
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+    {
+        if ((mask & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            return i;
+    }
+    throw ext::runtime_error("no suitable memory type found");
 }
 
 }

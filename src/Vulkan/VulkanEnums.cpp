@@ -99,4 +99,29 @@ vk::AttachmentLoadOp toVkAttachmentLoadOp(LoadAction loa)
         throw ext::runtime_error("not implemented");
     }
 }
+
+vk::Format toVkFormat(VertexAttributeFormat fmt)
+{
+    switch (fmt)
+    {
+    case VertexAttributeFormat::float2:
+        return vk::Format::eR32G32Sfloat;
+    case VertexAttributeFormat::float3:
+        return vk::Format::eR32G32B32Sfloat;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
+vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsage use)
+{
+    switch (use)
+    {
+    case BufferUsage::vertexBuffer:
+        return vk::BufferUsageFlagBits::eVertexBuffer;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
 }

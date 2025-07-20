@@ -12,6 +12,7 @@
 
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/Buffer.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
 #else
@@ -30,6 +31,7 @@ public:
     virtual void beginRenderPass(const Framebuffer&) = 0;
 
     virtual void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) = 0;
+    virtual void useVertexBuffer(const ext::shared_ptr<const Buffer>&) = 0;
 
     virtual void drawVertices(uint32_t start, uint32_t count) = 0;
 

@@ -9,9 +9,11 @@
 
 #include "Graphics/Enums.hpp"
 #include "Graphics/Framebuffer.hpp"
+#include "Graphics/Buffer.hpp"
 
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/Sync.hpp"
+#include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/QueueFamily.hpp"
@@ -157,6 +159,16 @@ void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipeli
     m_usedPipelines.insert(graphicsPipeline);
 }
 
+void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<const Buffer>& aBuffer)
+{
+    auto buffer = ext::dynamic_pointer_cast<const VulkanBuffer>(aBuffer);
+
+    m_usedBuffers.insert(buffer);
+
+    m_vkCommandBuffer.bindVertexBuffers(0, buffer->vkBuffer(), {0});
+
+}
+
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
 {
     m_vkCommandBuffer.draw(count, 1, start, 0);
@@ -173,6 +185,8 @@ void VulkanCommandBuffer::clear(void)
     m_waitSemaphores.clear();
     m_imageFinalSyncStates.clear();
     m_imageSyncRequests.clear();
+    m_usedBuffers.clear();
+    m_usedPipelines.clear();
 }
 
 }

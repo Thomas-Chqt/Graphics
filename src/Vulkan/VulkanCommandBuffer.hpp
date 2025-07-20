@@ -13,14 +13,14 @@
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/Buffer.hpp"
 
 #include "Vulkan/QueueFamily.hpp"
+#include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 
-#include <ranges>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_handles.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -29,6 +29,7 @@
     #include <cstdint>
     #include <map>
     #include <set>
+    #include <ranges>
     namespace ext = std;
 #endif
 
@@ -47,6 +48,7 @@ public:
     void beginRenderPass(const Framebuffer&) override;
 
     void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
+    void useVertexBuffer(const ext::shared_ptr<const Buffer>&) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
 
@@ -80,6 +82,7 @@ private:
     vk::Rect2D m_scissor;
 
     ext::set<ext::shared_ptr<const VulkanGraphicsPipeline>> m_usedPipelines;
+    ext::set<ext::shared_ptr<const VulkanBuffer>> m_usedBuffers;
 
     ext::map<ext::shared_ptr<VulkanTexture>, ImageSyncRequest> m_imageSyncRequests;
     ext::map<ext::shared_ptr<VulkanTexture>, ImageSyncState> m_imageFinalSyncStates;

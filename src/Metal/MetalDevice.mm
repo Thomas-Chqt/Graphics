@@ -13,6 +13,7 @@
 #include "Graphics/Drawable.hpp"
 
 #include "Metal/MetalDevice.hpp"
+#include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
@@ -54,6 +55,11 @@ ext::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const ext::filesystem::path
 ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
 {
     return ext::make_unique<MetalGraphicsPipeline>(*this, desc);
+}
+
+ext::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) const
+{
+    return ext::make_unique<MetalBuffer>(*this, desc);
 }
 
 void MetalDevice::beginFrame(void) { @autoreleasepool

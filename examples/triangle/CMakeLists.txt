@@ -5,8 +5,6 @@
 # Date: 2024/06/06 16:59:39
 # ---------------------------------------------------
 
-set(SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader.slib")
-
 if (GFX_BUILD_METAL)
     string(APPEND SHADER_TARGETS "metal")
 endif()
@@ -14,6 +12,7 @@ if (GFX_BUILD_VULKAN)
     string(APPEND SHADER_TARGETS ",spirv")
 endif()
 
+set(SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader.slib")
 file(GLOB SHADER_SRCS "*.slang")
 
 add_custom_command(

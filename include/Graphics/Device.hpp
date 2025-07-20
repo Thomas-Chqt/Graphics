@@ -10,6 +10,7 @@
 #ifndef DEVICE_HPP
 #define DEVICE_HPP
 
+#include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
@@ -45,6 +46,7 @@ public:
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
     virtual ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const = 0;
     virtual ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const = 0;
+    virtual ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
 
     virtual void beginFrame(void) = 0;
  

@@ -14,7 +14,11 @@
 #include "Vulkan/VulkanShaderFunction.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 
+#include <cstdint>
+#include <vector>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_enums.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -54,9 +58,37 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
     auto dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo()
         .setDynamicStates(dynamicStates);
 
-    auto vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo()
-        .setVertexBindingDescriptions(nullptr)
-        .setVertexAttributeDescriptions(nullptr);
+    ext::array<vk::VertexInputBindingDescription, 1> vertexInputBindingDescriptions;
+    ext::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
+    vk::PipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
+
+    if (auto& vertexLayout =  desc.vertexLayout)
+    {
+        vertexInputBindingDescriptions = {
+            vk::VertexInputBindingDescription{}
+                .setBinding(0)
+                .setStride(vertexLayout->stride)
+                .setInputRate(vk::VertexInputRate::eVertex)
+        };
+        vertexInputAttributeDescriptions.resize(vertexLayout->attributes.size());
+        for (uint32_t i = 0; auto& attribute : vertexLayout->attributes) {
+            vertexInputAttributeDescriptions[i] = vk::VertexInputAttributeDescription{}
+                .setLocation(i)
+                .setBinding(0)
+                .setFormat(toVkFormat(attribute.format))
+                .setOffset(attribute.offset);
+            i++;
+        }
+        vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo()
+            .setVertexBindingDescriptions(vertexInputBindingDescriptions)
+            .setVertexAttributeDescriptions(vertexInputAttributeDescriptions);
+    }
+    else
+    {
+        vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo()
+            .setVertexBindingDescriptions(nullptr)
+            .setVertexAttributeDescriptions(nullptr);
+    }
 
     auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo()
         .setTopology(vk::PrimitiveTopology::eTriangleList)

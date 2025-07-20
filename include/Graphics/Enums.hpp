@@ -42,6 +42,17 @@ enum class BlendOperation
     one_minus_srcA_plus_srcA
 };
 
+enum class VertexAttributeFormat
+{
+    float2,
+    float3
+};
+
+enum class BufferUsage
+{
+    vertexBuffer
+};
+
 } // namespace gfx
 
 #endif // GFX_ENUMS_HPP

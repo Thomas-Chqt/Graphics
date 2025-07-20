@@ -17,6 +17,7 @@
 #else
     using MTLPixelFormat = unsigned long;
     using MTLLoadAction = unsigned long;
+    using MTLVertexFormat = unsigned long;
 #endif // __OBJC__
 
 namespace gfx
@@ -26,6 +27,8 @@ MTLPixelFormat toMTLPixelFormat(PixelFormat);
 PixelFormat toPixelFormat(MTLPixelFormat);
 
 MTLLoadAction toMTLLoadAction(LoadAction);
+
+MTLVertexFormat toMetalVertexAttributeFormat(VertexAttributeFormat);
 
 }
 

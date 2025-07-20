@@ -12,6 +12,7 @@
 
 #include "Graphics/ShaderFunction.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/VertexLayout.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -29,6 +30,8 @@ class GraphicsPipeline
 public:
     struct Descriptor
     {
+        ext::optional<VertexLayout> vertexLayout;
+
         ShaderFunction* vertexShader;
         ShaderFunction* fragmentShader;
 

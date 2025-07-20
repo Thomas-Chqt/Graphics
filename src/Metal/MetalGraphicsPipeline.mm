@@ -23,6 +23,7 @@
     #include <utility>
     #include <cstdint>
     #include <stdexcept>
+    #include <cassert>
     namespace ext = std;
 #endif
 
@@ -31,12 +32,27 @@ namespace gfx
 
 MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const GraphicsPipeline::Descriptor& desc) { @autoreleasepool
 {
+    assert(desc.vertexShader != nullptr);
+    assert(desc.fragmentShader != nullptr);
+
     MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
     
-    if (desc.vertexShader != nullptr)
-        renderPipelineDescriptor.vertexFunction = dynamic_cast<MetalShaderFunction&>(*desc.vertexShader).mtlFunction();
-    if (desc.fragmentShader != nullptr)
-        renderPipelineDescriptor.fragmentFunction = dynamic_cast<MetalShaderFunction&>(*desc.fragmentShader).mtlFunction();
+    if (auto& vertexLayout = desc.vertexLayout)
+    {
+        MTLVertexDescriptor* vertexDescriptor = [MTLVertexDescriptor vertexDescriptor];
+        vertexDescriptor.layouts[0].stride = vertexLayout->stride;
+        for (uint32_t i = 0; const auto& element : vertexLayout->attributes)
+        {
+            vertexDescriptor.attributes[i].format = (MTLVertexFormat)toMetalVertexAttributeFormat(element.format);
+            vertexDescriptor.attributes[i].offset = element.offset;
+            vertexDescriptor.attributes[i].bufferIndex = 0;
+            i++;
+        }
+        renderPipelineDescriptor.vertexDescriptor = vertexDescriptor;
+    }
+
+    renderPipelineDescriptor.vertexFunction = dynamic_cast<MetalShaderFunction&>(*desc.vertexShader).mtlFunction();
+    renderPipelineDescriptor.fragmentFunction = dynamic_cast<MetalShaderFunction&>(*desc.fragmentShader).mtlFunction();
 
     for (uint32_t i = 0; const PixelFormat& pxFmt : desc.colorAttachmentPxFormats)
     {

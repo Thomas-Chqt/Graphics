@@ -7,6 +7,7 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Framebuffer.hpp"
@@ -17,6 +18,7 @@
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
+#include "Graphics/VertexLayout.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -85,12 +87,36 @@ public:
         assert(shaderLib);
 
         gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
+            .vertexLayout = gfx::VertexLayout{
+                .stride = sizeof(float) * 6,
+                .attributes = {
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float2,
+                        .offset = 0
+                    },
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float3,
+                        .offset = sizeof(float) * 2
+                    }
+                }
+            },
             .vertexShader = &shaderLib->getFunction("vertexMain"),
             .fragmentShader = &shaderLib->getFunction("fragmentMain"),
             .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
         };
         m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
         assert(m_graphicsPipeline);
+
+        float vertices[] = {
+            /*.pos=*/ 0.0f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+            /*.pos=*/ 0.5f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
+            /*.pos=*/-0.5f, -0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f 
+        };
+
+        m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(vertices), .data = vertices, .usage = gfx::BufferUsage::vertexBuffer
+        });
+        assert(m_vertexBuffer);
     }
 
     void loop()
@@ -144,6 +170,7 @@ public:
                 commandBuffer.beginRenderPass(framebuffer);
                 {
                     commandBuffer.usePipeline(m_graphicsPipeline);
+                    commandBuffer.useVertexBuffer(m_vertexBuffer);
                     commandBuffer.drawVertices(0, 3);
                 }
                 commandBuffer.endRenderPass();
@@ -168,6 +195,7 @@ private:
     ext::unique_ptr<gfx::Device> m_device;
     ext::unique_ptr<gfx::Swapchain> m_swapchain;
     ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    ext::shared_ptr<gfx::Buffer> m_vertexBuffer;
 };
 
 int main()

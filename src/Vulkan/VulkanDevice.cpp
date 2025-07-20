@@ -15,6 +15,7 @@
 
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/Sync.hpp"
+#include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
@@ -108,6 +109,11 @@ ext::unique_ptr<ShaderLib> VulkanDevice::newShaderLib(const ext::filesystem::pat
 ext::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
 {
     return ext::make_unique<VulkanGraphicsPipeline>(this, desc);
+}
+
+ext::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) const
+{
+    return ext::make_unique<VulkanBuffer>(this, desc);
 }
 
 void VulkanDevice::beginFrame(void) 

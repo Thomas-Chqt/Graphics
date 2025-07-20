@@ -7,6 +7,7 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Framebuffer.hpp"
@@ -28,6 +29,7 @@
     #include <cassert>
     #include <set>
     #include <cstdint>
+    #include <array>
     namespace ext = std;
 #endif
 
@@ -81,49 +83,88 @@ public:
         assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
         
-        ext::unique_ptr<gfx::ShaderLib> shaderLib1 = m_device->newShaderLib(SHADER1_SLIB);
-        assert(shaderLib1);
+        ext::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
+        assert(shaderLib);
 
-        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor1 = {
-            .vertexShader = &shaderLib1->getFunction("vertexMain"),
-            .fragmentShader = &shaderLib1->getFunction("fragmentMain"),
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
+            .vertexLayout = gfx::VertexLayout{
+                .stride = sizeof(float) * 6,
+                .attributes = {
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float2,
+                        .offset = 0
+                    },
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float3,
+                        .offset = sizeof(float) * 2
+                    }
+                }
+            },
+            .vertexShader = &shaderLib->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib->getFunction("fragmentMain"),
             .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
         };
-        m_graphicsPipeline1 = m_device->newGraphicsPipeline(gfxPipelineDescriptor1);
-        assert(m_graphicsPipeline1);
+        m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
+        assert(m_graphicsPipeline);
 
-        ext::unique_ptr<gfx::ShaderLib> shaderLib2 = m_device->newShaderLib(SHADER2_SLIB);
-        assert(shaderLib2);
+        ext::array<float, (2 + 4) * 6> vertices[4] = {
+            {
+                /*.pos=*/-1.0f, -0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/-1.0f,  1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/ 0.5f,  1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
 
-        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor2 = {
-            .vertexShader = &shaderLib2->getFunction("vertexMain"),
-            .fragmentShader = &shaderLib2->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+                /*.pos=*/-1.0f, -0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/ 0.5f,  1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/ 0.5f, -0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f
+            },
+            {
+                /*.pos=*/-0.5f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
+                /*.pos=*/-0.5f,  1.0f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
+                /*.pos=*/ 1.0f,  1.0f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
+
+                /*.pos=*/-0.5f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
+                /*.pos=*/ 1.0f,  1.0f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
+                /*.pos=*/ 1.0f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f
+            },
+            {
+                /*.pos=*/-0.5f,  0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
+                /*.pos=*/ 1.0f,  0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
+                /*.pos=*/ 1.0f, -1.0f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
+
+                /*.pos=*/-0.5f,  0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
+                /*.pos=*/ 1.0f, -1.0f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
+                /*.pos=*/-0.5f, -1.0f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f
+            },
+            {
+                /*.pos=*/-1.0f, -1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/-1.0f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/ 0.5f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+
+                /*.pos=*/-1.0f, -1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/ 0.5f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+                /*.pos=*/ 0.5f, -1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f
+            }
         };
-        m_graphicsPipeline2 = m_device->newGraphicsPipeline(gfxPipelineDescriptor2);
-        assert(m_graphicsPipeline2);
 
-        ext::unique_ptr<gfx::ShaderLib> shaderLib3 = m_device->newShaderLib(SHADER3_SLIB);
-        assert(shaderLib3);
+        m_vertexBuffers[0] = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(float) * vertices[0].size(), .data = vertices[0].data(), .usage = gfx::BufferUsage::vertexBuffer
+        });
+        assert(m_vertexBuffers[0]);
 
-        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor3 = {
-            .vertexShader = &shaderLib3->getFunction("vertexMain"),
-            .fragmentShader = &shaderLib3->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
-        };
-        m_graphicsPipeline3 = m_device->newGraphicsPipeline(gfxPipelineDescriptor3);
-        assert(m_graphicsPipeline3);
+        m_vertexBuffers[1] = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(float) * vertices[1].size(), .data = vertices[1].data(), .usage = gfx::BufferUsage::vertexBuffer
+        });
+        assert(m_vertexBuffers[1]);
 
-        ext::unique_ptr<gfx::ShaderLib> shaderLib4 = m_device->newShaderLib(SHADER4_SLIB);
-        assert(shaderLib4);
+        m_vertexBuffers[2] = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(float) * vertices[2].size(), .data = vertices[2].data(), .usage = gfx::BufferUsage::vertexBuffer
+        });
+        assert(m_vertexBuffers[2]);
 
-        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor4 = {
-            .vertexShader = &shaderLib4->getFunction("vertexMain"),
-            .fragmentShader = &shaderLib4->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
-        };
-        m_graphicsPipeline4 = m_device->newGraphicsPipeline(gfxPipelineDescriptor4);
-        assert(m_graphicsPipeline4);
+        m_vertexBuffers[3] = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(float) * vertices[3].size(), .data = vertices[3].data(), .usage = gfx::BufferUsage::vertexBuffer
+        });
+        assert(m_vertexBuffers[3]);
     }
 
     void loop()
@@ -173,7 +214,8 @@ public:
 
                 commandBuffer1.beginRenderPass(framebuffer);
                 {
-                    commandBuffer1.usePipeline(m_graphicsPipeline1);
+                    commandBuffer1.usePipeline(m_graphicsPipeline);
+                    commandBuffer1.useVertexBuffer(m_vertexBuffers[0]);
                     commandBuffer1.drawVertices(0, 6);
                 }
                 commandBuffer1.endRenderPass();
@@ -182,7 +224,8 @@ public:
 
                 commandBuffer1.beginRenderPass(framebuffer);
                 {
-                    commandBuffer1.usePipeline(m_graphicsPipeline2);
+                    commandBuffer1.usePipeline(m_graphicsPipeline);
+                    commandBuffer1.useVertexBuffer(m_vertexBuffers[1]);
                     commandBuffer1.drawVertices(0, 6);
                 }
                 commandBuffer1.endRenderPass();
@@ -193,14 +236,16 @@ public:
 
                 commandBuffer2.beginRenderPass(framebuffer);
                 {
-                    commandBuffer2.usePipeline(m_graphicsPipeline3);
+                    commandBuffer2.usePipeline(m_graphicsPipeline);
+                    commandBuffer2.useVertexBuffer(m_vertexBuffers[2]);
                     commandBuffer2.drawVertices(0, 6);
                 }
                 commandBuffer2.endRenderPass();
 
                 commandBuffer2.beginRenderPass(framebuffer);
                 {
-                    commandBuffer2.usePipeline(m_graphicsPipeline4);
+                    commandBuffer2.usePipeline(m_graphicsPipeline);
+                    commandBuffer2.useVertexBuffer(m_vertexBuffers[3]);
                     commandBuffer2.drawVertices(0, 6);
                 }
                 commandBuffer2.endRenderPass();
@@ -225,10 +270,8 @@ private:
     ext::unique_ptr<gfx::Surface> m_surface;
     ext::unique_ptr<gfx::Device> m_device;
     ext::unique_ptr<gfx::Swapchain> m_swapchain;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline1;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline2;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline3;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline4;
+    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    ext::shared_ptr<gfx::Buffer> m_vertexBuffers[4];
 };
 
 int main()

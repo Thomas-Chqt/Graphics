@@ -14,6 +14,9 @@
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 
+#include "Metal/MetalBuffer.hpp"
+#include "Metal/MetalGraphicsPipeline.hpp"
+
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
@@ -28,6 +31,8 @@
 #if defined(GFX_USE_UTILSCPP)
 #else
     #include <memory>
+    #include <set>
+    namespace ext = std;
 #endif
 
 namespace gfx
@@ -45,6 +50,7 @@ public:
     void beginRenderPass(const Framebuffer&) override;
 
     void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
+    void useVertexBuffer(const ext::shared_ptr<const Buffer>&) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
 
@@ -57,6 +63,9 @@ public:
 private:
     id<MTLCommandBuffer> m_mtlCommandBuffer = nil;
     id<MTLRenderCommandEncoder> m_commandEncoder = nil;
+
+    ext::set<ext::shared_ptr<const MetalGraphicsPipeline>> m_usedPipelines;
+    ext::set<ext::shared_ptr<const MetalBuffer>> m_usedBuffers;
 
 public:
     MetalCommandBuffer& operator = (const MetalCommandBuffer&) = delete;

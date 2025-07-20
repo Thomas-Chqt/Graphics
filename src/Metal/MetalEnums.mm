@@ -62,4 +62,17 @@ MTLLoadAction toMTLLoadAction(LoadAction lac)
     }
 }
 
+MTLVertexFormat toMetalVertexAttributeFormat(VertexAttributeFormat format)
+{
+    switch (format)
+    {
+    case VertexAttributeFormat::float2:
+        return MTLVertexFormatFloat2;
+    case VertexAttributeFormat::float3:
+        return MTLVertexFormatFloat3;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
 }
