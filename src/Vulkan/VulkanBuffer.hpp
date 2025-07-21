@@ -12,7 +12,16 @@
 
 #include "Graphics/Buffer.hpp"
 
+#include "Vulkan/vk_mem_alloc.hpp"
+
 #include <vulkan/vulkan.hpp>
+
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <vector>
+    namespace ext = std;
+#endif
 
 namespace gfx
 {
@@ -28,15 +37,22 @@ public:
 
     VulkanBuffer(const VulkanDevice*, const Buffer::Descriptor&);
 
-    const vk::Buffer& vkBuffer() const { return m_vkBuffer; }
+    void setContent(void* data, size_t size) override;
+
+    const vk::Buffer& vkBuffer() const;
 
     ~VulkanBuffer() override;
 
 private:
     const VulkanDevice* m_device;
 
-    vk::Buffer m_vkBuffer;
-    vk::DeviceMemory m_memory;
+    struct FrameData
+    {
+        vk::Buffer vkBuffer;
+        VmaAllocation allocation;
+    };
+
+    ext::vector<FrameData> m_frameDatas;
 
 public:
     VulkanBuffer& operator=(const VulkanBuffer&) = delete;

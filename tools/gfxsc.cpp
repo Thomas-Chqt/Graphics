@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 
     std::vector<Slang::ComPtr<slang::IModule>> modules;
     std::vector<Slang::ComPtr<slang::IEntryPoint>> entryPoints;
-    
+
     for (auto inputFilePath : program.get<std::vector<std::filesystem::path>>("sources"))
     {
         std::ifstream inputFileStream(inputFilePath);

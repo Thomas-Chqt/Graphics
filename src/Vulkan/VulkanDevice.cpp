@@ -22,7 +22,9 @@
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanShaderLib.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
+#include "Vulkan/VulkanInstance.hpp"
 
+#include "Vulkan/vk_mem_alloc.hpp" // IWYU pragma: keep
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
@@ -46,8 +48,8 @@
 namespace gfx
 {
 
-VulkanDevice::VulkanDevice(const VulkanPhysicalDevice* phyDevice, const VulkanDevice::Descriptor& desc)
-    : m_physicalDevice(phyDevice), m_frameData(desc.deviceDescriptor->maxFrameInFlight), m_currFD(m_frameData.begin())
+VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalDevice* phyDevice, const VulkanDevice::Descriptor& desc)
+    : m_instance(instance), m_physicalDevice(phyDevice)
 {
     assert((m_physicalDevice->getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty() == false);
     
@@ -88,12 +90,31 @@ VulkanDevice::VulkanDevice(const VulkanPhysicalDevice* phyDevice, const VulkanDe
     auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
         .setQueueFamilyIndex(m_queueFamily.index);
 
-    for (auto& fd : m_frameData) {
-        fd.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
-        fd.frameCompletedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
+    m_frameDatas.resize(desc.deviceDescriptor->maxFrameInFlight);
+    for (auto& frameData : m_frameDatas) {
+        frameData.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
+        frameData.frameCompletedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
     }
+    m_currFrameData = m_frameDatas.begin();
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkDevice);
+
+    VmaVulkanFunctions vulkanFunctions = {};
+    vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+     
+    VmaAllocatorCreateInfo allocatorCreateInfo = {
+        .flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT,
+        .vulkanApiVersion = VK_API_VERSION_1_2,
+        .physicalDevice = static_cast<VkPhysicalDevice>(*m_physicalDevice),
+        .device = m_vkDevice,
+        .instance = m_instance->vkInstance(),
+        .pVulkanFunctions = &vulkanFunctions
+    };
+     
+    auto res = vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
+    if (res != VK_SUCCESS)
+        throw ext::runtime_error("vmaCreateAllocator failed");
 }
 
 ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -118,36 +139,36 @@ ext::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) 
 
 void VulkanDevice::beginFrame(void) 
 {
-    if (m_vkDevice.waitForFences(m_currFD->frameCompletedFence, true, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
+    if (m_vkDevice.waitForFences(m_currFrameData->frameCompletedFence, true, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
         throw ext::runtime_error("failed to wait for fence");
     
-    m_currFD->presentedDrawables.clear();
-    m_currFD->submittedCmdBuffers.clear();
-    while(m_currFD->usedCommandBuffers.empty() == false)
+    m_currFrameData->presentedDrawables.clear();
+    m_currFrameData->submittedCmdBuffers.clear();
+    while(m_currFrameData->usedCommandBuffers.empty() == false)
     {
-        m_currFD->usedCommandBuffers.front().clear();
-        m_currFD->commandBuffers.push(ext::move(m_currFD->usedCommandBuffers.front()));
-        m_currFD->usedCommandBuffers.pop();
+        m_currFrameData->usedCommandBuffers.front().clear();
+        m_currFrameData->commandBuffers.push(ext::move(m_currFrameData->usedCommandBuffers.front()));
+        m_currFrameData->usedCommandBuffers.pop();
     }
-    m_vkDevice.resetCommandPool(m_currFD->commandPool);
+    m_vkDevice.resetCommandPool(m_currFrameData->commandPool);
 }
 
 CommandBuffer& VulkanDevice::commandBuffer(void)
 {
-    if (m_currFD->commandBuffers.empty() == false) {
-        m_currFD->usedCommandBuffers.push(ext::move(m_currFD->commandBuffers.front()));
-        m_currFD->commandBuffers.pop();
+    if (m_currFrameData->commandBuffers.empty() == false) {
+        m_currFrameData->usedCommandBuffers.push(ext::move(m_currFrameData->commandBuffers.front()));
+        m_currFrameData->commandBuffers.pop();
     }
     else {
         auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
-            .setCommandPool(m_currFD->commandPool)
+            .setCommandPool(m_currFrameData->commandPool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
             .setCommandBufferCount(1);
         vk::CommandBuffer vkCommandBuffer = m_vkDevice.allocateCommandBuffers(commandBufferAllocateInfo).front();
-        m_currFD->usedCommandBuffers.emplace(ext::move(vkCommandBuffer), m_queueFamily);
+        m_currFrameData->usedCommandBuffers.emplace(ext::move(vkCommandBuffer), m_queueFamily);
     }
-    m_currFD->usedCommandBuffers.back().begin();
-    return m_currFD->usedCommandBuffers.back();
+    m_currFrameData->usedCommandBuffers.back().begin();
+    return m_currFrameData->usedCommandBuffers.back();
 }
 
 void VulkanDevice::submitCommandBuffer(CommandBuffer& _commandBuffer)
@@ -188,10 +209,10 @@ void VulkanDevice::submitCommandBuffer(CommandBuffer& _commandBuffer)
             .setImageMemoryBarriers(memoryBarriers));
         barrierCmdBuffer.addWaitSemaphores(cmdBuffer.waitSemaphores());
         barrierCmdBuffer.end();
-        m_currFD->submittedCmdBuffers.push_back(&barrierCmdBuffer);
+        m_currFrameData->submittedCmdBuffers.push_back(&barrierCmdBuffer);
     }
 
-    m_currFD->submittedCmdBuffers.push_back(&cmdBuffer);
+    m_currFrameData->submittedCmdBuffers.push_back(&cmdBuffer);
 }
 
 void VulkanDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable)
@@ -220,13 +241,13 @@ void VulkanDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable)
             .setImageMemoryBarriers(*memoryBarrier));
         barrierCmdBuffer.setSignalSemaphore(&drawable->imagePresentableSemaphore());
         barrierCmdBuffer.end();
-        m_currFD->submittedCmdBuffers.push_back(&barrierCmdBuffer);
+        m_currFrameData->submittedCmdBuffers.push_back(&barrierCmdBuffer);
     }
     else {
-        m_currFD->submittedCmdBuffers.back()->setSignalSemaphore(&drawable->imagePresentableSemaphore());
+        m_currFrameData->submittedCmdBuffers.back()->setSignalSemaphore(&drawable->imagePresentableSemaphore());
     }
 
-    m_currFD->presentedDrawables.push_back(drawable);
+    m_currFrameData->presentedDrawables.push_back(drawable);
 }
 
 void VulkanDevice::endFrame(void)
@@ -258,9 +279,9 @@ void VulkanDevice::endFrame(void)
                 .setCommandBuffers(vkCommandBuffers)
                 .setSignalSemaphores(signalSemaphore);
 
-            if (vkCommandBuffers.back() == m_currFD->submittedCmdBuffers.back()->vkCommandBuffer()) {
-                m_vkDevice.resetFences(m_currFD->frameCompletedFence);
-                m_queue.submit(submitInfo, m_currFD->frameCompletedFence);
+            if (vkCommandBuffers.back() == m_currFrameData->submittedCmdBuffers.back()->vkCommandBuffer()) {
+                m_vkDevice.resetFences(m_currFrameData->frameCompletedFence);
+                m_queue.submit(submitInfo, m_currFrameData->frameCompletedFence);
             } else {
                 m_queue.submit(submitInfo);
             }
@@ -270,7 +291,7 @@ void VulkanDevice::endFrame(void)
             vkCommandBuffers.clear();
         };
 
-        for (auto* commandBuffer : m_currFD->submittedCmdBuffers)
+        for (auto* commandBuffer : m_currFrameData->submittedCmdBuffers)
         {
             if (commandBuffer->signalSemaphore() != nullptr)
             {
@@ -285,15 +306,15 @@ void VulkanDevice::endFrame(void)
         submit();
     }
     {
-        ext::vector<vk::Semaphore> waitSemaphores = m_currFD->presentedDrawables
+        ext::vector<vk::Semaphore> waitSemaphores = m_currFrameData->presentedDrawables
             | ext::views::transform([](auto& d){return d->imagePresentableSemaphore();})
             | ext::ranges::to<ext::vector>();
         
-        ext::vector<vk::SwapchainKHR> swapchains = m_currFD->presentedDrawables
+        ext::vector<vk::SwapchainKHR> swapchains = m_currFrameData->presentedDrawables
             | ext::views::transform([](auto& d){return d->swapchain();})
             | ext::ranges::to<ext::vector>();
 
-        ext::vector<uint32_t> imageIndices = m_currFD->presentedDrawables
+        ext::vector<uint32_t> imageIndices = m_currFrameData->presentedDrawables
             | ext::views::transform([](auto& d){return d->imageIndex();})
             | ext::ranges::to<ext::vector>();
 
@@ -306,9 +327,9 @@ void VulkanDevice::endFrame(void)
             throw std::runtime_error("failed to present swap chain image!");
     }
 
-    m_currFD++;
-    if (m_currFD == m_frameData.end())
-        m_currFD = m_frameData.begin();
+    m_currFrameData++;
+    if (m_currFrameData == m_frameDatas.end())
+        m_currFrameData = m_frameDatas.begin();
 }
 
 void VulkanDevice::waitIdle(void)
@@ -320,13 +341,15 @@ VulkanDevice::~VulkanDevice()
 {
     waitIdle();
 
-    for (auto& fd : m_frameData) {
-        fd.presentedDrawables.clear();
-        fd.usedCommandBuffers = ext::queue<VulkanCommandBuffer>();
-        fd.commandBuffers = ext::queue<VulkanCommandBuffer>();
-        m_vkDevice.destroyFence(fd.frameCompletedFence);
-        m_vkDevice.destroyCommandPool(fd.commandPool);
+    for (auto& frameData : m_frameDatas) {
+        frameData.presentedDrawables.clear();
+        frameData.usedCommandBuffers = ext::queue<VulkanCommandBuffer>();
+        frameData.commandBuffers = ext::queue<VulkanCommandBuffer>();
+        m_vkDevice.destroyFence(frameData.frameCompletedFence);
+        m_vkDevice.destroyCommandPool(frameData.commandPool);
     }
+
+    vmaDestroyAllocator(m_allocator);
     m_vkDevice.destroy();
 }
 

@@ -16,6 +16,7 @@
 #include "Graphics/Drawable.hpp"
 
 #include "Metal/MetalCommandBuffer.hpp"
+#include <memory>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -62,6 +63,9 @@ public:
 
     void waitIdle(void) override;
 
+    inline uint32_t maxFrameInFlight(void) const override { return m_frameDatas.size(); };
+    inline uint32_t currentFrameIdx() const override { return ext::distance(m_frameDatas.begin(), ext::vector<FrameData>::const_iterator(m_currFrameData)); };
+
     inline const id<MTLDevice>& mtlDevice(void) const { return m_mtlDevice; }
 
     ~MetalDevice();
@@ -76,8 +80,8 @@ private:
     id<MTLDevice> m_mtlDevice;
     id<MTLCommandQueue> m_queue;
 
-    ext::vector<FrameData> m_frameData;
-    ext::vector<FrameData>::iterator m_currFD;
+    ext::vector<FrameData> m_frameDatas;
+    ext::vector<FrameData>::iterator m_currFrameData;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

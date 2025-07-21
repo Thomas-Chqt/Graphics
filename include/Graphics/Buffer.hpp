@@ -29,12 +29,15 @@ public:
     {
         size_t size;
         void* data = nullptr;
-        BufferUsage usage;
+        BufferUsages usage;
+        ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
     };
 
 public:
     Buffer(const Buffer&) = delete;
     Buffer(Buffer&&)      = delete;
+
+    virtual void setContent(void* data, size_t size) = 0;
 
     virtual ~Buffer() = default;
 

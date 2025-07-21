@@ -23,6 +23,7 @@ add_custom_command(
     VERBATIM
 )
 add_custom_target(multiBuffer_shader ALL DEPENDS ${SHADER_SLIB})
+set_target_properties(multiBuffer_shader PROPERTIES FOLDER "examples/multiBuffer/shaders")
 
 add_executable(multiBuffer)
 
@@ -34,6 +35,14 @@ set_target_properties(multiBuffer PROPERTIES
     FOLDER         "examples/multiBuffer"
     ENABLE_EXPORTS ON
 )
+
+target_compile_features(multiBuffer PRIVATE cxx_std_23)
+
+if(MSVC)
+    target_compile_options(multiBuffer PRIVATE /W4)
+else()
+    target_compile_options(multiBuffer PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(multiBuffer PRIVATE ${EXE_SRCS})

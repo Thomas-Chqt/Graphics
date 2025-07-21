@@ -8,19 +8,20 @@
  */
 
 #include "Graphics/Buffer.hpp"
+#include "Graphics/Enums.hpp"
 
 #include "Vulkan/VulkanEnums.hpp"
-#include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
+#include "Vulkan/vk_mem_alloc.hpp"
 
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
-    #include <algorithm>
     #include <cstddef>
+    #include <stdexcept>
     namespace ext = std;
 #endif
 
@@ -30,37 +31,52 @@ namespace gfx
 VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor& desc)
     : m_device(device)
 {
-    auto bufferCreateInfo = vk::BufferCreateInfo{}
+    auto usage = toVkBufferUsageFlags(desc.usage);
+
+    VkBufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo{}
         .setSize(static_cast<vk::DeviceSize>(desc.size))
-        .setUsage(toVkBufferUsageFlags(desc.usage))
+        .setUsage(usage)
         .setSharingMode(vk::SharingMode::eExclusive);
-    m_vkBuffer = m_device->vkDevice().createBuffer(bufferCreateInfo);
 
-    vk::MemoryRequirements memRequirements = m_device->vkDevice().getBufferMemoryRequirements(m_vkBuffer);
-    uint32_t memoryTypeIdx = m_device->physicalDevice().findSuitableMemoryTypeIdx(
-        vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
-        memRequirements.memoryTypeBits);
+    VmaAllocationCreateInfo allocInfo = { .usage = VMA_MEMORY_USAGE_AUTO, };
+    if (desc.storageMode == ResourceStorageMode::hostVisible)
+        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
-    auto memoryAllocateInfo = vk::MemoryAllocateInfo{}
-        .setAllocationSize(memRequirements.size)
-        .setMemoryTypeIndex(memoryTypeIdx);
-
-    m_memory = m_device->vkDevice().allocateMemory(memoryAllocateInfo);
-
-    m_device->vkDevice().bindBufferMemory(m_vkBuffer, m_memory, 0);
-
+    m_frameDatas.resize(desc.usage & BufferUsage::perFrameData ? m_device->maxFrameInFlight() : 1);
+    for (auto& frameData : m_frameDatas)
+    {
+        VkBuffer buffer;
+        vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &frameData.allocation, nullptr);
+        frameData.vkBuffer = std::move(buffer);
+    }
     if (desc.data)
     {
-        void* bufferData = m_device->vkDevice().mapMemory(m_memory, 0, static_cast<vk::DeviceSize>(desc.size));
-        ext::copy((ext::byte*)desc.data, (ext::byte*)desc.data + desc.size, (ext::byte*)bufferData);
-        m_device->vkDevice().unmapMemory(m_memory);
+        assert(desc.storageMode == ResourceStorageMode::hostVisible);
+        setContent(desc.data, desc.size);
     }
+}
+
+void VulkanBuffer::setContent(void* data, size_t size)
+{
+    for (auto& frameData : m_frameDatas)
+    {
+        VkResult res = vmaCopyMemoryToAllocation(m_device->allocator(), data, frameData.allocation, 0, size);
+        if (res != VK_SUCCESS)
+            throw ext::runtime_error("vmaCopyMemoryToAllocation failed");
+    }
+}
+
+const vk::Buffer& VulkanBuffer::vkBuffer() const
+{
+    return m_frameDatas[m_device->currentFrameIdx() % m_frameDatas.size()].vkBuffer;
 }
 
 VulkanBuffer::~VulkanBuffer()
 {
-    m_device->vkDevice().freeMemory(m_memory);
-    m_device->vkDevice().destroyBuffer(m_vkBuffer);
+    for (auto& frameData : m_frameDatas)
+    {
+        vmaDestroyBuffer(m_device->allocator(), frameData.vkBuffer, frameData.allocation);
+    }
 }
 
 }

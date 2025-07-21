@@ -113,15 +113,18 @@ vk::Format toVkFormat(VertexAttributeFormat fmt)
     }
 }
 
-vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsage use)
+vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
 {
-    switch (use)
-    {
-    case BufferUsage::vertexBuffer:
-        return vk::BufferUsageFlagBits::eVertexBuffer;
-    default:
-        throw ext::runtime_error("not implemented");
-    }
+    vk::BufferUsageFlags vkUsages;
+    
+    if (use & BufferUsage::vertexBuffer)
+        vkUsages |= vk::BufferUsageFlagBits::eVertexBuffer;
+    if (use & BufferUsage::indexBuffer)
+        vkUsages |= vk::BufferUsageFlagBits::eIndexBuffer;
+    if (use & BufferUsage::uniformBuffer)
+        vkUsages |= vk::BufferUsageFlagBits::eUniformBuffer;
+
+    return vkUsages;
 }
 
 }

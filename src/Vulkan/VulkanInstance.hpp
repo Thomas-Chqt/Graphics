@@ -46,6 +46,8 @@ public:
 
     ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
+    const vk::Instance& vkInstance() const { return m_vkInstance; }
+
     ~VulkanInstance();
 
 private:

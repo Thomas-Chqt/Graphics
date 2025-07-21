@@ -29,7 +29,7 @@ vk::AttachmentLoadOp toVkAttachmentLoadOp(LoadAction);
 
 vk::Format toVkFormat(VertexAttributeFormat);
 
-vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsage);
+vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages);
 
 }
 

@@ -100,6 +100,7 @@ if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
         GIT_TAG           c31964cc24d009324ae3de1574fa00dcf3c2c113
         GIT_SHALLOW       1
         GIT_PROGRESS      TRUE
+        FIND_PACKAGE_ARGS
     )
     set(DL_BUILD_TESTS OFF)
     set(DL_INSTALL     OFF)
@@ -107,9 +108,19 @@ if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     set_target_properties(dlLoad PROPERTIES FOLDER "dependencies")
 endif()
 
+FetchContent_Declare(VulkanMemoryAllocator
+    GIT_REPOSITORY    https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG           v3.3.0
+    GIT_SHALLOW       1
+    GIT_PROGRESS      TRUE
+    FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(VulkanMemoryAllocator)
+
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`
 
 target_compile_features(Graphics PUBLIC cxx_std_23)
+
 if(MSVC)
     target_compile_options(Graphics PRIVATE /W4)
 else()
@@ -142,6 +153,8 @@ if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_VULKAN")
     target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_NO_CONSTRUCTORS")
     target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1")
+    target_compile_definitions(Graphics PUBLIC "VMA_STATIC_VULKAN_FUNCTIONS=0")
+    target_compile_definitions(Graphics PUBLIC "VMA_DYNAMIC_VULKAN_FUNCTIONS=1")
 endif()
 
 if (GFX_ENABLE_IMGUI)
@@ -178,6 +191,8 @@ endif()
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     target_link_libraries(Graphics PRIVATE dlLoad)
 endif()
+
+target_link_libraries(Graphics PRIVATE GPUOpen::VulkanMemoryAllocator)
 
 add_subdirectory("tools")
 

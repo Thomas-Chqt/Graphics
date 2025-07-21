@@ -21,6 +21,13 @@
     class MTLBuffer;
 #endif // __OBJC__
 
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <vector>
+    namespace ext = std;
+#endif
+
 namespace gfx
 {
 
@@ -33,14 +40,22 @@ public:
     MetalBuffer(const MetalBuffer&) = delete;
     MetalBuffer(MetalBuffer&&)      = delete;
 
-    MetalBuffer(const MetalDevice&, const Buffer::Descriptor&);
+    MetalBuffer(const MetalDevice*, const Buffer::Descriptor&);
 
-    inline const id<MTLBuffer>& mtlBuffer() const { return m_mtlBuffer; }
+    void setContent(void* data, size_t size) override;
 
-    ~MetalBuffer() override = default;
+    const id<MTLBuffer>& mtlBuffer() const;
+
+    ~MetalBuffer() override;
 
 private:
-    id<MTLBuffer> m_mtlBuffer;
+    const MetalDevice* const m_device;
+
+    struct FrameData
+    {
+        id<MTLBuffer> mtlBuffer;
+    };
+    ext::vector<FrameData> m_frameDatas;
     
 public:
     MetalBuffer& operator = (const MetalBuffer&) = delete;

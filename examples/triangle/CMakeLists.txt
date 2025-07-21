@@ -23,6 +23,7 @@ add_custom_command(
     VERBATIM
 )
 add_custom_target(triangle_shader ALL DEPENDS ${SHADER_SLIB})
+set_target_properties(triangle_shader PROPERTIES FOLDER "examples/triangle/shaders")
 
 add_executable(triangle)
 
@@ -34,6 +35,14 @@ set_target_properties(triangle PROPERTIES
     FOLDER         "examples/triangle"
     ENABLE_EXPORTS ON
 )
+
+target_compile_features(triangle PRIVATE cxx_std_23)
+
+if(MSVC)
+    target_compile_options(triangle PRIVATE /W4)
+else()
+    target_compile_options(triangle PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(triangle PRIVATE ${EXE_SRCS})

@@ -10,13 +10,12 @@
 #include "Graphics/Instance.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
-    #include <string> // IWYU pragma: keep
     #include <memory>
     #include <cstdlib>
-    #include <iostream> // IWYU pragma: keep
+    #include <cstring>
+    #include <print>
     namespace ext = std;
 #endif
 
@@ -36,12 +35,12 @@ ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 #if defined(GFX_BUILD_METAL) && defined(GFX_BUILD_VULKAN)
     if (const char* val = ext::getenv("GFX_USED_API"))
     {
-        if (ext::string(val) == ext::string("VULKAN"))
+        if (ext::strcmp(val, "VULKAN") == 0)
         {
-            ext::cout << "using vulkan" << ext::endl;
+            ext::println("using vulkan");
             return newVulkanInstance(desc);
         }
-        ext::cout << "using metal" << ext::endl;
+        ext::println("using metal");
     }
     return newMetalInstance(desc);
 #elif defined(GFX_BUILD_METAL)

@@ -197,7 +197,7 @@ ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc
     if (suitableDevices.empty())
         throw ext::runtime_error("no suitable device found");
 
-    return ext::make_unique<VulkanDevice>(&suitableDevices.front(), vulkandeviceDescriptor);
+    return ext::make_unique<VulkanDevice>(this, &suitableDevices.front(), vulkandeviceDescriptor);
 }
 
 VulkanInstance::~VulkanInstance()

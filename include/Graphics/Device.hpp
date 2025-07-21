@@ -59,7 +59,8 @@ public:
 
     virtual void waitIdle(void) = 0;
 
-    //virtual uint32_t maxFrameInFlight(void) const = 0;
+    virtual uint32_t maxFrameInFlight() const = 0;
+    virtual uint32_t currentFrameIdx() const = 0;
 
     virtual ~Device() = default;
 

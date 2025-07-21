@@ -33,14 +33,12 @@
 namespace gfx
 {
 
-MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor& desc) : 
-    m_frameData(desc.maxFrameInFlight), m_currFD(m_frameData.begin())
+MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor& desc)
+    : m_frameDatas(desc.maxFrameInFlight), m_currFrameData(m_frameDatas.begin()) { @autoreleasepool
 {
-    @autoreleasepool {
-        m_mtlDevice = [device retain];
-        m_queue = [device newCommandQueue];
-    }
-}
+    m_mtlDevice = [device retain];
+    m_queue = [device newCommandQueue];
+}}
 
 ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
 {
@@ -59,50 +57,52 @@ ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const Graphic
 
 ext::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) const
 {
-    return ext::make_unique<MetalBuffer>(*this, desc);
+    return ext::make_unique<MetalBuffer>(this, desc);
 }
 
 void MetalDevice::beginFrame(void) { @autoreleasepool
 {
-    if (m_currFD->submittedCommandBuffers.empty() == false)
-        [m_currFD->submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
-    m_currFD->submittedCommandBuffers.clear();
-    while (m_currFD->commandBuffers.empty() == false)
-        m_currFD->commandBuffers.pop();
+    if (m_currFrameData->submittedCommandBuffers.empty() == false)
+        [m_currFrameData->submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
+
+    m_currFrameData->submittedCommandBuffers.clear();
+    while (m_currFrameData->commandBuffers.empty() == false)
+        m_currFrameData->commandBuffers.pop();
 }}
 
 CommandBuffer& MetalDevice::commandBuffer(void)
 {
-    m_currFD->commandBuffers.emplace(m_queue);
-    return m_currFD->commandBuffers.back();
+    m_currFrameData->commandBuffers.emplace(m_queue);
+    return m_currFrameData->commandBuffers.back();
 }
 
-void MetalDevice::submitCommandBuffer(CommandBuffer& commandBuffer)
+void MetalDevice::submitCommandBuffer(CommandBuffer& aCommandBuffer)
 {
-    assert(dynamic_cast<MetalCommandBuffer*>(&commandBuffer));
-    m_currFD->submittedCommandBuffers.push_back(dynamic_cast<MetalCommandBuffer*>(&commandBuffer));
+    MetalCommandBuffer* commandbuffer = dynamic_cast<MetalCommandBuffer*>(&aCommandBuffer);
+    assert(commandbuffer);
+    m_currFrameData->submittedCommandBuffers.push_back(commandbuffer);
 }
 
 void MetalDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable) { @autoreleasepool
 {
     ext::shared_ptr<MetalDrawable> drawable = ext::dynamic_pointer_cast<MetalDrawable>(_drawable);
-    [m_currFD->submittedCommandBuffers.back()->mtlCommandBuffer() presentDrawable:drawable->mtlDrawable()];
+    [m_currFrameData->submittedCommandBuffers.back()->mtlCommandBuffer() presentDrawable:drawable->mtlDrawable()];
 }}
 
 void MetalDevice::endFrame(void) { @autoreleasepool
 {
-    for (auto& buff : m_currFD->submittedCommandBuffers)
+    for (auto& buff : m_currFrameData->submittedCommandBuffers)
         [buff->mtlCommandBuffer() commit];
-    m_currFD++;
-    if (m_currFD == m_frameData.end())
-        m_currFD = m_frameData.begin();
+    m_currFrameData++;
+    if (m_currFrameData == m_frameDatas.end())
+        m_currFrameData = m_frameDatas.begin();
 }}
 
 void MetalDevice::waitIdle(void) { @autoreleasepool
 {
-    for (auto& fd : m_frameData) {
-        if (fd.submittedCommandBuffers.empty() == false)
-            [fd.submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
+    for (auto& frameData : m_frameDatas) {
+        if (frameData.submittedCommandBuffers.empty() == false)
+            [frameData.submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
     }
 }}
 
