@@ -67,7 +67,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         vertexInputBindingDescriptions = {
             vk::VertexInputBindingDescription{}
                 .setBinding(0)
-                .setStride(vertexLayout->stride)
+                .setStride(static_cast<uint32_t>(vertexLayout->stride))
                 .setInputRate(vk::VertexInputRate::eVertex)
         };
         vertexInputAttributeDescriptions.resize(vertexLayout->attributes.size());
@@ -76,7 +76,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
                 .setLocation(i)
                 .setBinding(0)
                 .setFormat(toVkFormat(attribute.format))
-                .setOffset(attribute.offset);
+                .setOffset(static_cast<uint32_t>(attribute.offset));
             i++;
         }
         vertexInputStateCreateInfo = vk::PipelineVertexInputStateCreateInfo()

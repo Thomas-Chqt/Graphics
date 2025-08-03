@@ -35,6 +35,10 @@
     namespace ext = std;
 #endif
 
+#if defined(GFX_IMGUI_ENABLED)
+    struct ImDrawData;
+#endif
+
 namespace gfx
 {
 
@@ -53,6 +57,10 @@ public:
     void useVertexBuffer(const ext::shared_ptr<const Buffer>&) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
+
+#if defined(GFX_IMGUI_ENABLED)
+    void imGuiRenderDrawData(ImDrawData*) const override;
+#endif
 
     void endRenderPass(void) override;
 

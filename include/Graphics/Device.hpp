@@ -13,6 +13,7 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
+#include "Graphics/Enums.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/QueueCapabilities.hpp"
@@ -24,6 +25,7 @@
     #include <memory>
     #include <filesystem>
     #include <cstdint>
+    #include <optional>
     namespace ext = std;
 #endif
 
@@ -48,6 +50,14 @@ public:
     virtual ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const = 0;
     virtual ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
 
+#if defined(GFX_IMGUI_ENABLED)
+    virtual void imguiInit(uint32_t imageCount,
+                           ext::vector<PixelFormat> colorAttachmentPxFormats,
+                           ext::optional<PixelFormat> depthAttachmentPxFormat = ext::nullopt) const = 0;
+
+    virtual void imguiNewFrame() const = 0;
+#endif
+
     virtual void beginFrame(void) = 0;
  
     virtual CommandBuffer& commandBuffer(void) = 0;
@@ -59,8 +69,13 @@ public:
 
     virtual void waitIdle(void) = 0;
 
+    virtual Backend backend() const = 0;
     virtual uint32_t maxFrameInFlight() const = 0;
     virtual uint32_t currentFrameIdx() const = 0;
+
+#if defined(GFX_IMGUI_ENABLED)
+    virtual void imguiShutdown() const = 0;
+#endif
 
     virtual ~Device() = default;
 

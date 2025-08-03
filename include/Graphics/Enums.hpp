@@ -140,6 +140,14 @@ enum class ResourceStorageMode
     hostVisible,
 };
 
+enum class Backend : uint32_t
+{
+    metal,
+    vulkan
+};
+GFX_ENABLE_BITMASK_OPERATORS(Backend);
+using Backends = Flags<Backend>;
+
 } // namespace gfx
 
 #endif // GFX_ENUMS_HPP

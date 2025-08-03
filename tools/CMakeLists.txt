@@ -42,6 +42,17 @@ target_sources(gfxsc PRIVATE "gfxsc.cpp")
 
 target_include_directories(gfxsc PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
+# Remove undefined behavior sanitizer for gfxsc only (target-specific)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(gfxsc PRIVATE -fno-sanitize=undefined)
+    target_link_options(gfxsc PRIVATE -fno-sanitize=undefined)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(gfxsc PRIVATE -fno-sanitize=undefined)
+    target_link_options(gfxsc PRIVATE -fno-sanitize=undefined)
+endif()
+
 if (NOT SLANG_INCLUDE_DIR-NOTFOUND)
     target_include_directories(gfxsc PRIVATE ${SLANG_INCLUDE_DIR})
 endif()

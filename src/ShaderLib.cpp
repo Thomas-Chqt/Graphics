@@ -8,7 +8,6 @@
  */
 
 #include "Graphics/ShaderLib.hpp"
-#include <stdexcept>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -18,6 +17,7 @@
     #include <string>
     #include <vector>
     #include <cstdint>
+    #include <stdexcept>
     namespace ext = std;
 #endif
 

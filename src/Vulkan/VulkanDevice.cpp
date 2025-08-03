@@ -23,9 +23,13 @@
 #include "Vulkan/VulkanShaderLib.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
-
 #include "Vulkan/vk_mem_alloc.hpp" // IWYU pragma: keep
+#include "Vulkan/imgui_impl_vulkan.h"
+#include "Vulkan/VulkanEnums.hpp"
+
+#include <array>
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_enums.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -90,10 +94,17 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
         .setQueueFamilyIndex(m_queueFamily.index);
 
-    m_frameDatas.resize(desc.deviceDescriptor->maxFrameInFlight);
-    for (auto& frameData : m_frameDatas) {
+    // m_frameDatas.resize(desc.deviceDescriptor->maxFrameInFlight);
+    // for (auto& frameData : m_frameDatas) {
+    //     frameData.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
+    //     frameData.frameCompletedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
+    // }
+    for (uint32_t i = 0; i < desc.deviceDescriptor->maxFrameInFlight; i++)
+    {
+        FrameData frameData;
         frameData.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
         frameData.frameCompletedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
+        m_frameDatas.push_back(ext::move(frameData));
     }
     m_currFrameData = m_frameDatas.begin();
 
@@ -105,11 +116,11 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
      
     VmaAllocatorCreateInfo allocatorCreateInfo = {
         .flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT,
-        .vulkanApiVersion = VK_API_VERSION_1_2,
         .physicalDevice = static_cast<VkPhysicalDevice>(*m_physicalDevice),
         .device = m_vkDevice,
+        .pVulkanFunctions = &vulkanFunctions,
         .instance = m_instance->vkInstance(),
-        .pVulkanFunctions = &vulkanFunctions
+        .vulkanApiVersion = VK_API_VERSION_1_2
     };
      
     auto res = vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
@@ -136,6 +147,54 @@ ext::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) 
 {
     return ext::make_unique<VulkanBuffer>(this, desc);
 }
+
+#if defined (GFX_IMGUI_ENABLED)
+void VulkanDevice::imguiInit(uint32_t imageCount,
+                             ext::vector<PixelFormat> colorAttachmentPxFormats,
+                             ext::optional<PixelFormat> depthAttachmentPxFormat) const
+{
+    ext::vector<vk::Format> colorAttachmentFormats;
+    colorAttachmentFormats.reserve(colorAttachmentPxFormats.size());
+    for (PixelFormat pxf : colorAttachmentPxFormats)
+        colorAttachmentFormats.push_back(toVkFormat(pxf));
+
+    auto pipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
+        .setColorAttachmentFormats(colorAttachmentFormats);
+    if (depthAttachmentPxFormat.has_value())
+        pipelineRenderingCreateInfo.setDepthAttachmentFormat(toVkFormat(depthAttachmentPxFormat.value()));
+
+    ImGui_ImplVulkan_InitInfo initInfo = {
+        .ApiVersion = m_physicalDevice->getProperties().apiVersion,
+        .Instance = m_instance->vkInstance(),
+        .PhysicalDevice = static_cast<const VkPhysicalDevice>(*m_physicalDevice),
+        .Device = m_vkDevice,
+        .QueueFamily = m_queueFamily.index,
+        .Queue = m_queue,
+        .DescriptorPool = VK_NULL_HANDLE,
+        .RenderPass = VK_NULL_HANDLE,
+        .MinImageCount = imageCount,
+        .ImageCount = imageCount,
+        .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+        .PipelineCache = VK_NULL_HANDLE,
+        .Subpass = 1,
+        .DescriptorPoolSize = IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE,
+        .UseDynamicRendering = true,
+        .PipelineRenderingCreateInfo = pipelineRenderingCreateInfo,
+        .Allocator = nullptr,
+        .CheckVkResultFn = nullptr,
+        .MinAllocationSize = 1024*1024
+    };
+
+    ImGui_ImplVulkan_Init(&initInfo);
+}
+#endif
+
+#if defined (GFX_IMGUI_ENABLED)
+void VulkanDevice::imguiNewFrame() const
+{
+    ImGui_ImplVulkan_NewFrame();
+}
+#endif
 
 void VulkanDevice::beginFrame(void) 
 {
@@ -177,11 +236,10 @@ void VulkanDevice::submitCommandBuffer(CommandBuffer& _commandBuffer)
     cmdBuffer.end();
 
 #if !defined (NDEBUG)
-    auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
+    m_vkDevice.setDebugUtilsObjectNameEXT(vk::DebugUtilsObjectNameInfoEXT{}
         .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkCommandBuffer>(cmdBuffer.vkCommandBuffer())))
         .setObjectType(vk::ObjectType::eCommandBuffer)
-        .setPObjectName("user command buffer");
-    m_vkDevice.setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
+        .setPObjectName("user command buffer"));
 #endif
 
     ext::vector<vk::ImageMemoryBarrier2> memoryBarriers;
@@ -198,11 +256,10 @@ void VulkanDevice::submitCommandBuffer(CommandBuffer& _commandBuffer)
     if (memoryBarriers.empty() == false) {
         auto& barrierCmdBuffer = dynamic_cast<VulkanCommandBuffer&>(commandBuffer());
 #if !defined (NDEBUG)
-        auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
+        m_vkDevice.setDebugUtilsObjectNameEXT(vk::DebugUtilsObjectNameInfoEXT{}
             .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkCommandBuffer>(barrierCmdBuffer.vkCommandBuffer())))
             .setObjectType(vk::ObjectType::eCommandBuffer)
-            .setPObjectName("barrier command buffer");
-        m_vkDevice.setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
+            .setPObjectName("barrier command buffer"));
 #endif
         barrierCmdBuffer.vkCommandBuffer().pipelineBarrier2(vk::DependencyInfo{}
             .setDependencyFlags(vk::DependencyFlags{}) // TODO
@@ -336,6 +393,13 @@ void VulkanDevice::waitIdle(void)
 {
     m_vkDevice.waitIdle();
 }
+
+#if defined(GFX_IMGUI_ENABLED)
+void VulkanDevice::imguiShutdown() const
+{
+    ImGui_ImplVulkan_Shutdown();
+}
+#endif
 
 VulkanDevice::~VulkanDevice()
 {

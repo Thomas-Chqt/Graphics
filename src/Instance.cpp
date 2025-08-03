@@ -16,7 +16,7 @@
     #include <cstdlib>
     #include <cstring>
     #include <print>
-    namespace ext = std;
+    namespace ext = std; // NOLINT
 #endif
 
 #if defined(GFX_BUILD_METAL)

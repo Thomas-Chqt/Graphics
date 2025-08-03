@@ -1,26 +1,46 @@
 /*
  * ---------------------------------------------------
- * triangle.cpp
+ * imgui_usage.cpp
  *
- * Author: Thomas Choquet <thomas.publique@icloud.com>
- * Date: 2024/06/06 16:59:24
+ * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
+ * Date: 2025/07/29 07:30:35
  * ---------------------------------------------------
  */
 
-#include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Framebuffer.hpp"
-#include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
-#include "Graphics/ShaderLib.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
-#include "Graphics/VertexLayout.hpp"
+#include "imgui.h"
 
 #include <GLFW/glfw3.h>
+#include <backends/imgui_impl_glfw.h>
+
+#if (defined(__GNUC__) || defined(__clang__))
+    #define GFX_EXPORT __attribute__((visibility("default")))
+#elif defined(_MSC_VER)
+    #define GFX_EXPORT __declspec(dllexport)
+#else
+    #error "unknown compiler"
+#endif
+
+extern "C"
+{
+
+GFX_EXPORT ImGuiContext* GetCurrentContext() { return ImGui::GetCurrentContext(); }
+GFX_EXPORT ImGuiIO* GetIO() { return &ImGui::GetIO(); }
+GFX_EXPORT ImGuiPlatformIO* GetPlatformIO() { return &ImGui::GetPlatformIO(); }
+GFX_EXPORT ImGuiViewport* GetMainViewport() { return ImGui::GetMainViewport(); }
+GFX_EXPORT bool DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx) { return ImGui::DebugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx); }
+GFX_EXPORT void* MemAlloc(size_t size) { return ImGui::MemAlloc(size); }
+GFX_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
+GFX_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
+
+}
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
@@ -37,7 +57,6 @@
     #include <unistd.h>
 #endif
 
-
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
@@ -53,7 +72,6 @@ public:
         assert(res == GLFW_TRUE);
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
         m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
         assert(m_window);
 
@@ -82,41 +100,24 @@ public:
 
         assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
-        
-        ext::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
-        assert(shaderLib);
 
-        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
-            .vertexLayout = gfx::VertexLayout{
-                .stride = sizeof(float) * 6,
-                .attributes = {
-                    gfx::VertexAttribute{
-                        .format = gfx::VertexAttributeFormat::float2,
-                        .offset = 0
-                    },
-                    gfx::VertexAttribute{
-                        .format = gfx::VertexAttributeFormat::float3,
-                        .offset = sizeof(float) * 2
-                    }
-                }
-            },
-            .vertexShader = &shaderLib->getFunction("vertexMain"),
-            .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
-        };
-        m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
-        assert(m_graphicsPipeline);
+        ImGui::CreateContext();
 
-        float vertices[] = {
-            /*.pos=*/ 0.0f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-            /*.pos=*/ 0.5f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
-            /*.pos=*/-0.5f, -0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f 
-        };
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-        m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(vertices), .data = vertices, .usage = gfx::BufferUsage::vertexBuffer
-        });
-        assert(m_vertexBuffer);
+        switch (m_device->backend())
+        {
+        case gfx::Backend::vulkan:
+            ImGui_ImplGlfw_InitForVulkan(m_window, true);
+            break;
+        default:
+            ImGui_ImplGlfw_InitForOther(m_window, true);
+            break;
+        }
+
+        m_device->imguiInit(3, {gfx::PixelFormat::BGRA8Unorm});
     }
 
     void loop()
@@ -143,13 +144,16 @@ public:
                 m_device->waitIdle();
             }
 
+            m_device->imguiNewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+            static bool showDemoWindow = true;
+            ImGui::ShowDemoWindow(&showDemoWindow);
+            ImGui::Render();
+
             m_device->beginFrame();
             {
                 gfx::CommandBuffer& commandBuffer = m_device->commandBuffer();
-
-                /*
-                 * pre passes
-                 */
 
                 ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
                 if (drawable == nullptr) {
@@ -169,21 +173,29 @@ public:
 
                 commandBuffer.beginRenderPass(framebuffer);
                 {
-                    commandBuffer.usePipeline(m_graphicsPipeline);
-                    commandBuffer.useVertexBuffer(m_vertexBuffer);
-                    commandBuffer.drawVertices(0, 3);
+                    commandBuffer.imGuiRenderDrawData(ImGui::GetDrawData());
                 }
                 commandBuffer.endRenderPass();
-
+                
                 m_device->submitCommandBuffer(commandBuffer);
                 m_device->presentDrawable(drawable);
             }
             m_device->endFrame();
+
+            if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+            {
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+            }
         }
     }
 
     void clean()
     {
+        m_device->waitIdle();
+        m_device->imguiShutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
         glfwDestroyWindow(m_window);
         glfwTerminate();
     }
@@ -193,9 +205,7 @@ private:
     ext::unique_ptr<gfx::Instance> m_instance;
     ext::unique_ptr<gfx::Surface> m_surface;
     ext::unique_ptr<gfx::Device> m_device;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
     ext::unique_ptr<gfx::Swapchain> m_swapchain;
-    ext::shared_ptr<gfx::Buffer> m_vertexBuffer;
 };
 
 int main()

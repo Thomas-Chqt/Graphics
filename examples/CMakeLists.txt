@@ -8,4 +8,7 @@
 if (GFX_ENABLE_GLFW)
     add_subdirectory(triangle)
     add_subdirectory(multiBuffer)
+    if (GFX_ENABLE_IMGUI)
+        add_subdirectory(imgui_usage)
+    endif()
 endif()

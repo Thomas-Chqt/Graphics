@@ -14,12 +14,15 @@
 
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalBuffer.hpp"
+#include "Metal/MetalEnums.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
+#include "Metal/imgui_impl_metal.h"
 
+#include <Metal/MTLPixelFormat.h>
 #include <Metal/Metal.h>
 
 #if defined(GFX_USE_UTILSCPP)
@@ -59,6 +62,23 @@ ext::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) c
 {
     return ext::make_unique<MetalBuffer>(this, desc);
 }
+
+#if defined (GFX_IMGUI_ENABLED)
+void MetalDevice::imguiInit(uint32_t, ext::vector<PixelFormat> colorPixelFomats, ext::optional<PixelFormat> depthPixelFormat) const { @autoreleasepool
+{
+    ImGui_ImplMetal_Init(m_mtlDevice, 1,
+        toMTLPixelFormat(colorPixelFomats[0]),
+        depthPixelFormat ? toMTLPixelFormat(depthPixelFormat.value()) : MTLPixelFormatInvalid,
+        MTLPixelFormatInvalid);
+}}
+#endif
+
+#if defined(GFX_IMGUI_ENABLED)
+void MetalDevice::imguiNewFrame() const
+{
+    ImGui_ImplMetal_NewFrame();
+}
+#endif
 
 void MetalDevice::beginFrame(void) { @autoreleasepool
 {
@@ -105,6 +125,13 @@ void MetalDevice::waitIdle(void) { @autoreleasepool
             [frameData.submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
     }
 }}
+
+#if defined(GFX_IMGUI_ENABLED)
+void MetalDevice::imguiShutdown() const
+{
+    ImGui_ImplMetal_Shutdown();
+}
+#endif
 
 MetalDevice::~MetalDevice() { @autoreleasepool
 {

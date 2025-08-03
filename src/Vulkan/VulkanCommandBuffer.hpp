@@ -52,6 +52,10 @@ public:
 
     void drawVertices(uint32_t start, uint32_t count) override;
 
+#if defined(GFX_IMGUI_ENABLED)
+    void imGuiRenderDrawData(ImDrawData*) const override;
+#endif
+
     void endRenderPass(void) override;
 
     const vk::CommandBuffer& vkCommandBuffer(void) const { return m_vkCommandBuffer; }

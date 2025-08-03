@@ -13,6 +13,7 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
+#include "Metal/imgui_impl_metal.h"
 #include "MetalGraphicsPipeline.hpp"
 
 #import <Metal/Metal.h>
@@ -85,6 +86,13 @@ void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autorel
 {
     [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
 }}
+
+#if defined(GFX_IMGUI_ENABLED)
+void MetalCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const
+{
+    ImGui_ImplMetal_RenderDrawData(drawData, m_mtlCommandBuffer, m_commandEncoder);
+}
+#endif
 
 void MetalCommandBuffer::endRenderPass(void) { @autoreleasepool
 {

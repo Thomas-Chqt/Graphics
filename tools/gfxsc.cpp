@@ -108,10 +108,10 @@ int main(int argc, char* argv[])
     };
 
     slang::SessionDesc sessionDesc = {
-        .targetCount = static_cast<SlangInt>(targetDescs.size()),
         .targets = targetDescs.data(),
-        .compilerOptionEntryCount = static_cast<uint32_t>(options.size()),
-        .compilerOptionEntries = options.data()
+        .targetCount = static_cast<SlangInt>(targetDescs.size()),
+        .compilerOptionEntries = options.data(),
+        .compilerOptionEntryCount = static_cast<uint32_t>(options.size())
     };
 
     Slang::ComPtr<slang::ISession> session;
@@ -132,9 +132,9 @@ int main(int argc, char* argv[])
         Slang::ComPtr<slang::IModule> module;
         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
         module = session->loadModuleFromSourceString(
-            inputFilePath.filename().replace_extension().c_str(),
-            inputFilePath.c_str(),
-            inputFileContent.str().c_str(),
+            (const char*)inputFilePath.filename().replace_extension().c_str(),
+            (const char*)inputFilePath.c_str(),
+            (const char*)inputFileContent.str().c_str(),
             diagnosticsBlob.writeRef()
         );
         if (diagnosticsBlob != nullptr)

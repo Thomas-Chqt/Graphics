@@ -20,6 +20,10 @@
     #include <cstdint>
 #endif
 
+#if defined(GFX_IMGUI_ENABLED)
+    struct ImDrawData;
+#endif
+
 namespace gfx
 {
 
@@ -34,6 +38,10 @@ public:
     virtual void useVertexBuffer(const ext::shared_ptr<const Buffer>&) = 0;
 
     virtual void drawVertices(uint32_t start, uint32_t count) = 0;
+
+#if defined(GFX_IMGUI_ENABLED)
+    virtual void imGuiRenderDrawData(ImDrawData*) const = 0;
+#endif
 
     virtual void endRenderPass(void) = 0;
 

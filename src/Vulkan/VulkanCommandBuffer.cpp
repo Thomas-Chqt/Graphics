@@ -17,6 +17,7 @@
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/QueueFamily.hpp"
+#include "Vulkan/imgui_impl_vulkan.h"
 #include "VulkanGraphicsPipeline.hpp"
 
 #include <vulkan/vulkan.hpp>
@@ -126,8 +127,8 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
     m_viewport = vk::Viewport{}
         .setX(0)
         .setY(0)
-        .setWidth(framebuffer.colorAttachments[0].texture->width())
-        .setHeight(framebuffer.colorAttachments[0].texture->height())
+        .setWidth(static_cast<float>(framebuffer.colorAttachments[0].texture->width()))
+        .setHeight(static_cast<float>(framebuffer.colorAttachments[0].texture->height()))
         .setMinDepth(0)
         .setMaxDepth(1);
 
@@ -173,6 +174,13 @@ void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
 {
     m_vkCommandBuffer.draw(count, 1, start, 0);
 }
+
+#if defined(GFX_IMGUI_ENABLED)
+void VulkanCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const
+{
+    ImGui_ImplVulkan_RenderDrawData(drawData, m_vkCommandBuffer);
+}
+#endif
 
 void VulkanCommandBuffer::endRenderPass(void)
 {

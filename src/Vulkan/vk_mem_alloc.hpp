@@ -10,12 +10,27 @@
 #ifndef VK_MEM_ALLOC_HPP
 #define VK_MEM_ALLOC_HPP
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wall"
-#pragma clang diagnostic ignored "-Wextra"
-#pragma clang diagnostic ignored "-Wpedantic"
-#pragma clang diagnostic ignored "-Wnullability-completeness"
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wall"
+#  pragma clang diagnostic ignored "-Wextra"
+#  pragma clang diagnostic ignored "-Wpedantic"
+#  pragma clang diagnostic ignored "-Wnullability-completeness"
+#elif defined(_MSC_VER)
+#  pragma warning(push, 0)
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wall"
+#  pragma GCC diagnostic ignored "-Wextra"
+#  pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 #include "vk_mem_alloc.h"
-#pragma clang diagnostic pop
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#elif defined(_MSC_VER)
+#  pragma warning(pop)
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
 
 #endif // VK_MEM_ALLOC_HPP

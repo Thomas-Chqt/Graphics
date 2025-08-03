@@ -11,6 +11,7 @@
 #define VULKANDEVICE_HPP
 
 #include "Graphics/Device.hpp"
+#include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
@@ -62,6 +63,16 @@ public:
     ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const override;
     ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
 
+#if defined(GFX_IMGUI_ENABLED)
+    void imguiInit(uint32_t imageCount,
+                   ext::vector<PixelFormat> colorAttachmentPxFormats,
+                   ext::optional<PixelFormat> depthAttachmentPxFormat) const override;
+#endif
+
+#if defined(GFX_IMGUI_ENABLED)
+    void imguiNewFrame() const override;
+#endif
+
     void beginFrame(void) override;
 
     CommandBuffer& commandBuffer(void) override;
@@ -73,12 +84,17 @@ public:
 
     void waitIdle(void) override;
 
-    inline uint32_t maxFrameInFlight() const override { return m_frameDatas.size(); };
-    inline uint32_t currentFrameIdx() const override { return ext::distance(m_frameDatas.begin(), ext::vector<FrameData>::const_iterator(m_currFrameData)); };
+    inline Backend backend() const override { return Backend::vulkan; }
+    inline uint32_t maxFrameInFlight() const override { return static_cast<uint32_t>(m_frameDatas.size()); };
+    inline uint32_t currentFrameIdx() const override { return static_cast<uint32_t>(ext::distance(m_frameDatas.begin(), ext::vector<FrameData>::const_iterator(m_currFrameData))); };
 
     inline const vk::Device& vkDevice(void) const { return m_vkDevice; }
     inline const VulkanPhysicalDevice& physicalDevice(void) const { return *m_physicalDevice; }
     inline const VmaAllocator& allocator() const { return m_allocator; }
+
+#if defined(GFX_IMGUI_ENABLED)
+    void imguiShutdown() const override;
+#endif
 
     ~VulkanDevice();
 
@@ -91,6 +107,10 @@ private:
         ext::queue<VulkanCommandBuffer> usedCommandBuffers;
         ext::vector<VulkanCommandBuffer*> submittedCmdBuffers;
         ext::vector<ext::shared_ptr<VulkanDrawable>> presentedDrawables;
+
+        FrameData() = default;
+        FrameData(const FrameData&) = delete;
+        FrameData(FrameData&&) = default;
     };
     
     const VulkanInstance* const m_instance;

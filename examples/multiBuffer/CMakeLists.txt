@@ -5,12 +5,14 @@
 # Date: 2025/07/12 14:01:42
 # ---------------------------------------------------
 
+set(SHADER_TARGET_LIST)
 if (GFX_BUILD_METAL)
-    string(APPEND SHADER_TARGETS "metal")
+    list(APPEND SHADER_TARGET_LIST metal)
 endif()
 if (GFX_BUILD_VULKAN)
-    string(APPEND SHADER_TARGETS ",spirv")
+    list(APPEND SHADER_TARGET_LIST spirv)
 endif()
+list(JOIN SHADER_TARGET_LIST "," SHADER_TARGETS)
 
 set(SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader.slib")
 file(GLOB SHADER_SRCS "*.slang")
