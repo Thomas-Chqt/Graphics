@@ -16,6 +16,7 @@
 #include "Vulkan/vk_mem_alloc.hpp"
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_structs.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -29,25 +30,27 @@ namespace gfx
 {
     
 VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor& desc)
-    : m_device(device)
+    : m_device(device), m_size(desc.size)
 {
-    auto usage = toVkBufferUsageFlags(desc.usage);
-
     VkBufferCreateInfo bufferCreateInfo = vk::BufferCreateInfo{}
         .setSize(static_cast<vk::DeviceSize>(desc.size))
-        .setUsage(usage)
+        .setUsage(toVkBufferUsageFlags(desc.usage))
         .setSharingMode(vk::SharingMode::eExclusive);
 
     VmaAllocationCreateInfo allocInfo = { .usage = VMA_MEMORY_USAGE_AUTO, };
     if (desc.storageMode == ResourceStorageMode::hostVisible)
-        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     m_frameDatas.resize(desc.usage & BufferUsage::perFrameData ? m_device->maxFrameInFlight() : 1);
     for (auto& frameData : m_frameDatas)
     {
         VkBuffer buffer;
-        vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &frameData.allocation, nullptr);
+        vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &frameData.allocation, &frameData.allocInfo);
         frameData.vkBuffer = std::move(buffer);
+        frameData.descriptorInfo = vk::DescriptorBufferInfo{}
+            .setBuffer(frameData.vkBuffer)
+            .setOffset(0)
+            .setRange(vk::WholeSize);
     }
     if (desc.data)
     {
@@ -56,7 +59,7 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor&
     }
 }
 
-void VulkanBuffer::setContent(void* data, size_t size)
+void VulkanBuffer::setContent(const void* data, size_t size)
 {
     for (auto& frameData : m_frameDatas)
     {
@@ -71,12 +74,22 @@ const vk::Buffer& VulkanBuffer::vkBuffer() const
     return m_frameDatas[m_device->currentFrameIdx() % m_frameDatas.size()].vkBuffer;
 }
 
+const vk::DescriptorBufferInfo& VulkanBuffer::descriptorInfo() const
+{
+    return m_frameDatas[m_device->currentFrameIdx() % m_frameDatas.size()].descriptorInfo;
+}
+
 VulkanBuffer::~VulkanBuffer()
 {
     for (auto& frameData : m_frameDatas)
     {
         vmaDestroyBuffer(m_device->allocator(), frameData.vkBuffer, frameData.allocation);
     }
+}
+
+void* VulkanBuffer::contentVoid()
+{
+    return m_frameDatas[m_device->currentFrameIdx() % m_frameDatas.size()].allocInfo.pMappedData;
 }
 
 }

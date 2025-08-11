@@ -10,6 +10,7 @@
 #ifndef GRAPHICSPIPELINE_HPP
 #define GRAPHICSPIPELINE_HPP
 
+#include "Graphics/ParameterBlock.hpp"
 #include "Graphics/ShaderFunction.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/VertexLayout.hpp"
@@ -39,6 +40,8 @@ public:
         ext::optional<PixelFormat> depthAttachmentPxFormat;
         
         BlendOperation blendOperation = BlendOperation::blendingOff;
+
+        ext::vector<ParameterBlock::Layout> parameterBlockLayouts;
     };
 
 public:

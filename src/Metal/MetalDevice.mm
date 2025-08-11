@@ -8,21 +8,24 @@
  */
 
 #include "Graphics/Device.hpp"
+#include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
+#include "Graphics/ParameterBlock.hpp"
 
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalBuffer.hpp"
-#include "Metal/MetalEnums.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
+#include "Metal/MetalParameterBlockPool.hpp"
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
 #include "Metal/imgui_impl_metal.h"
 
-#include <Metal/MTLPixelFormat.h>
+#import "Metal/MetalEnums.h"
+
 #include <Metal/Metal.h>
 
 #if defined(GFX_USE_UTILSCPP)
@@ -30,17 +33,24 @@
 #else
     #include <memory>
     #include <queue>
+    #include <cassert>
+    #include <cstdint>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
 
-MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor& desc)
-    : m_frameDatas(desc.maxFrameInFlight), m_currFrameData(m_frameDatas.begin()) { @autoreleasepool
+MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor& desc) { @autoreleasepool
 {
     m_mtlDevice = [device retain];
     m_queue = [device newCommandQueue];
+
+    m_frameDatas.reserve(desc.maxFrameInFlight);
+    for (uint32_t i = 0; i < desc.maxFrameInFlight; i++)
+        m_frameDatas.emplace_back(this);
+
+    m_currFrameData = m_frameDatas.begin();
 }}
 
 ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -53,7 +63,7 @@ ext::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const ext::filesystem::path
     return ext::make_unique<MetalShaderLib>(*this, path);
 }
 
-ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
+ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
 {
     return ext::make_unique<MetalGraphicsPipeline>(*this, desc);
 }
@@ -84,16 +94,17 @@ void MetalDevice::beginFrame(void) { @autoreleasepool
 {
     if (m_currFrameData->submittedCommandBuffers.empty() == false)
         [m_currFrameData->submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
-
-    m_currFrameData->submittedCommandBuffers.clear();
-    while (m_currFrameData->commandBuffers.empty() == false)
-        m_currFrameData->commandBuffers.pop();
+    m_currFrameData->reset();
 }}
+
+ParameterBlock& MetalDevice::parameterBlock(const ParameterBlock::Layout& pbLayout)
+{
+    return m_currFrameData->pBlockPool.get(pbLayout);
+}
 
 CommandBuffer& MetalDevice::commandBuffer(void)
 {
-    m_currFrameData->commandBuffers.emplace(m_queue);
-    return m_currFrameData->commandBuffers.back();
+    return m_currFrameData->commandBuffers.emplace_back(m_queue);
 }
 
 void MetalDevice::submitCommandBuffer(CommandBuffer& aCommandBuffer)
@@ -118,7 +129,7 @@ void MetalDevice::endFrame(void) { @autoreleasepool
         m_currFrameData = m_frameDatas.begin();
 }}
 
-void MetalDevice::waitIdle(void) { @autoreleasepool
+void MetalDevice::waitIdle(void) const { @autoreleasepool
 {
     for (auto& frameData : m_frameDatas) {
         if (frameData.submittedCommandBuffers.empty() == false)
@@ -136,8 +147,21 @@ void MetalDevice::imguiShutdown() const
 MetalDevice::~MetalDevice() { @autoreleasepool
 {
     waitIdle();
+    m_frameDatas.clear();
     [m_queue release];
     [m_mtlDevice release];
 }}
+
+MetalDevice::FrameData::FrameData(const MetalDevice* device)
+    : pBlockPool(device)
+{
+}
+
+void MetalDevice::FrameData::reset()
+{
+    submittedCommandBuffers.clear();
+    commandBuffers.clear();
+    pBlockPool.reset();
+}
 
 }

@@ -28,25 +28,33 @@ public:
     struct Descriptor
     {
         size_t size;
-        void* data = nullptr;
+        const void* data = nullptr;
         BufferUsages usage;
         ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
     };
 
 public:
     Buffer(const Buffer&) = delete;
-    Buffer(Buffer&&)      = delete;
 
-    virtual void setContent(void* data, size_t size) = 0;
+    virtual size_t size() const = 0;
+
+    template<typename T> inline T* content() { return (T*)contentVoid(); }
+    virtual void setContent(const void* data, size_t size) = 0;
+    inline void setContent(const auto& data) { setContent(&data, sizeof(data)); }
 
     virtual ~Buffer() = default;
 
 protected:
     Buffer() = default;
+    Buffer(Buffer&&) = default;
+
+    virtual void* contentVoid() = 0;
     
 public:
     Buffer& operator = (const Buffer&) = delete;
-    Buffer& operator = (Buffer&&)      = delete;
+
+protected:
+    Buffer& operator = (Buffer&&) = default;
 };
 
 }

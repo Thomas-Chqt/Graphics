@@ -14,11 +14,7 @@
 #include "Vulkan/VulkanShaderFunction.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 
-#include <cstdint>
-#include <vector>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_enums.hpp>
-#include <vulkan/vulkan_structs.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -26,6 +22,8 @@
     #include <stdexcept>
     #include <utility>
     #include <array>
+    #include <cstdint>
+    #include <vector>
     namespace ext = std;
 #endif
 
@@ -55,7 +53,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         vk::DynamicState::eScissor
     };
 
-    auto dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo()
+    auto dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo{}
         .setDynamicStates(dynamicStates);
 
     ext::array<vk::VertexInputBindingDescription, 1> vertexInputBindingDescriptions;
@@ -90,15 +88,15 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
             .setVertexAttributeDescriptions(nullptr);
     }
 
-    auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo()
+    auto inputAssemblyStateCreateInfo = vk::PipelineInputAssemblyStateCreateInfo{}
         .setTopology(vk::PrimitiveTopology::eTriangleList)
         .setPrimitiveRestartEnable(false);
 
-    auto viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo()
+    auto viewportStateCreateInfo = vk::PipelineViewportStateCreateInfo{}
         .setViewportCount(1)
         .setScissorCount(1);
 
-    auto rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo()
+    auto rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo{}
         .setDepthClampEnable(false)
         .setRasterizerDiscardEnable(false)
         .setPolygonMode(vk::PolygonMode::eFill)
@@ -107,11 +105,11 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         .setFrontFace(vk::FrontFace::eClockwise)
         .setDepthBiasEnable(false);
 
-    auto multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo()
+    auto multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo{}
         .setSampleShadingEnable(false)
         .setRasterizationSamples(vk::SampleCountFlagBits::e1);
 
-    auto colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState()
+    auto colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState{}
         .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
 
     if (desc.blendOperation == BlendOperation::blendingOff)
@@ -143,11 +141,19 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
 
     ext::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates(desc.colorAttachmentPxFormats.size(), colorBlendAttachmentState);
 
-    auto colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo()
+    auto colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo{}
         .setLogicOpEnable(false)
         .setAttachments(colorBlendAttachmentStates);
 
-    auto pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo();
+    ext::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+    if (desc.parameterBlockLayouts.empty() == false)
+    {
+        descriptorSetLayouts.reserve(desc.parameterBlockLayouts.size());
+        for (const auto& pbl : desc.parameterBlockLayouts)
+            descriptorSetLayouts.push_back(m_device->descriptorSetLayout(pbl));
+    }
+    auto pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo{}
+        .setSetLayouts(descriptorSetLayouts);
 
     m_pipelineLayout = m_device->vkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
@@ -156,7 +162,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
     for (PixelFormat pxf : desc.colorAttachmentPxFormats)
         colorAttachmentFormats.push_back(toVkFormat(pxf));
 
-    auto pipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
+    auto pipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo{}
         .setColorAttachmentFormats(colorAttachmentFormats);
 
     if (desc.depthAttachmentPxFormat.has_value())

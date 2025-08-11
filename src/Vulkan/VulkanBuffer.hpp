@@ -19,6 +19,7 @@
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
+    #include <cstddef>
     #include <vector>
     namespace ext = std;
 #endif
@@ -37,19 +38,29 @@ public:
 
     VulkanBuffer(const VulkanDevice*, const Buffer::Descriptor&);
 
-    void setContent(void* data, size_t size) override;
+    inline size_t size() const override { return m_size; }
+
+    void setContent(const void* data, size_t size) override;
 
     const vk::Buffer& vkBuffer() const;
 
+    const vk::DescriptorBufferInfo& descriptorInfo() const;
+
     ~VulkanBuffer() override;
+
+protected:
+    void* contentVoid() override;
 
 private:
     const VulkanDevice* m_device;
+    const size_t m_size;
 
     struct FrameData
     {
         vk::Buffer vkBuffer;
         VmaAllocation allocation;
+        VmaAllocationInfo allocInfo;
+        vk::DescriptorBufferInfo descriptorInfo;
     };
 
     ext::vector<FrameData> m_frameDatas;

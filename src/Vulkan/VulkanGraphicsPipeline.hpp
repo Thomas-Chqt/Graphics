@@ -29,11 +29,12 @@ public:
     VulkanGraphicsPipeline(const VulkanDevice*, const GraphicsPipeline::Descriptor&);
 
     inline const vk::Pipeline& vkPipeline(void) const { return m_vkPipeline; }
+    inline const vk::PipelineLayout& pipelineLayout() const { return m_pipelineLayout; }
 
     ~VulkanGraphicsPipeline();
 
 private:
-    const VulkanDevice* m_device;
+    const VulkanDevice* const m_device;
     vk::PipelineLayout m_pipelineLayout;
     vk::Pipeline m_vkPipeline;
 

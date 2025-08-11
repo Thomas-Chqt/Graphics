@@ -26,28 +26,29 @@ template<typename T>
 class Flags
 {
 public:
-    Flags() : m_value(0) {}
+    constexpr Flags() : m_value(0) {}
 
-    Flags(T value) : m_value(static_cast<ext::underlying_type_t<T>>(value)) {}
+    constexpr Flags(T value) : m_value(static_cast<ext::underlying_type_t<T>>(value)) {}
 
-    [[nodiscard]] inline T value() const { return m_value; }
+    constexpr [[nodiscard]] inline T value() const { return m_value; }
 
-    [[nodiscard]] inline bool operator==(const Flags& rhs) const { return m_value == rhs.m_value; }
-    [[nodiscard]] inline bool operator!=(const Flags& rhs) const { return m_value != rhs.m_value; }
+    constexpr [[nodiscard]] inline bool operator==(const Flags& rhs) const { return m_value == rhs.m_value; }
+    constexpr [[nodiscard]] inline bool operator!=(const Flags& rhs) const { return m_value != rhs.m_value; }
+    constexpr [[nodiscard]] inline bool operator<(const Flags& rhs) const { return m_value < rhs.m_value; }
 
-    [[nodiscard]] inline Flags operator|(const Flags& rhs) const { return Flags(m_value | rhs.m_value); }
-    [[nodiscard]] inline Flags operator&(const Flags& rhs) const { return Flags(m_value & rhs.m_value); }
-    [[nodiscard]] inline Flags operator^(const Flags& rhs) const { return Flags(m_value ^ rhs.m_value); }
-    [[nodiscard]] inline Flags operator~() const { return Flags(~m_value); }
+    constexpr [[nodiscard]] inline Flags operator|(const Flags& rhs) const { return Flags(m_value | rhs.m_value); }
+    constexpr [[nodiscard]] inline Flags operator&(const Flags& rhs) const { return Flags(m_value & rhs.m_value); }
+    constexpr [[nodiscard]] inline Flags operator^(const Flags& rhs) const { return Flags(m_value ^ rhs.m_value); }
+    constexpr [[nodiscard]] inline Flags operator~() const { return Flags(~m_value); }
 
-    inline Flags& operator|=(const Flags& rhs) { return m_value |= rhs.m_value, *this; }
-    inline Flags& operator&=(const Flags& rhs) { return m_value &= rhs.m_value, *this; }
-    inline Flags& operator^=(const Flags& rhs) { return m_value ^= rhs.m_value, *this; }
+    constexpr inline Flags& operator|=(const Flags& rhs) { return m_value |= rhs.m_value, *this; }
+    constexpr inline Flags& operator&=(const Flags& rhs) { return m_value &= rhs.m_value, *this; }
+    constexpr inline Flags& operator^=(const Flags& rhs) { return m_value ^= rhs.m_value, *this; }
 
-    inline explicit operator bool() const { return m_value != 0; }
+    constexpr inline explicit operator bool() const { return m_value != 0; }
 
 private:
-    Flags(ext::underlying_type_t<T> value) : m_value(value) {}
+    constexpr Flags(ext::underlying_type_t<T> value) : m_value(value) {}
 
     ext::underlying_type_t<T> m_value;
 };
@@ -142,11 +143,26 @@ enum class ResourceStorageMode
 
 enum class Backend : uint32_t
 {
-    metal,
-    vulkan
+    metal  = 1 << 0,
+    vulkan = 1 << 1
 };
 GFX_ENABLE_BITMASK_OPERATORS(Backend);
 using Backends = Flags<Backend>;
+
+enum class BindingType
+{
+    uniformBuffer
+};
+
+enum class BindingUsage : uint32_t
+{
+    vertexRead    = 1 << 1,
+    vertexWrite   = 1 << 2,
+    fragmentRead  = 1 << 3,
+    fragmentWrite = 1 << 4
+};
+GFX_ENABLE_BITMASK_OPERATORS(BindingUsage);
+using BindingUsages = Flags<BindingUsage>;
 
 } // namespace gfx
 

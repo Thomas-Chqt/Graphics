@@ -17,19 +17,137 @@
 namespace gfx
 {
 
-vk::Format toVkFormat(PixelFormat);
-PixelFormat toPixelFormat(vk::Format fmt);
+constexpr vk::Format toVkFormat(PixelFormat pxf)
+{
+    switch (pxf)
+    {
+    case PixelFormat::BGRA8Unorm:
+        return vk::Format::eB8G8R8A8Unorm;
+    case PixelFormat::BGRA8Unorm_sRGB:
+        return vk::Format::eB8G8R8A8Srgb;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
 
-vk::ColorSpaceKHR toVkColorSpaceKHR(PixelFormat);
+constexpr PixelFormat toPixelFormat(vk::Format fmt)
+{
+    switch (fmt)
+    {
+    case vk::Format::eB8G8R8A8Unorm:
+        return PixelFormat::BGRA8Unorm;
+    case vk::Format::eB8G8R8A8Srgb:
+        return PixelFormat::BGRA8Unorm_sRGB;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
 
-vk::PresentModeKHR toVkPresentModeKHR(PresentMode);
-PresentMode toPresentMode(vk::PresentModeKHR pmd);
+constexpr vk::ColorSpaceKHR toVkColorSpaceKHR(PixelFormat pxf)
+{
+    switch (pxf)
+    {
+    case PixelFormat::BGRA8Unorm:
+    case PixelFormat::BGRA8Unorm_sRGB:
+        return vk::ColorSpaceKHR::eSrgbNonlinear;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
 
-vk::AttachmentLoadOp toVkAttachmentLoadOp(LoadAction);
+constexpr vk::PresentModeKHR toVkPresentModeKHR(PresentMode pmd)
+{
+    switch (pmd)
+    {
+    case PresentMode::fifo:
+        return vk::PresentModeKHR::eFifo;
+    case PresentMode::mailbox:
+        return vk::PresentModeKHR::eMailbox;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
 
-vk::Format toVkFormat(VertexAttributeFormat);
+constexpr PresentMode toPresentMode(vk::PresentModeKHR pmd)
+{
+    switch (pmd)
+    {
+    case vk::PresentModeKHR::eFifo:
+        return PresentMode::fifo;
+    case vk::PresentModeKHR::eMailbox:
+        return PresentMode::mailbox;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
 
-vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages);
+constexpr vk::AttachmentLoadOp toVkAttachmentLoadOp(LoadAction loa)
+{
+    switch (loa)
+    {
+    case LoadAction::load:
+        return vk::AttachmentLoadOp::eLoad;
+    case LoadAction::clear:
+        return vk::AttachmentLoadOp::eClear;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
+constexpr vk::Format toVkFormat(VertexAttributeFormat fmt)
+{
+    switch (fmt)
+    {
+    case VertexAttributeFormat::float2:
+        return vk::Format::eR32G32Sfloat;
+    case VertexAttributeFormat::float3:
+        return vk::Format::eR32G32B32Sfloat;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
+constexpr vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
+{
+    vk::BufferUsageFlags vkUsages;
+    
+    if (use & BufferUsage::vertexBuffer)
+        vkUsages |= vk::BufferUsageFlagBits::eVertexBuffer;
+    if (use & BufferUsage::indexBuffer)
+        vkUsages |= vk::BufferUsageFlagBits::eIndexBuffer;
+    if (use & BufferUsage::uniformBuffer)
+        vkUsages |= vk::BufferUsageFlagBits::eUniformBuffer;
+
+    return vkUsages;
+}
+
+constexpr vk::DescriptorType toVkDescriptorType(BindingType tpe)
+{
+    switch (tpe)
+    {
+    case BindingType::uniformBuffer:
+        return vk::DescriptorType::eUniformBuffer;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+
+}
+
+constexpr vk::ShaderStageFlags toVkShaderStageFlags(BindingUsages use)
+{
+    vk::ShaderStageFlags vkShaderStageFlags;
+
+    if (use & BindingUsage::vertexRead)
+        vkShaderStageFlags |= vk::ShaderStageFlagBits::eVertex;
+    if (use & BindingUsage::vertexWrite)
+        vkShaderStageFlags |= vk::ShaderStageFlagBits::eVertex;
+    if (use & BindingUsage::fragmentRead)
+        vkShaderStageFlags |= vk::ShaderStageFlagBits::eFragment;
+    if (use & BindingUsage::fragmentWrite)
+        vkShaderStageFlags |= vk::ShaderStageFlagBits::eFragment;
+    
+    return vkShaderStageFlags;
+}
 
 }
 

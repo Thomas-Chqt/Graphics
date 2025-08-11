@@ -8,13 +8,19 @@
  */
 
 #include "Graphics/Framebuffer.hpp"
+#include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/Buffer.hpp"
+#include "Graphics/ParameterBlock.hpp"
 
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalBuffer.hpp"
-#include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/imgui_impl_metal.h"
-#include "MetalGraphicsPipeline.hpp"
+#include "Metal/MetalGraphicsPipeline.hpp"
+#include "Metal/MetalParameterBlock.hpp"
+
+#import "Metal/MetalEnums.h"
+#include <algorithm>
 
 #import <Metal/Metal.h>
 
@@ -23,6 +29,12 @@
 #else
     #include <cassert>
     #include <memory>
+    #include <cstdint>
+    #include <ranges>
+#endif
+
+#if defined(GFX_IMGUI_ENABLED)
+    struct ImDrawData;
 #endif
 
 namespace gfx
@@ -79,12 +91,42 @@ void MetalCommandBuffer::useVertexBuffer(const ext::shared_ptr<const Buffer>& aB
 
     m_usedBuffers.insert(buffer);
 
-    [m_commandEncoder setVertexBuffer:buffer->mtlBuffer() offset:0 atIndex:0];
+    [m_commandEncoder setVertexBuffer:buffer->mtlBuffer() offset:0 atIndex:5];
+}}
+
+void MetalCommandBuffer::setParameterBlock(const ParameterBlock& aPBlock, uint32_t index) { @autoreleasepool
+{
+    const auto& pBlock = dynamic_cast<const MetalParameterBlock&>(aPBlock);
+
+    for (const auto& [binding, buffer] : pBlock.encodedBuffers())
+        [m_commandEncoder useResource:buffer->mtlBuffer()
+                                usage:toMTLResourceUsage(binding.usages)
+                               stages:toMTLRenderStages(binding.usages)];
+    if (ext::ranges::any_of(pBlock.encodedBuffers(), [](auto& pair){ return (bool)(pair.first.usages & BindingUsage::vertexRead) || (bool)(pair.first.usages & BindingUsage::vertexWrite); }))
+        [m_commandEncoder setVertexBuffer:pBlock.argumentBuffer().mtlBuffer() offset:pBlock.offset() atIndex:index];
+    if (ext::ranges::any_of(pBlock.encodedBuffers(), [](auto& pair){ return (bool)(pair.first.usages & BindingUsage::fragmentRead) || (bool)(pair.first.usages & BindingUsage::fragmentWrite); }))
+        [m_commandEncoder setFragmentBuffer:pBlock.argumentBuffer().mtlBuffer() offset:pBlock.offset() atIndex:index];
+
+    m_usedBuffers.insert_range(pBlock.encodedBuffers() | ext::views::transform([](auto& pair){ return pair.second; }));
 }}
 
 void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autoreleasepool
 {
     [m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
+}}
+
+void MetalCommandBuffer::drawIndexedVertices(const ext::shared_ptr<const Buffer>& buffer) { @autoreleasepool
+{
+    auto idxBuffer = ext::dynamic_pointer_cast<const MetalBuffer>(buffer);
+    assert(idxBuffer);
+
+    m_usedBuffers.insert(idxBuffer);
+
+    [m_commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                 indexCount:idxBuffer->size() / sizeof(uint32_t)
+                                  indexType:MTLIndexTypeUInt32
+                                indexBuffer:idxBuffer->mtlBuffer()
+                          indexBufferOffset:0];
 }}
 
 #if defined(GFX_IMGUI_ENABLED)
@@ -104,10 +146,10 @@ void MetalCommandBuffer::endRenderPass(void) { @autoreleasepool
 
 MetalCommandBuffer::~MetalCommandBuffer() { @autoreleasepool
 {
-    if (m_commandEncoder)
-        [m_commandEncoder release];
-    if (m_mtlCommandBuffer)
-        [m_mtlCommandBuffer release];
+    m_usedBuffers.clear();
+    m_usedPipelines.clear();
+    assert(m_commandEncoder == nullptr);
+    [m_mtlCommandBuffer release];
 }}
 
 }

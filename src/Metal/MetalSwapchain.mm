@@ -13,8 +13,9 @@
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalDrawable.hpp"
-#include "Metal/MetalEnums.hpp"
 #include "Metal/MetalSurface.hpp"
+
+#import "Metal/MetalEnums.h"
 
 #import <QuartzCore/CAMetalLayer.h>
 

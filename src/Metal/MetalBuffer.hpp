@@ -17,7 +17,6 @@
 #else
     template<typename T> using id = T*;
     #define nil nullptr
-    class MTLDevice;
     class MTLBuffer;
 #endif // __OBJC__
 
@@ -36,20 +35,25 @@ class MetalDevice;
 class MetalBuffer : public Buffer
 {
 public:
-    MetalBuffer() = delete;
     MetalBuffer(const MetalBuffer&) = delete;
-    MetalBuffer(MetalBuffer&&)      = delete;
+    MetalBuffer(MetalBuffer&&) = default;
 
+    MetalBuffer() = default;
     MetalBuffer(const MetalDevice*, const Buffer::Descriptor&);
 
-    void setContent(void* data, size_t size) override;
+    size_t size() const override;
+
+    void setContent(const void* data, size_t size) override;
 
     const id<MTLBuffer>& mtlBuffer() const;
 
     ~MetalBuffer() override;
 
+protected:
+    void* contentVoid() override;
+
 private:
-    const MetalDevice* const m_device;
+    const MetalDevice* m_device = nullptr;
 
     struct FrameData
     {
@@ -59,7 +63,9 @@ private:
     
 public:
     MetalBuffer& operator = (const MetalBuffer&) = delete;
-    MetalBuffer& operator = (MetalBuffer&&)      = delete;
+    MetalBuffer& operator = (MetalBuffer&&) = default;
+
+    inline operator bool () const { return m_device != nullptr; }
 };
 
 }

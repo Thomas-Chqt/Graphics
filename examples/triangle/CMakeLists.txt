@@ -25,7 +25,7 @@ add_custom_command(
     VERBATIM
 )
 add_custom_target(triangle_shader ALL DEPENDS ${SHADER_SLIB})
-set_target_properties(triangle_shader PROPERTIES FOLDER "examples/triangle/shaders")
+set_target_properties(triangle_shader PROPERTIES FOLDER "examples/triangle")
 
 add_executable(triangle)
 

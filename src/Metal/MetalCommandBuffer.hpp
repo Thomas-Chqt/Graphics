@@ -13,6 +13,8 @@
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/Buffer.hpp"
+#include "Graphics/ParameterBlock.hpp"
 
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
@@ -56,7 +58,10 @@ public:
     void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
     void useVertexBuffer(const ext::shared_ptr<const Buffer>&) override;
 
+    void setParameterBlock(const ParameterBlock&, uint32_t index) override;
+
     void drawVertices(uint32_t start, uint32_t count) override;
+    void drawIndexedVertices(const ext::shared_ptr<const Buffer>& idxBuffer) override;
 
 #if defined(GFX_IMGUI_ENABLED)
     void imGuiRenderDrawData(ImDrawData*) const override;

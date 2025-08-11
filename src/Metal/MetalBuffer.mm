@@ -20,6 +20,9 @@
 #else
     #include <stdexcept>
     #include <cstring>
+    #include <utility>
+    #include <cassert>
+    #include <cstddef>
     namespace ext = std;
 #endif
 
@@ -29,9 +32,7 @@ namespace gfx
 MetalBuffer::MetalBuffer(const MetalDevice* device, const Buffer::Descriptor& desc)
     : m_device(device) { @autoreleasepool
 {
-    MTLResourceOptions ressourceOptions = 0;
-    if (desc.storageMode == ResourceStorageMode::deviceLocal)
-        ressourceOptions = MTLResourceStorageModePrivate;
+    MTLResourceOptions ressourceOptions = desc.storageMode == ResourceStorageMode::deviceLocal ? MTLResourceStorageModePrivate : 0;
 
     m_frameDatas.resize(desc.usage & BufferUsage::perFrameData ? m_device->maxFrameInFlight() : 1);
     for (auto& frameData : m_frameDatas)
@@ -46,13 +47,18 @@ MetalBuffer::MetalBuffer(const MetalDevice* device, const Buffer::Descriptor& de
     }
 }}
 
-void MetalBuffer::setContent(void* data, size_t size) { @autoreleasepool
+size_t MetalBuffer::size() const { @autoreleasepool
+{
+    return mtlBuffer().length;
+}}
+
+void MetalBuffer::setContent(const void* data, size_t size) { @autoreleasepool
 {
     for (auto& frameData : m_frameDatas)
     {
         void* content = frameData.mtlBuffer.contents;
         std::memcpy(content, data, size);
-        if (frameData.mtlBuffer.storageMode & MTLStorageModeManaged)
+        if (frameData.mtlBuffer.storageMode == MTLStorageModeManaged)
             [frameData.mtlBuffer didModifyRange:NSMakeRange(0, size)];
     }
 }}
@@ -68,6 +74,12 @@ MetalBuffer::~MetalBuffer() { @autoreleasepool
     {
         [frameData.mtlBuffer release];
     }
+}}
+
+void* MetalBuffer::contentVoid() { @autoreleasepool
+{
+    assert(mtlBuffer().storageMode == MTLStorageModeShared);
+    return mtlBuffer().contents;
 }}
 
 }

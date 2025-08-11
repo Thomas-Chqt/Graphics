@@ -9,7 +9,8 @@
 
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
-#include "Metal/MetalEnums.hpp"
+
+#import "Metal/MetalEnums.h"
 
 #include "Metal/MetalTexture.hpp"
 

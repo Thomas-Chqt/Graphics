@@ -13,7 +13,8 @@
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalShaderFunction.hpp"
-#include "Metal/MetalEnums.hpp"
+
+#import "Metal/MetalEnums.h"
     
 #import <Metal/Metal.h>
 
@@ -40,12 +41,12 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
     if (auto& vertexLayout = desc.vertexLayout)
     {
         MTLVertexDescriptor* vertexDescriptor = [MTLVertexDescriptor vertexDescriptor];
-        vertexDescriptor.layouts[0].stride = vertexLayout->stride;
+        vertexDescriptor.layouts[5].stride = vertexLayout->stride;
         for (uint32_t i = 0; const auto& element : vertexLayout->attributes)
         {
             vertexDescriptor.attributes[i].format = (MTLVertexFormat)toMetalVertexAttributeFormat(element.format);
             vertexDescriptor.attributes[i].offset = element.offset;
-            vertexDescriptor.attributes[i].bufferIndex = 0;
+            vertexDescriptor.attributes[i].bufferIndex = 5;
             i++;
         }
         renderPipelineDescriptor.vertexDescriptor = vertexDescriptor;

@@ -14,16 +14,20 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
+#include "Graphics/ParameterBlock.hpp"
 
+#include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
-#include <memory>
+#include "Metal/MetalParameterBlockPool.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     namespace ext = std;
     #include <vector>
-    #include <queue>
+    #include <memory>
+    #include <cstddef>
+    #include <deque>
 #endif
 
 #ifdef __OBJC__
@@ -31,6 +35,7 @@
 #else
     template<typename T>
     using id = T*;
+    #define nil nullptr
     class MTLDevice;
     class MTLCommandQueue;
 #endif // __OBJC__
@@ -49,7 +54,7 @@ public:
 
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;
-    ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const override;
+    ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override;
     ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
 
 #if defined (GFX_IMGUI_ENABLED)
@@ -64,6 +69,8 @@ public:
 
     void beginFrame(void) override;
  
+    ParameterBlock& parameterBlock(const ParameterBlock::Layout&) override;
+
     CommandBuffer& commandBuffer(void) override;
 
     void submitCommandBuffer(CommandBuffer&) override;
@@ -71,11 +78,11 @@ public:
 
     void endFrame(void) override;
 
-    void waitIdle(void) override;
+    void waitIdle(void) const override;
 
     inline Backend backend() const override { return Backend::metal; }
-    inline uint32_t maxFrameInFlight(void) const override { return m_frameDatas.size(); };
-    inline uint32_t currentFrameIdx() const override { return ext::distance(m_frameDatas.begin(), ext::vector<FrameData>::const_iterator(m_currFrameData)); };
+    inline uint32_t maxFrameInFlight(void) const override { return static_cast<uint32_t>(m_frameDatas.size()); };
+    inline uint32_t currentFrameIdx() const override { return static_cast<uint32_t>(ext::distance(m_frameDatas.begin(), ext::vector<FrameData>::const_iterator(m_currFrameData))); };
 
     inline const id<MTLDevice>& mtlDevice(void) const { return m_mtlDevice; }
 
@@ -88,11 +95,17 @@ public:
 private:
     struct FrameData
     {
-        ext::queue<MetalCommandBuffer> commandBuffers;
+        MetalParameterBlockPool pBlockPool;
+        ext::deque<MetalCommandBuffer> commandBuffers;
         ext::vector<MetalCommandBuffer*> submittedCommandBuffers;
+
+        FrameData(const MetalDevice*);
+        FrameData(FrameData&&) = default;
+        void reset();
+        ~FrameData() = default;
     };
 
-    id<MTLDevice> m_mtlDevice;
+    id<MTLDevice> m_mtlDevice = nil;
     id<MTLCommandQueue> m_queue;
 
     ext::vector<FrameData> m_frameDatas;

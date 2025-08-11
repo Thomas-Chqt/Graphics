@@ -14,6 +14,7 @@ if (GFX_BUILD_VULKAN)
 endif()
 list(JOIN SHADER_TARGET_LIST "," SHADER_TARGETS)
 
+
 set(SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shader.slib")
 file(GLOB SHADER_SRCS "*.slang")
 
@@ -25,7 +26,7 @@ add_custom_command(
     VERBATIM
 )
 add_custom_target(multiBuffer_shader ALL DEPENDS ${SHADER_SLIB})
-set_target_properties(multiBuffer_shader PROPERTIES FOLDER "examples/multiBuffer/shaders")
+set_target_properties(multiBuffer_shader PROPERTIES FOLDER "examples/multiBuffer")
 
 add_executable(multiBuffer)
 

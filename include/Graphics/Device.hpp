@@ -47,7 +47,7 @@ public:
 
     virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
     virtual ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const = 0;
-    virtual ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const = 0;
+    virtual ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) = 0;
     virtual ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
@@ -59,6 +59,8 @@ public:
 #endif
 
     virtual void beginFrame(void) = 0;
+
+    virtual ParameterBlock& parameterBlock(const ParameterBlock::Layout&) = 0;
  
     virtual CommandBuffer& commandBuffer(void) = 0;
 
@@ -67,15 +69,15 @@ public:
 
     virtual void endFrame(void) = 0;
 
-    virtual void waitIdle(void) = 0;
-
-    virtual Backend backend() const = 0;
-    virtual uint32_t maxFrameInFlight() const = 0;
-    virtual uint32_t currentFrameIdx() const = 0;
+    virtual void waitIdle(void) const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
     virtual void imguiShutdown() const = 0;
 #endif
+
+    virtual Backend backend() const = 0;
+    virtual uint32_t maxFrameInFlight() const = 0;
+    virtual uint32_t currentFrameIdx() const = 0;
 
     virtual ~Device() = default;
 

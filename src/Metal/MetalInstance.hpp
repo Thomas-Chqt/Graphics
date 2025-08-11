@@ -13,13 +13,13 @@
 #include "Graphics/Instance.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Device.hpp"
-#include <vector>
 
 #if defined(GFX_USE_UTILSCPP)
     #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>
+    #include <vector>
     namespace ext = std;
 #endif
 

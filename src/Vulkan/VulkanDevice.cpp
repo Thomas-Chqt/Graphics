@@ -14,8 +14,10 @@
 #include "Graphics/Drawable.hpp"
 
 #include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/Sync.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
+#include "Vulkan/VulkanParameterBlockPool.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
@@ -23,13 +25,11 @@
 #include "Vulkan/VulkanShaderLib.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
-#include "Vulkan/vk_mem_alloc.hpp" // IWYU pragma: keep
 #include "Vulkan/imgui_impl_vulkan.h"
 #include "Vulkan/VulkanEnums.hpp"
+#include "Vulkan/vk_mem_alloc.hpp" // IWYU pragma: keep
 
-#include <array>
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_enums.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -43,9 +43,9 @@
     #include <cstddef>
     #include <cstring>
     #include <utility>
-    #include <queue>
     #include <set>
     #include <algorithm>
+    #include <array>
     namespace ext = std;
 #endif
 
@@ -56,7 +56,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     : m_instance(instance), m_physicalDevice(phyDevice)
 {
     assert((m_physicalDevice->getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty() == false);
-    
+
     auto synchronization2Feature = vk::PhysicalDeviceSynchronization2Features{}
         .setSynchronization2(vk::True);
 
@@ -70,7 +70,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setQueueFamilyIndex(m_queueFamily.index)
         .setQueueCount(1)
         .setPQueuePriorities(&queuePriority);
-    
+
     ext::vector<const char*> enabledExtensions = desc.deviceExtensions | ext::views::filter([&](const char* ext) {
         if (strcmp(ext, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0 && m_physicalDevice->getProperties().apiVersion >= vk::ApiVersion13)
             return false;
@@ -91,21 +91,9 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     m_vkDevice = m_physicalDevice->createDevice(deviceCreateInfo);
     m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
 
-    auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
-        .setQueueFamilyIndex(m_queueFamily.index);
-
-    // m_frameDatas.resize(desc.deviceDescriptor->maxFrameInFlight);
-    // for (auto& frameData : m_frameDatas) {
-    //     frameData.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
-    //     frameData.frameCompletedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
-    // }
+    m_frameDatas.reserve(desc.deviceDescriptor->maxFrameInFlight);
     for (uint32_t i = 0; i < desc.deviceDescriptor->maxFrameInFlight; i++)
-    {
-        FrameData frameData;
-        frameData.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
-        frameData.frameCompletedFence = m_vkDevice.createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
-        m_frameDatas.push_back(ext::move(frameData));
-    }
+        m_frameDatas.emplace_back(this, m_queueFamily);
     m_currFrameData = m_frameDatas.begin();
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkDevice);
@@ -113,7 +101,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
     vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
-     
+
     VmaAllocatorCreateInfo allocatorCreateInfo = {
         .flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT,
         .physicalDevice = static_cast<VkPhysicalDevice>(*m_physicalDevice),
@@ -122,7 +110,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .instance = m_instance->vkInstance(),
         .vulkanApiVersion = VK_API_VERSION_1_2
     };
-     
+
     auto res = vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
     if (res != VK_SUCCESS)
         throw ext::runtime_error("vmaCreateAllocator failed");
@@ -138,8 +126,10 @@ ext::unique_ptr<ShaderLib> VulkanDevice::newShaderLib(const ext::filesystem::pat
     return ext::make_unique<VulkanShaderLib>(*this, path);
 }
 
-ext::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
+ext::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
 {
+    for (auto& pbl : desc.parameterBlockLayouts)
+        (void)descriptorSetLayout(pbl);
     return ext::make_unique<VulkanGraphicsPipeline>(this, desc);
 }
 
@@ -156,7 +146,7 @@ void VulkanDevice::imguiInit(uint32_t imageCount,
     ext::vector<vk::Format> colorAttachmentFormats;
     colorAttachmentFormats.reserve(colorAttachmentPxFormats.size());
     for (PixelFormat pxf : colorAttachmentPxFormats)
-        colorAttachmentFormats.push_back(toVkFormat(pxf));
+    colorAttachmentFormats.push_back(toVkFormat(pxf));
 
     auto pipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
         .setColorAttachmentFormats(colorAttachmentFormats);
@@ -196,27 +186,24 @@ void VulkanDevice::imguiNewFrame() const
 }
 #endif
 
-void VulkanDevice::beginFrame(void) 
+void VulkanDevice::beginFrame(void)
 {
     if (m_vkDevice.waitForFences(m_currFrameData->frameCompletedFence, true, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
         throw ext::runtime_error("failed to wait for fence");
-    
-    m_currFrameData->presentedDrawables.clear();
-    m_currFrameData->submittedCmdBuffers.clear();
-    while(m_currFrameData->usedCommandBuffers.empty() == false)
-    {
-        m_currFrameData->usedCommandBuffers.front().clear();
-        m_currFrameData->commandBuffers.push(ext::move(m_currFrameData->usedCommandBuffers.front()));
-        m_currFrameData->usedCommandBuffers.pop();
-    }
-    m_vkDevice.resetCommandPool(m_currFrameData->commandPool);
+    m_currFrameData->reset();
+}
+
+ParameterBlock& VulkanDevice::parameterBlock(const ParameterBlock::Layout& pbLayout)
+{
+    (void)descriptorSetLayout(pbLayout); // create if not cached, so no need to pass non const device
+    return m_currFrameData->pbPool.get(pbLayout);
 }
 
 CommandBuffer& VulkanDevice::commandBuffer(void)
 {
     if (m_currFrameData->commandBuffers.empty() == false) {
-        m_currFrameData->usedCommandBuffers.push(ext::move(m_currFrameData->commandBuffers.front()));
-        m_currFrameData->commandBuffers.pop();
+        m_currFrameData->usedCommandBuffers.push_back(ext::move(m_currFrameData->commandBuffers.front()));
+        m_currFrameData->commandBuffers.pop_front();
     }
     else {
         auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
@@ -224,9 +211,9 @@ CommandBuffer& VulkanDevice::commandBuffer(void)
             .setLevel(vk::CommandBufferLevel::ePrimary)
             .setCommandBufferCount(1);
         vk::CommandBuffer vkCommandBuffer = m_vkDevice.allocateCommandBuffers(commandBufferAllocateInfo).front();
-        m_currFrameData->usedCommandBuffers.emplace(ext::move(vkCommandBuffer), m_queueFamily);
+        m_currFrameData->usedCommandBuffers.emplace_back(ext::move(vkCommandBuffer), m_queueFamily);
     }
-    m_currFrameData->usedCommandBuffers.back().begin();
+    m_currFrameData->usedCommandBuffers.back().begin(); // begin the command buffer
     return m_currFrameData->usedCommandBuffers.back();
 }
 
@@ -366,7 +353,7 @@ void VulkanDevice::endFrame(void)
         ext::vector<vk::Semaphore> waitSemaphores = m_currFrameData->presentedDrawables
             | ext::views::transform([](auto& d){return d->imagePresentableSemaphore();})
             | ext::ranges::to<ext::vector>();
-        
+
         ext::vector<vk::SwapchainKHR> swapchains = m_currFrameData->presentedDrawables
             | ext::views::transform([](auto& d){return d->swapchain();})
             | ext::ranges::to<ext::vector>();
@@ -389,7 +376,7 @@ void VulkanDevice::endFrame(void)
         m_currFrameData = m_frameDatas.begin();
 }
 
-void VulkanDevice::waitIdle(void)
+void VulkanDevice::waitIdle(void) const
 {
     m_vkDevice.waitIdle();
 }
@@ -397,24 +384,75 @@ void VulkanDevice::waitIdle(void)
 #if defined(GFX_IMGUI_ENABLED)
 void VulkanDevice::imguiShutdown() const
 {
+    waitIdle();
     ImGui_ImplVulkan_Shutdown();
 }
 #endif
 
+const vk::DescriptorSetLayout& VulkanDevice::descriptorSetLayout(const ParameterBlock::Layout& pbLayout)
+{
+    auto it = m_descriptorSetLayouts.find(pbLayout);
+    if (it == m_descriptorSetLayouts.end())
+    {
+        ext::vector<vk::DescriptorSetLayoutBinding> vkBindings;
+        for (uint32_t i = 0; const auto& binding : pbLayout.bindings) {
+            vkBindings.push_back(vk::DescriptorSetLayoutBinding{}
+                .setBinding(i)
+                .setDescriptorType(toVkDescriptorType(binding.type))
+                .setDescriptorCount(1)
+                .setStageFlags(toVkShaderStageFlags(binding.usages)));
+            i++;
+        }
+        auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo{}
+            .setBindings(vkBindings);
+        vk::DescriptorSetLayout dsLayout = m_vkDevice.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+        auto [newIt, res] = m_descriptorSetLayouts.insert(ext::make_pair(pbLayout, dsLayout));
+        assert(res);
+        it = newIt;
+    }
+    return it->second;
+}
+
 VulkanDevice::~VulkanDevice()
 {
     waitIdle();
-
-    for (auto& frameData : m_frameDatas) {
-        frameData.presentedDrawables.clear();
-        frameData.usedCommandBuffers = ext::queue<VulkanCommandBuffer>();
-        frameData.commandBuffers = ext::queue<VulkanCommandBuffer>();
-        m_vkDevice.destroyFence(frameData.frameCompletedFence);
-        m_vkDevice.destroyCommandPool(frameData.commandPool);
-    }
-
+    m_frameDatas.clear();
+    for (auto& [_, descriptorSetLayout] : m_descriptorSetLayouts)
+        m_vkDevice.destroyDescriptorSetLayout(descriptorSetLayout);
     vmaDestroyAllocator(m_allocator);
     m_vkDevice.destroy();
+}
+
+VulkanDevice::FrameData::FrameData(const VulkanDevice* device, const QueueFamily& qFamily)
+    : device(device), pbPool(device)
+{
+    auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
+        .setQueueFamilyIndex(qFamily.index);
+    commandPool = device->vkDevice().createCommandPool(commandPoolCreateInfo);
+    frameCompletedFence = device->vkDevice().createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
+}
+
+void VulkanDevice::FrameData::reset()
+{
+    presentedDrawables.clear();
+    submittedCmdBuffers.clear();
+    while (usedCommandBuffers.empty() == false)
+    {
+        usedCommandBuffers.front().clear();
+        commandBuffers.push_back(ext::move(usedCommandBuffers.front()));
+        usedCommandBuffers.pop_front();
+    }
+    device->vkDevice().resetCommandPool(commandPool);
+    pbPool.reset();
+}
+
+VulkanDevice::FrameData::~FrameData()
+{
+    presentedDrawables.clear();
+    usedCommandBuffers.clear();
+    commandBuffers.clear();
+    device->vkDevice().destroyFence(frameCompletedFence);
+    device->vkDevice().destroyCommandPool(commandPool);
 }
 
 } // namespace gfx

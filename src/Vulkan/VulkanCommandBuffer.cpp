@@ -10,10 +10,12 @@
 #include "Graphics/Enums.hpp"
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/Buffer.hpp"
+#include "Graphics/ParameterBlock.hpp"
 
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/Sync.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
+#include "Vulkan/VulkanParameterBlock.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/QueueFamily.hpp"
@@ -31,6 +33,7 @@
     #include <utility>
     #include <cstddef>
     #include <cassert>
+    #include <cstdint>
     namespace ext = std;
 #endif
 
@@ -157,7 +160,7 @@ void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipeli
     m_vkCommandBuffer.setViewport(0, m_viewport);
     m_vkCommandBuffer.setScissor(0, m_scissor);
 
-    m_usedPipelines.insert(graphicsPipeline);
+    m_usedPipelines.push_back(graphicsPipeline);
 }
 
 void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<const Buffer>& aBuffer)
@@ -167,12 +170,28 @@ void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<const Buffer>& a
     m_usedBuffers.insert(buffer);
 
     m_vkCommandBuffer.bindVertexBuffers(0, buffer->vkBuffer(), {0});
+}
 
+void VulkanCommandBuffer::setParameterBlock(const ParameterBlock& aPblock, uint32_t index)
+{
+    const auto& pBlock = dynamic_cast<const VulkanParameterBlock&>(aPblock);
+    m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_usedPipelines.back()->pipelineLayout(), index, pBlock.descriptorSet(), {});
+    m_usedBuffers.insert_range(pBlock.usedBuffers());
 }
 
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
 {
     m_vkCommandBuffer.draw(count, 1, start, 0);
+}
+
+void VulkanCommandBuffer::drawIndexedVertices(const ext::shared_ptr<const Buffer>& buffer)
+{
+    auto idxBuffer = ext::dynamic_pointer_cast<const VulkanBuffer>(buffer);
+
+    m_usedBuffers.insert(idxBuffer);
+
+    m_vkCommandBuffer.bindIndexBuffer(idxBuffer->vkBuffer(), 0, vk::IndexType::eUint32);
+    m_vkCommandBuffer.drawIndexed(static_cast<uint32_t>(idxBuffer->size() / sizeof(uint32_t)), 1, 0, 0, 0);
 }
 
 #if defined(GFX_IMGUI_ENABLED)

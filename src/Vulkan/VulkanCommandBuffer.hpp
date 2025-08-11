@@ -14,6 +14,7 @@
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Buffer.hpp"
+#include "Graphics/ParameterBlock.hpp"
 
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
@@ -30,6 +31,7 @@
     #include <map>
     #include <set>
     #include <ranges>
+    #include <vector>
     namespace ext = std;
 #endif
 
@@ -50,7 +52,10 @@ public:
     void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
     void useVertexBuffer(const ext::shared_ptr<const Buffer>&) override;
 
+    void setParameterBlock(const ParameterBlock&, uint32_t index) override;
+
     void drawVertices(uint32_t start, uint32_t count) override;
+    void drawIndexedVertices(const ext::shared_ptr<const Buffer>& idxBuffer) override;
 
 #if defined(GFX_IMGUI_ENABLED)
     void imGuiRenderDrawData(ImDrawData*) const override;
@@ -85,7 +90,7 @@ private:
     vk::Viewport m_viewport;
     vk::Rect2D m_scissor;
 
-    ext::set<ext::shared_ptr<const VulkanGraphicsPipeline>> m_usedPipelines;
+    ext::vector<ext::shared_ptr<const VulkanGraphicsPipeline>> m_usedPipelines;
     ext::set<ext::shared_ptr<const VulkanBuffer>> m_usedBuffers;
 
     ext::map<ext::shared_ptr<VulkanTexture>, ImageSyncRequest> m_imageSyncRequests;
