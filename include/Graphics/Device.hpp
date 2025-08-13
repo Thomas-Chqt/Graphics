@@ -18,6 +18,7 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/QueueCapabilities.hpp"
 #include "Graphics/ShaderLib.hpp"
+#include "Graphics/Texture.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -38,7 +39,6 @@ public:
     struct Descriptor
     {
         QueueCapabilities queueCaps;
-        uint32_t maxFrameInFlight = 3;
     };
 
 public:
@@ -49,6 +49,7 @@ public:
     virtual ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const = 0;
     virtual ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) = 0;
     virtual ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
+    virtual ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
     virtual void imguiInit(uint32_t imageCount,
@@ -76,7 +77,6 @@ public:
 #endif
 
     virtual Backend backend() const = 0;
-    virtual uint32_t maxFrameInFlight() const = 0;
     virtual uint32_t currentFrameIdx() const = 0;
 
     virtual ~Device() = default;

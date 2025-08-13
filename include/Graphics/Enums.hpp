@@ -30,16 +30,16 @@ public:
 
     constexpr Flags(T value) : m_value(static_cast<ext::underlying_type_t<T>>(value)) {}
 
-    constexpr [[nodiscard]] inline T value() const { return m_value; }
+    [[nodiscard]] constexpr inline T value() const { return m_value; }
 
-    constexpr [[nodiscard]] inline bool operator==(const Flags& rhs) const { return m_value == rhs.m_value; }
-    constexpr [[nodiscard]] inline bool operator!=(const Flags& rhs) const { return m_value != rhs.m_value; }
-    constexpr [[nodiscard]] inline bool operator<(const Flags& rhs) const { return m_value < rhs.m_value; }
+    [[nodiscard]] constexpr inline bool operator==(const Flags& rhs) const { return m_value == rhs.m_value; }
+    [[nodiscard]] constexpr inline bool operator!=(const Flags& rhs) const { return m_value != rhs.m_value; }
+    [[nodiscard]] constexpr inline bool operator<(const Flags& rhs) const { return m_value < rhs.m_value; }
 
-    constexpr [[nodiscard]] inline Flags operator|(const Flags& rhs) const { return Flags(m_value | rhs.m_value); }
-    constexpr [[nodiscard]] inline Flags operator&(const Flags& rhs) const { return Flags(m_value & rhs.m_value); }
-    constexpr [[nodiscard]] inline Flags operator^(const Flags& rhs) const { return Flags(m_value ^ rhs.m_value); }
-    constexpr [[nodiscard]] inline Flags operator~() const { return Flags(~m_value); }
+    [[nodiscard]] constexpr inline Flags operator|(const Flags& rhs) const { return Flags(m_value | rhs.m_value); }
+    [[nodiscard]] constexpr inline Flags operator&(const Flags& rhs) const { return Flags(m_value & rhs.m_value); }
+    [[nodiscard]] constexpr inline Flags operator^(const Flags& rhs) const { return Flags(m_value ^ rhs.m_value); }
+    [[nodiscard]] constexpr inline Flags operator~() const { return Flags(~m_value); }
 
     constexpr inline Flags& operator|=(const Flags& rhs) { return m_value |= rhs.m_value, *this; }
     constexpr inline Flags& operator&=(const Flags& rhs) { return m_value &= rhs.m_value, *this; }
@@ -59,11 +59,11 @@ struct enable_bitmask_operators
     static constexpr bool enable = false;
 };
 
-#define GFX_ENABLE_BITMASK_OPERATORS(E)      \
-    template<>                               \
-    struct enable_bitmask_operators<E>       \
-    {                                        \
-        static constexpr bool enable = true; \
+#define GFX_ENABLE_BITMASK_OPERATORS(E) /* NOLINT */ \
+    template<>                                       \
+    struct enable_bitmask_operators<E>               \
+    {                                                \
+        static constexpr bool enable = true;         \
     };
 
 template<typename E>
@@ -94,38 +94,39 @@ template<typename E>
     return ~Flags(val);
 }
 
-enum class PixelFormat
+enum class PixelFormat : uint8_t
 {
     BGRA8Unorm,
-    BGRA8Unorm_sRGB
+    BGRA8Unorm_sRGB,
+    Depth32Float
 };
 
-enum class PresentMode
+enum class PresentMode : uint8_t
 {
     fifo,
     mailbox
 };
 
-enum class LoadAction
+enum class LoadAction : uint8_t
 {
     load,
     clear
 };
 
-enum class BlendOperation
+enum class BlendOperation : uint8_t
 {
     blendingOff,
     srcA_plus_1_minus_srcA,
     one_minus_srcA_plus_srcA
 };
 
-enum class VertexAttributeFormat
+enum class VertexAttributeFormat : uint8_t
 {
     float2,
     float3
 };
 
-enum class BufferUsage : uint32_t
+enum class BufferUsage : uint8_t
 {
     vertexBuffer  = 1 << 0,
     indexBuffer   = 1 << 1,
@@ -135,13 +136,13 @@ enum class BufferUsage : uint32_t
 GFX_ENABLE_BITMASK_OPERATORS(BufferUsage);
 using BufferUsages = Flags<BufferUsage>;
 
-enum class ResourceStorageMode
+enum class ResourceStorageMode : uint8_t
 {
     deviceLocal,
     hostVisible,
 };
 
-enum class Backend : uint32_t
+enum class Backend : uint8_t
 {
     metal  = 1 << 0,
     vulkan = 1 << 1
@@ -149,12 +150,12 @@ enum class Backend : uint32_t
 GFX_ENABLE_BITMASK_OPERATORS(Backend);
 using Backends = Flags<Backend>;
 
-enum class BindingType
+enum class BindingType : uint8_t
 {
     uniformBuffer
 };
 
-enum class BindingUsage : uint32_t
+enum class BindingUsage : uint8_t
 {
     vertexRead    = 1 << 1,
     vertexWrite   = 1 << 2,
@@ -163,6 +164,15 @@ enum class BindingUsage : uint32_t
 };
 GFX_ENABLE_BITMASK_OPERATORS(BindingUsage);
 using BindingUsages = Flags<BindingUsage>;
+
+enum class TextureUsage : uint8_t
+{
+    shaderRead             = 1 << 0,
+    colorAttachment        = 1 << 1,
+    depthStencilAttachment = 1 << 2,
+};
+GFX_ENABLE_BITMASK_OPERATORS(TextureUsage);
+using TextureUsages = Flags<TextureUsage>;
 
 } // namespace gfx
 

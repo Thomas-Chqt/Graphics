@@ -13,6 +13,9 @@
 #include "Graphics/Enums.hpp"
 #include "Graphics/Texture.hpp"
 
+#include "Metal/MetalBuffer.hpp"
+#include "common.hpp"
+
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
@@ -23,6 +26,8 @@
 namespace gfx
 {
 
+class MetalDevice;
+
 class MetalTexture : public Texture
 {
 public:
@@ -30,18 +35,29 @@ public:
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&)      = delete;
     
-    MetalTexture(const id<MTLTexture>&);
+    MetalTexture(const MetalDevice*, const id<MTLTexture>&);
+    MetalTexture(const MetalDevice*, const Texture::Descriptor&);
 
     uint32_t width() const override;
     uint32_t height() const override;
-    PixelFormat pixelFormat(void) const override;
+    PixelFormat pixelFormat() const override;
 
-    const id<MTLTexture>& mtltexture(void) const { return m_mtlTexture; }
+    inline const id<MTLTexture>& mtltexture() const { return currentFrameData().mtlTexture; }
 
-    ~MetalTexture();
+    ~MetalTexture() override;
 
 private:
-    id<MTLTexture> m_mtlTexture = nullptr;
+    struct FrameData
+    {
+        id<MTLTexture> mtlTexture = nullptr;
+    };
+
+    FrameData& currentFrameData();
+    const FrameData& currentFrameData() const;
+
+    const MetalDevice* m_device;
+    PerFrameInFlight<FrameData> m_frameDatas;
+    uint8_t m_imageCount;
     
 public:
     MetalTexture& operator = (const MetalTexture&) = delete;

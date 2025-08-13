@@ -45,18 +45,20 @@ public:
 
 public:
     ParameterBlock(const ParameterBlock&) = delete;
-    ParameterBlock(ParameterBlock&&) = delete;
 
     virtual void setBinding(uint32_t idx, const ext::shared_ptr<const Buffer>&) = 0;
 
     virtual ~ParameterBlock() = default;
 
 protected:
+    ParameterBlock(ParameterBlock&&) = default;
     ParameterBlock() = default;
 
 public:
     ParameterBlock& operator=(const ParameterBlock&) = delete;
-    ParameterBlock& operator=(ParameterBlock&&) = delete;
+
+protected:
+    ParameterBlock& operator=(ParameterBlock&&) = default;
 };
 
 }

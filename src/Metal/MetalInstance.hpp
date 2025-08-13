@@ -15,7 +15,6 @@
 #include "Graphics/Device.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>

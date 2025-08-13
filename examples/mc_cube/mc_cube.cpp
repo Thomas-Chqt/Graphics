@@ -47,8 +47,8 @@
     #include <unistd.h>
 #endif
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+constexpr uint32_t WINDOW_WIDTH = 800;
+constexpr uint32_t WINDOW_HEIGHT = 600;
 
 #if (defined(__GNUC__) || defined(__clang__))
     #define GFX_EXPORT __attribute__((visibility("default")))
@@ -176,8 +176,7 @@ public:
                 .compute = true,
                 .transfer = true,
                 .present = { m_surface.get() }
-            },
-            .maxFrameInFlight = 3
+            }
         };
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
@@ -201,28 +200,29 @@ public:
             .vertexShader = &shaderLib->getFunction("vertexMain"),
             .fragmentShader = &shaderLib->getFunction("fragmentMain"),
             .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+            .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
             .parameterBlockLayouts = { vpMatrixBpLayout, modelMatrixBpLayout, materialBpLayout }
         };
         m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
         assert(m_graphicsPipeline);
 
         m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(cube_vertices), .data = cube_vertices.data(), .usage = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(cube_vertices), .data = cube_vertices.data(), .usages = gfx::BufferUsage::vertexBuffer
         });
         assert(m_vertexBuffer);
 
         m_indexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(cube_indices), .data = cube_indices.data(), .usage = gfx::BufferUsage::indexBuffer
+            .size = sizeof(cube_indices), .data = cube_indices.data(), .usages = gfx::BufferUsage::indexBuffer
         });
         assert(m_indexBuffer);
 
-        m_vpMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::mat4x4), .usage=gfx::BufferUsage::uniformBuffer });
+        m_vpMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::mat4x4), .usages=gfx::BufferUsage::uniformBuffer });
         assert(m_vpMatrix);
 
-        m_modelMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::mat4x4), .usage=gfx::BufferUsage::uniformBuffer | gfx::BufferUsage::perFrameData});
+        m_modelMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::mat4x4), .usages=gfx::BufferUsage::uniformBuffer | gfx::BufferUsage::perFrameData});
         assert(m_modelMatrix);
 
-        m_color = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::vec4), .usage=gfx::BufferUsage::uniformBuffer | gfx::BufferUsage::perFrameData});
+        m_color = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::vec4), .usages=gfx::BufferUsage::uniformBuffer | gfx::BufferUsage::perFrameData});
         assert(m_color);
 
         ImGui::CreateContext();
@@ -241,19 +241,19 @@ public:
             break;
         }
 
-        m_device->imguiInit(3, {gfx::PixelFormat::BGRA8Unorm});
+        m_device->imguiInit(3, { gfx::PixelFormat::BGRA8Unorm }, gfx::PixelFormat::Depth32Float);
     }
 
     void loop()
     {
-        while (1)
+        while (true)
         {
             glfwPollEvents();
             if (glfwWindowShouldClose(m_window))
                 break;
 
             if (m_swapchain == nullptr) {
-                int width, height;
+                int width = 0, height = 0;
                 ::glfwGetFramebufferSize(m_window, &width, &height);
                 gfx::Swapchain::Descriptor swapchainDescriptor = {
                     .surface = m_surface.get(),
@@ -265,6 +265,16 @@ public:
                 };
                 m_swapchain = m_device->newSwapchain(swapchainDescriptor);
                 assert(m_swapchain);
+
+                gfx::Texture::Descriptor depthTextureDescriptor = {
+                    .width = (uint32_t)width, .height = (uint32_t)height,
+                    .pixelFormat = gfx::PixelFormat::Depth32Float,
+                    .usages = gfx::TextureUsage::depthStencilAttachment,
+                    .storageMode = gfx::ResourceStorageMode::deviceLocal
+                };
+
+                m_depthTexture = m_device->newTexture(depthTextureDescriptor);
+
                 m_device->waitIdle();
 
                 constexpr glm::vec3 camPos = glm::vec3(0.0f, 0.0f,  3.0f);
@@ -285,21 +295,21 @@ public:
                     {
                         *m_modelMatrix->content<glm::mat4x4>() = glm::mat4(1.0f);
 
-                        ImGui::DragFloat3("position", (float*)&m_cubePos, 0.01f, -5.0, 5.0);
+                        ImGui::DragFloat3("position", reinterpret_cast<float*>(&m_cubePos), 0.01f, -5.0, 5.0);
                         *m_modelMatrix->content<glm::mat4x4>() = glm::translate(*m_modelMatrix->content<glm::mat4x4>(), m_cubePos);
 
-                        ImGui::DragFloat3("rotation", (float*)&m_cubeRot, 0.01f, -ext::numbers::pi_v<float>, ext::numbers::pi_v<float>);
+                        ImGui::DragFloat3("rotation", reinterpret_cast<float*>(&m_cubeRot), 0.01f, -ext::numbers::pi_v<float>, ext::numbers::pi_v<float>);
                         *m_modelMatrix->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix->content<glm::mat4x4>(), m_cubeRot.x, glm::vec3(1, 0, 0));
                         *m_modelMatrix->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix->content<glm::mat4x4>(), m_cubeRot.y, glm::vec3(0, 1, 0));
                         *m_modelMatrix->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix->content<glm::mat4x4>(), m_cubeRot.z, glm::vec3(0, 0, 1));
 
-                        ImGui::DragFloat3("scale", (float*)&m_cubeSca, 0.01f, -2, 2);
+                        ImGui::DragFloat3("scale", reinterpret_cast<float*>(&m_cubeSca), 0.01f, -2, 2);
                         *m_modelMatrix->content<glm::mat4x4>() = glm::scale(*m_modelMatrix->content<glm::mat4x4>(), m_cubeSca);
 
                         ImGui::Spacing();
 
                         static glm::vec3 color = { 1, 1, 1 };
-                        ImGui::ColorEdit3("color", (float*)&color);
+                        ImGui::ColorEdit3("color", reinterpret_cast<float*>(&color));
                         *m_color->content<glm::vec3>() = color;
                     }
                     ImGui::End();
@@ -329,6 +339,13 @@ public:
                             .loadAction = gfx::LoadAction::clear,
                             .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
                             .texture = drawable->texture()
+                        }
+                    },
+                    .depthAttachment = {
+                        gfx::Framebuffer::Attachment{
+                            .loadAction = gfx::LoadAction::clear,
+                            .clearDepth = 1.0f,
+                            .texture = m_depthTexture
                         }
                     }
                 };
@@ -369,7 +386,7 @@ public:
     }
 
 private:
-    GLFWwindow* m_window;
+    GLFWwindow* m_window = nullptr;
     ext::unique_ptr<gfx::Instance> m_instance;
     ext::unique_ptr<gfx::Surface> m_surface;
     ext::unique_ptr<gfx::Device> m_device;
@@ -386,6 +403,8 @@ private:
     ext::shared_ptr<gfx::Buffer> m_modelMatrix;
 
     ext::shared_ptr<gfx::Buffer> m_color;
+
+    ext::shared_ptr<gfx::Texture> m_depthTexture;
 };
 
 int main()

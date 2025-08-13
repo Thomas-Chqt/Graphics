@@ -36,7 +36,7 @@ class VulkanParameterBlock : public ParameterBlock
 public:
     VulkanParameterBlock() = delete;
     VulkanParameterBlock(const VulkanParameterBlock&) = delete;
-    VulkanParameterBlock(VulkanParameterBlock&&) = delete;
+    VulkanParameterBlock(VulkanParameterBlock&&) = default;
 
     VulkanParameterBlock(const VulkanDevice*, vk::DescriptorSet&&);
 
@@ -54,7 +54,7 @@ private:
 
 public:
     VulkanParameterBlock& operator=(const VulkanParameterBlock&) = delete;
-    VulkanParameterBlock& operator=(VulkanParameterBlock&&) = delete;
+    VulkanParameterBlock& operator=(VulkanParameterBlock&&) = default;
 };
 
 } // namespace gfx

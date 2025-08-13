@@ -136,7 +136,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
         .setMaxDepth(1);
 
     m_scissor = vk::Rect2D{}
-        .setOffset({0, 0})
+        .setOffset({.x=0, .y=0})
         .setExtent({
             .width = framebuffer.colorAttachments[0].texture->width(),
             .height = framebuffer.colorAttachments[0].texture->height()
@@ -201,12 +201,12 @@ void VulkanCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const
 }
 #endif
 
-void VulkanCommandBuffer::endRenderPass(void)
+void VulkanCommandBuffer::endRenderPass()
 {
     m_vkCommandBuffer.endRendering();
 }
 
-void VulkanCommandBuffer::clear(void)
+void VulkanCommandBuffer::clear()
 {
     m_signalSemaphore = nullptr;
     m_waitSemaphores.clear();

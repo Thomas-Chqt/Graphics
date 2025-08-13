@@ -10,11 +10,14 @@
 #include "Graphics/Drawable.hpp"
 
 #include "Vulkan/VulkanSwapchain.hpp"
+#include "Graphics/Enums.hpp"
+#include "Graphics/Texture.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
+#include "common.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -87,7 +90,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         new vk::SwapchainKHR(ext::move(vkSwapchain)),
         [device=m_device](vk::SwapchainKHR* ptr){
             device->vkDevice().destroySwapchainKHR(*ptr);
-            delete ptr;
+            delete ptr; // NOLINT
         }
     );
     m_vkSwapchain = vkSwapchainPtr.get();
@@ -95,21 +98,22 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
 
     Texture::Descriptor swapchainImageTexDesc = {
         .width = extent.width, .height = extent.height,
-        .pixelFormat = desc.pixelFormat
+        .pixelFormat = desc.pixelFormat,
+        .usages = TextureUsage::colorAttachment,
+        .storageMode = ResourceStorageMode::deviceLocal
     };
 
     m_swapchainImages = m_device->vkDevice().getSwapchainImagesKHR(*vkSwapchainPtr)
         | ext::views::transform([&](vk::Image& vkImage) { return ext::make_shared<SwapchainImage>(m_device, ext::move(vkImage), vkSwapchainPtr, swapchainImageTexDesc); })
         | ext::ranges::to<ext::vector>();
 
-    m_drawables.resize(m_device->maxFrameInFlight());
-    for (uint32_t i = 0; i < m_device->maxFrameInFlight(); i++)
-        m_drawables[i] = ext::make_shared<VulkanDrawable>(m_device);
+    for (auto& drawable : m_drawables)
+        drawable = ext::make_shared<VulkanDrawable>(m_device);
 }
 
-ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable(void)
+ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
 {
-    ext::shared_ptr<VulkanDrawable> drawable = m_drawables[m_nextDrawableIndex];
+    ext::shared_ptr<VulkanDrawable> drawable = m_drawables.at(m_nextDrawableIndex);
     m_nextDrawableIndex = (m_nextDrawableIndex + 1) % m_drawables.size();
 
     uint64_t timeout = ext::numeric_limits<uint64_t>::max();
@@ -132,7 +136,7 @@ ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable(void)
 
 VulkanSwapchain::~VulkanSwapchain()
 {
-    m_drawables.clear();
+    m_drawables = PerFrameInFlight<ext::shared_ptr<VulkanDrawable>>();
     m_swapchainImages.clear();
 }
 

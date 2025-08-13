@@ -43,7 +43,6 @@ GFX_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(
 }
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>
@@ -92,8 +91,7 @@ public:
                 .compute = true,
                 .transfer = true,
                 .present = { m_surface.get() }
-            },
-            .maxFrameInFlight = 3
+            }
         };
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);

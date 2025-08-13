@@ -22,14 +22,15 @@
 namespace gfx
 {
 
-MetalDrawable::MetalDrawable(const id<CAMetalDrawable>& mtlDrawable) { @autoreleasepool
+MetalDrawable::MetalDrawable(const MetalDevice* device, id<CAMetalDrawable> mtlDrawable)
+    : m_device(device) { @autoreleasepool
 {
     m_mtlDrawable = [mtlDrawable retain];
 }}
 
-ext::shared_ptr<Texture> MetalDrawable::texture(void) const { @autoreleasepool
+ext::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
 {
-    return ext::make_shared<MetalTexture>(m_mtlDrawable.texture);
+    return ext::make_shared<MetalTexture>(m_device, m_mtlDrawable.texture);
 }}
 
 MetalDrawable::~MetalDrawable()

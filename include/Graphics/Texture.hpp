@@ -27,6 +27,8 @@ public:
     {
         uint32_t width = 0, height = 0;
         PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
+        TextureUsages usages;
+        ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
     };
 
 public:
@@ -35,7 +37,7 @@ public:
 
     virtual uint32_t width() const = 0;
     virtual uint32_t height() const = 0;
-    virtual PixelFormat pixelFormat(void) const = 0;
+    virtual PixelFormat pixelFormat() const = 0;
 
     virtual ~Texture() = default;
 

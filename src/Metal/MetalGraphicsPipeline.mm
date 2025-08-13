@@ -37,6 +37,7 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
     assert(desc.fragmentShader != nullptr);
 
     MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
+    MTLDepthStencilDescriptor* depthStencilDescriptor = nil;
     
     if (auto& vertexLayout = desc.vertexLayout)
     {
@@ -58,6 +59,7 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
     for (uint32_t i = 0; const PixelFormat& pxFmt : desc.colorAttachmentPxFormats)
     {
         renderPipelineDescriptor.colorAttachments[i].pixelFormat = (MTLPixelFormat)toMTLPixelFormat(pxFmt);
+
         if (desc.blendOperation == BlendOperation::blendingOff)
             renderPipelineDescriptor.colorAttachments[i].blendingEnabled = NO;
         else
@@ -93,18 +95,20 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
         }
     }
 
+    if (auto& depthPxFmt = desc.depthAttachmentPxFormat)
+    {
+        renderPipelineDescriptor.depthAttachmentPixelFormat = (MTLPixelFormat)toMTLPixelFormat(*depthPxFmt);
+        depthStencilDescriptor = [[[MTLDepthStencilDescriptor alloc] init] autorelease];
+        depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;
+        depthStencilDescriptor.depthWriteEnabled = YES;
+    }
+
     m_renderPipelineState = [device.mtlDevice() newRenderPipelineStateWithDescriptor:renderPipelineDescriptor error:nil];
     if (m_renderPipelineState == nil)
         throw ext::runtime_error("failed to create the RenderPipelineState");
     
-    if (auto& depthPxFmt = desc.depthAttachmentPxFormat)
+    if (depthStencilDescriptor != nil)
     {
-        renderPipelineDescriptor.depthAttachmentPixelFormat = (MTLPixelFormat)toMTLPixelFormat(*depthPxFmt);
-
-        MTLDepthStencilDescriptor* depthStencilDescriptor = [[[MTLDepthStencilDescriptor alloc] init] autorelease];
-        depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;
-        depthStencilDescriptor.depthWriteEnabled = YES;
-
         m_depthStencilState = [device.mtlDevice() newDepthStencilStateWithDescriptor:depthStencilDescriptor];
         if (m_renderPipelineState == nil)
             throw ext::runtime_error("failed to create DepthStencilState");

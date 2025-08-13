@@ -13,6 +13,7 @@
 #include "Graphics/Enums.hpp"
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_enums.hpp>
 
 namespace gfx
 {
@@ -25,6 +26,8 @@ constexpr vk::Format toVkFormat(PixelFormat pxf)
         return vk::Format::eB8G8R8A8Unorm;
     case PixelFormat::BGRA8Unorm_sRGB:
         return vk::Format::eB8G8R8A8Srgb;
+    case PixelFormat::Depth32Float:
+        return vk::Format::eD32Sfloat;
     default:
         throw ext::runtime_error("not implemented");
     }
@@ -147,6 +150,34 @@ constexpr vk::ShaderStageFlags toVkShaderStageFlags(BindingUsages use)
         vkShaderStageFlags |= vk::ShaderStageFlagBits::eFragment;
     
     return vkShaderStageFlags;
+}
+
+constexpr vk::ImageUsageFlags toVkImageUsageFlags(TextureUsages use)
+{
+    vk::ImageUsageFlags vkUsages;
+    
+    if (use & TextureUsage::shaderRead)
+        vkUsages |= vk::ImageUsageFlagBits::eSampled;
+    if (use & TextureUsage::colorAttachment)
+        vkUsages |= vk::ImageUsageFlagBits::eColorAttachment;
+    if (use & TextureUsage::depthStencilAttachment)
+        vkUsages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+
+    return vkUsages;
+}
+
+constexpr vk::ImageAspectFlags toVkImageAspectFlags(TextureUsages use)
+{
+    vk::ImageAspectFlags vkImgAspectFlags;
+    
+    if (use & TextureUsage::shaderRead)
+        vkImgAspectFlags |= vk::ImageAspectFlagBits::eNone; // ?
+    if (use & TextureUsage::colorAttachment)
+        vkImgAspectFlags |= vk::ImageAspectFlagBits::eColor;
+    if (use & TextureUsage::depthStencilAttachment)
+        vkImgAspectFlags |= vk::ImageAspectFlagBits::eDepth;
+
+    return vkImgAspectFlags;
 }
 
 }

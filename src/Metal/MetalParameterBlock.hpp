@@ -31,7 +31,7 @@ class MetalParameterBlock : public ParameterBlock
 public:
     MetalParameterBlock() = delete;
     MetalParameterBlock(const MetalParameterBlock&) = delete;
-    MetalParameterBlock(MetalParameterBlock&&)      = delete;
+    MetalParameterBlock(MetalParameterBlock&&)      = default;
 
     MetalParameterBlock(MetalBuffer*, size_t offset, const ParameterBlock::Layout&);
 
@@ -52,7 +52,7 @@ private:
 
 public:
     MetalParameterBlock& operator = (const MetalParameterBlock&) = delete;
-    MetalParameterBlock& operator = (MetalParameterBlock&&)      = delete;
+    MetalParameterBlock& operator = (MetalParameterBlock&&)      = default;
 };
 
 }

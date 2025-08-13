@@ -30,7 +30,7 @@ class MetalDevice;
 class MetalParameterBlockPool
 {
 public:
-    MetalParameterBlockPool() = delete;
+    MetalParameterBlockPool() = default;
     MetalParameterBlockPool(const MetalParameterBlockPool&) = delete;
     MetalParameterBlockPool(MetalParameterBlockPool&&) = default;
 

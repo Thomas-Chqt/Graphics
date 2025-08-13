@@ -37,13 +37,14 @@ public:
     MetalSwapchain(const MetalSwapchain&) = delete;
     MetalSwapchain(MetalSwapchain&&) = delete;
 
-    MetalSwapchain(const MetalDevice&, const Swapchain::Descriptor&);
+    MetalSwapchain(const MetalDevice*, const Swapchain::Descriptor&);
 
-    ext::shared_ptr<Drawable> nextDrawable(void) override;
+    ext::shared_ptr<Drawable> nextDrawable() override;
 
-    ~MetalSwapchain();
+    ~MetalSwapchain() override;
 
 private:
+    const MetalDevice* m_device;
     CAMetalLayer* m_mtlLayer;
 
 public:

@@ -7,10 +7,21 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/ParameterBlock.hpp"
+
 #include "Vulkan/VulkanParameterBlockPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
-#include <utility>
+
+#include <vulkan/vulkan.hpp>
+
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <utility>
+    #include <stdexcept>
+    namespace ext = std;
+#endif
 
 namespace gfx
 {
@@ -49,7 +60,22 @@ void VulkanParameterBlockPool::reset()
 
 VulkanParameterBlockPool::~VulkanParameterBlockPool()
 {
-    m_device->vkDevice().destroyDescriptorPool(m_descriptorPool);
+    if (m_descriptorPool)
+        m_device->vkDevice().destroyDescriptorPool(m_descriptorPool);
+}
+
+VulkanParameterBlockPool& VulkanParameterBlockPool::operator=(VulkanParameterBlockPool&& other) noexcept
+{
+    if (this != &other)
+    {
+        m_usedPBlocks = ext::move(other.m_usedPBlocks);
+        if (m_descriptorPool)
+            m_device->vkDevice().destroyDescriptorPool(m_descriptorPool);
+        m_descriptorPool = ext::move(other.m_descriptorPool);
+        m_device = ext::exchange(other.m_device, nullptr);
+
+    }
+    return *this;
 }
 
 }

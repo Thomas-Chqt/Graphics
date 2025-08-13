@@ -29,7 +29,7 @@ public:
     {
         size_t size;
         const void* data = nullptr;
-        BufferUsages usage;
+        BufferUsages usages;
         ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
     };
 

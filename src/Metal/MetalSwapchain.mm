@@ -30,20 +30,22 @@
 namespace gfx
 {
 
-MetalSwapchain::MetalSwapchain(const MetalDevice& mtlDevice, const Swapchain::Descriptor& desc) { @autoreleasepool
+MetalSwapchain::MetalSwapchain(const MetalDevice* device, const Swapchain::Descriptor& desc)
+    : m_device(device) { @autoreleasepool
 {
     assert(desc.surface);
-    MetalSurface* mtlSurface = static_cast<MetalSurface*>(desc.surface);
+    auto* mtlSurface = dynamic_cast<MetalSurface*>(desc.surface);
+    assert(mtlSurface);
 
     m_mtlLayer = [mtlSurface->mtlLayer() retain];
-    m_mtlLayer.device = mtlDevice.mtlDevice();
+    m_mtlLayer.device = m_device->mtlDevice();
     m_mtlLayer.drawableSize = CGSize{CGFloat(desc.width), CGFloat(desc.height)};
     m_mtlLayer.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
 }}
     
-ext::shared_ptr<Drawable> MetalSwapchain::nextDrawable(void) { @autoreleasepool
+ext::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
 {
-    return ext::make_shared<MetalDrawable>([m_mtlLayer nextDrawable]);
+    return ext::make_shared<MetalDrawable>(m_device, [m_mtlLayer nextDrawable]);
 }}
 
 MetalSwapchain::~MetalSwapchain() { @autoreleasepool

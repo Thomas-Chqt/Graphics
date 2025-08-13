@@ -34,6 +34,8 @@ constexpr MTLPixelFormat toMTLPixelFormat(PixelFormat pxf)
         return MTLPixelFormatBGRA8Unorm;
     case PixelFormat::BGRA8Unorm_sRGB:
         return MTLPixelFormatBGRA8Unorm_sRGB;
+    case PixelFormat::Depth32Float:
+        return MTLPixelFormatDepth32Float;
     default:
         throw ext::runtime_error("not implemented");
     }
@@ -108,6 +110,20 @@ constexpr MTLRenderStages toMTLRenderStages(BindingUsages usages)
         mtlRenderStages |= MTLRenderStageFragment;
     
     return mtlRenderStages;
+}
+
+constexpr MTLTextureUsage toMTLTextureUsage(TextureUsages use)
+{
+    MTLTextureUsage mtlTextureUsage = 0;
+
+    if (use & TextureUsage::shaderRead)
+        mtlTextureUsage |= MTLTextureUsageShaderRead;
+    if (use & TextureUsage::colorAttachment)
+        mtlTextureUsage |= MTLTextureUsageRenderTarget;
+    if (use & TextureUsage::depthStencilAttachment)
+        mtlTextureUsage |= MTLTextureUsageRenderTarget;
+
+    return mtlTextureUsage;
 }
 
 }

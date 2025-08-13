@@ -19,7 +19,7 @@ MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device)
 {
     Buffer::Descriptor buffDesc = {
         .size = 1024,
-        .usage = BufferUsage::uniformBuffer, // dont matter (but not perFrameData)
+        .usages = BufferUsage::uniformBuffer, // dont matter (but not perFrameData)
         .storageMode = ResourceStorageMode::hostVisible};
     m_argumentBuffer = MetalBuffer(device, buffDesc);
 }

@@ -31,7 +31,7 @@ class VulkanDevice;
 class VulkanParameterBlockPool
 {
 public:
-    VulkanParameterBlockPool() = delete;
+    VulkanParameterBlockPool() = default;
     VulkanParameterBlockPool(const VulkanParameterBlockPool&) = delete;
     VulkanParameterBlockPool(VulkanParameterBlockPool&&) = default;
 
@@ -43,13 +43,13 @@ public:
     ~VulkanParameterBlockPool();
 
 private:
-    const VulkanDevice* m_device;
+    const VulkanDevice* m_device = nullptr;
     vk::DescriptorPool m_descriptorPool;
     ext::deque<VulkanParameterBlock> m_usedPBlocks;
 
 public:
     VulkanParameterBlockPool& operator=(const VulkanParameterBlockPool&) = delete;
-    VulkanParameterBlockPool& operator=(VulkanParameterBlockPool&&) = delete;
+    VulkanParameterBlockPool& operator=(VulkanParameterBlockPool&&) noexcept;
 };
 
 } // namespace gfx

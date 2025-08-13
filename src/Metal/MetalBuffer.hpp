@@ -12,6 +12,8 @@
 
 #include "Graphics/Buffer.hpp"
 
+#include "common.hpp"
+
 #ifdef __OBJC__
     #import <Metal/Metal.h>
 #else
@@ -23,8 +25,7 @@
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
-    #include <vector>
-    namespace ext = std;
+    namespace ext = std; // NOLINT
 #endif
 
 namespace gfx
@@ -35,10 +36,10 @@ class MetalDevice;
 class MetalBuffer : public Buffer
 {
 public:
+    MetalBuffer() = default;
     MetalBuffer(const MetalBuffer&) = delete;
     MetalBuffer(MetalBuffer&&) = default;
 
-    MetalBuffer() = default;
     MetalBuffer(const MetalDevice*, const Buffer::Descriptor&);
 
     size_t size() const override;
@@ -47,19 +48,31 @@ public:
 
     const id<MTLBuffer>& mtlBuffer() const;
 
-    ~MetalBuffer() override;
+    ~MetalBuffer() override = default;
 
 protected:
     void* contentVoid() override;
 
 private:
-    const MetalDevice* m_device = nullptr;
-
     struct FrameData
     {
-        id<MTLBuffer> mtlBuffer;
+        id<MTLBuffer> mtlBuffer = nil;
+
+        FrameData() = default;
+        FrameData(const FrameData&) = delete;
+        FrameData(FrameData&&) noexcept ;
+        ~FrameData();
+        FrameData& operator = (const FrameData&) = delete;
+        FrameData& operator = (FrameData&&) noexcept ;
     };
-    ext::vector<FrameData> m_frameDatas;
+
+    FrameData& currentFrameData();
+    const FrameData& currentFrameData() const;
+
+    const MetalDevice* m_device = nullptr;
+    BufferUsages m_usages;
+
+    PerFrameInFlight<FrameData> m_frameDatas;
     
 public:
     MetalBuffer& operator = (const MetalBuffer&) = delete;

@@ -16,24 +16,22 @@
 #include "Vulkan/VulkanDevice.hpp"
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_structs.hpp>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>
     #include <vector>
     #include <array>
-    #include <iostream>
-    #include <stdint.h>
+    #include <cstdint>
     #include <stdexcept>
     #include <cassert>
     #include <cstddef>
     #include <cstdint>
     #include <ranges>
+    #include <print>
     namespace ext = std;
 #endif
 
@@ -43,50 +41,53 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
     #define glfwGetRequiredInstanceExtensions ((const char** (*)(uint32_t* count))::getSym(DL_DEFAULT, "glfwGetRequiredInstanceExtensions"))
 #endif
 
-namespace gfx
+namespace
 {
-
-ext::vector<const char*> getRequiredExtensions()
-{
-    ext::vector<const char*> extensions;
+    ext::vector<const char*> getRequiredExtensions()
+    {
+        ext::vector<const char*> extensions;
 
 #if defined(GFX_GLFW_ENABLED)
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    if (glfwExtensionCount > 0)
-        extensions.insert(extensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount);
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount); // NOLINT
+        if (glfwExtensionCount > 0)
+            extensions.insert(extensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount); // NOLINT
 #endif
 
 #if !defined (NDEBUG)
-    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    extensions.push_back("VK_EXT_layer_settings");
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        extensions.push_back("VK_EXT_layer_settings");
 #endif
 
 #if defined(__APPLE__)
-    extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
-    return extensions;
-}
-
-template<size_t S>
-bool hasLayers(const ext::array<const char*, S>& wantedLayers)
-{
-    std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
-    for (const char* wantedLayer : wantedLayers) {
-        bool layerFound = false;
-        for (const vk::LayerProperties& availableLayer : availableLayers) {
-            if (strcmp(wantedLayer, availableLayer.layerName) == 0) {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound)
-            return false;
+        return extensions;
     }
-    return true;
+
+    template<size_t S>
+    bool hasLayers(const ext::array<const char*, S>& wantedLayers)
+    {
+        std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
+        for (const char* wantedLayer : wantedLayers) {
+            bool layerFound = false;
+            for (const vk::LayerProperties& availableLayer : availableLayers) {
+                if (strcmp(wantedLayer, availableLayer.layerName) == 0) {
+                    layerFound = true;
+                    break;
+                }
+            }
+
+            if (!layerFound)
+                return false;
+        }
+        return true;
+    }
 }
+
+namespace gfx
+{
 
 VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
 {
@@ -149,7 +150,7 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
             vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
         )
         .setPfnUserCallback([](vk::DebugUtilsMessageSeverityFlagBitsEXT, vk::DebugUtilsMessageTypeFlagsEXT, const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void*) -> vk::Bool32 {
-            ext::cerr << pCallbackData->pMessage << ext::endl;
+            ext::println(stderr, "{}", pCallbackData->pMessage);
             return vk::False;
         });
 

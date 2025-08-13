@@ -16,6 +16,8 @@
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
 
+#include "Graphics/Texture.hpp"
+#include "common.hpp"
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
@@ -65,6 +67,7 @@ public:
     ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;
     ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override; // need non cont to cache descriptorSetLayouts
     ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
+    ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
 
 #if defined(GFX_IMGUI_ENABLED)
     void imguiInit(uint32_t imageCount,
@@ -76,66 +79,58 @@ public:
     void imguiNewFrame() const override;
 #endif
 
-    void beginFrame(void) override;
+    void beginFrame() override;
 
     ParameterBlock& parameterBlock(const ParameterBlock::Layout&) override;
 
-    CommandBuffer& commandBuffer(void) override;
+    CommandBuffer& commandBuffer() override;
  
     void submitCommandBuffer(CommandBuffer&) override;
     void presentDrawable(const ext::shared_ptr<Drawable>&) override;
 
-    void endFrame(void) override;
+    void endFrame() override;
 
-    void waitIdle(void) const override;
+    void waitIdle() const override;
 
 #if defined(GFX_IMGUI_ENABLED)
     void imguiShutdown() const override;
 #endif
 
     inline Backend backend() const override { return Backend::vulkan; }
-    inline uint32_t maxFrameInFlight() const override { return static_cast<uint32_t>(m_frameDatas.size()); };
-    inline uint32_t currentFrameIdx() const override { return static_cast<uint32_t>(ext::distance(m_frameDatas.begin(), ext::vector<FrameData>::const_iterator(m_currFrameData))); };
+    inline uint32_t currentFrameIdx() const override { return static_cast<uint32_t>(ext::distance(m_frameDatas.begin(), PerFrameInFlight<FrameData>::const_iterator(m_currFrameData))); };
 
-    inline const vk::Device& vkDevice(void) const { return m_vkDevice; }
-    inline const VulkanPhysicalDevice& physicalDevice(void) const { return *m_physicalDevice; }
+    inline const vk::Device& vkDevice() const { return m_vkDevice; }
+    inline const VulkanPhysicalDevice& physicalDevice() const { return *m_physicalDevice; }
     inline const VmaAllocator& allocator() const { return m_allocator; }
 
     const vk::DescriptorSetLayout& descriptorSetLayout(const ParameterBlock::Layout&);
     inline const vk::DescriptorSetLayout& descriptorSetLayout(const ParameterBlock::Layout& pbl) const { return m_descriptorSetLayouts.at(pbl); }
 
-    ~VulkanDevice();
+    ~VulkanDevice() override;
 
 private:
     struct FrameData
     {
-        const VulkanDevice* device;
         VulkanParameterBlockPool pbPool;
         vk::CommandPool commandPool; // TODO : CommandBufferPool
-
         vk::Fence frameCompletedFence;
         ext::deque<VulkanCommandBuffer> commandBuffers;
         ext::deque<VulkanCommandBuffer> usedCommandBuffers;
         ext::vector<VulkanCommandBuffer*> submittedCmdBuffers;
         ext::vector<ext::shared_ptr<VulkanDrawable>> presentedDrawables;
-
-        FrameData(const VulkanDevice*, const QueueFamily&);
-        FrameData(FrameData&&) = default;
-        void reset();
-        ~FrameData();
     };
     
-    const VulkanInstance* const m_instance;
-    const VulkanPhysicalDevice* const m_physicalDevice;
-    vk::Device m_vkDevice;
+    const VulkanInstance* const m_instance = nullptr;
+    const VulkanPhysicalDevice* const m_physicalDevice = nullptr;
     QueueFamily m_queueFamily;
+    vk::Device m_vkDevice;
     vk::Queue m_queue;
-    VmaAllocator m_allocator;
+    VmaAllocator m_allocator = VK_NULL_HANDLE;
+
+    PerFrameInFlight<FrameData> m_frameDatas;
+    PerFrameInFlight<FrameData>::iterator m_currFrameData = m_frameDatas.begin();
 
     ext::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayouts;
-    
-    ext::vector<FrameData> m_frameDatas;
-    ext::vector<FrameData>::iterator m_currFrameData;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

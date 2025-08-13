@@ -13,7 +13,9 @@
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
 
+#include "common.hpp"
 #include "Vulkan/Sync.hpp"
+#include "Vulkan/vk_mem_alloc.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -21,7 +23,7 @@
     namespace ext = utl;
 #else
     #include <cstdint>
-//    namespace ext = std;
+    namespace ext = std; // NOLINT
 #endif
 
 namespace gfx
@@ -37,33 +39,43 @@ public:
     VulkanTexture(VulkanTexture&&) = delete;
 
     VulkanTexture(const VulkanDevice*, vk::Image&&, const Texture::Descriptor&);
+    VulkanTexture(const VulkanDevice*, const Texture::Descriptor&);
 
     inline uint32_t width() const override { return m_width; }
     inline uint32_t height() const override { return m_height; }
-    inline PixelFormat pixelFormat(void) const override { return m_pixelFormat; };
+    inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
 
-    inline const vk::Image& vkImage() const { return m_vkImage; }
+    inline const vk::Image& vkImage() const { return currentFrameData().vkImage; }
+    inline const vk::ImageView& vkImageView() const { return currentFrameData().vkImageView; }
+    inline ImageSyncState& syncState() { return currentFrameData().syncState; }
+
     inline const vk::ImageSubresourceRange& subresourceRange() const { return m_subresourceRange; }
-    inline const vk::ImageView& vkImageView() const { return m_vkImageView; }
 
-    inline ImageSyncState& syncState() { return m_syncState; }
     inline virtual const vk::Semaphore* imageAvailableSemaphore() const { return nullptr; }
 
-    ~VulkanTexture();
+    ~VulkanTexture() override;
 
 protected:
+    struct FrameData
+    {
+        vk::Image vkImage;
+        VmaAllocation allocation;
+        VmaAllocationInfo allocInfo;
+        vk::ImageView vkImageView;
+        ImageSyncState syncState = ImageSyncState{.layout=vk::ImageLayout::eUndefined};
+    };
+
+    FrameData& currentFrameData();
+    const FrameData& currentFrameData() const;
+
     const VulkanDevice* m_device = nullptr;
-
     uint32_t m_width, m_height;
-    PixelFormat m_pixelFormat;
-
-    vk::Image m_vkImage;
+    PixelFormat m_pixelFormat = PixelFormat::BGRA8Unorm;
     bool m_shouldDestroyImg;
-
     vk::ImageSubresourceRange m_subresourceRange;
-    vk::ImageView m_vkImageView;
 
-    ImageSyncState m_syncState = ImageSyncState{.layout=vk::ImageLayout::eUndefined};
+    PerFrameInFlight<FrameData> m_frameDatas;
+    uint8_t m_imageCount;
 
 public:
     VulkanTexture& operator=(const VulkanTexture&) = delete;

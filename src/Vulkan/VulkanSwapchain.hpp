@@ -13,6 +13,7 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Drawable.hpp"
 
+#include "common.hpp"
 #include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
 
@@ -51,7 +52,7 @@ private:
     vk::SwapchainKHR* m_vkSwapchain;
     ext::vector<ext::shared_ptr<SwapchainImage>> m_swapchainImages;
 
-    ext::vector<ext::shared_ptr<VulkanDrawable>> m_drawables;
+    PerFrameInFlight<ext::shared_ptr<VulkanDrawable>> m_drawables;
     uint32_t m_nextDrawableIndex = 0;
 
 public:

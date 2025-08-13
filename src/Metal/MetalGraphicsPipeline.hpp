@@ -37,10 +37,10 @@ public:
 
     MetalGraphicsPipeline(const MetalDevice&, const GraphicsPipeline::Descriptor&);
 
-    inline const id<MTLRenderPipelineState>& renderPipelineState(void) const { return m_renderPipelineState; }
-    inline const id<MTLDepthStencilState>& depthStencilState(void) const { return m_depthStencilState; }
+    inline const id<MTLRenderPipelineState>& renderPipelineState() const { return m_renderPipelineState; }
+    inline const id<MTLDepthStencilState>& depthStencilState() const { return m_depthStencilState; }
 
-    ~MetalGraphicsPipeline();
+    ~MetalGraphicsPipeline() override;
 
 private:
     id<MTLRenderPipelineState> m_renderPipelineState = nil;

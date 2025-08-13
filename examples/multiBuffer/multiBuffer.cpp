@@ -22,7 +22,6 @@
 #include <GLFW/glfw3.h>
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>
@@ -74,8 +73,7 @@ public:
                 .compute = true,
                 .transfer = true,
                 .present = { m_surface.get() }
-            },
-            .maxFrameInFlight = 3
+            }
         };
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
@@ -147,22 +145,22 @@ public:
         };
 
         m_vertexBuffers[0] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[0].size(), .data = vertices[0].data(), .usage = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(float) * vertices[0].size(), .data = vertices[0].data(), .usages = gfx::BufferUsage::vertexBuffer
         });
         assert(m_vertexBuffers[0]);
 
         m_vertexBuffers[1] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[1].size(), .data = vertices[1].data(), .usage = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(float) * vertices[1].size(), .data = vertices[1].data(), .usages = gfx::BufferUsage::vertexBuffer
         });
         assert(m_vertexBuffers[1]);
 
         m_vertexBuffers[2] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[2].size(), .data = vertices[2].data(), .usage = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(float) * vertices[2].size(), .data = vertices[2].data(), .usages = gfx::BufferUsage::vertexBuffer
         });
         assert(m_vertexBuffers[2]);
 
         m_vertexBuffers[3] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[3].size(), .data = vertices[3].data(), .usage = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(float) * vertices[3].size(), .data = vertices[3].data(), .usages = gfx::BufferUsage::vertexBuffer
         });
         assert(m_vertexBuffers[3]);
     }

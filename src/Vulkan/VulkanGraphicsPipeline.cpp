@@ -109,6 +109,13 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         .setSampleShadingEnable(false)
         .setRasterizationSamples(vk::SampleCountFlagBits::e1);
 
+    auto depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo{}
+        .setDepthTestEnable(vk::True)
+        .setDepthWriteEnable(vk::True)
+        .setDepthCompareOp(vk::CompareOp::eLess)
+        .setDepthBoundsTestEnable(vk::False)
+        .setStencilTestEnable(vk::False);
+
     auto colorBlendAttachmentState = vk::PipelineColorBlendAttachmentState{}
         .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
 
@@ -175,6 +182,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         .setPViewportState(&viewportStateCreateInfo)
         .setPRasterizationState(&rasterizationStateCreateInfo)
         .setPMultisampleState(&multisampleStateCreateInfo)
+        .setPDepthStencilState(&depthStencilStateCreateInfo)
         .setPColorBlendState(&colorBlendStateCreateInfo)
         .setPDynamicState(&dynamicStateCreateInfo)
         .setLayout(m_pipelineLayout)

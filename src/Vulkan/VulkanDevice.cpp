@@ -25,6 +25,7 @@
 #include "Vulkan/VulkanShaderLib.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
+#include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/imgui_impl_vulkan.h"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/vk_mem_alloc.hpp" // IWYU pragma: keep
@@ -89,14 +90,9 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setPEnabledFeatures(&deviceFeatures);
 
     m_vkDevice = m_physicalDevice->createDevice(deviceCreateInfo);
-    m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
-
-    m_frameDatas.reserve(desc.deviceDescriptor->maxFrameInFlight);
-    for (uint32_t i = 0; i < desc.deviceDescriptor->maxFrameInFlight; i++)
-        m_frameDatas.emplace_back(this, m_queueFamily);
-    m_currFrameData = m_frameDatas.begin();
-
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkDevice);
+
+    m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
 
     VmaVulkanFunctions vulkanFunctions = {};
     vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
@@ -114,6 +110,18 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     auto res = vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
     if (res != VK_SUCCESS)
         throw ext::runtime_error("vmaCreateAllocator failed");
+
+    auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
+        .setQueueFamilyIndex(m_queueFamily.index);
+
+    auto fenceCreateInfo = vk::FenceCreateInfo{}
+        .setFlags(vk::FenceCreateFlagBits::eSignaled);
+
+    for (auto& frameData : m_frameDatas) {
+        frameData.pbPool = VulkanParameterBlockPool(this);
+        frameData.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
+        frameData.frameCompletedFence = m_vkDevice.createFence(fenceCreateInfo);
+    }
 }
 
 ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -138,6 +146,11 @@ ext::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) 
     return ext::make_unique<VulkanBuffer>(this, desc);
 }
 
+ext::unique_ptr<Texture> VulkanDevice::newTexture(const Texture::Descriptor& desc) const
+{
+    return ext::make_unique<VulkanTexture>(this, desc);
+}
+
 #if defined (GFX_IMGUI_ENABLED)
 void VulkanDevice::imguiInit(uint32_t imageCount,
                              ext::vector<PixelFormat> colorAttachmentPxFormats,
@@ -152,6 +165,8 @@ void VulkanDevice::imguiInit(uint32_t imageCount,
         .setColorAttachmentFormats(colorAttachmentFormats);
     if (depthAttachmentPxFormat.has_value())
         pipelineRenderingCreateInfo.setDepthAttachmentFormat(toVkFormat(depthAttachmentPxFormat.value()));
+
+    constexpr auto minAllocSize = static_cast<VkDeviceSize>(1024*1024);
 
     ImGui_ImplVulkan_InitInfo initInfo = {
         .ApiVersion = m_physicalDevice->getProperties().apiVersion,
@@ -172,7 +187,7 @@ void VulkanDevice::imguiInit(uint32_t imageCount,
         .PipelineRenderingCreateInfo = pipelineRenderingCreateInfo,
         .Allocator = nullptr,
         .CheckVkResultFn = nullptr,
-        .MinAllocationSize = 1024*1024
+        .MinAllocationSize = minAllocSize
     };
 
     ImGui_ImplVulkan_Init(&initInfo);
@@ -186,11 +201,21 @@ void VulkanDevice::imguiNewFrame() const
 }
 #endif
 
-void VulkanDevice::beginFrame(void)
+void VulkanDevice::beginFrame()
 {
     if (m_vkDevice.waitForFences(m_currFrameData->frameCompletedFence, true, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
         throw ext::runtime_error("failed to wait for fence");
-    m_currFrameData->reset();
+
+    m_currFrameData->presentedDrawables.clear();
+    m_currFrameData->submittedCmdBuffers.clear();
+    while (m_currFrameData->usedCommandBuffers.empty() == false)
+    {
+        m_currFrameData->usedCommandBuffers.front().clear();
+        m_currFrameData->commandBuffers.push_back(ext::move(m_currFrameData->usedCommandBuffers.front()));
+        m_currFrameData->usedCommandBuffers.pop_front();
+    }
+    m_vkDevice.resetCommandPool(m_currFrameData->commandPool);
+    m_currFrameData->pbPool.reset();
 }
 
 ParameterBlock& VulkanDevice::parameterBlock(const ParameterBlock::Layout& pbLayout)
@@ -199,7 +224,7 @@ ParameterBlock& VulkanDevice::parameterBlock(const ParameterBlock::Layout& pbLay
     return m_currFrameData->pbPool.get(pbLayout);
 }
 
-CommandBuffer& VulkanDevice::commandBuffer(void)
+CommandBuffer& VulkanDevice::commandBuffer()
 {
     if (m_currFrameData->commandBuffers.empty() == false) {
         m_currFrameData->usedCommandBuffers.push_back(ext::move(m_currFrameData->commandBuffers.front()));
@@ -294,7 +319,7 @@ void VulkanDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable)
     m_currFrameData->presentedDrawables.push_back(drawable);
 }
 
-void VulkanDevice::endFrame(void)
+void VulkanDevice::endFrame()
 {
     {
         ext::vector<vk::CommandBuffer> vkCommandBuffers;
@@ -376,7 +401,7 @@ void VulkanDevice::endFrame(void)
         m_currFrameData = m_frameDatas.begin();
 }
 
-void VulkanDevice::waitIdle(void) const
+void VulkanDevice::waitIdle() const
 {
     m_vkDevice.waitIdle();
 }
@@ -416,43 +441,18 @@ const vk::DescriptorSetLayout& VulkanDevice::descriptorSetLayout(const Parameter
 VulkanDevice::~VulkanDevice()
 {
     waitIdle();
-    m_frameDatas.clear();
+    for (auto& frameData : m_frameDatas) {
+        frameData.presentedDrawables.clear();
+        frameData.usedCommandBuffers.clear();
+        frameData.commandBuffers.clear();
+        m_vkDevice.destroyFence(frameData.frameCompletedFence);
+        m_vkDevice.destroyCommandPool(frameData.commandPool);
+        frameData.pbPool = VulkanParameterBlockPool();
+    }
     for (auto& [_, descriptorSetLayout] : m_descriptorSetLayouts)
         m_vkDevice.destroyDescriptorSetLayout(descriptorSetLayout);
     vmaDestroyAllocator(m_allocator);
     m_vkDevice.destroy();
-}
-
-VulkanDevice::FrameData::FrameData(const VulkanDevice* device, const QueueFamily& qFamily)
-    : device(device), pbPool(device)
-{
-    auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
-        .setQueueFamilyIndex(qFamily.index);
-    commandPool = device->vkDevice().createCommandPool(commandPoolCreateInfo);
-    frameCompletedFence = device->vkDevice().createFence(vk::FenceCreateInfo{.flags=vk::FenceCreateFlagBits::eSignaled});
-}
-
-void VulkanDevice::FrameData::reset()
-{
-    presentedDrawables.clear();
-    submittedCmdBuffers.clear();
-    while (usedCommandBuffers.empty() == false)
-    {
-        usedCommandBuffers.front().clear();
-        commandBuffers.push_back(ext::move(usedCommandBuffers.front()));
-        usedCommandBuffers.pop_front();
-    }
-    device->vkDevice().resetCommandPool(commandPool);
-    pbPool.reset();
-}
-
-VulkanDevice::FrameData::~FrameData()
-{
-    presentedDrawables.clear();
-    usedCommandBuffers.clear();
-    commandBuffers.clear();
-    device->vkDevice().destroyFence(frameCompletedFence);
-    device->vkDevice().destroyCommandPool(commandPool);
 }
 
 } // namespace gfx

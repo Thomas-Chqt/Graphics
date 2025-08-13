@@ -12,6 +12,7 @@
 
 #include "Graphics/Buffer.hpp"
 
+#include "common.hpp"
 #include "Vulkan/vk_mem_alloc.hpp"
 
 #include <vulkan/vulkan.hpp>
@@ -20,8 +21,7 @@
     namespace ext = utl;
 #else
     #include <cstddef>
-    #include <vector>
-    namespace ext = std;
+    namespace ext = std; // NOLINT
 #endif
 
 namespace gfx
@@ -42,9 +42,8 @@ public:
 
     void setContent(const void* data, size_t size) override;
 
-    const vk::Buffer& vkBuffer() const;
-
-    const vk::DescriptorBufferInfo& descriptorInfo() const;
+    inline const vk::Buffer& vkBuffer() const { return currentFrameData().vkBuffer; }
+    inline const vk::DescriptorBufferInfo& descriptorInfo() const { return currentFrameData().descriptorInfo; }
 
     ~VulkanBuffer() override;
 
@@ -52,9 +51,6 @@ protected:
     void* contentVoid() override;
 
 private:
-    const VulkanDevice* m_device;
-    const size_t m_size;
-
     struct FrameData
     {
         vk::Buffer vkBuffer;
@@ -63,7 +59,15 @@ private:
         vk::DescriptorBufferInfo descriptorInfo;
     };
 
-    ext::vector<FrameData> m_frameDatas;
+    FrameData& currentFrameData();
+    const FrameData& currentFrameData() const;
+
+    const VulkanDevice* m_device;
+    const size_t m_size;
+    BufferUsages m_usages;
+    ResourceStorageMode m_storageMode;
+
+    PerFrameInFlight<FrameData> m_frameDatas;
 
 public:
     VulkanBuffer& operator=(const VulkanBuffer&) = delete;

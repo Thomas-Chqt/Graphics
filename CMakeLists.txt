@@ -166,6 +166,7 @@ if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1")
     target_compile_definitions(Graphics PUBLIC "VMA_STATIC_VULKAN_FUNCTIONS=0")
     target_compile_definitions(Graphics PUBLIC "VMA_DYNAMIC_VULKAN_FUNCTIONS=1")
+    target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
 endif()
 
 if (GFX_ENABLE_IMGUI)

@@ -30,6 +30,8 @@
 namespace gfx
 {
 
+class MetalDevice;
+
 class MetalDrawable : public Drawable
 {
 public:
@@ -37,15 +39,16 @@ public:
     MetalDrawable(const MetalDrawable&) = delete;
     MetalDrawable(MetalDrawable&&) = delete;
 
-    MetalDrawable(const id<CAMetalDrawable>&);
+    MetalDrawable(const MetalDevice*, id<CAMetalDrawable>);
 
-    ext::shared_ptr<Texture> texture(void) const override;
+    ext::shared_ptr<Texture> texture() const override;
 
-    const id<CAMetalDrawable>& mtlDrawable(void) const { return m_mtlDrawable; }
+    const id<CAMetalDrawable>& mtlDrawable() const { return m_mtlDrawable; }
 
-    ~MetalDrawable();
+    ~MetalDrawable() override;
 
 private:
+    const MetalDevice* m_device;
     id<CAMetalDrawable> m_mtlDrawable;
 
 public:

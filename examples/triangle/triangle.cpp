@@ -23,7 +23,6 @@
 #include <GLFW/glfw3.h>
 
 #if defined(GFX_USE_UTILSCPP)
-    #include "UtilsCPP/memory.hpp"
     namespace ext = utl;
 #else
     #include <memory>
@@ -74,8 +73,7 @@ public:
                 .compute = true,
                 .transfer = true,
                 .present = { m_surface.get() }
-            },
-            .maxFrameInFlight = 3
+            }
         };
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
@@ -114,7 +112,7 @@ public:
         };
 
         m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(vertices), .data = vertices, .usage = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(vertices), .data = vertices, .usages = gfx::BufferUsage::vertexBuffer
         });
         assert(m_vertexBuffer);
     }
