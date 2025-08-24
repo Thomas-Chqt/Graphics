@@ -8,6 +8,7 @@
  */
 
 #include "Graphics/Instance.hpp"
+#include <stdexcept>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -32,22 +33,35 @@ namespace gfx
 
 ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 {
-#if defined(GFX_BUILD_METAL) && defined(GFX_BUILD_VULKAN)
-    if (const char* val = ext::getenv("GFX_USED_API"))
+    if (const char* val = ext::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
     {
+#if defined(GFX_BUILD_METAL)
         if (ext::strcmp(val, "VULKAN") == 0)
         {
             ext::println("using vulkan");
             return newVulkanInstance(desc);
         }
-        ext::println("using metal");
-    }
-    return newMetalInstance(desc);
-#elif defined(GFX_BUILD_METAL)
-    return newMetalInstance(desc);
-#elif defined(GFX_BUILD_VULKAN)
-    return newVulkanInstance(desc);
 #endif
+#if defined(GFX_BUILD_VULKAN)
+        if (ext::strcmp(val, "METAL") == 0)
+        {
+            ext::println("using metal");
+            return newMetalInstance(desc);
+        }
+#endif
+        throw ext::runtime_error(ext::format("unknown api name: {}", val));
+    }
+    else
+    {
+#if defined(GFX_BUILD_METAL)
+        return newMetalInstance(desc);
+#endif
+
+#if defined(GFX_BUILD_VULKAN)
+        return newVulkanInstance(desc);
+#endif
+        throw ext::runtime_error("unable to define default api");
+    }
 }
 
 #if defined(GFX_BUILD_METAL)

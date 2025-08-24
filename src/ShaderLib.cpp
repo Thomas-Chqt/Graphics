@@ -18,6 +18,8 @@
     #include <vector>
     #include <cstdint>
     #include <stdexcept>
+    #include <array>
+    #include <bit>
     namespace ext = std;
 #endif
 
@@ -32,39 +34,39 @@ ShaderLib::ShaderLib(const fs::path& filepath)
     if (file.good() == false)
         throw ext::runtime_error("cannot open the file");
 
-    char magic[19] = {0};
-    file.read(magic, 18);
+    std::array<char, 19> magic = {};
+    file.read(magic.data(), 18);
 
-    if (ext::string(magic) != "GFX_SHADER_PACKAGE")
+    if (ext::strcmp(magic.data(), "GFX_SHADER_PACKAGE") != 0)
         throw ext::runtime_error("file format invalid");
 
-    uint32_t shaderCount = 0;
-    file.read(reinterpret_cast<char*>(&shaderCount), sizeof(shaderCount));
+    std::array<char, sizeof(uint32_t)> shadercount = {};
+    file.read(shadercount.data(), shadercount.size());
 
-    for (uint32_t i = 0; i < shaderCount; ++i)
+    for (uint32_t i = 0; i < *ext::bit_cast<uint32_t*>(shadercount.data()); ++i)
     {
-        uint32_t targetLength = 0;
-        file.read(reinterpret_cast<char*>(&targetLength), sizeof(targetLength));
+        std::array<char, sizeof(uint32_t)> targetNameLength = {};
+        file.read(targetNameLength.data(), targetNameLength.size());
 
-        std::string targetName(targetLength, '\0');
-        file.read(&targetName[0], targetLength);
+        std::string targetName(*ext::bit_cast<uint32_t*>(targetNameLength.data()), '\0');
+        file.read(targetName.data(), static_cast<long>(targetName.size()));
 
-        uint32_t shaderLength = 0;
-        file.read(reinterpret_cast<char*>(&shaderLength), sizeof(shaderLength));
+        std::array<char, sizeof(uint32_t)> shaderLength = {};
+        file.read(shaderLength.data(), shaderLength.size());
 
         if (targetName == "metal")
         {
-            m_metalBytes.resize(shaderLength);
-            file.read(reinterpret_cast<char*>(m_metalBytes.data()), shaderLength);
+            m_metalBytes.resize(*ext::bit_cast<uint32_t*>(shaderLength.data()));
+            file.read(ext::bit_cast<char*>(m_metalBytes.data()), *ext::bit_cast<uint32_t*>(shaderLength.data()));
         }
         else if (targetName == "spirv")
         {
-            m_spirvBytes.resize(shaderLength);
-            file.read(reinterpret_cast<char*>(m_spirvBytes.data()), shaderLength);
+            m_spirvBytes.resize(*ext::bit_cast<uint32_t*>(shaderLength.data()));
+            file.read(ext::bit_cast<char*>(m_spirvBytes.data()), *ext::bit_cast<uint32_t*>(shaderLength.data()));
         }
         else
         {
-            file.seekg(shaderLength, std::ios::cur);
+            file.seekg(*ext::bit_cast<uint32_t*>(shaderLength.data()), std::ios::cur);
         }
     }
 }

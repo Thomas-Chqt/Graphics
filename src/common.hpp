@@ -17,7 +17,7 @@
     namespace ext = std;
 #endif
 
-#define MAX_FRAME_IN_FLIGHT 3
+constexpr int MAX_FRAME_IN_FLIGHT = 3;
 
 template<typename T>
 using PerFrameInFlight = ext::array<T, MAX_FRAME_IN_FLIGHT>;

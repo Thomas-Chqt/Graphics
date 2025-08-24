@@ -7,7 +7,6 @@ Checks:
   - clang-analyzer-*
 
   - cppcoreguidelines-*
-  - -cppcoreguidelines-pro-type-reinterpret-cast
   - -cppcoreguidelines-avoid-magic-numbers
   - -cppcoreguidelines-non-private-member-variables-in-classes
   - -cppcoreguidelines-pro-type-union-access

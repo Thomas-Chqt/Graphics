@@ -100,6 +100,7 @@ private:
     {
         MetalParameterBlockPool pBlockPool;
         MetalCommandBufferPool commandBufferPool;
+
         ext::vector<MetalCommandBuffer*> submittedCommandBuffers;
         MetalCommandBuffer* waitedCommandBuffer = nullptr;
     };

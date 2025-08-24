@@ -101,11 +101,12 @@ void MetalDevice::imguiNewFrame() const { @autoreleasepool
 
 void MetalDevice::beginFrame() { @autoreleasepool
 {
-    if (m_currFrameData->waitedCommandBuffer != nullptr) {
+    if (m_currFrameData->waitedCommandBuffer != nullptr)
+    {
         [m_currFrameData->waitedCommandBuffer->mtlCommandBuffer() waitUntilCompleted];
         auto it = ext::ranges::find(m_currFrameData->submittedCommandBuffers, m_currFrameData->waitedCommandBuffer);
-        if (it != m_currFrameData->submittedCommandBuffers.end())
-            m_currFrameData->submittedCommandBuffers.erase(m_currFrameData->submittedCommandBuffers.begin(), ext::next(it));
+        auto upBound = it == m_currFrameData->submittedCommandBuffers.end() ? it : ext::next(it);
+        m_currFrameData->submittedCommandBuffers.erase(m_currFrameData->submittedCommandBuffers.begin(), upBound);
         m_currFrameData->waitedCommandBuffer = nullptr;
     }
 
