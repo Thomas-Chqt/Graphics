@@ -34,6 +34,7 @@
     #include <cstddef>
     #include <cassert>
     #include <cstdint>
+    #include <stdexcept>
     namespace ext = std;
 #endif
 
@@ -65,11 +66,12 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
                   colorAttachment.clearColor[3]})))
             .setImageView(texture->vkImageView())
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
-        
-        ImageSyncRequest syncReq = {
-            .layout = vk::ImageLayout::eColorAttachmentOptimal,
-            .preserveContent = colorAttachment.loadAction == LoadAction::load
-        };
+
+        ImageSyncRequest syncReq{};
+        syncReq.stageMask = vk::PipelineStageFlagBits2::eColorAttachmentOutput;
+        syncReq.accessMask = vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead;
+        syncReq.layout = vk::ImageLayout::eColorAttachmentOptimal;
+        syncReq.preserveContent = colorAttachment.loadAction == LoadAction::load;
 
         auto it = m_imageFinalSyncStates.find(texture);
         if (it != m_imageFinalSyncStates.end()) {
@@ -83,9 +85,6 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
             m_imageSyncRequests[texture] = syncReq;
             m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
         }
-        
-        if (auto* imageAvailableSemaphore = texture->imageAvailableSemaphore())
-            m_waitSemaphores.insert(imageAvailableSemaphore);
     }
 
     if (auto& depthAttachment = framebuffer.depthAttachment)
@@ -98,11 +97,12 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
             .setClearValue(vk::ClearValue{}.setDepthStencil(vk::ClearDepthStencilValue{}.setDepth(depthAttachment->clearDepth)))
             .setImageView(texture->vkImageView())
             .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
-        
-        ImageSyncRequest syncReq = {
-            .layout = vk::ImageLayout::eDepthStencilAttachmentOptimal,
-            .preserveContent = depthAttachment->loadAction == LoadAction::load
-        };
+
+        ImageSyncRequest syncReq{};
+        syncReq.stageMask = vk::PipelineStageFlagBits2::eEarlyFragmentTests | vk::PipelineStageFlagBits2::eLateFragmentTests;
+        syncReq.accessMask = vk::AccessFlagBits2::eDepthStencilAttachmentWrite | vk::AccessFlagBits2::eDepthStencilAttachmentRead;
+        syncReq.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+        syncReq.preserveContent = depthAttachment->loadAction == LoadAction::load;
 
         auto it = m_imageFinalSyncStates.find(texture);
         if (it != m_imageFinalSyncStates.end()) {
@@ -116,11 +116,8 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
             m_imageSyncRequests[texture] = syncReq;
             m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
         }
-
-        if (auto* imageAvailableSemaphore = texture->imageAvailableSemaphore())
-            m_waitSemaphores.insert(imageAvailableSemaphore);
     }
-    
+
     if (imageMemoryBarriers.empty() == false) {
         m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
             .setDependencyFlags(vk::DependencyFlags{}) // TODO ?
@@ -155,7 +152,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipeline>& _graphicsPipeline)
 {
     auto graphicsPipeline = ext::dynamic_pointer_cast<const VulkanGraphicsPipeline>(_graphicsPipeline);
-    
+
     m_vkCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline->vkPipeline());
     m_vkCommandBuffer.setViewport(0, m_viewport);
     m_vkCommandBuffer.setScissor(0, m_scissor);
@@ -163,11 +160,31 @@ void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipeli
     m_usedPipelines.push_back(graphicsPipeline);
 }
 
-void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<const Buffer>& aBuffer)
+void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<Buffer>& aBuffer)
 {
-    auto buffer = ext::dynamic_pointer_cast<const VulkanBuffer>(aBuffer);
+    auto buffer = ext::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
 
-    m_usedBuffers.insert(buffer);
+    BufferSyncRequest syncReq{};
+    syncReq.stageMask = vk::PipelineStageFlagBits2::eVertexInput;
+    syncReq.accessMask = vk::AccessFlagBits2::eVertexAttributeRead;
+
+    auto it = m_bufferFinalSyncStates.find(buffer);
+    if (it != m_bufferFinalSyncStates.end()) {
+        auto barrier = syncBuffer(it->second, syncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setBuffer(buffer->vkBuffer());
+            barrier->setOffset(0);
+            barrier->setSize(vk::WholeSize);
+            m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
+               .setDependencyFlags(vk::DependencyFlags{})
+               .setBufferMemoryBarriers(*barrier));
+        }
+    } else {
+        auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(buffer, syncReq));
+        assert(res1);
+        auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(buffer, bufferStateAfterSync(syncReq)));
+        assert(res2);
+    }
 
     m_vkCommandBuffer.bindVertexBuffers(0, buffer->vkBuffer(), {0});
 }
@@ -175,8 +192,53 @@ void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<const Buffer>& a
 void VulkanCommandBuffer::setParameterBlock(const ParameterBlock& aPblock, uint32_t index)
 {
     const auto& pBlock = dynamic_cast<const VulkanParameterBlock&>(aPblock);
+    ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
+
+    for (auto& [binding, buffer] : pBlock.usedBuffers())
+    {
+        BufferSyncRequest syncReq{};
+
+        if ((binding.usages & BindingUsage::vertexRead) || (binding.usages & BindingUsage::vertexWrite))
+            syncReq.stageMask |= vk::PipelineStageFlagBits2::eVertexShader;
+        if ((binding.usages & BindingUsage::fragmentRead) || (binding.usages & BindingUsage::fragmentWrite))
+            syncReq.stageMask |= vk::PipelineStageFlagBits2::eFragmentShader;
+
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead))) {
+            assert(binding.type == BindingType::uniformBuffer);
+            syncReq.accessMask |= vk::AccessFlagBits2::eUniformRead;
+        }
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite))) {
+            syncReq.accessMask |= vk::AccessFlagBits2::eShaderWrite;
+            throw ext::runtime_error("not implemented");
+        }
+
+        auto it = m_bufferFinalSyncStates.find(buffer);
+        if (it != m_bufferFinalSyncStates.end()) {
+            auto barrier = syncBuffer(it->second, syncReq); // will update the final sync state
+            if (barrier.has_value()) {
+                barrier->setBuffer(buffer->vkBuffer());
+                barrier->setOffset(0);
+                barrier->setSize(vk::WholeSize);
+                bufferMemoryBarriers.push_back(*barrier);
+            }
+        } else {
+            auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(buffer, syncReq));
+            assert(res1);
+            auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(buffer, bufferStateAfterSync(syncReq)));
+            assert(res2);
+        }
+    }
+
+    if (bufferMemoryBarriers.empty() == false)
+    {
+        auto dependencyInfo = vk::DependencyInfo{}
+            .setDependencyFlags(vk::DependencyFlags{})
+            .setBufferMemoryBarriers(bufferMemoryBarriers);
+
+        m_vkCommandBuffer.pipelineBarrier2(dependencyInfo);
+    }
+
     m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_usedPipelines.back()->pipelineLayout(), index, pBlock.descriptorSet(), {});
-    m_usedBuffers.insert_range(pBlock.usedBuffers());
 }
 
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
@@ -184,14 +246,34 @@ void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
     m_vkCommandBuffer.draw(count, 1, start, 0);
 }
 
-void VulkanCommandBuffer::drawIndexedVertices(const ext::shared_ptr<const Buffer>& buffer)
+void VulkanCommandBuffer::drawIndexedVertices(const ext::shared_ptr<Buffer>& aBuffer)
 {
-    auto idxBuffer = ext::dynamic_pointer_cast<const VulkanBuffer>(buffer);
+    auto buffer = ext::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
 
-    m_usedBuffers.insert(idxBuffer);
+    BufferSyncRequest syncReq{};
+    syncReq.stageMask = vk::PipelineStageFlagBits2::eVertexInput;
+    syncReq.accessMask = vk::AccessFlagBits2::eIndexRead;
 
-    m_vkCommandBuffer.bindIndexBuffer(idxBuffer->vkBuffer(), 0, vk::IndexType::eUint32);
-    m_vkCommandBuffer.drawIndexed(static_cast<uint32_t>(idxBuffer->size() / sizeof(uint32_t)), 1, 0, 0, 0);
+    auto it = m_bufferFinalSyncStates.find(buffer);
+    if (it != m_bufferFinalSyncStates.end()) {
+        auto barrier = syncBuffer(it->second, syncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setBuffer(buffer->vkBuffer());
+            barrier->setOffset(0);
+            barrier->setSize(vk::WholeSize);
+            m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
+               .setDependencyFlags(vk::DependencyFlags{})
+               .setBufferMemoryBarriers(*barrier));
+        }
+    } else {
+        auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(buffer, syncReq));
+        assert(res1);
+        auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(buffer, bufferStateAfterSync(syncReq)));
+        assert(res2);
+    }
+
+    m_vkCommandBuffer.bindIndexBuffer(buffer->vkBuffer(), 0, vk::IndexType::eUint32);
+    m_vkCommandBuffer.drawIndexed(static_cast<uint32_t>(buffer->size() / sizeof(uint32_t)), 1, 0, 0, 0);
 }
 
 #if defined(GFX_IMGUI_ENABLED)
@@ -210,9 +292,10 @@ void VulkanCommandBuffer::clear()
 {
     m_signalSemaphore = nullptr;
     m_waitSemaphores.clear();
+    m_bufferFinalSyncStates.clear();
+    m_bufferSyncRequests.clear();
     m_imageFinalSyncStates.clear();
     m_imageSyncRequests.clear();
-    m_usedBuffers.clear();
     m_usedPipelines.clear();
 }
 

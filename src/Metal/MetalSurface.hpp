@@ -42,7 +42,7 @@ public:
 
     CAMetalLayer* mtlLayer() const { return m_mtlLayer; }
 
-    ~MetalSurface();
+    ~MetalSurface() override;
 
 private:
     CAMetalLayer* m_mtlLayer;

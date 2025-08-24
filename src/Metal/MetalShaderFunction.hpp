@@ -36,20 +36,20 @@ class MetalShaderFunction : public ShaderFunction
 public:
     MetalShaderFunction() = delete;
     MetalShaderFunction(const MetalShaderFunction&) = delete;
-    MetalShaderFunction(MetalShaderFunction&&);
+    MetalShaderFunction(MetalShaderFunction&&) noexcept ;
 
     MetalShaderFunction(const id<MTLLibrary>&, const ext::string&);
     
-    inline id<MTLFunction> mtlFunction(void) { return m_mtlFunction; }
+    inline id<MTLFunction> mtlFunction() { return m_mtlFunction; }
 
-    ~MetalShaderFunction();
+    ~MetalShaderFunction() override;
 
 private:
     id<MTLFunction> m_mtlFunction;
 
 public:
     MetalShaderFunction& operator=(const MetalShaderFunction&) = delete;
-    MetalShaderFunction& operator=(MetalShaderFunction&&);
+    MetalShaderFunction& operator=(MetalShaderFunction&&) noexcept ;
 };
 
 } // namespace gfx

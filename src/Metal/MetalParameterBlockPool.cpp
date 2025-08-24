@@ -38,4 +38,11 @@ void MetalParameterBlockPool::reset()
     m_nextOffset = 0;
 }
 
+void MetalParameterBlockPool::clear()
+{
+    m_parameterBlocks.clear();
+    m_nextOffset = 0;
+    m_argumentBuffer.clear();
+}
+
 } // namespace gfx

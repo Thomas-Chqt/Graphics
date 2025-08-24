@@ -35,12 +35,16 @@ public:
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&)      = delete;
     
-    MetalTexture(const MetalDevice*, const id<MTLTexture>&);
+    MetalTexture(const MetalDevice*, const id<MTLTexture>&, const Texture::Descriptor&);
     MetalTexture(const MetalDevice*, const Texture::Descriptor&);
 
     uint32_t width() const override;
     uint32_t height() const override;
     PixelFormat pixelFormat() const override;
+    inline TextureUsages usages() const override { return m_usages; };
+    inline ResourceStorageMode storageMode() const override { return m_storageMode; };
+
+    void replaceContent(void* data);
 
     inline const id<MTLTexture>& mtltexture() const { return currentFrameData().mtlTexture; }
 
@@ -56,8 +60,11 @@ private:
     const FrameData& currentFrameData() const;
 
     const MetalDevice* m_device;
-    PerFrameInFlight<FrameData> m_frameDatas;
+    TextureUsages m_usages;
+    ResourceStorageMode m_storageMode;
+
     uint8_t m_imageCount;
+    PerFrameInFlight<FrameData> m_frameDatas;
     
 public:
     MetalTexture& operator = (const MetalTexture&) = delete;

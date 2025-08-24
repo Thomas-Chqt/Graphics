@@ -30,6 +30,8 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, vk::Image&& vkImage, co
     : m_device(device),
       m_width(desc.width), m_height(desc.height),
       m_pixelFormat(desc.pixelFormat),
+      m_usages(desc.usages),
+      m_storageMode(desc.storageMode),
       m_shouldDestroyImg(false),
       m_subresourceRange(vk::ImageSubresourceRange{}
           .setAspectMask(toVkImageAspectFlags(desc.usages))
@@ -59,6 +61,8 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descript
     : m_device(device),
       m_width(desc.width), m_height(desc.height),
       m_pixelFormat(desc.pixelFormat),
+      m_usages(desc.usages),
+      m_storageMode(desc.storageMode),
       m_shouldDestroyImg(true),
       m_subresourceRange(vk::ImageSubresourceRange{}
           .setAspectMask(toVkImageAspectFlags(desc.usages))

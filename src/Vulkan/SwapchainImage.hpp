@@ -30,16 +30,20 @@ class VulkanDevice;
 class SwapchainImage : public VulkanTexture
 {
 public:
+    SwapchainImage() = delete;
+    SwapchainImage(const SwapchainImage&) = delete;
+    SwapchainImage(SwapchainImage&&) = delete;
+
     SwapchainImage(const VulkanDevice*, vk::Image&&, const ext::shared_ptr<vk::SwapchainKHR>&, const Texture::Descriptor&);
 
-    inline const vk::SwapchainKHR& swapchain(void) const { return *m_swapchain; }
+    inline const vk::SwapchainKHR& swapchain() const { return *m_swapchain; }
 
+    inline const vk::Semaphore& imagePresentableSemaphore() const { return m_imagePresentableSemaphore; }
+
+    inline const vk::Semaphore& imageAvailableSemaphore() const { return *m_imageAvailableSemaphore; }
     inline void setImageAvailableSemaphoreRef(vk::Semaphore* s) { m_imageAvailableSemaphore = s; }
 
-    inline const vk::Semaphore* imageAvailableSemaphore(void) const override { return m_imageAvailableSemaphore; }
-    inline const vk::Semaphore& imagePresentableSemaphore(void) const { return m_imagePresentableSemaphore; }
-
-    ~SwapchainImage();
+    ~SwapchainImage() override;
 
 private:
     ext::shared_ptr<vk::SwapchainKHR> m_swapchain;

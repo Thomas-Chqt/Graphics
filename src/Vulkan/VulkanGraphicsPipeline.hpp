@@ -28,10 +28,10 @@ public:
 
     VulkanGraphicsPipeline(const VulkanDevice*, const GraphicsPipeline::Descriptor&);
 
-    inline const vk::Pipeline& vkPipeline(void) const { return m_vkPipeline; }
+    inline const vk::Pipeline& vkPipeline() const { return m_vkPipeline; }
     inline const vk::PipelineLayout& pipelineLayout() const { return m_pipelineLayout; }
 
-    ~VulkanGraphicsPipeline();
+    ~VulkanGraphicsPipeline() override;
 
 private:
     const VulkanDevice* const m_device;

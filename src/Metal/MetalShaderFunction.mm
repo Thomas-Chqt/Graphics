@@ -14,7 +14,7 @@
 namespace gfx
 {
 
-MetalShaderFunction::MetalShaderFunction(MetalShaderFunction&& other) { @autoreleasepool
+MetalShaderFunction::MetalShaderFunction(MetalShaderFunction&& other) noexcept { @autoreleasepool
 {
     m_mtlFunction = [other.m_mtlFunction retain];
 }}
@@ -32,7 +32,7 @@ MetalShaderFunction::~MetalShaderFunction() { @autoreleasepool
     [m_mtlFunction release];
 }}
 
-MetalShaderFunction& MetalShaderFunction::operator=(MetalShaderFunction&& other) { @autoreleasepool
+MetalShaderFunction& MetalShaderFunction::operator=(MetalShaderFunction&& other) noexcept { @autoreleasepool
 {
     if (&other != this)
     {

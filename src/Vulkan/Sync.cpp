@@ -12,6 +12,7 @@
 #include <vulkan/vulkan.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
 #else
     #include <optional>
     namespace ext = std;
@@ -20,30 +21,104 @@
 namespace gfx
 {
 
+ext::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState& state, const ResourceSyncRequest& request)
+{
+    constexpr vk::AccessFlags2 kWriteMask = vk::AccessFlagBits2::eShaderWrite
+        | vk::AccessFlagBits2::eTransferWrite
+        | vk::AccessFlagBits2::eColorAttachmentWrite
+        | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
+        | vk::AccessFlagBits2::eHostWrite
+        | vk::AccessFlagBits2::eMemoryWrite;
+
+    ext::optional<vk::MemoryBarrier2> memoryBarrier;
+
+    const bool hadPrevUse = state.accessMask != vk::AccessFlags2{};
+    const bool prevWrote = (state.accessMask & kWriteMask) != vk::AccessFlags2{};
+    const bool nextWrites = (request.accessMask & kWriteMask) != vk::AccessFlags2{};
+    if (hadPrevUse && (prevWrote || nextWrites))
+    {
+        memoryBarrier = vk::MemoryBarrier2{}
+            .setSrcStageMask(state.stageMask)
+            .setSrcAccessMask(state.accessMask)
+            .setDstStageMask(request.stageMask)
+            .setDstAccessMask(request.accessMask);
+    }
+    return memoryBarrier;
+}
+
+ResourceSyncState resourceStateAfterSync(const ResourceSyncRequest& request)
+{
+    return ResourceSyncState{
+        .stageMask = request.stageMask,
+        .accessMask = request.accessMask
+    };
+}
+
 ext::optional<vk::ImageMemoryBarrier2> syncImage(ImageSyncState& state, const ImageSyncRequest& request)
 {
-    ext::optional<vk::ImageMemoryBarrier2> barrier;
-    if (state.layout != request.layout)
+    ext::optional<vk::MemoryBarrier2> memoryBarrier = syncResource(state, request);
+    ext::optional<vk::ImageMemoryBarrier2> imageMemoryBarrier;
+    if (memoryBarrier.has_value())
     {
-        barrier = vk::ImageMemoryBarrier2{}
-            .setSrcStageMask(vk::PipelineStageFlagBits2::eAllCommands)
-            .setSrcAccessMask(vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite)
-            .setDstStageMask(vk::PipelineStageFlagBits2::eAllCommands)
-            .setDstAccessMask(vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite)
-            .setOldLayout(request.preserveContent ? state.layout : vk::ImageLayout::eUndefined)
+        const vk::ImageLayout oldLayout = (request.layout == state.layout) ? state.layout : (request.preserveContent ? state.layout : vk::ImageLayout::eUndefined);
+
+        imageMemoryBarrier = vk::ImageMemoryBarrier2{}
+            .setSrcStageMask(memoryBarrier->srcStageMask)
+            .setSrcAccessMask(memoryBarrier->srcAccessMask)
+            .setDstStageMask(memoryBarrier->dstStageMask)
+            .setDstAccessMask(memoryBarrier->dstAccessMask)
+            .setOldLayout(oldLayout)
+            .setNewLayout(request.layout)
+            .setSrcQueueFamilyIndex(vk::QueueFamilyIgnored)
+            .setDstQueueFamilyIndex(vk::QueueFamilyIgnored);
+    }
+    else if (state.layout != request.layout)
+    {
+        const vk::ImageLayout oldLayout = request.preserveContent ? state.layout : vk::ImageLayout::eUndefined;
+
+        imageMemoryBarrier = vk::ImageMemoryBarrier2{}
+            .setSrcStageMask(state.stageMask)
+            .setSrcAccessMask(state.accessMask)
+            .setDstStageMask(request.stageMask)
+            .setDstAccessMask(request.accessMask)
+            .setOldLayout(oldLayout)
             .setNewLayout(request.layout)
             .setSrcQueueFamilyIndex(vk::QueueFamilyIgnored)
             .setDstQueueFamilyIndex(vk::QueueFamilyIgnored);
     }
     state = imageStateAfterSync(request);
-    return barrier;
+    return imageMemoryBarrier;
 }
 
 ImageSyncState imageStateAfterSync(const ImageSyncRequest& request)
 {
-    return ImageSyncState{
-        .layout = request.layout
-    };
+    ImageSyncState newState(resourceStateAfterSync(request));
+    newState.layout = request.layout;
+    return newState;
+}
+
+ext::optional<vk::BufferMemoryBarrier2> syncBuffer(BufferSyncState& state, const BufferSyncRequest& request)
+{
+    ext::optional<vk::MemoryBarrier2> memoryBarrier = syncResource(state, request);
+    ext::optional<vk::BufferMemoryBarrier2> bufferMemoryBarrier;
+    if (memoryBarrier.has_value())
+    {
+        bufferMemoryBarrier = vk::BufferMemoryBarrier2{}
+            .setSrcStageMask(memoryBarrier->srcStageMask)
+            .setSrcAccessMask(memoryBarrier->srcAccessMask)
+            .setDstStageMask(memoryBarrier->dstStageMask)
+            .setDstAccessMask(memoryBarrier->dstAccessMask)
+            .setSrcQueueFamilyIndex(vk::QueueFamilyIgnored)
+            .setDstQueueFamilyIndex(vk::QueueFamilyIgnored);
+    }
+    state = bufferStateAfterSync(request);
+    return bufferMemoryBarrier;
+}
+
+BufferSyncState bufferStateAfterSync(const BufferSyncRequest& request)
+{
+    BufferSyncState newState(resourceStateAfterSync(request));
+    return newState;
 }
 
 }

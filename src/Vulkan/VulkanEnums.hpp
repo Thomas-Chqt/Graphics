@@ -13,7 +13,6 @@
 #include "Graphics/Enums.hpp"
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_enums.hpp>
 
 namespace gfx
 {
@@ -22,6 +21,8 @@ constexpr vk::Format toVkFormat(PixelFormat pxf)
 {
     switch (pxf)
     {
+    case PixelFormat::RGBA8Unorm:
+        return vk::Format::eR8G8B8A8Unorm;
     case PixelFormat::BGRA8Unorm:
         return vk::Format::eB8G8R8A8Unorm;
     case PixelFormat::BGRA8Unorm_sRGB:
@@ -120,6 +121,8 @@ constexpr vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
         vkUsages |= vk::BufferUsageFlagBits::eIndexBuffer;
     if (use & BufferUsage::uniformBuffer)
         vkUsages |= vk::BufferUsageFlagBits::eUniformBuffer;
+    if (use & BufferUsage::copySource)
+        vkUsages |= vk::BufferUsageFlagBits::eTransferSrc;
 
     return vkUsages;
 }
@@ -130,10 +133,13 @@ constexpr vk::DescriptorType toVkDescriptorType(BindingType tpe)
     {
     case BindingType::uniformBuffer:
         return vk::DescriptorType::eUniformBuffer;
+    case BindingType::sampledTexture:
+        return vk::DescriptorType::eSampledImage;
+    case BindingType::sampler:
+        return vk::DescriptorType::eSampler;
     default:
         throw ext::runtime_error("not implemented");
     }
-
 }
 
 constexpr vk::ShaderStageFlags toVkShaderStageFlags(BindingUsages use)
@@ -162,6 +168,8 @@ constexpr vk::ImageUsageFlags toVkImageUsageFlags(TextureUsages use)
         vkUsages |= vk::ImageUsageFlagBits::eColorAttachment;
     if (use & TextureUsage::depthStencilAttachment)
         vkUsages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+    if (use & TextureUsage::copyDestination)
+        vkUsages |= vk::ImageUsageFlagBits::eTransferDst;
 
     return vkUsages;
 }
@@ -171,7 +179,7 @@ constexpr vk::ImageAspectFlags toVkImageAspectFlags(TextureUsages use)
     vk::ImageAspectFlags vkImgAspectFlags;
     
     if (use & TextureUsage::shaderRead)
-        vkImgAspectFlags |= vk::ImageAspectFlagBits::eNone; // ?
+        vkImgAspectFlags |= vk::ImageAspectFlagBits::eColor;
     if (use & TextureUsage::colorAttachment)
         vkImgAspectFlags |= vk::ImageAspectFlagBits::eColor;
     if (use & TextureUsage::depthStencilAttachment)

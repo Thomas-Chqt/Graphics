@@ -96,6 +96,7 @@ template<typename E>
 
 enum class PixelFormat : uint8_t
 {
+    RGBA8Unorm,
     BGRA8Unorm,
     BGRA8Unorm_sRGB,
     Depth32Float
@@ -131,7 +132,8 @@ enum class BufferUsage : uint8_t
     vertexBuffer  = 1 << 0,
     indexBuffer   = 1 << 1,
     uniformBuffer = 1 << 2,
-    perFrameData  = 1 << 3  // one buffer per frame in flight
+    perFrameData  = 1 << 3,  // one buffer per frame in flight TODO : remove (define trough other usages)
+    copySource    = 1 << 4
 };
 GFX_ENABLE_BITMASK_OPERATORS(BufferUsage);
 using BufferUsages = Flags<BufferUsage>;
@@ -152,7 +154,9 @@ using Backends = Flags<Backend>;
 
 enum class BindingType : uint8_t
 {
-    uniformBuffer
+    uniformBuffer,
+    sampledTexture,
+    sampler
 };
 
 enum class BindingUsage : uint8_t
@@ -170,9 +174,15 @@ enum class TextureUsage : uint8_t
     shaderRead             = 1 << 0,
     colorAttachment        = 1 << 1,
     depthStencilAttachment = 1 << 2,
+    copyDestination        = 1 << 3
 };
 GFX_ENABLE_BITMASK_OPERATORS(TextureUsage);
 using TextureUsages = Flags<TextureUsage>;
+
+enum class TextureType : uint8_t
+{
+    texture2d
+};
 
 } // namespace gfx
 

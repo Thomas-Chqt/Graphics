@@ -15,14 +15,16 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
-
 #include "Graphics/Texture.hpp"
+
 #include "common.hpp"
+#include "Vulkan/SemaphorePool.hpp"
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanParameterBlockPool.hpp"
 #include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanCommandBufferPool.hpp"
 
 #include "Vulkan/vk_mem_alloc.hpp"
 
@@ -36,7 +38,6 @@
     #include <cstddef>
     #include <cstdint>
     #include <iterator>
-    #include <deque>
     #include <map>
     namespace ext = std;
 #endif
@@ -111,11 +112,12 @@ public:
 private:
     struct FrameData
     {
+        VulkanCommandBufferPool commandBufferPool;
         VulkanParameterBlockPool pbPool;
-        vk::CommandPool commandPool; // TODO : CommandBufferPool
+        SemaphorePool semaphorePool;
+
         vk::Fence frameCompletedFence;
-        ext::deque<VulkanCommandBuffer> commandBuffers;
-        ext::deque<VulkanCommandBuffer> usedCommandBuffers;
+        VulkanCommandBuffer* fencedCmdBuffer; // the one that trigger frameCompletedFence
         ext::vector<VulkanCommandBuffer*> submittedCmdBuffers;
         ext::vector<ext::shared_ptr<VulkanDrawable>> presentedDrawables;
     };
@@ -127,10 +129,10 @@ private:
     vk::Queue m_queue;
     VmaAllocator m_allocator = VK_NULL_HANDLE;
 
+    ext::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayouts;
+
     PerFrameInFlight<FrameData> m_frameDatas;
     PerFrameInFlight<FrameData>::iterator m_currFrameData = m_frameDatas.begin();
-
-    ext::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayouts;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

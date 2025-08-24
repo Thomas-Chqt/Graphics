@@ -32,8 +32,8 @@ public:
     QueueFamily() = default;
     QueueFamily(const vk::QueueFamilyProperties&);
 
-    uint32_t index;
-    const VulkanPhysicalDevice* device;
+    uint32_t index = 0;
+    const VulkanPhysicalDevice* device = nullptr;
 
     bool hasCapabilities(const QueueCapabilities&) const;
 };

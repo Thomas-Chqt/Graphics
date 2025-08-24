@@ -30,7 +30,7 @@ class ParameterBlock
 public:
     struct Binding
     {
-        BindingType type;
+        BindingType type = BindingType::uniformBuffer;
         BindingUsages usages;
 
         bool operator<(const Binding& rhs) const noexcept { return type != rhs.type ? type < rhs.type : usages < rhs.usages; }
@@ -46,7 +46,7 @@ public:
 public:
     ParameterBlock(const ParameterBlock&) = delete;
 
-    virtual void setBinding(uint32_t idx, const ext::shared_ptr<const Buffer>&) = 0;
+    virtual void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) = 0;
 
     virtual ~ParameterBlock() = default;
 

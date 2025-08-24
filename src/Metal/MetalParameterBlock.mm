@@ -30,18 +30,18 @@ namespace gfx
 {
 
 MetalParameterBlock::MetalParameterBlock(MetalBuffer* argumentBuffer, size_t offset, const ParameterBlock::Layout& layout)
-    : m_argumentBuffer(ext::move(argumentBuffer)), m_offset(offset), m_layout(layout)
+    : m_argumentBuffer(argumentBuffer), m_offset(offset), m_bindings(layout.bindings)
 {
-    assert((argumentBuffer->size() - m_offset) >= (m_layout.bindings.size() * sizeof(uint64_t)));
+    assert((argumentBuffer->size() - m_offset) >= (m_bindings.size() * sizeof(uint64_t)));
 }
 
-void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<const Buffer>& aBuffer)
+void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer>& aBuffer)
 {
-    auto buffer = std::dynamic_pointer_cast<const MetalBuffer>(aBuffer);
+    auto buffer = ext::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
-    m_encodedBuffers.insert(ext::make_pair(m_layout.bindings[idx], buffer));
     ext::byte* content = m_argumentBuffer->content<ext::byte>() + m_offset;
     reinterpret_cast<uint64_t*>(content)[idx] = buffer->mtlBuffer().gpuAddress;
+    m_encodedBuffers.insert(ext::make_pair(m_bindings[idx], buffer));
 }
 
 }

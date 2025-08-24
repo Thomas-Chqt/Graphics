@@ -59,18 +59,18 @@ public:
     virtual void imguiNewFrame() const = 0;
 #endif
 
-    virtual void beginFrame(void) = 0;
+    virtual void beginFrame() = 0;
 
     virtual ParameterBlock& parameterBlock(const ParameterBlock::Layout&) = 0;
  
-    virtual CommandBuffer& commandBuffer(void) = 0;
+    virtual CommandBuffer& commandBuffer() = 0;
 
     virtual void submitCommandBuffer(CommandBuffer&) = 0;
     virtual void presentDrawable(const ext::shared_ptr<Drawable>&) = 0;
 
-    virtual void endFrame(void) = 0;
+    virtual void endFrame() = 0;
 
-    virtual void waitIdle(void) const = 0;
+    virtual void waitIdle() const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
     virtual void imguiShutdown() const = 0;

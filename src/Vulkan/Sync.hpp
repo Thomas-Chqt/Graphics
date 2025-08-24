@@ -21,19 +21,41 @@
 namespace gfx
 {
 
-struct ImageSyncRequest
+struct ResourceSyncRequest
 {
-    vk::ImageLayout layout;
-    bool preserveContent;
+    vk::PipelineStageFlags2 stageMask;
+    vk::AccessFlags2 accessMask;
 };
 
-struct ImageSyncState
+struct ResourceSyncState
 {
-    vk::ImageLayout layout;
+    vk::PipelineStageFlags2 stageMask;
+    vk::AccessFlags2 accessMask;
 };
+
+struct ImageSyncRequest : public ResourceSyncRequest
+{
+    vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+    bool preserveContent = true;
+};
+
+struct ImageSyncState : public ResourceSyncState
+{
+    vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+};
+
+struct BufferSyncRequest : public ResourceSyncRequest { };
+
+struct BufferSyncState : public ResourceSyncState { };
+
+ext::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState&, const ResourceSyncRequest&);
+ResourceSyncState resourceStateAfterSync(const ResourceSyncRequest&);
 
 ext::optional<vk::ImageMemoryBarrier2> syncImage(ImageSyncState&, const ImageSyncRequest&);
 ImageSyncState imageStateAfterSync(const ImageSyncRequest&);
+
+ext::optional<vk::BufferMemoryBarrier2> syncBuffer(BufferSyncState&, const BufferSyncRequest&);
+BufferSyncState bufferStateAfterSync(const BufferSyncRequest&);
 
 }
 

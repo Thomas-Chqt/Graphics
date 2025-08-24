@@ -35,20 +35,20 @@ public:
 
     MetalParameterBlock(MetalBuffer*, size_t offset, const ParameterBlock::Layout&);
 
-    void setBinding(uint32_t idx, const ext::shared_ptr<const Buffer>&) override;
+    void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) override;
 
     inline const MetalBuffer& argumentBuffer() const { return *m_argumentBuffer; }
     inline size_t offset() const { return m_offset; }
-    inline const ext::map<ParameterBlock::Binding, ext::shared_ptr<const MetalBuffer>>& encodedBuffers() const { return m_encodedBuffers; };
+    inline const ext::map<ParameterBlock::Binding, ext::shared_ptr<MetalBuffer>>& encodedBuffers() const { return m_encodedBuffers; };
 
-    ~MetalParameterBlock() = default;
+    ~MetalParameterBlock() override = default;
 
 private:
     MetalBuffer* m_argumentBuffer = nullptr;
     size_t m_offset = 0;
-    ParameterBlock::Layout m_layout;
+    ext::vector<ParameterBlock::Binding> m_bindings;
 
-    ext::map<ParameterBlock::Binding, ext::shared_ptr<const MetalBuffer>> m_encodedBuffers;
+    ext::map<ParameterBlock::Binding, ext::shared_ptr<MetalBuffer>> m_encodedBuffers;
 
 public:
     MetalParameterBlock& operator = (const MetalParameterBlock&) = delete;

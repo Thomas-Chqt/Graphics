@@ -14,11 +14,11 @@
 #include "Metal/MetalDevice.hpp"
 
 #import <Metal/Metal.h>
-#include <cstdint>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
+    #include <cstdint>
     #include <stdexcept>
     #include <cstring>
     #include <utility>
@@ -31,22 +31,28 @@ namespace gfx
 {
 
 MetalBuffer::MetalBuffer(const MetalDevice* device, const Buffer::Descriptor& desc)
-    : m_device(device), m_usages(desc.usages) { @autoreleasepool
+    : m_device(device),
+      m_usages(desc.usages),
+      m_storageMode(desc.storageMode) { @autoreleasepool
 {
     MTLResourceOptions ressourceOptions = desc.storageMode == ResourceStorageMode::deviceLocal ? MTLResourceStorageModePrivate : 0;
 
-    for (auto& frameData :  m_frameDatas)
+    if (desc.usages & BufferUsage::perFrameData)
+        m_bufferCount = m_frameDatas.size();
+    else
+        m_bufferCount = 1;
+
+    for (uint32_t i = 0; i < m_bufferCount; i++)
     {
+        auto& frameData = m_frameDatas.at(i);
+
         if (desc.data == nullptr)
             frameData.mtlBuffer = [m_device->mtlDevice() newBufferWithLength:desc.size options:ressourceOptions];
         else
             frameData.mtlBuffer = [m_device->mtlDevice() newBufferWithBytes:desc.data length:desc.size options:ressourceOptions];
 
-        if (frameData.mtlBuffer == Nil)
+        if (frameData.mtlBuffer == nil)
             throw ext::runtime_error("mtl buffer creation failed");
-
-        if (static_cast<bool>(desc.usages & BufferUsage::perFrameData) == false)
-            break;
     }
 }}
 
@@ -57,22 +63,35 @@ size_t MetalBuffer::size() const { @autoreleasepool
 
 void MetalBuffer::setContent(const void* data, size_t size) { @autoreleasepool
 {
-    for (auto& frameData : m_frameDatas)
+    for (uint32_t i = 0; i < m_bufferCount; i++)
     {
+        auto& frameData = m_frameDatas.at(i);
+
         void* content = frameData.mtlBuffer.contents;
         std::memcpy(content, data, size);
         if (frameData.mtlBuffer.storageMode == MTLStorageModeManaged)
             [frameData.mtlBuffer didModifyRange:NSMakeRange(0, size)];
-
-        if (static_cast<bool>(m_usages & BufferUsage::perFrameData) == false)
-            break;
     }
 }}
 
-const id<MTLBuffer>& MetalBuffer::mtlBuffer() const { @autoreleasepool
+void MetalBuffer::clear() { @autoreleasepool
 {
-    return currentFrameData().mtlBuffer;
+    for (uint32_t i = 0; i < m_bufferCount; i++)
+    {
+        auto& frameData = m_frameDatas.at(i);
+        if (frameData.mtlBuffer != nil) {
+            [frameData.mtlBuffer release];
+            frameData.mtlBuffer = nil;
+        }
+    }
+    m_bufferCount = 0;
+    m_device = nullptr;
 }}
+
+MetalBuffer::~MetalBuffer()
+{
+    clear();
+}
 
 void* MetalBuffer::contentVoid() { @autoreleasepool
 {
@@ -80,38 +99,44 @@ void* MetalBuffer::contentVoid() { @autoreleasepool
     return mtlBuffer().contents;
 }}
 
-MetalBuffer::FrameData::FrameData(FrameData&& other) noexcept
-    : mtlBuffer(other.mtlBuffer)
-{
-    other.mtlBuffer = nil;
-}
-
-MetalBuffer::FrameData::~FrameData() { @autoreleasepool
-{
-    if (mtlBuffer != nil)
-        [mtlBuffer release];
-}}
-
-MetalBuffer::FrameData& MetalBuffer::FrameData::operator = (FrameData&& other) noexcept
-{
-    if (this != &other)
-    {
-        mtlBuffer = other.mtlBuffer;
-        other.mtlBuffer = nil;
-    }
-    return *this;
-}
-
 MetalBuffer::FrameData& MetalBuffer::currentFrameData()
 {
-    uint64_t bufferCount = static_cast<bool>(m_usages & BufferUsage::perFrameData) ? m_frameDatas.size() : 1;
-    return m_frameDatas.at(m_device->currentFrameIdx() % bufferCount);
+    assert(m_device != nullptr);
+    assert(m_bufferCount > 0);
+    return m_frameDatas.at(m_device->currentFrameIdx() % m_bufferCount);
 }
 
 const MetalBuffer::FrameData& MetalBuffer::currentFrameData() const
 {
-    uint64_t bufferCount = static_cast<bool>(m_usages & BufferUsage::perFrameData) ? m_frameDatas.size() : 1;
-    return m_frameDatas.at(m_device->currentFrameIdx() % bufferCount);
+    assert(m_device != nullptr);
+    assert(m_bufferCount > 0);
+    return m_frameDatas.at(m_device->currentFrameIdx() % m_bufferCount);
+}
+
+MetalBuffer& MetalBuffer::operator = (MetalBuffer&& other) noexcept
+{
+    if (this != &other)
+    {
+        clear();
+        m_device = ext::exchange(other.m_device, nullptr);
+        m_bufferCount = ext::exchange(other.m_bufferCount, 0);
+        for (uint32_t i = 0; i < m_bufferCount; i++)
+            m_frameDatas.at(i) = ext::exchange(other.m_frameDatas.at(i), FrameData());
+    }
+    return *this;
+}
+
+MetalBuffer::operator bool () const
+{
+    if (m_device == nullptr)
+        return false;
+    if (m_bufferCount == 0)
+        return false;
+    for (uint32_t i = 0; i < m_bufferCount; i++) {
+        if (m_frameDatas.at(i).mtlBuffer == nil) 
+            return false;
+    }
+    return true;
 }
 
 }

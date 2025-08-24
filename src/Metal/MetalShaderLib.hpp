@@ -46,7 +46,7 @@ public:
 
     MetalShaderFunction& getFunction(const ext::string&) override;
 
-    ~MetalShaderLib();
+    ~MetalShaderLib() override;
 
 private:
     id<MTLLibrary> m_mtlLibrary;

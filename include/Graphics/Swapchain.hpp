@@ -30,8 +30,8 @@ class Swapchain
 public:
     struct Descriptor
     {
-        Surface* surface;
-        uint32_t width, height;
+        Surface* surface = nullptr;
+        uint32_t width = 0, height = 0;
         uint32_t imageCount = 3;
         PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
         PresentMode presentMode = PresentMode::fifo;
@@ -41,7 +41,7 @@ public:
     Swapchain(const Swapchain&) = delete;
     Swapchain(Swapchain&&) = delete;
 
-    virtual ext::shared_ptr<Drawable> nextDrawable(void) = 0;
+    virtual ext::shared_ptr<Drawable> nextDrawable() = 0;
 
     virtual ~Swapchain() = default;
 

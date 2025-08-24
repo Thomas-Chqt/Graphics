@@ -18,6 +18,7 @@
 
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
+#include "Metal/MetalTexture.hpp"
 
 #ifdef __OBJC__
     #import <Metal/Metal.h>
@@ -27,7 +28,7 @@
     using id = T*;
     class MTLCommandQueue;
     class MTLCommandBuffer;
-    class MTLRenderCommandEncoder;
+    class MTLCommandEncoder;
 #endif // __OBJC__
 
 #if defined(GFX_USE_UTILSCPP)
@@ -49,40 +50,41 @@ class MetalCommandBuffer : public CommandBuffer
 public:
     MetalCommandBuffer() = default;
     MetalCommandBuffer(const MetalCommandBuffer&) = delete;
-    MetalCommandBuffer(MetalCommandBuffer&&) = delete;
+    MetalCommandBuffer(MetalCommandBuffer&&) noexcept;
 
     MetalCommandBuffer(const id<MTLCommandQueue>&);
     
     void beginRenderPass(const Framebuffer&) override;
 
     void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
-    void useVertexBuffer(const ext::shared_ptr<const Buffer>&) override;
+    void useVertexBuffer(const ext::shared_ptr<Buffer>&) override;
 
     void setParameterBlock(const ParameterBlock&, uint32_t index) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
-    void drawIndexedVertices(const ext::shared_ptr<const Buffer>& idxBuffer) override;
+    void drawIndexedVertices(const ext::shared_ptr<Buffer>& idxBuffer) override;
 
 #if defined(GFX_IMGUI_ENABLED)
     void imGuiRenderDrawData(ImDrawData*) const override;
 #endif
 
-    void endRenderPass(void) override;
+    void endRenderPass() override;
 
     const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }
 
-    ~MetalCommandBuffer();
+    ~MetalCommandBuffer() override;
 
 private:
     id<MTLCommandBuffer> m_mtlCommandBuffer = nil;
-    id<MTLRenderCommandEncoder> m_commandEncoder = nil;
+    id<MTLCommandEncoder> m_commandEncoder = nil;
 
     ext::set<ext::shared_ptr<const MetalGraphicsPipeline>> m_usedPipelines;
+    ext::set<ext::shared_ptr<const MetalTexture>> m_usedTextures;
     ext::set<ext::shared_ptr<const MetalBuffer>> m_usedBuffers;
 
 public:
     MetalCommandBuffer& operator = (const MetalCommandBuffer&) = delete;
-    MetalCommandBuffer& operator = (MetalCommandBuffer&&) = delete;
+    MetalCommandBuffer& operator = (MetalCommandBuffer&&) noexcept;
 };
 
 }

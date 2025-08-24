@@ -19,6 +19,7 @@
     #include <vector>
     #include <memory>
     #include <optional>
+    #include <array>
     namespace ext = std;
 #endif
 
@@ -31,7 +32,7 @@ struct Framebuffer
     struct Attachment
     {
         LoadAction loadAction = LoadAction::load;
-        union { float clearColor[4]; float clearDepth; };
+        union { ext::array<float, 4> clearColor; float clearDepth; };
         ext::shared_ptr<Texture> texture;
     };
 

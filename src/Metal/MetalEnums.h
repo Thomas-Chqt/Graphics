@@ -30,6 +30,8 @@ constexpr MTLPixelFormat toMTLPixelFormat(PixelFormat pxf)
 {
     switch (pxf)
     {
+    case PixelFormat::RGBA8Unorm:
+        return MTLPixelFormatRGBA8Unorm;
     case PixelFormat::BGRA8Unorm:
         return MTLPixelFormatBGRA8Unorm;
     case PixelFormat::BGRA8Unorm_sRGB:
@@ -45,6 +47,8 @@ constexpr PixelFormat toPixelFormat(MTLPixelFormat pxf)
 {
     switch (pxf)
     {
+    case MTLPixelFormatRGBA8Unorm:
+        return PixelFormat::RGBA8Unorm;
     case MTLPixelFormatBGRA8Unorm:
         return PixelFormat::BGRA8Unorm;
     case MTLPixelFormatBGRA8Unorm_sRGB:
@@ -124,6 +128,17 @@ constexpr MTLTextureUsage toMTLTextureUsage(TextureUsages use)
         mtlTextureUsage |= MTLTextureUsageRenderTarget;
 
     return mtlTextureUsage;
+}
+
+constexpr MTLTextureType toMTLTextureType(TextureType type)
+{
+    switch (type)
+    {
+    case TextureType::texture2d:
+        return MTLTextureType2D;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
 }
 
 }

@@ -28,7 +28,7 @@ MetalSurface::MetalSurface(GLFWwindow* glfwWindow) { @autoreleasepool
 {
     m_mtlLayer = [[CAMetalLayer layer] retain];
 
-    NSWindow* nswindow = glfwGetCocoaWindow(glfwWindow);
+    NSWindow* nswindow = glfwGetCocoaWindow(glfwWindow); // NOLINT
     nswindow.contentView.layer = m_mtlLayer;
     nswindow.contentView.wantsLayer = YES;
 }}

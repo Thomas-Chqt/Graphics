@@ -28,7 +28,7 @@ public:
     Drawable(const Drawable&) = delete;
     Drawable(Drawable&&) = delete;
 
-    virtual ext::shared_ptr<Texture> texture(void) const = 0;
+    virtual ext::shared_ptr<Texture> texture() const = 0;
 
     virtual ~Drawable() = default;
 

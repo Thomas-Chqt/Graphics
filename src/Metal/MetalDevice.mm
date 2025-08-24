@@ -16,6 +16,7 @@
 
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalBuffer.hpp"
+#include "Metal/MetalCommandBufferPool.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlockPool.hpp"
 #include "Metal/MetalSwapchain.hpp"
@@ -27,7 +28,7 @@
 
 #import "Metal/MetalEnums.h"
 
-#include <Metal/Metal.h>
+#import <Metal/Metal.h>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -36,6 +37,8 @@
     #include <queue>
     #include <cassert>
     #include <cstdint>
+    #include <iterator>
+    #include <algorithm>
     namespace ext = std;
 #endif
 
@@ -49,8 +52,8 @@ MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor&) { @au
 
     for (auto& frameData : m_frameDatas) {
         frameData.pBlockPool = MetalParameterBlockPool(this);
+        frameData.commandBufferPool = MetalCommandBufferPool(&m_queue);
     }
-    m_currFrameData = m_frameDatas.begin();
 }}
 
 ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -90,19 +93,23 @@ void MetalDevice::imguiInit(uint32_t, ext::vector<PixelFormat> colorPixelFomats,
 #endif
 
 #if defined(GFX_IMGUI_ENABLED)
-void MetalDevice::imguiNewFrame() const
+void MetalDevice::imguiNewFrame() const { @autoreleasepool
 {
     ImGui_ImplMetal_NewFrame();
-}
+}}
 #endif
 
 void MetalDevice::beginFrame() { @autoreleasepool
 {
-    if (m_currFrameData->submittedCommandBuffers.empty() == false)
-        [m_currFrameData->submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
+    if (m_currFrameData->waitedCommandBuffer != nullptr) {
+        [m_currFrameData->waitedCommandBuffer->mtlCommandBuffer() waitUntilCompleted];
+        auto it = ext::ranges::find(m_currFrameData->submittedCommandBuffers, m_currFrameData->waitedCommandBuffer);
+        if (it != m_currFrameData->submittedCommandBuffers.end())
+            m_currFrameData->submittedCommandBuffers.erase(m_currFrameData->submittedCommandBuffers.begin(), ext::next(it));
+        m_currFrameData->waitedCommandBuffer = nullptr;
+    }
 
-    m_currFrameData->submittedCommandBuffers.clear();
-    m_currFrameData->commandBuffers.clear();
+    m_currFrameData->commandBufferPool.reset();
     m_currFrameData->pBlockPool.reset();
 }}
 
@@ -113,7 +120,7 @@ ParameterBlock& MetalDevice::parameterBlock(const ParameterBlock::Layout& pbLayo
 
 CommandBuffer& MetalDevice::commandBuffer()
 {
-    return m_currFrameData->commandBuffers.emplace_back(m_queue);
+    return m_currFrameData->commandBufferPool.get();
 }
 
 void MetalDevice::submitCommandBuffer(CommandBuffer& aCommandBuffer)
@@ -127,12 +134,18 @@ void MetalDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable) { 
 {
     ext::shared_ptr<MetalDrawable> drawable = ext::dynamic_pointer_cast<MetalDrawable>(_drawable);
     [m_currFrameData->submittedCommandBuffers.back()->mtlCommandBuffer() presentDrawable:drawable->mtlDrawable()];
+    // TODO : keep strong ref to drawable
 }}
 
 void MetalDevice::endFrame() { @autoreleasepool
 {
     for (auto& buff : m_currFrameData->submittedCommandBuffers)
         [buff->mtlCommandBuffer() commit];
+
+    if (m_currFrameData->submittedCommandBuffers.empty() == false)
+        m_currFrameData->waitedCommandBuffer = m_currFrameData->submittedCommandBuffers.back();
+
+    m_currFrameData->commandBufferPool.swapPools();
     m_currFrameData++;
     if (m_currFrameData == m_frameDatas.end())
         m_currFrameData = m_frameDatas.begin();
@@ -141,22 +154,32 @@ void MetalDevice::endFrame() { @autoreleasepool
 void MetalDevice::waitIdle() const { @autoreleasepool
 {
     for (auto& frameData : m_frameDatas) {
-        if (frameData.submittedCommandBuffers.empty() == false)
-            [frameData.submittedCommandBuffers.back()->mtlCommandBuffer() waitUntilCompleted];
+        if (frameData.waitedCommandBuffer != nullptr) {
+            [frameData.waitedCommandBuffer->mtlCommandBuffer() waitUntilCompleted];
+            //auto it = ext::ranges::find(frameData.submittedCommandBuffers, frameData.waitedCommandBuffer);
+            //if (it != frameData.submittedCommandBuffers.end())
+            //    frameData.submittedCommandBuffers.erase(frameData.submittedCommandBuffers.begin(), ext::next(it));
+            //frameData.waitedCommandBuffer = nullptr;
+        }
     }
 }}
 
 #if defined(GFX_IMGUI_ENABLED)
-void MetalDevice::imguiShutdown() const
+void MetalDevice::imguiShutdown() const { @autoreleasepool
 {
     ImGui_ImplMetal_Shutdown();
-}
+}}
 #endif
 
 MetalDevice::~MetalDevice() { @autoreleasepool
 {
     waitIdle();
-    m_frameDatas = PerFrameInFlight<FrameData>();
+    for (auto& frameData : m_frameDatas) {
+        frameData.waitedCommandBuffer = nullptr;
+        frameData.submittedCommandBuffers.clear();
+        frameData.commandBufferPool.clear();
+        frameData.pBlockPool.clear();
+    }
     [m_queue release];
     [m_mtlDevice release];
 }}

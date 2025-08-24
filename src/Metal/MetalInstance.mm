@@ -15,6 +15,7 @@
 
 #import <Metal/Metal.h>
 #import <TargetConditionals.h>
+#import <Foundation/Foundation.h>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -30,7 +31,8 @@
 namespace gfx
 {
 
-MetalInstance::MetalInstance(const Instance::Descriptor& _)
+MetalInstance::MetalInstance(const Instance::Descriptor&)
+    : m_autoReleasePool([[NSAutoreleasePool alloc] init])
 {
 }
 
@@ -41,17 +43,31 @@ ext::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow)
 }
 #endif
 
-ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc) { @autoreleasepool
+ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc)
 {
-#if defined(TARGET_OS_OSX)
-    NSArray<id<MTLDevice>>* mtlDevices = [MTLCopyAllDevices() autorelease];
-#else
-    NSArray<id<MTLDevice>>* mtlDevices = @[ MTLCreateSystemDefaultDevice() ];
-#endif
-    for (id<MTLDevice> mtlDevice in mtlDevices)
-        m_devices.push_back([mtlDevice retain]);
+    @autoreleasepool
+    {
+        for (auto& device : m_devices)
+            [device release]; // refresh the list when newDevice is called
 
-    return ext::make_unique<MetalDevice>(m_devices.front(), desc);
-}}
+#if defined(TARGET_OS_OSX)
+        NSArray<id<MTLDevice>>* mtlDevices = [MTLCopyAllDevices() autorelease];
+#else
+        NSArray<id<MTLDevice>>* mtlDevices = @[ MTLCreateSystemDefaultDevice() ];
+#endif
+
+        for (NSUInteger i = 0; i < mtlDevices.count; i++)
+            m_devices.push_back([[mtlDevices objectAtIndex:i] retain]);
+
+        return ext::make_unique<MetalDevice>(m_devices.front(), desc);
+    }
+}
+
+MetalInstance::~MetalInstance()
+{
+    for (auto& device : m_devices)
+        [device release];
+    [m_autoReleasePool drain];
+}
 
 } // namespace gfx

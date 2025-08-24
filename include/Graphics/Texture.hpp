@@ -25,10 +25,11 @@ class Texture
 public:
     struct Descriptor
     {
+        TextureType type = TextureType::texture2d;
         uint32_t width = 0, height = 0;
-        PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
-        TextureUsages usages;
-        ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
+        PixelFormat pixelFormat = PixelFormat::RGBA8Unorm;
+        TextureUsages usages = TextureUsage::shaderRead;
+        ResourceStorageMode storageMode = ResourceStorageMode::deviceLocal;
     };
 
 public:
@@ -38,6 +39,8 @@ public:
     virtual uint32_t width() const = 0;
     virtual uint32_t height() const = 0;
     virtual PixelFormat pixelFormat() const = 0;
+    virtual TextureUsages usages() const = 0;
+    virtual ResourceStorageMode storageMode() const = 0;
 
     virtual ~Texture() = default;
 

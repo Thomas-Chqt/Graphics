@@ -15,6 +15,7 @@
 
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/QueueFamily.hpp"
+#include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/Sync.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanParameterBlockPool.hpp"
@@ -29,6 +30,7 @@
 #include "Vulkan/imgui_impl_vulkan.h"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/vk_mem_alloc.hpp" // IWYU pragma: keep
+#include "Vulkan/VulkanCommandBufferPool.hpp"
 
 #include <vulkan/vulkan.hpp>
 
@@ -45,8 +47,8 @@
     #include <cstring>
     #include <utility>
     #include <set>
-    #include <algorithm>
     #include <array>
+    #include <deque>
     namespace ext = std;
 #endif
 
@@ -111,15 +113,13 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     if (res != VK_SUCCESS)
         throw ext::runtime_error("vmaCreateAllocator failed");
 
-    auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
-        .setQueueFamilyIndex(m_queueFamily.index);
-
     auto fenceCreateInfo = vk::FenceCreateInfo{}
         .setFlags(vk::FenceCreateFlagBits::eSignaled);
 
     for (auto& frameData : m_frameDatas) {
+        frameData.commandBufferPool = VulkanCommandBufferPool(this, m_queueFamily);
         frameData.pbPool = VulkanParameterBlockPool(this);
-        frameData.commandPool = m_vkDevice.createCommandPool(commandPoolCreateInfo);
+        frameData.semaphorePool = SemaphorePool(this);
         frameData.frameCompletedFence = m_vkDevice.createFence(fenceCreateInfo);
     }
 }
@@ -137,7 +137,7 @@ ext::unique_ptr<ShaderLib> VulkanDevice::newShaderLib(const ext::filesystem::pat
 ext::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
 {
     for (auto& pbl : desc.parameterBlockLayouts)
-        (void)descriptorSetLayout(pbl);
+        (void)descriptorSetLayout(pbl); // will create the layout if not present
     return ext::make_unique<VulkanGraphicsPipeline>(this, desc);
 }
 
@@ -207,15 +207,15 @@ void VulkanDevice::beginFrame()
         throw ext::runtime_error("failed to wait for fence");
 
     m_currFrameData->presentedDrawables.clear();
-    m_currFrameData->submittedCmdBuffers.clear();
-    while (m_currFrameData->usedCommandBuffers.empty() == false)
-    {
-        m_currFrameData->usedCommandBuffers.front().clear();
-        m_currFrameData->commandBuffers.push_back(ext::move(m_currFrameData->usedCommandBuffers.front()));
-        m_currFrameData->usedCommandBuffers.pop_front();
-    }
-    m_vkDevice.resetCommandPool(m_currFrameData->commandPool);
+
+    auto it = ext::ranges::find(m_currFrameData->submittedCmdBuffers, m_currFrameData->fencedCmdBuffer);
+    if (it != m_currFrameData->submittedCmdBuffers.end())
+        m_currFrameData->submittedCmdBuffers.erase(m_currFrameData->submittedCmdBuffers.begin(), ext::next(it));
+    m_currFrameData->fencedCmdBuffer = nullptr;
+
+    m_currFrameData->semaphorePool.reset();
     m_currFrameData->pbPool.reset();
+    m_currFrameData->commandBufferPool.reset();
 }
 
 ParameterBlock& VulkanDevice::parameterBlock(const ParameterBlock::Layout& pbLayout)
@@ -226,153 +226,149 @@ ParameterBlock& VulkanDevice::parameterBlock(const ParameterBlock::Layout& pbLay
 
 CommandBuffer& VulkanDevice::commandBuffer()
 {
-    if (m_currFrameData->commandBuffers.empty() == false) {
-        m_currFrameData->usedCommandBuffers.push_back(ext::move(m_currFrameData->commandBuffers.front()));
-        m_currFrameData->commandBuffers.pop_front();
-    }
-    else {
-        auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
-            .setCommandPool(m_currFrameData->commandPool)
-            .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(1);
-        vk::CommandBuffer vkCommandBuffer = m_vkDevice.allocateCommandBuffers(commandBufferAllocateInfo).front();
-        m_currFrameData->usedCommandBuffers.emplace_back(ext::move(vkCommandBuffer), m_queueFamily);
-    }
-    m_currFrameData->usedCommandBuffers.back().begin(); // begin the command buffer
-    return m_currFrameData->usedCommandBuffers.back();
+    return m_currFrameData->commandBufferPool.get();
 }
 
-void VulkanDevice::submitCommandBuffer(CommandBuffer& _commandBuffer)
+void VulkanDevice::submitCommandBuffer(CommandBuffer& aCommandBuffer) // NOLINT(misc-no-recursion)
 {
-    auto& cmdBuffer = dynamic_cast<VulkanCommandBuffer&>(_commandBuffer);
+    // submittedCmdBuffers resolve the dependency between the submitted command buffers and the others
+    // it insert memoryBarriers and add semaphores if necessary
+
+    auto& cmdBuffer = dynamic_cast<VulkanCommandBuffer&>(aCommandBuffer);
     cmdBuffer.end();
 
-#if !defined (NDEBUG)
-    m_vkDevice.setDebugUtilsObjectNameEXT(vk::DebugUtilsObjectNameInfoEXT{}
-        .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkCommandBuffer>(cmdBuffer.vkCommandBuffer())))
-        .setObjectType(vk::ObjectType::eCommandBuffer)
-        .setPObjectName("user command buffer"));
-#endif
+    ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
+    ext::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
 
-    ext::vector<vk::ImageMemoryBarrier2> memoryBarriers;
+    for (auto& [buffer, syncReq] : cmdBuffer.bufferSyncRequests())
+    {
+        // TODO : check if a semaphore is required
+        
+        // define if a barrier is required
+        auto barrier = syncBuffer(buffer->syncState(), syncReq);
+        if (barrier.has_value()) {
+            barrier->setBuffer(buffer->vkBuffer());
+            barrier->setOffset(0);
+            barrier->setSize(vk::WholeSize);
+            bufferMemoryBarriers.push_back(barrier.value());
+        }
+        // the new sync state is the state a the end of the command buffer
+        buffer->syncState() = cmdBuffer.bufferFinalSyncStates().at(buffer);
+    }
+
     for (auto& [image, syncReq] : cmdBuffer.imageSyncRequests())
     {
+        // TODO : check if a semaphore is required
+        // (image->syncState().queueIdx != syncReq.queueIdx)
+        
+        // if the buffer use a swapchain image, add its imageAvailableSemaphore
+        // to the list of wait semaphores
+        if (auto swapchainImg = dynamic_pointer_cast<SwapchainImage>(image))
+            cmdBuffer.waitSemaphores().insert(&swapchainImg->imageAvailableSemaphore());
+
+        // define if a barrier is required
         auto memoryBarrier = syncImage(image->syncState(), syncReq);
         if (memoryBarrier.has_value()) {
             memoryBarrier->setImage(image->vkImage());
             memoryBarrier->setSubresourceRange(image->subresourceRange());
-            memoryBarriers.push_back(memoryBarrier.value());
+            imageMemoryBarriers.push_back(memoryBarrier.value());
         }
+        // the new sync state is the state a the end of the command buffer
         image->syncState() = cmdBuffer.imageFinalSyncStates().at(image);
     }
-    if (memoryBarriers.empty() == false) {
+
+    if (bufferMemoryBarriers.empty() == false || imageMemoryBarriers.empty() == false)
+    {
+        auto dependencyInfo = vk::DependencyInfo{}
+            .setDependencyFlags(vk::DependencyFlags{});
+
+        if (bufferMemoryBarriers.empty() == false)
+            dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
+        if (imageMemoryBarriers.empty() == false)
+            dependencyInfo.setImageMemoryBarriers(imageMemoryBarriers);
+
+        // if a barrier is needed, we need to create a command buffer for it
         auto& barrierCmdBuffer = dynamic_cast<VulkanCommandBuffer&>(commandBuffer());
-#if !defined (NDEBUG)
-        m_vkDevice.setDebugUtilsObjectNameEXT(vk::DebugUtilsObjectNameInfoEXT{}
-            .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkCommandBuffer>(barrierCmdBuffer.vkCommandBuffer())))
-            .setObjectType(vk::ObjectType::eCommandBuffer)
-            .setPObjectName("barrier command buffer"));
-#endif
-        barrierCmdBuffer.vkCommandBuffer().pipelineBarrier2(vk::DependencyInfo{}
-            .setDependencyFlags(vk::DependencyFlags{}) // TODO
-            .setImageMemoryBarriers(memoryBarriers));
-        barrierCmdBuffer.addWaitSemaphores(cmdBuffer.waitSemaphores());
-        barrierCmdBuffer.end();
-        m_currFrameData->submittedCmdBuffers.push_back(&barrierCmdBuffer);
+        barrierCmdBuffer.vkCommandBuffer().pipelineBarrier2(dependencyInfo);
+        // transfert the command buffer wait semaphore to the barrier command buffer
+        // so they are submitted in the same call
+        barrierCmdBuffer.waitSemaphores().insert_range(cmdBuffer.waitSemaphores());
+        cmdBuffer.waitSemaphores().clear();
+        submitCommandBuffer(barrierCmdBuffer);
     }
 
+    // if the command has wait semaphores we need to submit it in a separate call
+    // so an other semaphore is require to sync with the previous command buffer.
+    // this may not be required if there is not dependency between the command buffers
+    // but is fine for now
+    // *will happend on the barrierCmdBuffer if there is one (because the wait semaphores are transfered)*
+    if (cmdBuffer.waitSemaphores().empty() == false && m_currFrameData->submittedCmdBuffers.empty() == false)
+        m_currFrameData->submittedCmdBuffers.back()->signalSemaphore() = m_currFrameData->semaphorePool.get();
+    // if the last command buffer has a signalSemaphore we need to add it to the wait semaphores
+    // *will not happend if there is a barrierCmdBuffer (because barrierCmdBuffer dont have signal semaphores)*
+    if (m_currFrameData->submittedCmdBuffers.empty() == false && m_currFrameData->submittedCmdBuffers.back()->signalSemaphore())
+        cmdBuffer.waitSemaphores().insert(m_currFrameData->submittedCmdBuffers.back()->signalSemaphore());
+    
     m_currFrameData->submittedCmdBuffers.push_back(&cmdBuffer);
 }
 
-void VulkanDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable)
+void VulkanDevice::presentDrawable(const ext::shared_ptr<Drawable>& aDrawable)
 {
-    auto drawable = ext::dynamic_pointer_cast<VulkanDrawable>(_drawable);
+    auto drawable = ext::dynamic_pointer_cast<VulkanDrawable>(aDrawable);
+    auto swapchainImg = drawable->swapchainImage();
 
     ImageSyncRequest syncReq = {
         .layout = vk::ImageLayout::ePresentSrcKHR,
         .preserveContent = true};
-
-    if (auto memoryBarrier = syncImage(drawable->vulkanTexture()->syncState(), syncReq))
+    
+    // check if a barrier is required for the swapchain image
+    if (auto memoryBarrier = syncImage(swapchainImg->syncState(), syncReq))
     {
-        memoryBarrier->setImage(drawable->vulkanTexture()->vkImage());
-        memoryBarrier->setSubresourceRange(drawable->vulkanTexture()->subresourceRange());
+        memoryBarrier->setImage(swapchainImg->vkImage());
+        memoryBarrier->setSubresourceRange(swapchainImg->subresourceRange());
 
         auto& barrierCmdBuffer = dynamic_cast<VulkanCommandBuffer&>(commandBuffer());
-#if !defined (NDEBUG)
-        auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
-            .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkCommandBuffer>(barrierCmdBuffer.vkCommandBuffer())))
-            .setObjectType(vk::ObjectType::eCommandBuffer)
-            .setPObjectName("barrier command buffer");
-        m_vkDevice.setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
-#endif
         barrierCmdBuffer.vkCommandBuffer().pipelineBarrier2(vk::DependencyInfo{}
             .setDependencyFlags(vk::DependencyFlags{}) // TODO
             .setImageMemoryBarriers(*memoryBarrier));
-        barrierCmdBuffer.setSignalSemaphore(&drawable->imagePresentableSemaphore());
-        barrierCmdBuffer.end();
-        m_currFrameData->submittedCmdBuffers.push_back(&barrierCmdBuffer);
-    }
-    else {
-        m_currFrameData->submittedCmdBuffers.back()->setSignalSemaphore(&drawable->imagePresentableSemaphore());
+        submitCommandBuffer(barrierCmdBuffer);
     }
 
+    m_currFrameData->submittedCmdBuffers.back()->signalSemaphore() = &drawable->imagePresentableSemaphore();
     m_currFrameData->presentedDrawables.push_back(drawable);
 }
 
 void VulkanDevice::endFrame()
 {
     {
-        ext::vector<vk::CommandBuffer> vkCommandBuffers;
-        ext::set<vk::Semaphore> waitSemaphores;
-        vk::Semaphore signalSemaphore;
+        // split the submittedCmdBuffers on each signal semaphores
+        // all the signal/wait semaphores should be in the write place so only spliting is fine
+        ext::vector<vk::SubmitInfo> submitInfos;
+        ext::deque<ext::vector<vk::Semaphore>> waitSemaphores;
+        ext::deque<ext::vector<vk::PipelineStageFlags>> waitStages;
+        ext::deque<ext::vector<vk::CommandBuffer>> vkCommandBuffers;
 
-        auto append = [&](VulkanCommandBuffer& commandBuffer){
-            vkCommandBuffers.push_back(commandBuffer.vkCommandBuffer());
-
-            if (commandBuffer.waitSemaphores().empty() == false)
-                waitSemaphores.insert_range(commandBuffer.waitSemaphores() | ext::views::transform([](const auto* s){ return *s; }));
-
-            if (commandBuffer.signalSemaphore())
-                signalSemaphore = *commandBuffer.signalSemaphore();
-        };
-
-        auto submit = [&](){
-            if (vkCommandBuffers.empty())
-                return;
-
-            ext::vector<vk::Semaphore> waitSemaphoresVec = waitSemaphores | ext::ranges::to<ext::vector>();
-            ext::vector<vk::PipelineStageFlags> waitStages = ext::vector<vk::PipelineStageFlags>(vkCommandBuffers.size(), vk::PipelineStageFlagBits::eAllCommands);
-            auto submitInfo = vk::SubmitInfo{}
-                .setWaitSemaphores(waitSemaphoresVec)
-                .setPWaitDstStageMask(waitStages.data())
-                .setCommandBuffers(vkCommandBuffers)
-                .setSignalSemaphores(signalSemaphore);
-
-            if (vkCommandBuffers.back() == m_currFrameData->submittedCmdBuffers.back()->vkCommandBuffer()) {
-                m_vkDevice.resetFences(m_currFrameData->frameCompletedFence);
-                m_queue.submit(submitInfo, m_currFrameData->frameCompletedFence);
-            } else {
-                m_queue.submit(submitInfo);
-            }
-
-            signalSemaphore = vk::Semaphore{};
-            waitSemaphores.clear();
-            vkCommandBuffers.clear();
-        };
-
+        waitSemaphores.emplace_back();
+        vkCommandBuffers.emplace_back();
         for (auto* commandBuffer : m_currFrameData->submittedCmdBuffers)
         {
+            waitSemaphores.back().append_range(commandBuffer->waitSemaphores() | ext::views::transform([](const auto* s) -> vk::Semaphore { return *s; }));
+            vkCommandBuffers.back().push_back(commandBuffer->vkCommandBuffer());
+
             if (commandBuffer->signalSemaphore() != nullptr)
             {
-                append(*commandBuffer);
-                submit();
-                continue;
+                submitInfos.push_back(vk::SubmitInfo{}
+                    .setWaitSemaphores(waitSemaphores.back())
+                    .setPWaitDstStageMask(waitStages.emplace_back(vkCommandBuffers.size(), vk::PipelineStageFlagBits::eAllCommands).data())
+                    .setCommandBuffers(vkCommandBuffers.back())
+                    .setSignalSemaphores(*commandBuffer->signalSemaphore()));
+                waitSemaphores.emplace_back();
+                vkCommandBuffers.emplace_back();
             }
-            if (waitSemaphores.empty() == false && ext::ranges::any_of(commandBuffer->waitSemaphores(), [&](const auto* s) {return waitSemaphores.contains(*s) == false;}))
-                submit();
-            append(*commandBuffer);
         }
-        submit();
+        m_currFrameData->fencedCmdBuffer = m_currFrameData->submittedCmdBuffers.back();
+        m_vkDevice.resetFences(m_currFrameData->frameCompletedFence);
+        m_queue.submit(submitInfos, m_currFrameData->frameCompletedFence);
     }
     {
         ext::vector<vk::Semaphore> waitSemaphores = m_currFrameData->presentedDrawables
@@ -395,7 +391,10 @@ void VulkanDevice::endFrame()
         if (m_queue.presentKHR(&presentInfo) != vk::Result::eSuccess)
             throw std::runtime_error("failed to present swap chain image!");
     }
-
+    
+    m_currFrameData->semaphorePool.swapPools();
+    m_currFrameData->pbPool.swapPools();
+    m_currFrameData->commandBufferPool.swapPools();
     m_currFrameData++;
     if (m_currFrameData == m_frameDatas.end())
         m_currFrameData = m_frameDatas.begin();
@@ -443,11 +442,11 @@ VulkanDevice::~VulkanDevice()
     waitIdle();
     for (auto& frameData : m_frameDatas) {
         frameData.presentedDrawables.clear();
-        frameData.usedCommandBuffers.clear();
-        frameData.commandBuffers.clear();
+        frameData.submittedCmdBuffers.clear();
         m_vkDevice.destroyFence(frameData.frameCompletedFence);
-        m_vkDevice.destroyCommandPool(frameData.commandPool);
-        frameData.pbPool = VulkanParameterBlockPool();
+        frameData.semaphorePool.clear();
+        frameData.pbPool.clear();
+        frameData.commandBufferPool.clear();
     }
     for (auto& [_, descriptorSetLayout] : m_descriptorSetLayouts)
         m_vkDevice.destroyDescriptorSetLayout(descriptorSetLayout);

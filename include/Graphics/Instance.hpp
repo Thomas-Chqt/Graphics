@@ -18,6 +18,7 @@
 #else
     #include <memory>
     #include <string>
+    #include <array>
     namespace ext = std;
 #endif
 
@@ -34,9 +35,9 @@ public:
     struct Descriptor
     {
         ext::string appName;
-        int appVersion[3];
+        ext::array<int, 3> appVersion;
         ext::string engineName;
-        int engineVersion[3];
+        ext::array<int, 3> engineVersion;
     };
 
 public:

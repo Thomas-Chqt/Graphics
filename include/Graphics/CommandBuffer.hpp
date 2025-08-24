@@ -36,12 +36,12 @@ public:
     virtual void beginRenderPass(const Framebuffer&) = 0;
 
     virtual void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) = 0;
-    virtual void useVertexBuffer(const ext::shared_ptr<const Buffer>&) = 0;
+    virtual void useVertexBuffer(const ext::shared_ptr<Buffer>&) = 0;
 
     virtual void setParameterBlock(const ParameterBlock&, uint32_t index) = 0;
 
     virtual void drawVertices(uint32_t start, uint32_t count) = 0;
-    virtual void drawIndexedVertices(const ext::shared_ptr<const Buffer>& idxBuffer) = 0;
+    virtual void drawIndexedVertices(const ext::shared_ptr<Buffer>& idxBuffer) = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
     virtual void imGuiRenderDrawData(ImDrawData*) const = 0;

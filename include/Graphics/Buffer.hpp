@@ -27,7 +27,7 @@ class Buffer
 public:
     struct Descriptor
     {
-        size_t size;
+        size_t size = 0;
         const void* data = nullptr;
         BufferUsages usages;
         ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
@@ -37,6 +37,8 @@ public:
     Buffer(const Buffer&) = delete;
 
     virtual size_t size() const = 0;
+    virtual BufferUsages usages() const = 0;
+    virtual ResourceStorageMode storageMode() const = 0;
 
     template<typename T> inline T* content() { return (T*)contentVoid(); }
     virtual void setContent(const void* data, size_t size) = 0;

@@ -7,7 +7,11 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/Enums.hpp"
+#include "Graphics/Texture.hpp"
+
 #include "Metal/MetalDrawable.hpp"
+#include "Metal/MetalEnums.h"
 #include "Metal/MetalTexture.hpp"
 
 #import <QuartzCore/CAMetalLayer.h>
@@ -16,6 +20,7 @@
     namespace ext = utl;
 #else
     #include <memory>
+    #include <cstdint>
     namespace ext = std;
 #endif
 
@@ -30,7 +35,16 @@ MetalDrawable::MetalDrawable(const MetalDevice* device, id<CAMetalDrawable> mtlD
 
 ext::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
 {
-    return ext::make_shared<MetalTexture>(m_device, m_mtlDrawable.texture);
+    id<MTLTexture> mtlTexture = m_mtlDrawable.texture;
+    Texture::Descriptor desc = {
+        .type = TextureType::texture2d,
+        .width = static_cast<uint32_t>(mtlTexture.width),
+        .height = static_cast<uint32_t>(mtlTexture.height),
+        .pixelFormat = toPixelFormat(mtlTexture.pixelFormat),
+        .usages = TextureUsage::colorAttachment,
+        .storageMode = ResourceStorageMode::deviceLocal
+    };
+    return ext::make_shared<MetalTexture>(m_device, m_mtlDrawable.texture, desc);
 }}
 
 MetalDrawable::~MetalDrawable()

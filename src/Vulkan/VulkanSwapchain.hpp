@@ -42,9 +42,9 @@ public:
 
     VulkanSwapchain(const VulkanDevice*, const Swapchain::Descriptor&);
 
-    ext::shared_ptr<Drawable> nextDrawable(void) override;
+    ext::shared_ptr<Drawable> nextDrawable() override;
 
-    ~VulkanSwapchain();
+    ~VulkanSwapchain() override;
 
 private:
     const VulkanDevice* m_device;

@@ -11,6 +11,7 @@
 #define METALBUFFER_HPP
 
 #include "Graphics/Buffer.hpp"
+#include "Graphics/Enums.hpp"
 
 #include "common.hpp"
 
@@ -25,6 +26,7 @@
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
+    #include <cstdint>
     namespace ext = std; // NOLINT
 #endif
 
@@ -43,12 +45,16 @@ public:
     MetalBuffer(const MetalDevice*, const Buffer::Descriptor&);
 
     size_t size() const override;
+    inline BufferUsages usages() const override { return m_usages; };
+    inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
     void setContent(const void* data, size_t size) override;
 
-    const id<MTLBuffer>& mtlBuffer() const;
+    const id<MTLBuffer>& mtlBuffer() const { return currentFrameData().mtlBuffer; }
 
-    ~MetalBuffer() override = default;
+    void clear();
+
+    ~MetalBuffer() override;
 
 protected:
     void* contentVoid() override;
@@ -57,28 +63,22 @@ private:
     struct FrameData
     {
         id<MTLBuffer> mtlBuffer = nil;
-
-        FrameData() = default;
-        FrameData(const FrameData&) = delete;
-        FrameData(FrameData&&) noexcept ;
-        ~FrameData();
-        FrameData& operator = (const FrameData&) = delete;
-        FrameData& operator = (FrameData&&) noexcept ;
     };
 
     FrameData& currentFrameData();
     const FrameData& currentFrameData() const;
 
     const MetalDevice* m_device = nullptr;
-    BufferUsages m_usages;
+    BufferUsages m_usages = BufferUsage::uniformBuffer;
+    ResourceStorageMode m_storageMode = ResourceStorageMode::hostVisible;
 
+    uint32_t m_bufferCount = 0;
     PerFrameInFlight<FrameData> m_frameDatas;
     
 public:
     MetalBuffer& operator = (const MetalBuffer&) = delete;
-    MetalBuffer& operator = (MetalBuffer&&) = default;
-
-    inline operator bool () const { return m_device != nullptr; }
+    MetalBuffer& operator = (MetalBuffer&&) noexcept;
+    operator bool () const;
 };
 
 }

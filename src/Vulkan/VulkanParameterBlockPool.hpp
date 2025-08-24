@@ -33,19 +33,30 @@ class VulkanParameterBlockPool
 public:
     VulkanParameterBlockPool() = default;
     VulkanParameterBlockPool(const VulkanParameterBlockPool&) = delete;
-    VulkanParameterBlockPool(VulkanParameterBlockPool&&) = default;
+    VulkanParameterBlockPool(VulkanParameterBlockPool&&) noexcept;
 
     VulkanParameterBlockPool(const VulkanDevice*);
 
     VulkanParameterBlock& get(const ParameterBlock::Layout&);
-    void reset();
+    void swapPools(); // swap back and front pools
+    void reset(); // reset the back pool
+    void clear();
 
     ~VulkanParameterBlockPool();
 
 private:
+    struct PoolData
+    {
+        vk::DescriptorPool descriptorPool;
+        ext::deque<VulkanParameterBlock> usedPBlocks;
+    };
+
     const VulkanDevice* m_device = nullptr;
-    vk::DescriptorPool m_descriptorPool;
-    ext::deque<VulkanParameterBlock> m_usedPBlocks;
+
+    ext::array<PoolData, 2> m_pools;
+
+    PoolData* m_frontPool = &m_pools[0];
+    PoolData* m_backPool = &m_pools[1];
 
 public:
     VulkanParameterBlockPool& operator=(const VulkanParameterBlockPool&) = delete;

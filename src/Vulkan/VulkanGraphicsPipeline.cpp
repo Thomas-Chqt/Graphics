@@ -33,8 +33,8 @@ namespace gfx
 VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const GraphicsPipeline::Descriptor& desc)
     : m_device(device)
 {
-    VulkanShaderFunction* vertFunc = dynamic_cast<VulkanShaderFunction*>(desc.vertexShader);
-    VulkanShaderFunction* fragFunc = dynamic_cast<VulkanShaderFunction*>(desc.fragmentShader);
+    auto* vertFunc = dynamic_cast<VulkanShaderFunction*>(desc.vertexShader);
+    auto* fragFunc = dynamic_cast<VulkanShaderFunction*>(desc.fragmentShader);
 
     auto vertShaderStageCreateInfo = vk::PipelineShaderStageCreateInfo{}
         .setStage(vk::ShaderStageFlagBits::eVertex)

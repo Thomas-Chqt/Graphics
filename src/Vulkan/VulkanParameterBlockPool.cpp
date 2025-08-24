@@ -20,11 +20,20 @@
 #else
     #include <utility>
     #include <stdexcept>
+    #include <cassert>
     namespace ext = std;
 #endif
 
 namespace gfx
 {
+
+VulkanParameterBlockPool::VulkanParameterBlockPool(VulkanParameterBlockPool&& other) noexcept
+    : m_device(ext::exchange(other.m_device, nullptr)),
+      m_pools(ext::move(other.m_pools))
+{
+    other.m_frontPool = &other.m_pools[0];
+    other.m_backPool = &other.m_pools[1];
+}
 
 VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
     : m_device(device)
@@ -37,43 +46,63 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
         .setMaxSets(10)
         .setPoolSizes(poolSizes);
 
-    m_descriptorPool = m_device->vkDevice().createDescriptorPool(descriptorPoolCreateInfo);
+    m_pools[0].descriptorPool = m_device->vkDevice().createDescriptorPool(descriptorPoolCreateInfo);
+    m_pools[1].descriptorPool = m_device->vkDevice().createDescriptorPool(descriptorPoolCreateInfo);
 }
 
 VulkanParameterBlock& VulkanParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
 {
     auto descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo{}
-        .setDescriptorPool(m_descriptorPool)
+        .setDescriptorPool(m_frontPool->descriptorPool)
         .setDescriptorSetCount(1)
         .setSetLayouts(m_device->descriptorSetLayout(pbLayout));
     ext::vector<vk::DescriptorSet> descriptorSets = m_device->vkDevice().allocateDescriptorSets(descriptorSetAllocateInfo);
     if (descriptorSets.empty())
         throw ext::runtime_error("failed to allocate descriptorSet");
-    return m_usedPBlocks.emplace_back(m_device, ext::move(descriptorSets.front()));
+    return m_frontPool->usedPBlocks.emplace_back(m_device, ext::move(descriptorSets.front()), pbLayout);
+}
+
+void VulkanParameterBlockPool::swapPools()
+{
+    ext::swap(m_frontPool, m_backPool);
 }
 
 void VulkanParameterBlockPool::reset()
 {
-    m_usedPBlocks.clear();
-    m_device->vkDevice().resetDescriptorPool(m_descriptorPool);
+    assert(m_device);
+    m_backPool->usedPBlocks.clear();
+    m_device->vkDevice().resetDescriptorPool(m_backPool->descriptorPool);
+}
+
+void VulkanParameterBlockPool::clear()
+{
+    for (auto& pool : m_pools)
+    {
+        pool.usedPBlocks.clear();
+        if (pool.descriptorPool) {
+            assert(m_device);
+            m_device->vkDevice().destroyDescriptorPool(pool.descriptorPool);
+            pool.descriptorPool = VK_NULL_HANDLE;
+        }
+    }
+    m_device = nullptr;
 }
 
 VulkanParameterBlockPool::~VulkanParameterBlockPool()
 {
-    if (m_descriptorPool)
-        m_device->vkDevice().destroyDescriptorPool(m_descriptorPool);
+    clear();
 }
 
 VulkanParameterBlockPool& VulkanParameterBlockPool::operator=(VulkanParameterBlockPool&& other) noexcept
 {
     if (this != &other)
     {
-        m_usedPBlocks = ext::move(other.m_usedPBlocks);
-        if (m_descriptorPool)
-            m_device->vkDevice().destroyDescriptorPool(m_descriptorPool);
-        m_descriptorPool = ext::move(other.m_descriptorPool);
+        clear();
         m_device = ext::exchange(other.m_device, nullptr);
+        m_pools = ext::move(other.m_pools);
 
+        other.m_frontPool = &other.m_pools[0];
+        other.m_backPool = &other.m_pools[1];
     }
     return *this;
 }

@@ -44,14 +44,14 @@ public:
     inline uint32_t width() const override { return m_width; }
     inline uint32_t height() const override { return m_height; }
     inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
+    inline TextureUsages usages() const override { return m_usages; };
+    inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
     inline const vk::Image& vkImage() const { return currentFrameData().vkImage; }
     inline const vk::ImageView& vkImageView() const { return currentFrameData().vkImageView; }
     inline ImageSyncState& syncState() { return currentFrameData().syncState; }
 
     inline const vk::ImageSubresourceRange& subresourceRange() const { return m_subresourceRange; }
-
-    inline virtual const vk::Semaphore* imageAvailableSemaphore() const { return nullptr; }
 
     ~VulkanTexture() override;
 
@@ -62,7 +62,7 @@ protected:
         VmaAllocation allocation;
         VmaAllocationInfo allocInfo;
         vk::ImageView vkImageView;
-        ImageSyncState syncState = ImageSyncState{.layout=vk::ImageLayout::eUndefined};
+        ImageSyncState syncState;
     };
 
     FrameData& currentFrameData();
@@ -70,7 +70,10 @@ protected:
 
     const VulkanDevice* m_device = nullptr;
     uint32_t m_width, m_height;
-    PixelFormat m_pixelFormat = PixelFormat::BGRA8Unorm;
+    PixelFormat m_pixelFormat;
+    TextureUsages m_usages;
+    ResourceStorageMode m_storageMode;
+
     bool m_shouldDestroyImg;
     vk::ImageSubresourceRange m_subresourceRange;
 

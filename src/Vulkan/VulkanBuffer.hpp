@@ -12,6 +12,7 @@
 
 #include "Graphics/Buffer.hpp"
 
+#include "Vulkan/Sync.hpp"
 #include "common.hpp"
 #include "Vulkan/vk_mem_alloc.hpp"
 
@@ -39,11 +40,14 @@ public:
     VulkanBuffer(const VulkanDevice*, const Buffer::Descriptor&);
 
     inline size_t size() const override { return m_size; }
+    inline BufferUsages usages() const override { return m_usages; };
+    inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
     void setContent(const void* data, size_t size) override;
 
     inline const vk::Buffer& vkBuffer() const { return currentFrameData().vkBuffer; }
-    inline const vk::DescriptorBufferInfo& descriptorInfo() const { return currentFrameData().descriptorInfo; }
+    inline BufferSyncState& syncState() { return currentFrameData().syncState; }
+    inline const BufferSyncState& syncState() const { return currentFrameData().syncState; }
 
     ~VulkanBuffer() override;
 
@@ -56,7 +60,7 @@ private:
         vk::Buffer vkBuffer;
         VmaAllocation allocation;
         VmaAllocationInfo allocInfo;
-        vk::DescriptorBufferInfo descriptorInfo;
+        BufferSyncState syncState;
     };
 
     FrameData& currentFrameData();

@@ -45,7 +45,7 @@ MetalShaderFunction& MetalShaderLib::getFunction(const ext::string& name) { @aut
     auto it = m_shaderFunctions.find(name);
     if (it == m_shaderFunctions.end())
     {
-        auto [newIt, res] = m_shaderFunctions.emplace(ext::make_pair(name, MetalShaderFunction(m_mtlLibrary, name)));
+        auto [newIt, res] = m_shaderFunctions.emplace(name, MetalShaderFunction(m_mtlLibrary, name));
         assert(res);
         it = newIt;
     }

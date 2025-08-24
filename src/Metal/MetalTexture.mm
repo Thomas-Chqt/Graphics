@@ -27,24 +27,29 @@
 namespace gfx
 {
 
-MetalTexture::MetalTexture(const MetalDevice* device, const id<MTLTexture>& mtltexture)
-    : m_device(device), m_imageCount(1) { @autoreleasepool
+MetalTexture::MetalTexture(const MetalDevice* device, const id<MTLTexture>& mtltexture, const Texture::Descriptor& desc)
+    : m_device(device),
+      m_usages(desc.usages),
+      m_storageMode(desc.storageMode),
+      m_imageCount(1) { @autoreleasepool
 {
     m_frameDatas.front().mtlTexture = [mtltexture retain];
 }}
 
 MetalTexture::MetalTexture(const MetalDevice* device, const Texture::Descriptor& desc)
-    : m_device(device) { @autoreleasepool
+    : m_device(device),
+      m_usages(desc.usages),
+      m_storageMode(desc.storageMode) { @autoreleasepool
 {
     if (desc.usages & TextureUsage::depthStencilAttachment ||
         desc.storageMode == ResourceStorageMode::hostVisible) {
-        m_imageCount = 3;
+        m_imageCount = m_frameDatas.size();
     } else {
         m_imageCount = 1;
     }
 
     MTLTextureDescriptor* mtlTextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
-    mtlTextureDescriptor.textureType = MTLTextureType2D;
+    mtlTextureDescriptor.textureType = toMTLTextureType(desc.type);
     mtlTextureDescriptor.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
     mtlTextureDescriptor.width = desc.width;
     mtlTextureDescriptor.height = desc.height;
@@ -74,6 +79,20 @@ uint32_t MetalTexture::height() const { @autoreleasepool
 PixelFormat MetalTexture::pixelFormat() const { @autoreleasepool
 {
     return toPixelFormat([mtltexture() pixelFormat]);   
+}}
+
+void MetalTexture::replaceContent(void* data) { @autoreleasepool
+{
+    for (uint8_t i = 0; i < m_imageCount; i++)
+    {
+        FrameData& frameData = m_frameDatas.at(i);
+        [frameData.mtlTexture replaceRegion:MTLRegionMake2D(0, 0, width(), height())
+                                mipmapLevel:0
+                                      slice:0
+                                  withBytes:data
+                                bytesPerRow:sizeof(uint32_t) * width()
+                              bytesPerImage:0];
+    }
 }}
 
 MetalTexture::~MetalTexture() { @autoreleasepool

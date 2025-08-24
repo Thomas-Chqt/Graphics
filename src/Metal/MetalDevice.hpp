@@ -17,6 +17,7 @@
 #include "Graphics/ParameterBlock.hpp"
 #include "Graphics/Texture.hpp"
 
+#include "Metal/MetalCommandBufferPool.hpp"
 #include "common.hpp"
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
@@ -98,15 +99,16 @@ private:
     struct FrameData
     {
         MetalParameterBlockPool pBlockPool;
-        ext::deque<MetalCommandBuffer> commandBuffers;
+        MetalCommandBufferPool commandBufferPool;
         ext::vector<MetalCommandBuffer*> submittedCommandBuffers;
+        MetalCommandBuffer* waitedCommandBuffer = nullptr;
     };
 
     id<MTLDevice> m_mtlDevice = nil;
     id<MTLCommandQueue> m_queue = nil;
 
     PerFrameInFlight<FrameData> m_frameDatas;
-    PerFrameInFlight<FrameData>::iterator m_currFrameData;
+    PerFrameInFlight<FrameData>::iterator m_currFrameData = m_frameDatas.begin();
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

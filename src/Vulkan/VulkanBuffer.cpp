@@ -48,10 +48,6 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor&
         VkBuffer buffer = VK_NULL_HANDLE;
         vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &frameData.allocation, &frameData.allocInfo);
         frameData.vkBuffer = ext::exchange(buffer, VK_NULL_HANDLE);
-        frameData.descriptorInfo = vk::DescriptorBufferInfo{}
-            .setBuffer(frameData.vkBuffer)
-            .setOffset(0)
-            .setRange(vk::WholeSize);
 
         if (static_cast<bool>(desc.usages & BufferUsage::perFrameData) == false)
             break;

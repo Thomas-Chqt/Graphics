@@ -28,10 +28,12 @@
 
 #ifdef __OBJC__
     #import <Metal/Metal.h>
+    #import <Foundation/Foundation.h>
 #else
     template<typename T>
     using id = T*;
     class MTLDevice;
+    class NSAutoreleasePool;
 #endif // __OBJC__
 
 namespace gfx
@@ -52,9 +54,10 @@ public:
 
     ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
-    ~MetalInstance() = default;
+    ~MetalInstance() override;
 
 private:
+    NSAutoreleasePool* m_autoReleasePool;
     ext::vector<id<MTLDevice>> m_devices;
 
 public:

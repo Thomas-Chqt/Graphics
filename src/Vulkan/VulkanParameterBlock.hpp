@@ -22,7 +22,7 @@
 #else
     #include <cstdint>
     #include <memory>
-    #include <set>
+    #include <map>
     namespace ext = std;
 #endif
 
@@ -38,20 +38,21 @@ public:
     VulkanParameterBlock(const VulkanParameterBlock&) = delete;
     VulkanParameterBlock(VulkanParameterBlock&&) = default;
 
-    VulkanParameterBlock(const VulkanDevice*, vk::DescriptorSet&&);
+    VulkanParameterBlock(const VulkanDevice*, vk::DescriptorSet&& descriptorSet, const ParameterBlock::Layout&);
 
-    void setBinding(uint32_t idx, const ext::shared_ptr<const Buffer>&) override;
+    void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) override;
 
     inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
-    inline const ext::set<ext::shared_ptr<const VulkanBuffer>> usedBuffers() const { return m_usedBuffers; }
+    inline const ext::map<ParameterBlock::Binding, ext::shared_ptr<VulkanBuffer>> usedBuffers() const { return m_usedBuffers; }
 
     ~VulkanParameterBlock() override = default;
 
 private:
     const VulkanDevice* m_device;
     vk::DescriptorSet m_descriptorSet;
-    ext::set<ext::shared_ptr<const VulkanBuffer>> m_usedBuffers;
+    ext::vector<ParameterBlock::Binding> m_bindings;
 
+    ext::map<ParameterBlock::Binding, ext::shared_ptr<VulkanBuffer>> m_usedBuffers;
 public:
     VulkanParameterBlock& operator=(const VulkanParameterBlock&) = delete;
     VulkanParameterBlock& operator=(VulkanParameterBlock&&) = default;

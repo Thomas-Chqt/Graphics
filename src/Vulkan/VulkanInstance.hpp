@@ -48,11 +48,13 @@ public:
 
     const vk::Instance& vkInstance() const { return m_vkInstance; }
 
-    ~VulkanInstance();
+    ~VulkanInstance() override;
 
 private:
     vk::Instance m_vkInstance;
+#if !defined (NDEBUG)
     VkDebugUtilsMessengerEXT m_debugMessenger;
+#endif
     ext::vector<VulkanPhysicalDevice> m_physicalDevices;
 
 public:

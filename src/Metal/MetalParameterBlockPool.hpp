@@ -38,13 +38,13 @@ public:
 
     MetalParameterBlock& get(const ParameterBlock::Layout&);
     void reset();
+    void clear();
 
     ~MetalParameterBlockPool() = default;
 
 private:
     MetalBuffer m_argumentBuffer;
     size_t m_nextOffset = 0;
-
     ext::deque<MetalParameterBlock> m_parameterBlocks;
 
 public:
