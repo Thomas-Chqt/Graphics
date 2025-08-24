@@ -62,9 +62,7 @@ public:
     ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
 
 #if defined (GFX_IMGUI_ENABLED)
-    void imguiInit(uint32_t imageCount,
-                   ext::vector<PixelFormat> colorAttachmentPxFormats,
-                   ext::optional<PixelFormat> depthAttachmentPxFormat) const override;
+    void imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat) const override;
 #endif
 
 #if defined(GFX_IMGUI_ENABLED)

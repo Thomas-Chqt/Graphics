@@ -52,9 +52,7 @@ public:
     virtual ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
-    virtual void imguiInit(uint32_t imageCount,
-                           ext::vector<PixelFormat> colorAttachmentPxFormats,
-                           ext::optional<PixelFormat> depthAttachmentPxFormat = ext::nullopt) const = 0;
+    virtual void imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat = ext::nullopt) const = 0;
 
     virtual void imguiNewFrame() const = 0;
 #endif

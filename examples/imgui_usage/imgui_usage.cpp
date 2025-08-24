@@ -115,7 +115,7 @@ public:
             break;
         }
 
-        m_device->imguiInit(3, {gfx::PixelFormat::BGRA8Unorm});
+        m_device->imguiInit({gfx::PixelFormat::BGRA8Unorm});
     }
 
     void loop()

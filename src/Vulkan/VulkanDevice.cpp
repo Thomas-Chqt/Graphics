@@ -152,9 +152,7 @@ ext::unique_ptr<Texture> VulkanDevice::newTexture(const Texture::Descriptor& des
 }
 
 #if defined (GFX_IMGUI_ENABLED)
-void VulkanDevice::imguiInit(uint32_t imageCount,
-                             ext::vector<PixelFormat> colorAttachmentPxFormats,
-                             ext::optional<PixelFormat> depthAttachmentPxFormat) const
+void VulkanDevice::imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat) const
 {
     ext::vector<vk::Format> colorAttachmentFormats;
     colorAttachmentFormats.reserve(colorAttachmentPxFormats.size());
@@ -177,8 +175,8 @@ void VulkanDevice::imguiInit(uint32_t imageCount,
         .Queue = m_queue,
         .DescriptorPool = VK_NULL_HANDLE,
         .RenderPass = VK_NULL_HANDLE,
-        .MinImageCount = imageCount,
-        .ImageCount = imageCount,
+        .MinImageCount = MAX_FRAME_IN_FLIGHT,
+        .ImageCount = MAX_FRAME_IN_FLIGHT,
         .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
         .PipelineCache = VK_NULL_HANDLE,
         .Subpass = 1,
