@@ -43,12 +43,12 @@ ShaderLib::ShaderLib(const fs::path& filepath)
     std::array<char, sizeof(uint32_t)> shadercount = {};
     file.read(shadercount.data(), shadercount.size());
 
-    for (uint32_t i = 0; i < *ext::bit_cast<uint32_t*>(shadercount.data()); ++i)
+    for (uint32_t i = 0; i < ext::bit_cast<uint32_t>(shadercount); ++i)
     {
         std::array<char, sizeof(uint32_t)> targetNameLength = {};
         file.read(targetNameLength.data(), targetNameLength.size());
 
-        std::string targetName(*ext::bit_cast<uint32_t*>(targetNameLength.data()), '\0');
+        std::string targetName(ext::bit_cast<uint32_t>(targetNameLength), '\0');
         file.read(targetName.data(), static_cast<long>(targetName.size()));
 
         std::array<char, sizeof(uint32_t)> shaderLength = {};
@@ -56,17 +56,17 @@ ShaderLib::ShaderLib(const fs::path& filepath)
 
         if (targetName == "metal")
         {
-            m_metalBytes.resize(*ext::bit_cast<uint32_t*>(shaderLength.data()));
-            file.read(ext::bit_cast<char*>(m_metalBytes.data()), *ext::bit_cast<uint32_t*>(shaderLength.data()));
+            m_metalBytes.resize(ext::bit_cast<uint32_t>(shaderLength));
+            file.read(ext::bit_cast<char*>(m_metalBytes.data()), static_cast<long>(m_metalBytes.size()));
         }
         else if (targetName == "spirv")
         {
-            m_spirvBytes.resize(*ext::bit_cast<uint32_t*>(shaderLength.data()));
-            file.read(ext::bit_cast<char*>(m_spirvBytes.data()), *ext::bit_cast<uint32_t*>(shaderLength.data()));
+            m_spirvBytes.resize(ext::bit_cast<uint32_t>(shaderLength));
+            file.read(ext::bit_cast<char*>(m_spirvBytes.data()), static_cast<long>(m_spirvBytes.size()));
         }
         else
         {
-            file.seekg(*ext::bit_cast<uint32_t*>(shaderLength.data()), std::ios::cur);
+            file.seekg(ext::bit_cast<uint32_t>(shaderLength), std::ios::cur);
         }
     }
 }
