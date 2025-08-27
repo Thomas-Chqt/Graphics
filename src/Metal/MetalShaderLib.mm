@@ -10,17 +10,6 @@
 #include "Metal/MetalShaderLib.hpp"
 #include "Metal/MetalShaderFunction.hpp"
 #include "Metal/MetalDevice.hpp"
-#include <cassert>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <filesystem>
-    #include <stdexcept>
-    #include <utility>
-    #include <string>
-    namespace ext = std;
-#endif
 
 namespace gfx
 {

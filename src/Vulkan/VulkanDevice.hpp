@@ -17,7 +17,6 @@
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Texture.hpp"
 
-#include "common.hpp"
 #include "Vulkan/SemaphorePool.hpp"
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
@@ -25,22 +24,6 @@
 #include "Vulkan/VulkanParameterBlockPool.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanCommandBufferPool.hpp"
-
-#include "Vulkan/vk_mem_alloc.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <vector>
-    #include <memory>
-    #include <cstddef>
-    #include <cstdint>
-    #include <iterator>
-    #include <map>
-    namespace ext = std;
-#endif
 
 namespace gfx
 {

@@ -20,23 +20,7 @@
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/imgui_impl_vulkan.h"
-#include "VulkanGraphicsPipeline.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <vector>
-    #include <memory>
-    #include <optional>
-    #include <utility>
-    #include <cstddef>
-    #include <cassert>
-    #include <cstdint>
-    #include <stdexcept>
-    namespace ext = std;
-#endif
+#include "Vulkan/VulkanGraphicsPipeline.hpp"
 
 namespace gfx
 {

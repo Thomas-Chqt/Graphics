@@ -10,15 +10,6 @@
 #include "Vulkan/SemaphorePool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <utility>
-    #include <cassert>
-    namespace ext = std; // NOLINT
-#endif
-
 namespace gfx
 {
 

@@ -13,15 +13,6 @@
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/QueueFamily.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <vector>
-    #include <cstdint>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

@@ -20,28 +20,6 @@
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalTexture.hpp"
 
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-#else
-    #define nil nullptr
-    template<typename T>
-    using id = T*;
-    class MTLCommandQueue;
-    class MTLCommandBuffer;
-    class MTLCommandEncoder;
-#endif // __OBJC__
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <memory>
-    #include <set>
-    namespace ext = std;
-#endif
-
-#if defined(GFX_IMGUI_ENABLED)
-    struct ImDrawData;
-#endif
-
 namespace gfx
 {
 
@@ -53,7 +31,7 @@ public:
     MetalCommandBuffer(MetalCommandBuffer&&) noexcept;
 
     MetalCommandBuffer(const id<MTLCommandQueue>&);
-    
+
     void beginRenderPass(const Framebuffer&) override;
 
     void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;

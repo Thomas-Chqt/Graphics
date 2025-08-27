@@ -13,16 +13,6 @@
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstdint>
-    #include <memory>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

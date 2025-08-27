@@ -16,18 +16,6 @@
 
 #import "Metal/MetalEnums.h"
     
-#import <Metal/Metal.h>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <utility>
-    #include <cstdint>
-    #include <stdexcept>
-    #include <cassert>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

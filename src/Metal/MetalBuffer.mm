@@ -13,20 +13,6 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalDevice.hpp"
 
-#import <Metal/Metal.h>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstdint>
-    #include <stdexcept>
-    #include <cstring>
-    #include <utility>
-    #include <cassert>
-    #include <cstddef>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 
@@ -133,7 +119,7 @@ MetalBuffer::operator bool () const
     if (m_bufferCount == 0)
         return false;
     for (uint32_t i = 0; i < m_bufferCount; i++) {
-        if (m_frameDatas.at(i).mtlBuffer == nil) 
+        if (m_frameDatas.at(i).mtlBuffer == nil)
             return false;
     }
     return true;

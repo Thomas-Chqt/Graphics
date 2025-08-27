@@ -13,23 +13,6 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
 
-#include "common.hpp"
-
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-#else
-    template<typename T> using id = T*;
-    #define nil nullptr
-    class MTLBuffer;
-#endif // __OBJC__
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstdint>
-    namespace ext = std; // NOLINT
-#endif
-
 namespace gfx
 {
 
@@ -74,7 +57,7 @@ private:
 
     uint32_t m_bufferCount = 0;
     PerFrameInFlight<FrameData> m_frameDatas;
-    
+
 public:
     MetalBuffer& operator = (const MetalBuffer&) = delete;
     MetalBuffer& operator = (MetalBuffer&&) noexcept;

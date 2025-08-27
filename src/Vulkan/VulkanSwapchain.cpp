@@ -17,26 +17,6 @@
 #include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
-#include "common.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cassert>
-    #include <vector>
-    #include <algorithm>
-    #include <limits>
-    #include <cstddef>
-    #include <memory>
-    #include <cstdint>
-    #include <stdexcept>
-    #include <utility>
-    #include <ranges>
-    #include <map>
-    namespace ext = std;
-#endif
 
 namespace gfx
 {

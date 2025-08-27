@@ -13,19 +13,6 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Drawable.hpp"
 
-#ifdef __OBJC__
-    #import <QuartzCore/CAMetalLayer.h>
-#else
-    class CAMetalLayer;
-#endif // __OBJC__
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

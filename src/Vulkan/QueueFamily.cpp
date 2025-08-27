@@ -13,8 +13,6 @@
 #include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
 namespace gfx
 {
 

@@ -12,12 +12,6 @@
 
 #include "Graphics/Surface.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_GLFW_ENABLED)
-    struct GLFWwindow;
-#endif
-
 namespace gfx
 {
 

@@ -12,17 +12,6 @@
 
 #include "Graphics/GraphicsPipeline.hpp"
 
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-#else
-    template<typename T> using id = T*;
-    #define nil nullptr
-
-    class MTLDevice;
-    class MTLRenderPipelineState;
-    class MTLDepthStencilState;
-#endif // __OBJC__
-
 namespace gfx
 {
 

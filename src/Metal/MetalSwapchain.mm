@@ -17,16 +17,6 @@
 
 #import "Metal/MetalEnums.h"
 
-#import <QuartzCore/CAMetalLayer.h>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cassert>
-    #include <memory>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

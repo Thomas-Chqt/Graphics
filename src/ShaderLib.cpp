@@ -9,20 +9,6 @@
 
 #include "Graphics/ShaderLib.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <filesystem>
-    #include <fstream>
-    #include <string>
-    #include <vector>
-    #include <cstdint>
-    #include <stdexcept>
-    #include <array>
-    #include <bit>
-    namespace ext = std;
-#endif
-
 namespace fs = ext::filesystem;
 
 namespace gfx

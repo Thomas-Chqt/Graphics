@@ -22,23 +22,6 @@
 
 #import "Metal/MetalEnums.h"
 
-#import <Metal/Metal.h>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <algorithm>
-    #include <cassert>
-    #include <memory>
-    #include <cstdint>
-    #include <ranges>
-    #include <utility>
-#endif
-
-#if defined(GFX_IMGUI_ENABLED)
-    struct ImDrawData;
-#endif
-
 namespace gfx
 {
 

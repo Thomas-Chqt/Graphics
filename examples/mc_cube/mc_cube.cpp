@@ -23,10 +23,8 @@
 #include "glm/fwd.hpp"
 
 #include <GLFW/glfw3.h>
-
 #include <glm/glm.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 
@@ -280,7 +278,7 @@ public:
                 constexpr glm::vec3 camPos = glm::vec3(0.0f, 0.0f,  3.0f);
                 constexpr glm::vec3 camDir = glm::vec3(0.0f, 0.0f, -1.0f);
                 constexpr glm::vec3 camUp  = glm::vec3(0.0f, 1.0f,  0.0f);
-                const glm::mat4 viewMatrix = lookAt(camPos, camPos + camDir, camUp);
+                const glm::mat4 viewMatrix = glm::lookAt(camPos, camPos + camDir, camUp);
                 glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
                 *m_vpMatrix->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
             }

@@ -14,28 +14,6 @@
 #include "Graphics/Surface.hpp"
 #include "Graphics/Device.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <vector>
-    namespace ext = std;
-#endif
-
-#if defined(GFX_GLFW_ENABLED)
-    struct GLFWwindow;
-#endif
-
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-    #import <Foundation/Foundation.h>
-#else
-    template<typename T>
-    using id = T*;
-    class MTLDevice;
-    class NSAutoreleasePool;
-#endif // __OBJC__
-
 namespace gfx
 {
 

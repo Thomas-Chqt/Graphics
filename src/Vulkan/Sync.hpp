@@ -10,14 +10,6 @@
 #ifndef SYNC_HPP
 #define SYNC_HPP
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <optional>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

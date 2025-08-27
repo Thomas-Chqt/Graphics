@@ -12,22 +12,6 @@
 
 #include "Graphics/ShaderFunction.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <string>
-    namespace ext = std;
-#endif
-
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-#else
-    template<typename T>
-    using id = T*;
-    class MTLLibrary;
-    class MTLFunction;
-#endif // __OBJC__
-
 namespace gfx
 {
 

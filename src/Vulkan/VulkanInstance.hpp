@@ -16,18 +16,6 @@
 
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <memory>
-    namespace ext = std;
-#endif
-
-#if defined(GFX_GLFW_ENABLED)
-    struct GLFWwindow;
-#endif
-
 namespace gfx
 {
 

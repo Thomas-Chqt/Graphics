@@ -9,7 +9,6 @@
 
 #include "Metal/MetalShaderFunction.hpp"
 #include "Graphics/ShaderFunction.hpp"
-#include <utility>
 
 namespace gfx
 {

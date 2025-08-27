@@ -13,19 +13,6 @@
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalBuffer.hpp"
 
-#import <Metal/Metal.h>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstddef>
-    #include <utility>
-    #include <cstdint>
-    #include <memory>
-    #include <cassert>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

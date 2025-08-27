@@ -9,19 +9,6 @@
 
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <vector>
-    #include <ranges>
-    #include <set>
-    #include <algorithm>
-    #include <string>
-    #include <stdexcept>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

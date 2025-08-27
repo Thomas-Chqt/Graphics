@@ -11,15 +11,6 @@
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanShaderFunction.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <filesystem>
-    #include <stdexcept>
-    #include <utility>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

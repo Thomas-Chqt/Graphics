@@ -14,14 +14,6 @@
 #include "Graphics/Texture.hpp"
 
 #include "Metal/MetalBuffer.hpp"
-#include "common.hpp"
-
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-#else
-    template<typename T> using id = T*;
-    class MTLTexture;
-#endif // __OBJC__
 
 namespace gfx
 {

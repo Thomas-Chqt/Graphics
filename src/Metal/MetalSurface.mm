@@ -11,15 +11,6 @@
 
 #include "Metal/MetalSurface.hpp"
 
-#include <AppKit/NSWindow.h>
-#include <QuartzCore/CAMetalLayer.h>
-
-#if defined(GFX_GLFW_ENABLED)
-    #include <dlLoad/dlLoad.h>
-    struct GLFWwindow;
-    #define glfwGetCocoaWindow ((id (*)(GLFWwindow*))::getSym(DL_DEFAULT, "glfwGetCocoaWindow"))
-#endif
-
 namespace gfx
 {
 

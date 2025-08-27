@@ -21,19 +21,6 @@
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cstdint>
-    #include <map>
-    #include <set>
-    #include <vector>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

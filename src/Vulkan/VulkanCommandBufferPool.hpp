@@ -13,12 +13,6 @@
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <deque>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

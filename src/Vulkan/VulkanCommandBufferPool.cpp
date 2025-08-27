@@ -11,13 +11,6 @@
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <utility>
-    #include <cassert>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

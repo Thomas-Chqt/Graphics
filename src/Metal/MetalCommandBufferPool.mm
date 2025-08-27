@@ -10,13 +10,6 @@
 #include "Metal/MetalCommandBufferPool.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <utility>
-    namespace ext = std;
-#endif
-
 class MTLCommandQueue;
 
 namespace gfx

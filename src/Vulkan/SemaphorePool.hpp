@@ -10,14 +10,6 @@
 #ifndef SEMAPHOREPOOL_HPP
 #define SEMAPHOREPOOL_HPP
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <deque>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

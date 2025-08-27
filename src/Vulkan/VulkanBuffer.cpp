@@ -13,20 +13,6 @@
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
-#include "Vulkan/vk_mem_alloc.hpp"
-
-#include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_core.h>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstddef>
-    #include <stdexcept>
-    #include <cassert>
-    #include <utility>
-    namespace ext = std;
-#endif
 
 namespace gfx
 {

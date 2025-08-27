@@ -15,14 +15,6 @@
 
 #include "Metal/MetalBuffer.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <map>
-    #include <memory>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

@@ -10,16 +10,6 @@
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cstdint>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

@@ -11,17 +11,6 @@
 #include "Graphics/Enums.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
-#include "Vulkan/vk_mem_alloc.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <utility>
-    #include <cstdint>
-    namespace ext = std;
-#endif
 
 namespace gfx
 {

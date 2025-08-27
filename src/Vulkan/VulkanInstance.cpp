@@ -15,31 +15,7 @@
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
-#include <vulkan/vulkan.hpp>
-
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <vector>
-    #include <array>
-    #include <cstdint>
-    #include <stdexcept>
-    #include <cassert>
-    #include <cstddef>
-    #include <cstdint>
-    #include <ranges>
-    #include <print>
-    namespace ext = std;
-#endif
-
-#if defined(GFX_GLFW_ENABLED)
-    #include <dlLoad/dlLoad.h>
-    struct GLFWwindow;
-    #define glfwGetRequiredInstanceExtensions ((const char** (*)(uint32_t* count))::getSym(DL_DEFAULT, "glfwGetRequiredInstanceExtensions"))
-#endif
 
 namespace
 {

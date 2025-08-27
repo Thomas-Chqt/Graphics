@@ -13,10 +13,10 @@
 #include "Graphics/Enums.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
+    namespace ext = utl; // NOLINT
 #else
     #include <cstddef>
-    //namespace ext = std;
+    namespace ext = std; // NOLINT
 #endif
 
 namespace gfx

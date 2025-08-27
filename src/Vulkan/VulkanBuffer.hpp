@@ -13,17 +13,6 @@
 #include "Graphics/Buffer.hpp"
 
 #include "Vulkan/Sync.hpp"
-#include "common.hpp"
-#include "Vulkan/vk_mem_alloc.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstddef>
-    namespace ext = std; // NOLINT
-#endif
 
 namespace gfx
 {

@@ -11,14 +11,6 @@
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <utility>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

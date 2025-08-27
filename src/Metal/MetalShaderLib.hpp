@@ -14,22 +14,6 @@
 
 #include "Metal/MetalShaderFunction.hpp"
 
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-#else
-    template<typename T> using id = T*;
-    class MTLLibrary;
-    class MTLFunction;
-#endif // __OBJC__
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <filesystem>
-    #include <map>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

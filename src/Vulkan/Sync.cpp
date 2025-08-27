@@ -9,15 +9,6 @@
 
 #include "Vulkan/Sync.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <optional>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

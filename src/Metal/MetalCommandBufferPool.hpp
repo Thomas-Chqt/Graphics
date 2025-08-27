@@ -12,23 +12,6 @@
 
 #include "Metal/MetalCommandBuffer.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <deque>
-    #include <array>
-    namespace ext = std;
-#endif
-
-#ifdef __OBJC__
-    #import <Metal/Metal.h>
-#else
-    template<typename T>
-    using id = T*;
-    #define nil nullptr
-    class MTLCommandQueue;
-#endif // __OBJC__
-
 namespace gfx
 {
 

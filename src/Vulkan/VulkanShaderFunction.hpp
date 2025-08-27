@@ -12,15 +12,6 @@
 
 #include "Graphics/ShaderFunction.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <string>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

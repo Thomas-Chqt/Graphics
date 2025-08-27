@@ -12,13 +12,6 @@
 
 #include "Graphics/QueueCapabilities.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <cstdint>
-#endif
-
 namespace gfx
 {
 

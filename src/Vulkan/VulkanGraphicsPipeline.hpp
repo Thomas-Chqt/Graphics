@@ -12,8 +12,6 @@
 
 #include "Graphics/GraphicsPipeline.hpp"
 
-#include <vulkan/vulkan.hpp>
-
 namespace gfx
 {
 

@@ -13,16 +13,6 @@
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 
-#ifdef __OBJC__
-    #import <QuartzCore/CAMetalLayer.h>
-#else
-    class CAMetalLayer;
-#endif // __OBJC__
-
-#if defined(GFX_GLFW_ENABLED)
-    struct GLFWwindow;
-#endif
-
 namespace gfx
 {
 

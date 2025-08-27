@@ -47,7 +47,7 @@ public:
     virtual void imGuiRenderDrawData(ImDrawData*) const = 0;
 #endif
 
-    virtual void endRenderPass(void) = 0;
+    virtual void endRenderPass() = 0;
 
     virtual ~CommandBuffer() = default;
 

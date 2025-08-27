@@ -12,21 +12,6 @@
 
 #include "Graphics/Drawable.hpp"
 
-#ifdef __OBJC__
-    #import <QuartzCore/CAMetalLayer.h>
-#else
-    template<typename T>
-    using id = T*;
-    class CAMetalDrawable;
-#endif // __OBJC__
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    namespace ext = std;
-#endif
-
 namespace gfx
 {
 

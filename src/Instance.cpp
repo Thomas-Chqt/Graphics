@@ -8,17 +8,6 @@
  */
 
 #include "Graphics/Instance.hpp"
-#include <stdexcept>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cstdlib>
-    #include <cstring>
-    #include <print>
-    namespace ext = std; // NOLINT
-#endif
 
 #if defined(GFX_BUILD_METAL)
     #include "Metal/MetalInstance.hpp"

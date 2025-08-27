@@ -13,18 +13,7 @@
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
 
-#include "common.hpp"
 #include "Vulkan/Sync.hpp"
-#include "Vulkan/vk_mem_alloc.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstdint>
-    namespace ext = std; // NOLINT
-#endif
 
 namespace gfx
 {

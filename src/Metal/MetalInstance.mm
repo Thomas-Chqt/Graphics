@@ -13,21 +13,6 @@
 #include "Metal/MetalSurface.hpp"
 #include "Metal/MetalDevice.hpp"
 
-#import <Metal/Metal.h>
-#import <TargetConditionals.h>
-#import <Foundation/Foundation.h>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    namespace ext = std;
-#endif
-
-#if defined(GFX_GLFW_ENABLED)
-    struct GLFWwindow;
-#endif
-
 namespace gfx
 {
 

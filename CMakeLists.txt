@@ -14,9 +14,9 @@ project(Graphics)
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
 if (APPLE)
-    option(GFX_BUILD_METAL "Build the metal backed"               ON)
+    option(GFX_BUILD_METAL "Build the metal backend"              ON)
 endif()
-option(GFX_BUILD_VULKAN    "Build the vulkan backed"              ON)
+option(GFX_BUILD_VULKAN    "Build the vulkan backend"             ON)
 option(GFX_USE_UTILSCPP    "Use the UtilsCPP library"            OFF)
 option(GFX_USE_MATH        "Use a custom math library"           OFF)
 option(GFX_ENABLE_IMGUI    "Build with imgui capabilities"       OFF)
@@ -24,11 +24,15 @@ option(GFX_ENABLE_GLFW     "Build with glfw capabilities"        OFF)
 option(GFX_BUILD_EXAMPLES  "Build Graphics examples executables" OFF)
 option(GFX_INSTALL         "Enable the install command"           ON)
 
+if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
+    message(FATAL_ERROR "Not yet implemented")
+endif()
+
 set(FETCHCONTENT_QUIET FALSE)
 
 enable_language(CXX)
 
-if(GFX_BUILD_METAL)
+if(APPLE AND GFX_BUILD_METAL)
     enable_language(OBJCXX)
 endif()
 
@@ -36,21 +40,21 @@ if (APPLE AND GFX_BUILD_METAL)
     find_library(METAL_FRAMEWORK Metal)
     if (METAL_FRAMEWORK-NOTFOUND)
         message(WARNING "Metal not found, disabling metal backend")
-        set(GFX_BUILD_METAL OFF CACHE BOOL "Build the metal backed" FORCE)
+        set(GFX_BUILD_METAL OFF CACHE BOOL "Build the metal backend" FORCE)
     else()
         message(STATUS "Metal framework found")
     endif()
     find_library(QUARTZ_CORE_FRAMEWORK QuartzCore)
     if (QUARTZ_CORE_FRAMEWORK-NOTFOUND)
         message(WARNING "QuartzCore not found, disabling metal backend")
-        set(GFX_BUILD_METAL OFF CACHE BOOL "Build the metal backed" FORCE)
+        set(GFX_BUILD_METAL OFF CACHE BOOL "Build the metal backend" FORCE)
     else()
         message(STATUS "QuartzCore framework found")
     endif()
     find_library(FOUNDATION_FRAMEWORK Foundation)
     if (FOUNDATION_FRAMEWORK-NOTFOUND)
         message(WARNING "Foundation not found, disabling metal backend")
-        set(GFX_BUILD_METAL OFF CACHE BOOL "Build the metal backed" FORCE)
+        set(GFX_BUILD_METAL OFF CACHE BOOL "Build the metal backend" FORCE)
     else()
         message(STATUS "Foundation framework found")
     endif()
@@ -60,8 +64,12 @@ if (GFX_BUILD_VULKAN)
     find_package(Vulkan)
     if (NOT Vulkan_FOUND)
         message(WARNING "Vulkan not found, disabling vulkan backend")
-        set(GFX_BUILD_VULKAN OFF CACHE BOOL "Build the vulkan backed" FORCE)
+        set(GFX_BUILD_VULKAN OFF CACHE BOOL "Build the vulkan backend" FORCE)
     endif()
+endif()
+
+if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
+    message(FATAL_ERROR "One backend must be build")
 endif()
 
 if (GFX_USE_UTILSCPP)
@@ -86,14 +94,6 @@ if (GFX_USE_UTILSCPP)
     endif()
 endif()
 
-if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
-    message(FATAL_ERROR "One backed must be build")
-endif()
-
-if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
-    message(FATAL_ERROR "Not yet implemented")
-endif()
-
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     FetchContent_Declare(dlLoad
         GIT_REPOSITORY    https://github.com/Thomas-Chqt/dlLoad.git
@@ -108,14 +108,17 @@ if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     set_target_properties(dlLoad PROPERTIES FOLDER "dependencies")
 endif()
 
-FetchContent_Declare(VulkanMemoryAllocator
-    GIT_REPOSITORY    https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-    GIT_TAG           v3.3.0
-    GIT_SHALLOW       1
-    GIT_PROGRESS      TRUE
-    FIND_PACKAGE_ARGS
-)
-FetchContent_MakeAvailable(VulkanMemoryAllocator)
+if (GFX_BUILD_VULKAN)
+    FetchContent_Declare(VulkanMemoryAllocator
+        GIT_REPOSITORY    https://github.com/Thomas-Chqt/VulkanMemoryAllocator.git
+        GIT_TAG           6ca623a4e07ecac689fb456148c065e415502ae2
+        GIT_SHALLOW       1
+        GIT_PROGRESS      TRUE
+        FIND_PACKAGE_ARGS
+    )
+    FetchContent_MakeAvailable(VulkanMemoryAllocator)
+    target_link_libraries(VulkanMemoryAllocator PRIVATE Vulkan::Vulkan)
+endif()
 
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`
 
@@ -141,7 +144,7 @@ if (GFX_BUILD_METAL)
     if (NOT GFX_ENABLE_IMGUI)
         list(REMOVE_ITEM METAL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.mm" "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.h")
     else()
-        set_source_files_properties("src/Metal/imgui_impl_metal.mm" PROPERTIES COMPILE_FLAGS -fobjc-arc)
+        # set_source_files_properties("src/Metal/imgui_impl_metal.mm" PROPERTIES COMPILE_FLAGS -fobjc-arc)
     endif()
     target_sources(Graphics PRIVATE ${METAL_SRC})
 endif()
@@ -155,6 +158,7 @@ if (GFX_BUILD_VULKAN)
 endif()
 
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
+target_precompile_headers(Graphics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/pch.hpp")
 
 if (GFX_BUILD_METAL)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_METAL")
@@ -204,7 +208,7 @@ if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     target_link_libraries(Graphics PRIVATE dlLoad)
 endif()
 
-target_link_libraries(Graphics PRIVATE GPUOpen::VulkanMemoryAllocator)
+target_link_libraries(Graphics PRIVATE VulkanMemoryAllocator)
 
 add_subdirectory("tools")
 

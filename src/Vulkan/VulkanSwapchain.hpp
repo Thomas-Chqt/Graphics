@@ -13,20 +13,8 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Drawable.hpp"
 
-#include "common.hpp"
 #include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <vector>
-    #include <cstdint>
-    namespace ext = std;
-#endif
 
 namespace gfx
 {

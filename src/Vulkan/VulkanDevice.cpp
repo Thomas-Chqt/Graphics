@@ -29,28 +29,7 @@
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/imgui_impl_vulkan.h"
 #include "Vulkan/VulkanEnums.hpp"
-#include "Vulkan/vk_mem_alloc.hpp" // IWYU pragma: keep
 #include "Vulkan/VulkanCommandBufferPool.hpp"
-
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <vector>
-    #include <cstdint>
-    #include <cassert>
-    #include <memory>
-    #include <ranges>
-    #include <stdexcept>
-    #include <cstddef>
-    #include <cstring>
-    #include <utility>
-    #include <set>
-    #include <array>
-    #include <deque>
-    namespace ext = std;
-#endif
 
 namespace gfx
 {

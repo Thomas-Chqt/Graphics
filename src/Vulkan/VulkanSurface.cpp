@@ -14,23 +14,6 @@
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 
-#include <vulkan/vulkan.hpp>
-
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <stdexcept>
-    #include <cassert>
-    #include <cstdint>
-    namespace ext = std;
-#endif
-
-#if defined(GFX_GLFW_ENABLED)
-    #include <dlLoad/dlLoad.h>
-    struct GLFWwindow;
-    #define glfwCreateWindowSurface ((VkResult (*)(void*, GLFWwindow*, const VkAllocationCallbacks*, uint64_t*))::getSym(DL_DEFAULT, "glfwCreateWindowSurface"))
-#endif
-
 namespace gfx
 {
 
