@@ -94,45 +94,18 @@
 //  2016-10-18: Vulkan: Add location decorators & change to use structs as in/out in glsl, update embedded spv (produced with glslangValidator -x). Null the released resources.
 //  2016-08-27: Vulkan: Fix Vulkan example for use when a depth buffer is active.
 
-#include "imgui.h"
-#ifndef IMGUI_DISABLE
 #include "imgui_impl_vulkan.h"
-#include <stdio.h>
-#include <vector>
+
 #ifndef IM_MAX
 #define IM_MAX(A, B)    (((A) >= (B)) ? (A) : (B))
 #endif
+
 #undef Status // X11 headers are leaking this.
 
 // Visual Studio warnings
 #ifdef _MSC_VER
 #pragma warning (disable: 4127) // condition expression is constant
 #endif
-
-#include <dlLoad/dlLoad.h>
-
-#define GetCurrentContext() (reinterpret_cast<ImGuiContext*(*)()>(getSym(DL_DEFAULT, "GetCurrentContext"))())
-#define GetIO() (*reinterpret_cast<ImGuiIO*(*)()>(getSym(DL_DEFAULT, "GetIO"))())
-#define GetPlatformIO() (*reinterpret_cast<ImGuiPlatformIO*(*)()>(getSym(DL_DEFAULT, "GetPlatformIO"))())
-#define GetMainViewport() (reinterpret_cast<ImGuiViewport*(*)()>(getSym(DL_DEFAULT, "GetMainViewport"))())
-#define DebugCheckVersionAndDataLayout(...) (reinterpret_cast<bool(*)(const char*, size_t, size_t, size_t, size_t, size_t, size_t)>(getSym(DL_DEFAULT, "DebugCheckVersionAndDataLayout"))(__VA_ARGS__))
-#define MemAlloc(...) (reinterpret_cast<void*(*)(size_t)>(getSym(DL_DEFAULT, "MemAlloc"))(__VA_ARGS__))
-#define MemFree(...) (reinterpret_cast<void(*)(void*)>(getSym(DL_DEFAULT, "MemFree"))(__VA_ARGS__))
-#define DestroyPlatformWindows() (reinterpret_cast<void(*)()>(getSym(DL_DEFAULT, "DestroyPlatformWindows"))())
-
-#undef IMGUI_CHECKVERSION
-#define IMGUI_CHECKVERSION() DebugCheckVersionAndDataLayout(IMGUI_VERSION, sizeof(ImGuiIO), sizeof(ImGuiStyle), sizeof(ImVec2), sizeof(ImVec4), sizeof(ImDrawVert), sizeof(ImDrawIdx))
-
-#undef IM_ALLOC
-#define IM_ALLOC(_SIZE) MemAlloc(_SIZE)
-
-#undef IM_FREE
-#define IM_FREE(_PTR) MemFree(_PTR)
-
-#undef IM_NEW
-#define IM_NEW(_TYPE) new(ImNewWrapper(), MemAlloc(sizeof(_TYPE))) _TYPE
-
-#define IM_DELETE(ptr) delete ptr
 
 // Forward Declarations
 struct ImGui_ImplVulkan_FrameRenderBuffers;
@@ -2205,7 +2178,3 @@ void ImGui_ImplVulkan_ShutdownMultiViewportSupport()
 {
     DestroyPlatformWindows();
 }
-
-//-----------------------------------------------------------------------------
-
-#endif // #ifndef IMGUI_DISABLE

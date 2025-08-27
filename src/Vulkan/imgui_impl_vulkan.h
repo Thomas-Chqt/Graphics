@@ -27,9 +27,6 @@
 // Read comments in imgui_impl_vulkan.h.
 
 #pragma once
-#ifndef IMGUI_DISABLE
-#include "imgui.h"      // IMGUI_IMPL_API
-#include <vector>
 
 // [Configuration] in order to use a custom Vulkan function loader:
 // (1) You'll need to disable default Vulkan function prototypes.
@@ -54,12 +51,6 @@
 #define NOMINMAX
 #endif
 
-// Vulkan includes
-#ifdef IMGUI_IMPL_VULKAN_USE_VOLK
-#include <volk.h>
-#else
-#include <vulkan/vulkan.h>
-#endif
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_dynamic_rendering)
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #endif
@@ -220,5 +211,3 @@ struct ImGui_ImplVulkanH_Window
         ClearEnable = true;
     }
 };
-
-#endif // #ifndef IMGUI_DISABLE
