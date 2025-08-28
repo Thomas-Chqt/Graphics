@@ -93,7 +93,14 @@ struct ImGui_ImplMetal_Data
 };
 
 static ImGui_ImplMetal_Data* ImGui_ImplMetal_GetBackendData() { return GetCurrentContext() ? (ImGui_ImplMetal_Data*)GetIO().BackendRendererUserData : nullptr; }
-static void ImGui_ImplMetal_DestroyBackendData() { IM_DELETE(ImGui_ImplMetal_GetBackendData()); }
+static void ImGui_ImplMetal_DestroyBackendData() { 
+    ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
+    if (bd && bd->SharedMetalContext) {
+        [bd->SharedMetalContext release];
+        bd->SharedMetalContext = nullptr;
+    }
+    IM_DELETE(bd); 
+}
 
 static inline CFTimeInterval GetMachAbsoluteTimeInSeconds() { return (CFTimeInterval)(double)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1e9); }
 
@@ -333,7 +340,7 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
 
                 // Bind texture, Draw
                 if (ImTextureID tex_id = pcmd->GetTexID())
-                    [commandEncoder setFragmentTexture:(__bridge id<MTLTexture>)(void*)(intptr_t)(tex_id) atIndex:0];
+                    [commandEncoder setFragmentTexture:(id<MTLTexture>)(void*)(intptr_t)(tex_id) atIndex:0];
 
                 [commandEncoder setVertexBufferOffset:(vertexBufferOffset + pcmd->VtxOffset * sizeof(ImDrawVert)) atIndex:0];
                 [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
@@ -362,11 +369,12 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
 
 static void ImGui_ImplMetal_DestroyTexture(ImTextureData* tex)
 {
-    MetalTexture* backend_tex = (__bridge_transfer MetalTexture*)(tex->BackendUserData);
+    MetalTexture* backend_tex = (MetalTexture*)(tex->BackendUserData);
     if (backend_tex == nullptr)
         return;
-    IM_ASSERT(backend_tex.metalTexture == (__bridge id<MTLTexture>)(void*)(intptr_t)tex->TexID);
+    IM_ASSERT(backend_tex.metalTexture == (id<MTLTexture>)(void*)(intptr_t)tex->TexID);
     backend_tex.metalTexture = nil;
+    [backend_tex release];
 
     // Clear identifiers and mark as destroyed (in order to allow e.g. calling InvalidateDeviceObjects while running)
     tex->SetTexID(ImTextureID_Invalid);
@@ -405,13 +413,13 @@ void ImGui_ImplMetal_UpdateTexture(ImTextureData* tex)
         // Store identifiers
         tex->SetTexID((ImTextureID)(intptr_t)texture);
         tex->SetStatus(ImTextureStatus_OK);
-        tex->BackendUserData = (__bridge_retained void*)(backend_tex);
+        tex->BackendUserData = (void*)[backend_tex retain];
     }
     else if (tex->Status == ImTextureStatus_WantUpdates)
     {
         // Update selected blocks. We only ever write to textures regions which have never been used before!
         // This backend choose to use tex->Updates[] but you can use tex->UpdateRect to upload a single region.
-        MetalTexture* backend_tex = (__bridge MetalTexture*)(tex->BackendUserData);
+        MetalTexture* backend_tex = (MetalTexture*)(tex->BackendUserData);
         for (ImTextureRect& r : tex->Updates)
         {
             [backend_tex.metalTexture replaceRegion:MTLRegionMake2D((NSUInteger)r.x, (NSUInteger)r.y, (NSUInteger)r.w, (NSUInteger)r.h)
@@ -434,6 +442,7 @@ bool ImGui_ImplMetal_CreateDeviceObjects(id<MTLDevice> device)
     depthStencilDescriptor.depthWriteEnabled = NO;
     depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionAlways;
     bd->SharedMetalContext.depthStencilState = [device newDepthStencilStateWithDescriptor:depthStencilDescriptor];
+    [depthStencilDescriptor release];
     ImGui_ImplMetal_CreateDeviceObjectsForPlatformWindows();
     return true;
 }
@@ -484,7 +493,7 @@ static void ImGui_ImplMetal_CreateWindow(ImGuiViewport* viewport)
     layer.device = device;
     layer.framebufferOnly = YES;
     layer.pixelFormat = bd->SharedMetalContext.framebufferDescriptor.colorPixelFormat;
-    NSWindow* window = (__bridge NSWindow*)handle;
+    NSWindow* window = (NSWindow*)handle;
     NSView* view = window.contentView;
     view.layer = layer;
     view.wantsLayer = YES;
@@ -498,7 +507,11 @@ static void ImGui_ImplMetal_DestroyWindow(ImGuiViewport* viewport)
 {
     // The main viewport (owned by the application) will always have RendererUserData == 0 since we didn't create the data for it.
     if (ImGuiViewportDataMetal* data = (ImGuiViewportDataMetal*)viewport->RendererUserData)
+    {
+        [data->CommandQueue release];
+        [data->RenderPassDescriptor release];
         IM_DELETE(data);
+    }
     viewport->RendererUserData = nullptr;
 }
 
@@ -518,7 +531,7 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
     ImGuiViewportDataMetal* data = (ImGuiViewportDataMetal*)viewport->RendererUserData;
 
     void* handle = viewport->PlatformHandleRaw ? viewport->PlatformHandleRaw : viewport->PlatformHandle;
-    NSWindow* window = (__bridge NSWindow*)handle;
+    NSWindow* window = (NSWindow*)handle;
 
     // Always render the first frame, regardless of occlusionState, to avoid an initial flicker
     if ((window.occlusionState & NSWindowOcclusionStateVisible) == 0 && !data->FirstFrame)
@@ -824,6 +837,7 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
     pipelineDescriptor.stencilAttachmentPixelFormat = self.framebufferDescriptor.stencilPixelFormat;
 
     id<MTLRenderPipelineState> renderPipelineState = [device newRenderPipelineStateWithDescriptor:pipelineDescriptor error:&error];
+    [pipelineDescriptor release];
     if (error != nil)
         NSLog(@"Error: failed to create Metal pipeline state: %@", error);
 
