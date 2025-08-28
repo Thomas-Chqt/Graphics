@@ -144,16 +144,9 @@ if (GFX_BUILD_METAL)
     if (NOT GFX_ENABLE_IMGUI)
         list(REMOVE_ITEM METAL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.mm" "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.h")
     else()
-        # ARC has been converted to manual memory management
+        # set_source_files_properties("src/Metal/imgui_impl_metal.mm" PROPERTIES COMPILE_FLAGS -fobjc-arc)
     endif()
     target_sources(Graphics PRIVATE ${METAL_SRC})
-    
-    # Ensure ARC is disabled for all Objective-C++ files  
-    foreach(MM_FILE ${METAL_SRC})
-        if(MM_FILE MATCHES "\.mm$")
-            set_source_files_properties(${MM_FILE} PROPERTIES COMPILE_FLAGS -fno-objc-arc)
-        endif()
-    endforeach()
 endif()
 
 if (GFX_BUILD_VULKAN)
