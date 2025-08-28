@@ -23,7 +23,7 @@
 //  2025-01-08: Metal: Fixed memory leaks when using metal-cpp (#8276, #8166) or when using multiple contexts (#7419).
 //  2022-08-23: Metal: Update deprecated property 'sampleCount'->'rasterSampleCount'.
 //  2022-07-05: Metal: Add dispatch synchronization.
-//  2022-06-30: Metal: Use __bridge for ARC based systems.
+//  2022-06-30: Metal: Converted from ARC to manual memory management, removed __bridge casts.
 //  2022-06-01: Metal: Fixed null dereference on exit inside command buffer completion handler.
 //  2022-04-27: Misc: Store backend data in a per-context struct, allowing to use this backend with multiple contexts.
 //  2022-01-03: Metal: Ignore ImDrawCmd where ElemCount == 0 (very rare but can technically be manufactured by user code).
