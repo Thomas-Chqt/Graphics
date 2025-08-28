@@ -111,7 +111,7 @@ endif()
 if (GFX_BUILD_VULKAN)
     FetchContent_Declare(VulkanMemoryAllocator
         GIT_REPOSITORY    https://github.com/Thomas-Chqt/VulkanMemoryAllocator.git
-        GIT_TAG           6ca623a4e07ecac689fb456148c065e415502ae2
+        GIT_TAG           210b7512cba580da650b6eebcea1e01d0e34dbbf
         GIT_SHALLOW       1
         GIT_PROGRESS      TRUE
         FIND_PACKAGE_ARGS
