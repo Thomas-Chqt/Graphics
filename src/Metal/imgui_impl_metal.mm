@@ -40,6 +40,29 @@
 
 #include "imgui_impl_metal.h"
 
+// ARC compatibility helpers
+#ifndef __has_feature
+    #define __has_feature(x) 0
+#endif
+
+#if __has_feature(objc_arc)
+    #define IMGUI_METAL_PROP_STRONG strong
+    #define IMGUI_AUTORELEASE(x) (x)
+    #define IMGUI_RELEASE(x) ((void)0)
+    #define IMGUI_RETAIN(x) (x)
+#else
+    #define IMGUI_METAL_PROP_STRONG retain
+    #define IMGUI_AUTORELEASE(x) [(x) autorelease]
+    #define IMGUI_RELEASE(x) [(x) release]
+    #define IMGUI_RETAIN(x) [(x) retain]
+#endif
+
+#if __has_feature(objc_arc)
+    #define IMGUI_BRIDGED_TEX(x) (__bridge id<MTLTexture>)(void*)(intptr_t)(x)
+#else
+    #define IMGUI_BRIDGED_TEX(x) (id<MTLTexture>)(void*)(intptr_t)(x)
+#endif
+
 // Forward Declarations
 static void ImGui_ImplMetal_InitMultiViewportSupport();
 static void ImGui_ImplMetal_ShutdownMultiViewportSupport();
@@ -50,7 +73,7 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows();
 
 // A wrapper around a MTLBuffer object that knows the last time it was reused
 @interface MetalBuffer : NSObject
-@property (nonatomic, strong) id<MTLBuffer> buffer;
+@property (nonatomic, IMGUI_METAL_PROP_STRONG) id<MTLBuffer> buffer;
 @property (nonatomic, assign) double        lastReuseTime;
 - (instancetype)initWithBuffer:(id<MTLBuffer>)buffer;
 @end
@@ -68,7 +91,7 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows();
 @end
 
 @interface MetalTexture : NSObject
-@property (nonatomic, strong) id<MTLTexture> metalTexture;
+@property (nonatomic, IMGUI_METAL_PROP_STRONG) id<MTLTexture> metalTexture;
 - (instancetype)initWithTexture:(id<MTLTexture>)metalTexture;
 @end
 
@@ -76,11 +99,11 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows();
 // renderer backend. Stores the render pipeline state cache and the default
 // font texture, and manages the reusable buffer cache.
 @interface MetalContext : NSObject
-@property (nonatomic, strong) id<MTLDevice>                 device;
-@property (nonatomic, strong) id<MTLDepthStencilState>      depthStencilState;
-@property (nonatomic, strong) FramebufferDescriptor*        framebufferDescriptor; // framebuffer descriptor for current frame; transient
-@property (nonatomic, strong) NSMutableDictionary*          renderPipelineStateCache; // pipeline cache; keyed on framebuffer descriptors
-@property (nonatomic, strong) NSMutableArray<MetalBuffer*>* bufferCache;
+@property (nonatomic, IMGUI_METAL_PROP_STRONG) id<MTLDevice>                 device;
+@property (nonatomic, IMGUI_METAL_PROP_STRONG) id<MTLDepthStencilState>      depthStencilState;
+@property (nonatomic, IMGUI_METAL_PROP_STRONG) FramebufferDescriptor*        framebufferDescriptor; // framebuffer descriptor for current frame; transient
+@property (nonatomic, IMGUI_METAL_PROP_STRONG) NSMutableDictionary*          renderPipelineStateCache; // pipeline cache; keyed on framebuffer descriptors
+@property (nonatomic, IMGUI_METAL_PROP_STRONG) NSMutableArray<MetalBuffer*>* bufferCache;
 @property (nonatomic, assign) double                        lastBufferCachePurge;
 - (MetalBuffer*)dequeueReusableBufferOfLength:(NSUInteger)length device:(id<MTLDevice>)device;
 - (id<MTLRenderPipelineState>)renderPipelineStateForFramebufferDescriptor:(FramebufferDescriptor*)descriptor device:(id<MTLDevice>)device;
@@ -94,7 +117,17 @@ struct ImGui_ImplMetal_Data
 };
 
 static ImGui_ImplMetal_Data*    ImGui_ImplMetal_GetBackendData()    { return GetCurrentContext() ? (ImGui_ImplMetal_Data*)GetIO().BackendRendererUserData : nullptr; }
-static void                     ImGui_ImplMetal_DestroyBackendData(){ IM_DELETE(ImGui_ImplMetal_GetBackendData()); }
+static void                     ImGui_ImplMetal_DestroyBackendData()
+{
+    ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
+    if (bd)
+    {
+#if !__has_feature(objc_arc)
+        [bd->SharedMetalContext release];
+#endif
+        IM_DELETE(bd);
+    }
+}
 
 static inline CFTimeInterval    GetMachAbsoluteTimeInSeconds()      { return (CFTimeInterval)(double)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1e9); }
 
@@ -104,12 +137,20 @@ static inline CFTimeInterval    GetMachAbsoluteTimeInSeconds()      { return (CF
 
 bool ImGui_ImplMetal_Init(MTL::Device* device)
 {
-    return ImGui_ImplMetal_Init((__bridge id<MTLDevice>)(device));
+    return ImGui_ImplMetal_Init((
+#if __has_feature(objc_arc)
+    __bridge
+#endif
+    id<MTLDevice>)(device));
 }
 
 void ImGui_ImplMetal_NewFrame(MTL::RenderPassDescriptor* renderPassDescriptor)
 {
-    ImGui_ImplMetal_NewFrame((__bridge MTLRenderPassDescriptor*)(renderPassDescriptor));
+    ImGui_ImplMetal_NewFrame((
+#if __has_feature(objc_arc)
+    __bridge
+#endif
+    MTLRenderPassDescriptor*)(renderPassDescriptor));
 }
 
 void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data,
@@ -117,14 +158,26 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data,
                                     MTL::RenderCommandEncoder* commandEncoder)
 {
     ImGui_ImplMetal_RenderDrawData(draw_data,
-                                   (__bridge id<MTLCommandBuffer>)(commandBuffer),
-                                   (__bridge id<MTLRenderCommandEncoder>)(commandEncoder));
+                   (
+#if __has_feature(objc_arc)
+                   __bridge
+#endif
+                   id<MTLCommandBuffer>)(commandBuffer),
+                   (
+#if __has_feature(objc_arc)
+                   __bridge
+#endif
+                   id<MTLRenderCommandEncoder>)(commandEncoder));
 
 }
 
 bool ImGui_ImplMetal_CreateDeviceObjects(MTL::Device* device)
 {
-    return ImGui_ImplMetal_CreateDeviceObjects((__bridge id<MTLDevice>)(device));
+    return ImGui_ImplMetal_CreateDeviceObjects((
+#if __has_feature(objc_arc)
+    __bridge
+#endif
+    id<MTLDevice>)(device));
 }
 
 #endif // #ifdef IMGUI_IMPL_METAL_CPP
@@ -396,7 +449,7 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
 
                     // Bind texture, Draw
                     if (ImTextureID tex_id = pcmd->GetTexID())
-                        [commandEncoder setFragmentTexture:(__bridge id<MTLTexture>)(void*)(intptr_t)(tex_id) atIndex:0];
+                        [commandEncoder setFragmentTexture:IMGUI_BRIDGED_TEX(tex_id) atIndex:0];
 
                     [commandEncoder setVertexBufferOffset:(vertexBufferOffset + pcmd->VtxOffset * sizeof(ImDrawVert)) atIndex:0];
                     [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
@@ -412,14 +465,24 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
         }
 
         MetalContext* sharedMetalContext = bd->SharedMetalContext;
+#if !__has_feature(objc_arc)
+    // Ensure buffers stay alive until the completion handler runs
+    MetalBuffer* retained_vertexBuffer = [vertexBuffer retain];
+    MetalBuffer* retained_indexBuffer  = [indexBuffer retain];
+#endif
         [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer>)
         {
             dispatch_async(dispatch_get_main_queue(), ^{
                 @synchronized(sharedMetalContext.bufferCache)
                 {
-                    [sharedMetalContext.bufferCache addObject:vertexBuffer];
-                    [sharedMetalContext.bufferCache addObject:indexBuffer];
+            [sharedMetalContext.bufferCache addObject:vertexBuffer];
+            [sharedMetalContext.bufferCache addObject:indexBuffer];
                 }
+#if !__has_feature(objc_arc)
+        // Balance our manual retains
+        [retained_vertexBuffer release];
+        [retained_indexBuffer release];
+#endif
             });
         }];
     }
@@ -429,16 +492,22 @@ static void ImGui_ImplMetal_DestroyTexture(ImTextureData* tex)
 {
     @autoreleasepool
     {
-        MetalTexture* backend_tex = (__bridge_transfer MetalTexture*)(tex->BackendUserData);
+    MetalTexture* backend_tex = (
+#if __has_feature(objc_arc)
+        __bridge_transfer
+#endif
+        MetalTexture*)(tex->BackendUserData);
         if (backend_tex == nullptr)
             return;
-        IM_ASSERT(backend_tex.metalTexture == (__bridge id<MTLTexture>)(void*)(intptr_t)tex->TexID);
+    IM_ASSERT(backend_tex.metalTexture == IMGUI_BRIDGED_TEX(tex->TexID));
         backend_tex.metalTexture = nil;
 
         // Clear identifiers and mark as destroyed (in order to allow e.g. calling InvalidateDeviceObjects while running)
         tex->SetTexID(ImTextureID_Invalid);
         tex->SetStatus(ImTextureStatus_Destroyed);
         tex->BackendUserData = nullptr;
+
+    IMGUI_RELEASE(backend_tex);
     }
 }
 
@@ -471,11 +540,16 @@ void ImGui_ImplMetal_UpdateTexture(ImTextureData* tex)
             id <MTLTexture> texture = [bd->SharedMetalContext.device newTextureWithDescriptor:textureDescriptor];
             [texture replaceRegion:MTLRegionMake2D(0, 0, (NSUInteger)tex->Width, (NSUInteger)tex->Height) mipmapLevel:0 withBytes:tex->Pixels bytesPerRow:(NSUInteger)tex->Width * 4];
             MetalTexture* backend_tex = [[MetalTexture alloc] initWithTexture:texture];
+            IMGUI_RELEASE(texture);
 
             // Store identifiers
             tex->SetTexID((ImTextureID)(intptr_t)texture);
             tex->SetStatus(ImTextureStatus_OK);
-            tex->BackendUserData = (__bridge_retained void*)(backend_tex);
+            tex->BackendUserData = (
+#if __has_feature(objc_arc)
+                __bridge_retained
+#endif
+                void*)(backend_tex);
         }
         else if (tex->Status == ImTextureStatus_WantUpdates)
         {
