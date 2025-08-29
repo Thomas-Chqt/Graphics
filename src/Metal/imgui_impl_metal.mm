@@ -624,10 +624,16 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
 {
     if ((self = [super init]))
     {
-        _buffer = buffer;
+        _buffer = [buffer retain]; // Explicitly retain the buffer since we're using manual memory management
         _lastReuseTime = GetMachAbsoluteTimeInSeconds();
     }
     return self;
+}
+
+- (void)dealloc
+{
+    [_buffer release];
+    [super dealloc];
 }
 @end
 
@@ -704,6 +710,12 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
     return self;
 }
 
+- (void)dealloc
+{
+    [_metalTexture release];
+    [super dealloc];
+}
+
 @end
 
 #pragma mark - MetalContext implementation
@@ -729,11 +741,17 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
         // Purge old buffers that haven't been useful for a while
         if (now - self.lastBufferCachePurge > 1.0)
         {
-            NSMutableArray* survivors = [NSMutableArray array];
-            for (MetalBuffer* candidate in self.bufferCache)
-                if (candidate.lastReuseTime > self.lastBufferCachePurge)
-                    [survivors addObject:candidate];
-            self.bufferCache = [survivors mutableCopy];
+            @autoreleasepool {
+                NSMutableArray* survivors = [NSMutableArray array];
+                for (MetalBuffer* candidate in self.bufferCache)
+                    if (candidate.lastReuseTime > self.lastBufferCachePurge)
+                        [survivors addObject:candidate];
+                
+                // Release the old buffer cache before assigning the new one
+                NSMutableArray* oldCache = self.bufferCache;
+                self.bufferCache = [survivors mutableCopy];
+                [oldCache release];
+            }
             self.lastBufferCachePurge = now;
         }
 
@@ -753,7 +771,9 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
 
     // No luck; make a new buffer
     id<MTLBuffer> backing = [device newBufferWithLength:length options:MTLResourceStorageModeShared];
-    return [[MetalBuffer alloc] initWithBuffer:backing];
+    MetalBuffer* result = [[MetalBuffer alloc] initWithBuffer:backing];
+    [backing release]; // Release the backing buffer since MetalBuffer now retains it
+    return result;
 }
 
 // Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling.
@@ -857,6 +877,16 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
         NSLog(@"Error: failed to create Metal pipeline state: %@", error);
 
     return renderPipelineState;
+}
+
+- (void)dealloc
+{
+    [_device release];
+    [_depthStencilState release];
+    [_framebufferDescriptor release];
+    [_renderPipelineStateCache release];
+    [_bufferCache release];
+    [super dealloc];
 }
 
 @end
