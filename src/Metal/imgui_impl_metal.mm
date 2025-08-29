@@ -747,10 +747,7 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
                     if (candidate.lastReuseTime > self.lastBufferCachePurge)
                         [survivors addObject:candidate];
                 
-                // Release the old buffer cache before assigning the new one
-                NSMutableArray* oldCache = self.bufferCache;
                 self.bufferCache = [survivors mutableCopy];
-                [oldCache release];
             }
             self.lastBufferCachePurge = now;
         }
