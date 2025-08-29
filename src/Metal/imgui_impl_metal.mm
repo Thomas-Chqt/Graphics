@@ -368,6 +368,10 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
         }
       });
     }];
+    
+    // Release the buffers since the completion handler now retains them
+    [vertexBuffer release];
+    [indexBuffer release];
     }
 }
 
@@ -747,7 +751,9 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
                     if (candidate.lastReuseTime > self.lastBufferCachePurge)
                         [survivors addObject:candidate];
                 
-                self.bufferCache = [survivors mutableCopy];
+                NSMutableArray* newCache = [survivors mutableCopy];
+                [self.bufferCache release];
+                self.bufferCache = newCache;
             }
             self.lastBufferCachePurge = now;
         }
