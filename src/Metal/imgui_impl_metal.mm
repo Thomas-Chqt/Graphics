@@ -811,6 +811,7 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
     if (vertexFunction == nil || fragmentFunction == nil)
     {
         NSLog(@"Error: failed to find Metal shader functions in library: %@", error);
+        [library release];
         return nil;
     }
 
@@ -846,6 +847,12 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
 
     id<MTLRenderPipelineState> renderPipelineState = [device newRenderPipelineStateWithDescriptor:pipelineDescriptor error:&error];
     [pipelineDescriptor release];
+    
+    // Release the library and functions as they are no longer needed
+    [vertexFunction release];
+    [fragmentFunction release];
+    [library release];
+    
     if (error != nil)
         NSLog(@"Error: failed to create Metal pipeline state: %@", error);
 
