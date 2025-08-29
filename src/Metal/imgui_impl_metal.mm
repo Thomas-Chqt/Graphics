@@ -171,6 +171,7 @@ void ImGui_ImplMetal_NewFrame(MTLRenderPassDescriptor* renderPassDescriptor)
 {
     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
     IM_ASSERT(bd != nil && "Context or backend not initialized! Did you call ImGui_ImplMetal_Init()?");
+    [bd->SharedMetalContext.framebufferDescriptor release];
     bd->SharedMetalContext.framebufferDescriptor = [[FramebufferDescriptor alloc] initWithRenderPassDescriptor:renderPassDescriptor];
     if (bd->SharedMetalContext.depthStencilState == nil)
         ImGui_ImplMetal_CreateDeviceObjects(bd->SharedMetalContext.device);
@@ -180,6 +181,7 @@ void ImGui_ImplMetal_NewFrame(unsigned long sampleCount, MTLPixelFormat colorPix
 {
     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
     IM_ASSERT(bd != nil && "Context or backend not initialized! Did you call ImGui_ImplMetal_Init()?");
+    [bd->SharedMetalContext.framebufferDescriptor release];
     bd->SharedMetalContext.framebufferDescriptor = [[FramebufferDescriptor alloc] initWithSampleCount:sampleCount
                                                                                      colorPixelFormat:colorPixelFormat
                                                                                      depthPixelFormat:depthPixelFormat
@@ -242,14 +244,15 @@ static void ImGui_ImplMetal_SetupRenderState(ImDrawData* draw_data, id<MTLComman
 // Metal Render function.
 void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> commandBuffer, id<MTLRenderCommandEncoder> commandEncoder)
 {
-    ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
-    MetalContext* ctx = bd->SharedMetalContext;
+    @autoreleasepool {
+        ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
+        MetalContext* ctx = bd->SharedMetalContext;
 
-    // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-    int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
-    int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
-    if (fb_width <= 0 || fb_height <= 0 || draw_data->CmdLists.Size == 0)
-        return;
+        // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
+        int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+        int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+        if (fb_width <= 0 || fb_height <= 0 || draw_data->CmdLists.Size == 0)
+            return;
 
     // Catch up with texture updates. Most of the times, the list will have 1 element with an OK status, aka nothing to do.
     // (This almost always points to ImGui::GetPlatformIO().Textures[] but is part of ImDrawData to allow overriding or disabling texture updates).
@@ -365,6 +368,7 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
         }
       });
     }];
+    }
 }
 
 static void ImGui_ImplMetal_DestroyTexture(ImTextureData* tex)
@@ -528,55 +532,59 @@ static void ImGui_ImplMetal_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 
 static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
 {
-    ImGuiViewportDataMetal* data = (ImGuiViewportDataMetal*)viewport->RendererUserData;
+    @autoreleasepool {
+        ImGuiViewportDataMetal* data = (ImGuiViewportDataMetal*)viewport->RendererUserData;
 
-    void* handle = viewport->PlatformHandleRaw ? viewport->PlatformHandleRaw : viewport->PlatformHandle;
-    NSWindow* window = (NSWindow*)handle;
+        void* handle = viewport->PlatformHandleRaw ? viewport->PlatformHandleRaw : viewport->PlatformHandle;
+        NSWindow* window = (NSWindow*)handle;
 
-    // Always render the first frame, regardless of occlusionState, to avoid an initial flicker
-    if ((window.occlusionState & NSWindowOcclusionStateVisible) == 0 && !data->FirstFrame)
-    {
-        // Do not render windows which are completely occluded. Calling -[CAMetalLayer nextDrawable] will hang for
-        // approximately 1 second if the Metal layer is completely occluded.
-        return;
+        // Always render the first frame, regardless of occlusionState, to avoid an initial flicker
+        if ((window.occlusionState & NSWindowOcclusionStateVisible) == 0 && !data->FirstFrame)
+        {
+            // Do not render windows which are completely occluded. Calling -[CAMetalLayer nextDrawable] will hang for
+            // approximately 1 second if the Metal layer is completely occluded.
+            return;
+        }
+        data->FirstFrame = false;
+
+        float fb_scale = (float)window.backingScaleFactor;
+        // if (data->MetalLayer.contentsScale != fb_scale)
+        // {
+        data->MetalLayer.contentsScale = fb_scale;
+        data->MetalLayer.drawableSize = MakeScaledSize(window.frame.size, fb_scale);
+        // }
+
+        id<CAMetalDrawable> drawable = [data->MetalLayer nextDrawable];
+        if (drawable == nil)
+            return;
+
+        MTLRenderPassDescriptor* renderPassDescriptor = data->RenderPassDescriptor;
+        renderPassDescriptor.colorAttachments[0].texture = drawable.texture;
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
+        if ((viewport->Flags & ImGuiViewportFlags_NoRendererClear) == 0)
+            renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
+
+        ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
+
+        FramebufferDescriptor* oldFramebufferDescriptor = bd->SharedMetalContext.framebufferDescriptor;
+
+        FramebufferDescriptor* tempFramebufferDescriptor = [[FramebufferDescriptor alloc] initWithSampleCount:1
+                                                                                             colorPixelFormat:drawable.texture.pixelFormat
+                                                                                             depthPixelFormat:MTLPixelFormatInvalid
+                                                                                           stencilPixelFormat:MTLPixelFormatInvalid];
+        bd->SharedMetalContext.framebufferDescriptor = tempFramebufferDescriptor;
+
+        id<MTLCommandBuffer> commandBuffer = [data->CommandQueue commandBuffer];
+        id<MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+        ImGui_ImplMetal_RenderDrawData(viewport->DrawData, commandBuffer, renderEncoder);
+        [renderEncoder endEncoding];
+
+        bd->SharedMetalContext.framebufferDescriptor = oldFramebufferDescriptor;
+        [tempFramebufferDescriptor release];
+
+        [commandBuffer presentDrawable:drawable];
+        [commandBuffer commit];
     }
-    data->FirstFrame = false;
-
-    float fb_scale = (float)window.backingScaleFactor;
-    // if (data->MetalLayer.contentsScale != fb_scale)
-    // {
-    data->MetalLayer.contentsScale = fb_scale;
-    data->MetalLayer.drawableSize = MakeScaledSize(window.frame.size, fb_scale);
-    // }
-
-    id<CAMetalDrawable> drawable = [data->MetalLayer nextDrawable];
-    if (drawable == nil)
-        return;
-
-    MTLRenderPassDescriptor* renderPassDescriptor = data->RenderPassDescriptor;
-    renderPassDescriptor.colorAttachments[0].texture = drawable.texture;
-    renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
-    if ((viewport->Flags & ImGuiViewportFlags_NoRendererClear) == 0)
-        renderPassDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
-
-    ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
-
-    FramebufferDescriptor* oldFramebufferDescriptor = bd->SharedMetalContext.framebufferDescriptor;
-
-    bd->SharedMetalContext.framebufferDescriptor = [[FramebufferDescriptor alloc] initWithSampleCount:1
-                                                                                     colorPixelFormat:drawable.texture.pixelFormat
-                                                                                     depthPixelFormat:MTLPixelFormatInvalid
-                                                                                   stencilPixelFormat:MTLPixelFormatInvalid];
-
-    id<MTLCommandBuffer> commandBuffer = [data->CommandQueue commandBuffer];
-    id<MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-    ImGui_ImplMetal_RenderDrawData(viewport->DrawData, commandBuffer, renderEncoder);
-    [renderEncoder endEncoding];
-
-    bd->SharedMetalContext.framebufferDescriptor = oldFramebufferDescriptor;
-
-    [commandBuffer presentDrawable:drawable];
-    [commandBuffer commit];
 }
 
 static void ImGui_ImplMetal_InitMultiViewportSupport()
