@@ -61,10 +61,12 @@ if (APPLE AND GFX_BUILD_METAL)
 endif()
 
 if (GFX_BUILD_VULKAN)
-    find_package(Vulkan)
+    find_package(Vulkan QUIET)
     if (NOT Vulkan_FOUND)
         message(WARNING "Vulkan not found, disabling vulkan backend")
         set(GFX_BUILD_VULKAN OFF CACHE BOOL "Build the vulkan backend" FORCE)
+    else()
+        message(STATUS "Vulkan found")
     endif()
 endif()
 
