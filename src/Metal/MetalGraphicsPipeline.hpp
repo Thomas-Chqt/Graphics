@@ -22,7 +22,7 @@ class MetalGraphicsPipeline : public GraphicsPipeline
 public:
     MetalGraphicsPipeline() = delete;
     MetalGraphicsPipeline(const MetalGraphicsPipeline&) = delete;
-    MetalGraphicsPipeline(MetalGraphicsPipeline&&) = delete;
+    MetalGraphicsPipeline(MetalGraphicsPipeline&&) noexcept;
 
     MetalGraphicsPipeline(const MetalDevice&, const GraphicsPipeline::Descriptor&);
 
@@ -37,7 +37,7 @@ private:
 
 public:
     MetalGraphicsPipeline& operator=(const MetalGraphicsPipeline&) = delete;
-    MetalGraphicsPipeline& operator=(MetalGraphicsPipeline&&) = delete;
+    MetalGraphicsPipeline& operator=(MetalGraphicsPipeline&&) noexcept;
 };
 
 } // namespace gfx

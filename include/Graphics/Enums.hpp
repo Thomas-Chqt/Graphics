@@ -124,7 +124,9 @@ enum class BlendOperation : uint8_t
 enum class VertexAttributeFormat : uint8_t
 {
     float2,
-    float3
+    float3,
+    uchar4,
+    uint
 };
 
 enum class BufferUsage : uint8_t
@@ -182,6 +184,19 @@ using TextureUsages = Flags<TextureUsage>;
 enum class TextureType : uint8_t
 {
     texture2d
+};
+
+enum class SamplerAddressMode : uint8_t
+{
+    ClampToEdge,
+    Repeat,
+    MirrorRepeat
+};
+
+enum class SamplerMinMagFilter : uint8_t
+{
+    Nearest,
+    Linear
 };
 
 } // namespace gfx

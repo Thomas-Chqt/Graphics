@@ -25,17 +25,17 @@ ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
     if (const char* val = ext::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
     {
 #if defined(GFX_BUILD_METAL)
-        if (ext::strcmp(val, "VULKAN") == 0)
-        {
-            ext::println("using vulkan");
-            return newVulkanInstance(desc);
-        }
-#endif
-#if defined(GFX_BUILD_VULKAN)
         if (ext::strcmp(val, "METAL") == 0)
         {
             ext::println("using metal");
             return newMetalInstance(desc);
+        }
+#endif
+#if defined(GFX_BUILD_VULKAN)
+        if (ext::strcmp(val, "VULKAN") == 0)
+        {
+            ext::println("using vulkan");
+            return newVulkanInstance(desc);
         }
 #endif
         throw ext::runtime_error(ext::format("unknown api name: {}", val));

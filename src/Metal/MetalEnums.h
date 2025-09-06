@@ -7,6 +7,7 @@
  * ---------------------------------------------------
  */
 
+#include <Metal/Metal.h>
 #ifndef __OBJC__
 #error "this file can only by used in objective c"
 #endif
@@ -69,6 +70,10 @@ constexpr MTLVertexFormat toMetalVertexAttributeFormat(VertexAttributeFormat for
         return MTLVertexFormatFloat2;
     case VertexAttributeFormat::float3:
         return MTLVertexFormatFloat3;
+    case VertexAttributeFormat::uchar4:
+        return MTLVertexFormatUChar4;
+    case VertexAttributeFormat::uint:
+        return MTLVertexFormatUInt;
     default:
         throw ext::runtime_error("not implemented");
     }
@@ -126,6 +131,34 @@ constexpr MTLTextureType toMTLTextureType(TextureType type)
     {
     case TextureType::texture2d:
         return MTLTextureType2D;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
+constexpr MTLSamplerAddressMode toMTLSamplerAddressMode(SamplerAddressMode addressMode)
+{
+    switch (addressMode)
+    {
+    case SamplerAddressMode::ClampToEdge:
+        return MTLSamplerAddressModeClampToEdge;
+    case SamplerAddressMode::Repeat:
+        return MTLSamplerAddressModeRepeat;
+    case SamplerAddressMode::MirrorRepeat:
+        return MTLSamplerAddressModeMirrorRepeat;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
+constexpr MTLSamplerMinMagFilter toMTLSamplerMinMagFilter(SamplerMinMagFilter filter)
+{
+    switch (filter)
+    {
+    case SamplerMinMagFilter::Nearest:
+        return MTLSamplerMinMagFilterNearest;
+    case SamplerMinMagFilter::Linear:
+        return MTLSamplerMinMagFilterLinear;
     default:
         throw ext::runtime_error("not implemented");
     }

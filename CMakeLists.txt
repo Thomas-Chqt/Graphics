@@ -196,7 +196,7 @@ if (GFX_BUILD_METAL)
 endif()
 
 if (GFX_BUILD_VULKAN)
-    target_link_libraries(Graphics PRIVATE Vulkan::Vulkan)
+    target_link_libraries(Graphics PRIVATE Vulkan::Vulkan VulkanMemoryAllocator)
 endif()
 
 if (GFX_USE_UTILSCPP)
@@ -210,9 +210,23 @@ if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     target_link_libraries(Graphics PRIVATE dlLoad)
 endif()
 
-target_link_libraries(Graphics PRIVATE VulkanMemoryAllocator)
-
 add_subdirectory("tools")
+
+if (GFX_BUILD_METAL)
+    set(GFX_SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shaders/gfx.slib")
+    file(GLOB GFX_SHADER_SRCS "shaders/*.slang")
+    add_custom_command(
+        OUTPUT ${GFX_SHADER_SLIB}
+        COMMAND $<TARGET_FILE:gfxsc> -t metal -o ${GFX_SHADER_SLIB} ${GFX_SHADER_SRCS}
+        DEPENDS gfxsc ${GFX_SHADER_SRCS}
+        COMMENT "Building gfx shaders"
+        VERBATIM
+    )
+    add_custom_target(gfx_shaders ALL DEPENDS ${GFX_SHADER_SLIB})
+    set_target_properties(gfx_shaders PROPERTIES FOLDER "shaders")
+    target_compile_definitions(Graphics PRIVATE "GFX_SHADER_SLIB=\"${GFX_SHADER_SLIB}\"")
+    add_dependencies(Graphics gfx_shaders)
+endif()
 
 if(GFX_BUILD_EXAMPLES)
     add_subdirectory("examples")

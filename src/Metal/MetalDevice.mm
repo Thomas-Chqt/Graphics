@@ -23,7 +23,7 @@
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
-#include "Metal/imgui_impl_metal.h"
+#include "Metal/imgui_impl_metal.hpp"
 #include "Metal/MetalTexture.hpp"
 
 #import "Metal/MetalEnums.h"
@@ -71,10 +71,7 @@ ext::unique_ptr<Texture> MetalDevice::newTexture(const Texture::Descriptor& desc
 #if defined (GFX_IMGUI_ENABLED)
 void MetalDevice::imguiInit(ext::vector<PixelFormat> colorPixelFomats, ext::optional<PixelFormat> depthPixelFormat) const { @autoreleasepool
 {
-    ImGui_ImplMetal_Init(m_mtlDevice, 1,
-        toMTLPixelFormat(colorPixelFomats[0]),
-        depthPixelFormat ? toMTLPixelFormat(depthPixelFormat.value()) : MTLPixelFormatInvalid,
-        MTLPixelFormatInvalid);
+    ImGui_ImplMetal_Init(this, colorPixelFomats, depthPixelFormat);
 }}
 #endif
 

@@ -36,6 +36,7 @@ namespace ext = utl;  // NOLINT
 #include <fstream>    // IWYU pragma: keep
 #include <print>      // IWYU pragma: keep
 #include <ctime>      // IWYU pragma: keep
+#include <mutex>      // IWYU pragma: keep
 namespace ext = std;  // NOLINT
 
 #endif // GFX_USE_UTILSCPP

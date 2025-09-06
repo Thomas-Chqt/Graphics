@@ -49,6 +49,7 @@ public:
     void endRenderPass() override;
 
     const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }
+    const id<MTLCommandEncoder>& commandEncoder() const { return m_commandEncoder; }
 
     ~MetalCommandBuffer() override;
 

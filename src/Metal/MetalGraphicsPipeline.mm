@@ -19,6 +19,12 @@
 namespace gfx
 {
 
+MetalGraphicsPipeline::MetalGraphicsPipeline(MetalGraphicsPipeline&& other) noexcept
+    : m_renderPipelineState(ext::exchange(other.m_renderPipelineState, nil)),
+      m_depthStencilState(ext::exchange(other.m_depthStencilState, nil))
+{
+}
+
 MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const GraphicsPipeline::Descriptor& desc) { @autoreleasepool
 {
     assert(desc.vertexShader != nullptr);
@@ -109,5 +115,18 @@ MetalGraphicsPipeline::~MetalGraphicsPipeline() { @autoreleasepool
         [m_depthStencilState release];
     [m_renderPipelineState release];
 }}
+
+MetalGraphicsPipeline& MetalGraphicsPipeline::operator=(MetalGraphicsPipeline&& other) noexcept
+{
+    if (this != &other)
+    {
+        if (m_depthStencilState)
+            [m_depthStencilState release];
+        [m_renderPipelineState release];
+        m_renderPipelineState = ext::exchange(other.m_renderPipelineState, nil);
+        m_depthStencilState = ext::exchange(other.m_depthStencilState, nil);
+    }
+    return *this;
+}
 
 }

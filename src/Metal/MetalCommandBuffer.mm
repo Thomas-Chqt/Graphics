@@ -16,7 +16,7 @@
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalTexture.hpp"
-#include "Metal/imgui_impl_metal.h"
+#include "Metal/imgui_impl_metal.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 
