@@ -87,8 +87,6 @@ private:
 
     ext::set<ext::shared_ptr<const MetalParameterBlock>> m_usedPBlock;
 
-    ext::set<ext::shared_ptr<MetalDrawable>> m_usedDrawables;
-
 public:
     MetalCommandBuffer& operator = (const MetalCommandBuffer&) = delete;
     MetalCommandBuffer& operator = (MetalCommandBuffer&&) noexcept;

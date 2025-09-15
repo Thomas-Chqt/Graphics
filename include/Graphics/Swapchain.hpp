@@ -33,6 +33,7 @@ public:
         Surface* surface = nullptr;
         uint32_t width = 0, height = 0;
         uint32_t imageCount = 3;
+        uint32_t drawableCount = 3;
         PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
         PresentMode presentMode = PresentMode::fifo;
     };

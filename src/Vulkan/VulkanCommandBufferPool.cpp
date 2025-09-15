@@ -54,7 +54,7 @@ void VulkanCommandBufferPool::release(ext::unique_ptr<CommandBuffer>&& aCommandB
     assert(commandBuffer);
     commandBuffer->reuse();
     // buffer cannot be reused directly, the pool need to be reset
-    m_resetableCommandBuffers.insert(ext::unique_ptr<VulkanCommandBuffer>(commandBuffer));
+    m_resetableCommandBuffers.push_back(ext::unique_ptr<VulkanCommandBuffer>(commandBuffer));
     release(commandBuffer); // because reuse() dont call release
 }
 
@@ -68,9 +68,8 @@ void VulkanCommandBufferPool::release(CommandBuffer* aCommandBuffer)
         // no more used command buffers, the pool can be reset
         m_device->vkDevice().resetCommandPool(*m_vkCommandPool);
         // the pool is reset, command buffers can be reused
-        while (m_resetableCommandBuffers.empty() == false) {
-            auto node = m_resetableCommandBuffers.extract(m_resetableCommandBuffers.begin());
-            m_availableCommandBuffers.push_back(ext::move(node.value()));
+        for (auto& cmdBuffer : m_resetableCommandBuffers) {
+            m_availableCommandBuffers.push_back(ext::move(cmdBuffer));
         }
         m_resetableCommandBuffers.clear();
     }

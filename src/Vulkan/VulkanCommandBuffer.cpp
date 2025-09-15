@@ -43,6 +43,11 @@ CommandBufferPool* VulkanCommandBuffer::pool()
     return m_sourcePool;
 }
 
+VulkanCommandBufferPool* VulkanCommandBuffer::poolVulkan()
+{
+    return m_sourcePool;
+}
+
 void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 {
     ext::vector<vk::RenderingAttachmentInfo> colorAttachmentInfos(framebuffer.colorAttachments.size());

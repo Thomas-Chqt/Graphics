@@ -237,6 +237,7 @@ public:
             commandBuffer->endBlitPass();
             m_device->submitCommandBuffers(ext::move(commandBuffer));
         }
+
         {
             m_indexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size = sizeof(uint32_t) * cube_indices.size(),
@@ -361,6 +362,7 @@ public:
                     .width = (uint32_t)width,
                     .height = (uint32_t)height,
                     .imageCount = 3,
+                    .drawableCount = maxFrameInFlight,
                     .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
                     .presentMode = gfx::PresentMode::fifo,
                 };

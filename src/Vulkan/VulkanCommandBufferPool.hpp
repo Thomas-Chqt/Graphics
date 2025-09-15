@@ -44,7 +44,7 @@ private:
     ext::shared_ptr<vk::CommandPool> m_vkCommandPool; // buffers can outlive the pool, so the vkCommandPool need to be kept alive
 
     ext::deque<ext::unique_ptr<VulkanCommandBuffer>> m_availableCommandBuffers;
-    ext::set<ext::unique_ptr<VulkanCommandBuffer>> m_resetableCommandBuffers; // buffer are put here until the pool can be reset (when m_usedCommandBuffers is empty)
+    ext::deque<ext::unique_ptr<VulkanCommandBuffer>> m_resetableCommandBuffers; // buffer are put here until the pool can be reset (when m_usedCommandBuffers is empty)
     ext::set<VulkanCommandBuffer*> m_usedCommandBuffers;
 
 public:

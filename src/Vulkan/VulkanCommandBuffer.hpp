@@ -39,6 +39,7 @@ public:
     VulkanCommandBuffer(const VulkanDevice*, const ext::shared_ptr<vk::CommandPool>&, VulkanCommandBufferPool*);
 
     CommandBufferPool* pool() override;
+    VulkanCommandBufferPool* poolVulkan();
 
     void beginRenderPass(const Framebuffer&) override;
 

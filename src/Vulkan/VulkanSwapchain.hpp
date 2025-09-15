@@ -15,6 +15,7 @@
 
 #include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
+#include <vector>
 
 namespace gfx
 {
@@ -32,15 +33,14 @@ public:
 
     ext::shared_ptr<Drawable> nextDrawable() override;
 
-    ~VulkanSwapchain() override;
+    ~VulkanSwapchain() override = default;
 
 private:
     const VulkanDevice* m_device;
     
     vk::SwapchainKHR* m_vkSwapchain;
     ext::vector<ext::shared_ptr<SwapchainImage>> m_swapchainImages;
-
-    PerFrameInFlight<ext::shared_ptr<VulkanDrawable>> m_drawables;
+    ext::vector<ext::shared_ptr<VulkanDrawable>> m_drawables;
     uint32_t m_nextDrawableIndex = 0;
 
 public:

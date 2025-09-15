@@ -87,6 +87,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         | ext::views::transform([&](vk::Image& vkImage) { return ext::make_shared<SwapchainImage>(m_device, ext::move(vkImage), vkSwapchainPtr, swapchainImageTexDesc); })
         | ext::ranges::to<ext::vector>();
 
+    m_drawables.resize(desc.drawableCount);
     for (auto& drawable : m_drawables)
         drawable = ext::make_shared<VulkanDrawable>(m_device);
 }
@@ -94,7 +95,6 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
 ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
 {
     ext::shared_ptr<VulkanDrawable> drawable = m_drawables.at(m_nextDrawableIndex);
-    m_nextDrawableIndex = (m_nextDrawableIndex + 1) % m_drawables.size();
 
     uint64_t timeout = ext::numeric_limits<uint64_t>::max();
     auto& semaphore = drawable->imageAvailableSemaphore();
@@ -105,6 +105,7 @@ ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
     {
     case vk::Result::eSuccess:
         drawable->setSwapchainImage(m_swapchainImages[value], value);
+        m_nextDrawableIndex = (m_nextDrawableIndex + 1) % m_drawables.size();
         return drawable;
     case vk::Result::eSuboptimalKHR:
     case vk::Result::eErrorOutOfDateKHR:
@@ -112,12 +113,6 @@ ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
     default:
         throw std::runtime_error("Failed to acquire swapchain image!");
     }
-}
-
-VulkanSwapchain::~VulkanSwapchain()
-{
-    m_drawables = PerFrameInFlight<ext::shared_ptr<VulkanDrawable>>();
-    m_swapchainImages.clear();
 }
 
 } // namespace gfx

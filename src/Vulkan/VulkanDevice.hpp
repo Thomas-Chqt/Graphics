@@ -88,7 +88,6 @@ private:
     vk::Queue m_queue;
     VmaAllocator m_allocator = VK_NULL_HANDLE;
     vk::Semaphore m_timelineSemaphore;
-    ext::unique_ptr<VulkanCommandBufferPool> m_barrierCmdBufferPool;
 
     ext::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayoutCache;
     ext::deque<ext::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;

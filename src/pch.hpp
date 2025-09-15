@@ -149,9 +149,4 @@ struct GLFWwindow;
 
 #endif // GFX_IMGUI_ENABLED
 
-constexpr int MAX_FRAME_IN_FLIGHT = 3;
-
-template<typename T>
-using PerFrameInFlight = ext::array<T, MAX_FRAME_IN_FLIGHT>;
-
 #endif // GRAPHICS_PCH_HPP

@@ -38,8 +38,7 @@ MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
       m_usedTextures(ext::move(other.m_usedTextures)),
       m_usedBuffers(ext::move(other.m_usedBuffers)),
       m_usedSamplers(ext::move(other.m_usedSamplers)),
-      m_usedPBlock(ext::move(other.m_usedPBlock)),
-      m_usedDrawables(ext::move(other.m_usedDrawables))
+      m_usedPBlock(ext::move(other.m_usedPBlock))
 {
 }
 
@@ -258,7 +257,6 @@ void MetalCommandBuffer::presentDrawable(const ext::shared_ptr<Drawable>& aDrawa
     assert(drawable);
 
     [m_mtlCommandBuffer presentDrawable:drawable->mtlDrawable()];
-    m_usedDrawables.insert(drawable);
 }}
 
 MetalCommandBuffer::~MetalCommandBuffer() { @autoreleasepool
@@ -290,7 +288,6 @@ MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) 
         m_usedBuffers = ext::move(other.m_usedBuffers);
         m_usedSamplers = ext::move(other.m_usedSamplers);
         m_usedPBlock = ext::move(other.m_usedPBlock);
-        m_usedDrawables = ext::move(other.m_usedDrawables);
     }
     return *this;
 }}

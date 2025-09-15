@@ -101,8 +101,6 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setPNext(vk::SemaphoreTypeCreateInfo{}
             .setSemaphoreType(vk::SemaphoreType::eTimeline)
             .setInitialValue(0)));
-
-    m_barrierCmdBufferPool = ext::make_unique<VulkanCommandBufferPool>(this, m_queueFamily);
 }
 
 ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -171,8 +169,8 @@ void VulkanDevice::imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, 
         .Queue = m_queue,
         .DescriptorPool = VK_NULL_HANDLE,
         .RenderPass = VK_NULL_HANDLE,
-        .MinImageCount = MAX_FRAME_IN_FLIGHT,
-        .ImageCount = MAX_FRAME_IN_FLIGHT,
+        .MinImageCount = 3,
+        .ImageCount = 3,
         .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
         .PipelineCache = VK_NULL_HANDLE,
         .Subpass = 1,
@@ -308,7 +306,9 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
                 dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
 
             // if a barrier is needed, we need to create a command buffer for it
-            ext::unique_ptr<VulkanCommandBuffer> barrierCmdBuffer = m_barrierCmdBufferPool->getVulkan();
+            // using the same pool a the submitted command buffer so they have the same lifetime
+            assert(commandBuffer->poolVulkan());
+            ext::unique_ptr<VulkanCommandBuffer> barrierCmdBuffer = commandBuffer->poolVulkan()->getVulkan();
             barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
             barrierCmdBuffer->end();
             // barrierCmdBuffer is added before the user command buffer
@@ -419,7 +419,6 @@ VulkanDevice::~VulkanDevice()
     waitIdle();
     for (auto& [_, descriptorSetLayout] : m_descriptorSetLayoutCache)
         m_vkDevice.destroyDescriptorSetLayout(descriptorSetLayout);
-    m_barrierCmdBufferPool.reset();
     m_vkDevice.destroySemaphore(m_timelineSemaphore);
     vmaDestroyAllocator(m_allocator);
     m_vkDevice.destroy();
