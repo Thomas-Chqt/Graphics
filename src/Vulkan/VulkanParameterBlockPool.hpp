@@ -10,6 +10,7 @@
 #ifndef VULKANPARAMETERBLOCKPOOL_HPP
 #define VULKANPARAMETERBLOCKPOOL_HPP
 
+#include "Graphics/ParameterBlockPool.hpp"
 #include "Graphics/ParameterBlock.hpp"
 
 #include "Vulkan/VulkanParameterBlock.hpp"
@@ -19,39 +20,30 @@ namespace gfx
 
 class VulkanDevice;
 
-class VulkanParameterBlockPool
+class VulkanParameterBlockPool : public ParameterBlockPool
 {
 public:
     VulkanParameterBlockPool() = default;
     VulkanParameterBlockPool(const VulkanParameterBlockPool&) = delete;
-    VulkanParameterBlockPool(VulkanParameterBlockPool&&) noexcept;
+    VulkanParameterBlockPool(VulkanParameterBlockPool&&) = delete;
 
     VulkanParameterBlockPool(const VulkanDevice*);
 
-    VulkanParameterBlock& get(const ParameterBlock::Layout&);
-    void swapPools(); // swap back and front pools
-    void reset(); // reset the back pool
-    void clear();
+    ext::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
+    void release(ParameterBlock*);
 
-    ~VulkanParameterBlockPool();
+    ~VulkanParameterBlockPool() override;
 
 private:
-    struct PoolData
-    {
-        vk::DescriptorPool descriptorPool;
-        ext::deque<VulkanParameterBlock> usedPBlocks;
-    };
-
     const VulkanDevice* m_device = nullptr;
 
-    ext::array<PoolData, 2> m_pools;
+    ext::shared_ptr<vk::DescriptorPool> m_descriptorPool; // blocks can outlive the pool, only the vk::DescriptorPool need to remain alive
 
-    PoolData* m_frontPool = &m_pools[0];
-    PoolData* m_backPool = &m_pools[1];
+    ext::set<VulkanParameterBlock*> m_usedParameterBlocks;
 
 public:
     VulkanParameterBlockPool& operator=(const VulkanParameterBlockPool&) = delete;
-    VulkanParameterBlockPool& operator=(VulkanParameterBlockPool&&) noexcept;
+    VulkanParameterBlockPool& operator=(VulkanParameterBlockPool&&) = delete;
 };
 
 } // namespace gfx

@@ -17,8 +17,7 @@
 namespace gfx
 {
 
-MetalDrawable::MetalDrawable(const MetalDevice* device, id<CAMetalDrawable> mtlDrawable)
-    : m_device(device) { @autoreleasepool
+MetalDrawable::MetalDrawable(id<CAMetalDrawable> mtlDrawable) { @autoreleasepool
 {
     m_mtlDrawable = [mtlDrawable retain];
 }}
@@ -34,7 +33,7 @@ ext::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
         .usages = TextureUsage::colorAttachment,
         .storageMode = ResourceStorageMode::deviceLocal
     };
-    return ext::make_shared<MetalTexture>(m_device, m_mtlDrawable.texture, desc);
+    return ext::make_shared<MetalTexture>(m_mtlDrawable.texture, desc);
 }}
 
 MetalDrawable::~MetalDrawable()

@@ -31,7 +31,7 @@ public:
     struct Binding
     {
         BindingType type = BindingType::uniformBuffer;
-        BindingUsages usages;
+        BindingUsages usages = BindingUsage::vertexRead | BindingUsage::fragmentRead;
 
         bool operator<(const Binding& rhs) const noexcept { return type != rhs.type ? type < rhs.type : usages < rhs.usages; }
     };

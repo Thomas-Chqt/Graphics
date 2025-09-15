@@ -39,7 +39,7 @@ public:
     inline const vk::SwapchainKHR& swapchain() const { return m_swapchainImage->swapchain(); }
     inline uint32_t imageIndex() const { return m_imageIndex; }
 
-    inline const vk::Semaphore& imageAvailableSemaphore() { return m_imageAvailableSemaphore; }
+    inline const vk::Semaphore& imageAvailableSemaphore() const { return m_imageAvailableSemaphore; }
     inline const vk::Semaphore& imagePresentableSemaphore() const { return m_swapchainImage->imagePresentableSemaphore(); }
 
     ~VulkanDrawable() override;

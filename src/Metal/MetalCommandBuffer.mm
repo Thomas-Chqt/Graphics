@@ -7,6 +7,7 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
@@ -19,6 +20,8 @@
 #include "Metal/imgui_impl_metal.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
+#include "Metal/MetalDrawable.hpp"
+#include "Metal/MetalCommandBufferPool.hpp"
 
 #import "Metal/MetalEnums.h"
 
@@ -26,18 +29,28 @@ namespace gfx
 {
 
 MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
-    : m_mtlCommandBuffer(ext::exchange(other.m_mtlCommandBuffer, nil)),
+    : CommandBuffer(ext::move(other)),
+      m_sourcePool(ext::exchange(other.m_sourcePool, nullptr)),
+      m_mtlCommandBuffer(ext::exchange(other.m_mtlCommandBuffer, nil)),
       m_commandEncoder(ext::exchange(other.m_commandEncoder, nil)),
       m_usedPipelines(ext::move(other.m_usedPipelines)),
       m_usedTextures(ext::move(other.m_usedTextures)),
-      m_usedBuffers(ext::move(other.m_usedBuffers))
+      m_usedBuffers(ext::move(other.m_usedBuffers)),
+      m_usedPBlock(ext::move(other.m_usedPBlock)),
+      m_usedDrawables(ext::move(other.m_usedDrawables))
 {
 }
 
-MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue) { @autoreleasepool
+MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue, MetalCommandBufferPool* commandPool) 
+    : m_sourcePool(commandPool) { @autoreleasepool
 {
     m_mtlCommandBuffer = [[queue commandBuffer] retain];
 }}
+
+CommandBufferPool* MetalCommandBuffer::pool()
+{
+    return m_sourcePool;
+}
 
 void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @autoreleasepool
 {
@@ -47,11 +60,11 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
 
     for (int i = 0; auto& colorAttachment : framebuffer.colorAttachments)
     {
-        auto texture = ext::dynamic_pointer_cast<const MetalTexture>(colorAttachment.texture);
+        auto texture = ext::dynamic_pointer_cast<MetalTexture>(colorAttachment.texture);
         assert(texture);
-        renderPassDescriptor.colorAttachments[0].loadAction = toMTLLoadAction(colorAttachment.loadAction);
-        renderPassDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(
+        renderPassDescriptor.colorAttachments[i].loadAction = toMTLLoadAction(colorAttachment.loadAction);
+        renderPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
+        renderPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(
             colorAttachment.clearColor[0], colorAttachment.clearColor[1],
             colorAttachment.clearColor[2], colorAttachment.clearColor[3]);
         renderPassDescriptor.colorAttachments[i].texture = texture->mtltexture();
@@ -60,7 +73,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
 
     if (auto& depthAttachment = framebuffer.depthAttachment)
     {
-        auto texture = ext::dynamic_pointer_cast<const MetalTexture>(depthAttachment->texture);
+        auto texture = ext::dynamic_pointer_cast<MetalTexture>(depthAttachment->texture);
         renderPassDescriptor.depthAttachment.loadAction = toMTLLoadAction(depthAttachment->loadAction);
         renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
         renderPassDescriptor.depthAttachment.clearDepth = depthAttachment->clearDepth;
@@ -76,12 +89,14 @@ void MetalCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipelin
     auto graphicsPipeline = ext::dynamic_pointer_cast<const MetalGraphicsPipeline>(_graphicsPipeline);
     assert(graphicsPipeline);
 
-    m_usedPipelines.insert(graphicsPipeline);
-
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    [(id<MTLRenderCommandEncoder>)m_commandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
+    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+    [renderCommandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
     if (graphicsPipeline->depthStencilState() != nil)
-        [(id<MTLRenderCommandEncoder>)m_commandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
+        [renderCommandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
+
+    m_usedPipelines.insert(graphicsPipeline);
 }}
 
 void MetalCommandBuffer::useVertexBuffer(const ext::shared_ptr<Buffer>& aBuffer) { @autoreleasepool
@@ -89,45 +104,40 @@ void MetalCommandBuffer::useVertexBuffer(const ext::shared_ptr<Buffer>& aBuffer)
     auto buffer = ext::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
 
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
+    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+    [renderCommandEncoder setVertexBuffer:buffer->mtlBuffer() offset:0 atIndex:5];
 
     m_usedBuffers.insert(buffer);
-
-    assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    [(id<MTLRenderCommandEncoder>)m_commandEncoder setVertexBuffer:buffer->mtlBuffer() offset:0 atIndex:5];
 }}
 
-void MetalCommandBuffer::setParameterBlock(const ParameterBlock& aPBlock, uint32_t index) { @autoreleasepool
+void MetalCommandBuffer::setParameterBlock(const ext::shared_ptr<const ParameterBlock>& aPBlock, uint32_t index) { @autoreleasepool
 {
-    const auto& pBlock = dynamic_cast<const MetalParameterBlock&>(aPBlock);
+    const auto& pBlock = ext::dynamic_pointer_cast<const MetalParameterBlock>(aPBlock);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
+    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
 
-    for (const auto& [binding, buffer] : pBlock.encodedBuffers())
-        [(id<MTLRenderCommandEncoder>)m_commandEncoder useResource:buffer->mtlBuffer()
-                                                             usage:toMTLResourceUsage(binding.usages)
-                                                            stages:toMTLRenderStages(binding.usages)];
+    for (const auto& [buffer, binding] : pBlock->encodedBuffers())
+        [renderCommandEncoder useResource:buffer->mtlBuffer() usage:toMTLResourceUsage(binding.usages) stages:toMTLRenderStages(binding.usages)];
 
-    if (ext::ranges::any_of(pBlock.encodedBuffers(),  [](auto& pair) { return (bool)(pair.first.usages & BindingUsage::vertexRead) || (bool)(pair.first.usages & BindingUsage::vertexWrite); }))
-    {
-        [(id<MTLRenderCommandEncoder>)m_commandEncoder setVertexBuffer:pBlock.argumentBuffer().mtlBuffer()
-                                                                offset:pBlock.offset()
-                                                               atIndex:index];
-    }
+    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }))
+        [renderCommandEncoder setVertexBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
 
-    if (ext::ranges::any_of(pBlock.encodedBuffers(),  [](auto& pair) { return (bool)(pair.first.usages & BindingUsage::fragmentRead) || (bool)(pair.first.usages & BindingUsage::fragmentWrite); }))
-    {
-        [(id<MTLRenderCommandEncoder>)m_commandEncoder setFragmentBuffer:pBlock.argumentBuffer().mtlBuffer()
-                                                                  offset:pBlock.offset()
-                                                                 atIndex:index];
-    }
+    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }))
+        [renderCommandEncoder setFragmentBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
 
-    m_usedBuffers.insert_range(pBlock.encodedBuffers()   | ext::views::transform([](auto& pair){ return pair.second; }));
+    m_usedBuffers.insert_range(pBlock->encodedBuffers() | ext::views::transform([](auto& pair) -> ext::shared_ptr<MetalBuffer> { return pair.first; }));
+    m_usedPBlock.insert(pBlock);
 }}
 
 void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autoreleasepool
 {
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    [(id<MTLRenderCommandEncoder>)m_commandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
+    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+    [renderCommandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
 }}
 
 void MetalCommandBuffer::drawIndexedVertices(const ext::shared_ptr<Buffer>& buffer) { @autoreleasepool
@@ -136,21 +146,23 @@ void MetalCommandBuffer::drawIndexedVertices(const ext::shared_ptr<Buffer>& buff
     assert(idxBuffer);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
+    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+    [renderCommandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                                     indexCount:idxBuffer->size() / sizeof(uint32_t)
+                                      indexType:MTLIndexTypeUInt32
+                                    indexBuffer:idxBuffer->mtlBuffer()
+                              indexBufferOffset:0];
 
     m_usedBuffers.insert(idxBuffer);
-
-    [(id<MTLRenderCommandEncoder>)m_commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                                              indexCount:idxBuffer->size() / sizeof(uint32_t)
-                                                               indexType:MTLIndexTypeUInt32
-                                                             indexBuffer:idxBuffer->mtlBuffer()
-                                                       indexBufferOffset:0];
 }}
 
 #if defined(GFX_IMGUI_ENABLED)
 void MetalCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const { @autoreleasepool
 {
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    ImGui_ImplMetal_RenderDrawData(drawData, m_mtlCommandBuffer, (id<MTLRenderCommandEncoder>)m_commandEncoder);
+    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+    ImGui_ImplMetal_RenderDrawData(drawData, m_mtlCommandBuffer, renderCommandEncoder);
 }}
 #endif
 
@@ -162,33 +174,79 @@ void MetalCommandBuffer::endRenderPass() { @autoreleasepool
     m_commandEncoder = nil;
 }}
 
+void MetalCommandBuffer::beginBlitPass() { @autoreleasepool
+{
+    assert(m_commandEncoder == nil);
+    m_commandEncoder = [[m_mtlCommandBuffer blitCommandEncoder] retain];
+}}
+
+void MetalCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc, const ext::shared_ptr<Buffer>& aDst, size_t size) { @autoreleasepool
+{
+    auto src = ext::dynamic_pointer_cast<MetalBuffer>(aSrc);
+    assert(src);
+
+    auto dst = ext::dynamic_pointer_cast<MetalBuffer>(aDst);
+    assert(dst);
+
+    assert(src->usages() & BufferUsage::copySource && dst->usages() & BufferUsage::copyDestination);
+
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
+    auto blitCommandEncoder = (id<MTLBlitCommandEncoder>)m_commandEncoder;
+
+    [blitCommandEncoder copyFromBuffer:src->mtlBuffer() sourceOffset:0 toBuffer:dst->mtlBuffer() destinationOffset:0 size:size];
+
+    m_usedBuffers.insert(src);
+    m_usedBuffers.insert(dst);
+}}
+
+void MetalCommandBuffer::endBlitPass() { @autoreleasepool
+{
+    assert(m_commandEncoder);
+    [m_commandEncoder endEncoding];
+    [m_commandEncoder release];
+    m_commandEncoder = nil;
+}}
+
+void MetalCommandBuffer::presentDrawable(const ext::shared_ptr<Drawable>& aDrawable) { @autoreleasepool
+{
+    auto drawable = ext::dynamic_pointer_cast<MetalDrawable>(aDrawable);
+    assert(drawable);
+
+    [m_mtlCommandBuffer presentDrawable:drawable->mtlDrawable()];
+    m_usedDrawables.insert(drawable);
+}}
+
 MetalCommandBuffer::~MetalCommandBuffer() { @autoreleasepool
 {
-    m_usedBuffers.clear();
-    m_usedTextures.clear();
-    m_usedPipelines.clear();
+    if (m_sourcePool)
+        m_sourcePool->release(this);
     if (m_commandEncoder != nil)
-        [m_mtlCommandBuffer release];
+        [m_commandEncoder release];
     if (m_mtlCommandBuffer != nil)
         [m_mtlCommandBuffer release];
 }}
 
-MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) noexcept
+MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) noexcept { @autoreleasepool
 {
     if (this != &other)
     {
+        if (m_sourcePool)
+            m_sourcePool->release(this);
         if (m_commandEncoder != nil)
-            [m_mtlCommandBuffer release];
+            [m_commandEncoder release];
         if (m_mtlCommandBuffer != nil)
             [m_mtlCommandBuffer release];
 
+        m_sourcePool = ext::exchange(other.m_sourcePool, nullptr);
         m_mtlCommandBuffer = ext::exchange(other.m_mtlCommandBuffer, nil);
         m_commandEncoder = ext::exchange(other.m_commandEncoder, nil);
         m_usedPipelines = ext::move(other.m_usedPipelines);
         m_usedTextures = ext::move(other.m_usedTextures);
         m_usedBuffers = ext::move(other.m_usedBuffers);
+        m_usedPBlock = ext::move(other.m_usedPBlock);
+        m_usedDrawables = ext::move(other.m_usedDrawables);
     }
     return *this;
-}
+}}
 
 }

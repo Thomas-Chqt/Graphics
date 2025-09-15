@@ -119,6 +119,7 @@ if (GFX_BUILD_VULKAN)
         FIND_PACKAGE_ARGS
     )
     FetchContent_MakeAvailable(VulkanMemoryAllocator)
+    set_target_properties(VulkanMemoryAllocator PROPERTIES FOLDER "dependencies")
     target_link_libraries(VulkanMemoryAllocator PRIVATE Vulkan::Vulkan)
 endif()
 

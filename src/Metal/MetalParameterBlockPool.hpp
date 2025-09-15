@@ -10,6 +10,7 @@
 #ifndef METALPARAMETERBLOCKPOOL_HPP
 #define METALPARAMETERBLOCKPOOL_HPP
 
+#include "Graphics/ParameterBlockPool.hpp"
 #include "Graphics/ParameterBlock.hpp"
 
 #include "Metal/MetalParameterBlock.hpp"
@@ -20,29 +21,31 @@ namespace gfx
 
 class MetalDevice;
 
-class MetalParameterBlockPool
+class MetalParameterBlockPool : public ParameterBlockPool
 {
 public:
-    MetalParameterBlockPool() = default;
+    MetalParameterBlockPool() = delete;
     MetalParameterBlockPool(const MetalParameterBlockPool&) = delete;
-    MetalParameterBlockPool(MetalParameterBlockPool&&) = default;
+    MetalParameterBlockPool(MetalParameterBlockPool&&) = delete;
 
     MetalParameterBlockPool(const MetalDevice*);
 
-    MetalParameterBlock& get(const ParameterBlock::Layout&);
-    void reset();
-    void clear();
+    ext::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
+    void release(ParameterBlock*);
 
-    ~MetalParameterBlockPool() = default;
+    ~MetalParameterBlockPool() override;
 
 private:
-    MetalBuffer m_argumentBuffer;
+    const MetalDevice* m_device = nullptr; // to allow creating more argument buffers in the future
+
+    ext::shared_ptr<MetalBuffer> m_argumentBuffer; // blocks can outlive the pool, only the argument buffer need to remain alive
     size_t m_nextOffset = 0;
-    ext::deque<MetalParameterBlock> m_parameterBlocks;
+
+    ext::set<MetalParameterBlock*> m_usedParameterBlocks;
 
 public:
     MetalParameterBlockPool& operator=(const MetalParameterBlockPool&) = delete;
-    MetalParameterBlockPool& operator=(MetalParameterBlockPool&&) = default;
+    MetalParameterBlockPool& operator=(MetalParameterBlockPool&&) = delete;
 };
 
 } // namespace gfx

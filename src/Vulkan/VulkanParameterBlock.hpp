@@ -19,32 +19,41 @@ namespace gfx
 {
 
 class VulkanDevice;
+class VulkanParameterBlockPool;
 
 class VulkanParameterBlock : public ParameterBlock
 {
 public:
     VulkanParameterBlock() = delete;
     VulkanParameterBlock(const VulkanParameterBlock&) = delete;
-    VulkanParameterBlock(VulkanParameterBlock&&) = default;
+    VulkanParameterBlock(VulkanParameterBlock&&) = delete;
 
-    VulkanParameterBlock(const VulkanDevice*, vk::DescriptorSet&& descriptorSet, const ParameterBlock::Layout&);
+    VulkanParameterBlock(const VulkanDevice*, const ext::shared_ptr<vk::DescriptorPool>&, const ParameterBlock::Layout&, VulkanParameterBlockPool*);
 
     void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) override;
 
-    inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
-    inline const ext::map<ParameterBlock::Binding, ext::shared_ptr<VulkanBuffer>> usedBuffers() const { return m_usedBuffers; }
+    inline const ParameterBlock::Layout& layout() const { return m_layout; }
+    inline void clearSourcePool() { m_sourcePool = nullptr; }
 
-    ~VulkanParameterBlock() override = default;
+    inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
+
+    inline const ext::map<ext::shared_ptr<VulkanBuffer>, ParameterBlock::Binding> usedBuffers() const { return m_usedBuffers; }
+
+    ~VulkanParameterBlock() override; 
 
 private:
     const VulkanDevice* m_device;
-    vk::DescriptorSet m_descriptorSet;
-    ext::vector<ParameterBlock::Binding> m_bindings;
+    ext::shared_ptr<vk::DescriptorPool> m_descriptorPool;
+    ParameterBlock::Layout m_layout;
+    VulkanParameterBlockPool* m_sourcePool;
 
-    ext::map<ParameterBlock::Binding, ext::shared_ptr<VulkanBuffer>> m_usedBuffers;
+    vk::DescriptorSet m_descriptorSet;
+
+    ext::map<ext::shared_ptr<VulkanBuffer>, ParameterBlock::Binding> m_usedBuffers;
+
 public:
     VulkanParameterBlock& operator=(const VulkanParameterBlock&) = delete;
-    VulkanParameterBlock& operator=(VulkanParameterBlock&&) = default;
+    VulkanParameterBlock& operator=(VulkanParameterBlock&&) = delete;
 };
 
 } // namespace gfx

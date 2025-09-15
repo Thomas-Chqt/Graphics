@@ -14,7 +14,7 @@ namespace gfx
 
 ext::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState& state, const ResourceSyncRequest& request)
 {
-    constexpr vk::AccessFlags2 kWriteMask = vk::AccessFlagBits2::eShaderWrite
+    constexpr vk::AccessFlags2 writeMask = vk::AccessFlagBits2::eShaderWrite
         | vk::AccessFlagBits2::eTransferWrite
         | vk::AccessFlagBits2::eColorAttachmentWrite
         | vk::AccessFlagBits2::eDepthStencilAttachmentWrite
@@ -24,8 +24,8 @@ ext::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState& state, c
     ext::optional<vk::MemoryBarrier2> memoryBarrier;
 
     const bool hadPrevUse = state.accessMask != vk::AccessFlags2{};
-    const bool prevWrote = (state.accessMask & kWriteMask) != vk::AccessFlags2{};
-    const bool nextWrites = (request.accessMask & kWriteMask) != vk::AccessFlags2{};
+    const bool prevWrote = (state.accessMask & writeMask) != vk::AccessFlags2{};
+    const bool nextWrites = (request.accessMask & writeMask) != vk::AccessFlags2{};
     if (hadPrevUse && (prevWrote || nextWrites))
     {
         memoryBarrier = vk::MemoryBarrier2{}

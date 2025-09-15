@@ -28,8 +28,7 @@ public:
     struct Descriptor
     {
         size_t size = 0;
-        const void* data = nullptr;
-        BufferUsages usages;
+        BufferUsages usages = BufferUsage::uniformBuffer;
         ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
     };
 

@@ -12,15 +12,27 @@
 #include "Vulkan/VulkanParameterBlock.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanParameterBlockPool.hpp"
 
 namespace gfx
 {
 
-VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, vk::DescriptorSet&& descriptorSet, const ParameterBlock::Layout& layout)
+VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const ext::shared_ptr<vk::DescriptorPool>& descriptorPool, const ParameterBlock::Layout& layout, VulkanParameterBlockPool* sourcePool)
     : m_device(device),
-      m_descriptorSet(ext::move(descriptorSet)),
-      m_bindings(layout.bindings)
+      m_descriptorPool(descriptorPool),
+      m_layout(layout),
+      m_sourcePool(sourcePool)
 {
+    auto descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo{}
+        .setDescriptorPool(*m_descriptorPool)
+        .setDescriptorSetCount(1)
+        .setSetLayouts(m_device->descriptorSetLayout(layout)); // need to be in cache
+ 
+    ext::vector<vk::DescriptorSet> descriptorSets = m_device->vkDevice().allocateDescriptorSets(descriptorSetAllocateInfo);
+    if (descriptorSets.empty())
+        throw ext::runtime_error("failed to allocate descriptorSet");
+
+    m_descriptorSet = ext::move(descriptorSets.front());
 }
 
 void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer>& aBuffer)
@@ -42,7 +54,13 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer
 
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
 
-    m_usedBuffers.insert(ext::make_pair(m_bindings.at(idx), buffer));
+    m_usedBuffers.insert(ext::make_pair(buffer, m_layout.bindings.at(idx)));
+}
+
+VulkanParameterBlock::~VulkanParameterBlock()
+{
+    if (m_sourcePool != nullptr)
+        m_sourcePool->release(this);
 }
 
 }

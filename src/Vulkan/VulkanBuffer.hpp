@@ -11,6 +11,7 @@
 #define VULKANBUFFER_HPP
 
 #include "Graphics/Buffer.hpp"
+#include "Graphics/Enums.hpp"
 
 #include "Vulkan/Sync.hpp"
 
@@ -34,9 +35,9 @@ public:
 
     void setContent(const void* data, size_t size) override;
 
-    inline const vk::Buffer& vkBuffer() const { return currentFrameData().vkBuffer; }
-    inline BufferSyncState& syncState() { return currentFrameData().syncState; }
-    inline const BufferSyncState& syncState() const { return currentFrameData().syncState; }
+    inline const vk::Buffer& vkBuffer() const { return m_vkBuffer; }
+    inline BufferSyncState& syncState() { return m_syncState; }
+    inline const BufferSyncState& syncState() const { return m_syncState; }
 
     ~VulkanBuffer() override;
 
@@ -44,23 +45,16 @@ protected:
     void* contentVoid() override;
 
 private:
-    struct FrameData
-    {
-        vk::Buffer vkBuffer;
-        VmaAllocation allocation;
-        VmaAllocationInfo allocInfo;
-        BufferSyncState syncState;
-    };
-
-    FrameData& currentFrameData();
-    const FrameData& currentFrameData() const;
-
     const VulkanDevice* m_device;
     const size_t m_size;
     BufferUsages m_usages;
     ResourceStorageMode m_storageMode;
 
-    PerFrameInFlight<FrameData> m_frameDatas;
+    vk::Buffer m_vkBuffer;
+    VmaAllocation m_allocation = VK_NULL_HANDLE;
+    VmaAllocationInfo m_allocInfo = {};
+
+    BufferSyncState m_syncState;
 
 public:
     VulkanBuffer& operator=(const VulkanBuffer&) = delete;

@@ -33,20 +33,18 @@
 #else
     #include <memory>
     #include <cassert>
-    #include <set>
     #include <cstdint>
     #include <cstddef>
     #include <array>
     #include <numbers>
+    #include <algorithm>
+    #include <bit>
     namespace ext = std;
 #endif
 
 #if __XCODE__
     #include <unistd.h>
 #endif
-
-constexpr uint32_t WINDOW_WIDTH = 800;
-constexpr uint32_t WINDOW_HEIGHT = 600;
 
 #if (defined(__GNUC__) || defined(__clang__))
     #define GFX_EXPORT __attribute__((visibility("default")))
@@ -58,24 +56,27 @@ constexpr uint32_t WINDOW_HEIGHT = 600;
 
 extern "C"
 {
-
-GFX_EXPORT ImGuiContext* GetCurrentContext() { return ImGui::GetCurrentContext(); }
-GFX_EXPORT ImGuiIO* GetIO() { return &ImGui::GetIO(); }
-GFX_EXPORT ImGuiPlatformIO* GetPlatformIO() { return &ImGui::GetPlatformIO(); }
-GFX_EXPORT ImGuiViewport* GetMainViewport() { return ImGui::GetMainViewport(); }
-GFX_EXPORT bool DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx) { return ImGui::DebugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx); }
-GFX_EXPORT void* MemAlloc(size_t size) { return ImGui::MemAlloc(size); }
-GFX_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
-GFX_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
-
+    GFX_EXPORT ImGuiContext* GetCurrentContext() { return ImGui::GetCurrentContext(); }
+    GFX_EXPORT ImGuiIO* GetIO() { return &ImGui::GetIO(); }
+    GFX_EXPORT ImGuiPlatformIO* GetPlatformIO() { return &ImGui::GetPlatformIO(); }
+    GFX_EXPORT ImGuiViewport* GetMainViewport() { return ImGui::GetMainViewport(); }
+    GFX_EXPORT bool DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx) { return ImGui::DebugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx); }
+    GFX_EXPORT void* MemAlloc(size_t size) { return ImGui::MemAlloc(size); }
+    GFX_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
+    GFX_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
 }
+
+constexpr uint32_t WINDOW_WIDTH = 800;
+constexpr uint32_t WINDOW_HEIGHT = 600;
+
+constexpr uint8_t maxFrameInFlight = 3;
 
 struct Vertex
 {
     glm::vec3 pos;
 };
 
-const ext::array<Vertex, 24> cube_vertices = {
+constexpr ext::array<Vertex, 24> cube_vertices = {
     // Front face (+Z)
     Vertex{ glm::vec3(-0.5f, -0.5f,  0.5f) },
     Vertex{ glm::vec3( 0.5f, -0.5f,  0.5f) },
@@ -108,7 +109,7 @@ const ext::array<Vertex, 24> cube_vertices = {
     Vertex{ glm::vec3(-0.5f, -0.5f,  0.5f) }
 };
 
-const ext::array<uint32_t, 36> cube_indices = {
+constexpr ext::array<uint32_t, 36> cube_indices = {
     // Front face
     0, 1, 2, 0, 2, 3,
     // Back face
@@ -151,9 +152,9 @@ public:
 #endif
         auto res = glfwInit();
         assert(res == GLFW_TRUE);
+        (void)res;
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
         m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
         assert(m_window);
 
@@ -204,24 +205,71 @@ public:
         m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
         assert(m_graphicsPipeline);
 
+        for (uint8_t i = 0; i < maxFrameInFlight; i++) {
+            m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
+            m_parameterBlockPools.at(i) = m_device->newParameterBlockPool();
+        }
+
+        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = ext::max(sizeof(Vertex) * cube_vertices.size(), sizeof(uint32_t) * cube_indices.size()),
+            .usages = gfx::BufferUsage::copySource,
+            .storageMode = gfx::ResourceStorageMode::hostVisible
+        });
+        assert(stagingBuffer);
+
         m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(cube_vertices), .data = cube_vertices.data(), .usages = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(Vertex) * cube_vertices.size(),
+            .usages = gfx::BufferUsage::vertexBuffer | gfx::BufferUsage::copyDestination,
+            .storageMode = gfx::ResourceStorageMode::deviceLocal
         });
         assert(m_vertexBuffer);
 
         m_indexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(cube_indices), .data = cube_indices.data(), .usages = gfx::BufferUsage::indexBuffer
+            .size = sizeof(uint32_t) * cube_indices.size(),
+            .usages = gfx::BufferUsage::indexBuffer | gfx::BufferUsage::copyDestination,
+            .storageMode = gfx::ResourceStorageMode::deviceLocal
         });
         assert(m_indexBuffer);
 
-        m_vpMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::mat4x4), .usages=gfx::BufferUsage::uniformBuffer });
-        assert(m_vpMatrix);
+        ext::ranges::copy(cube_vertices, stagingBuffer->content<Vertex>());
+        gfx::CommandBuffer* commandBuffer = m_commandBufferPools.at(m_frameIdx)->get().release();
+        commandBuffer->beginBlitPass();
+        commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, m_vertexBuffer->size());
+        commandBuffer->endBlitPass();
+        m_device->submitCommandBuffers(ext::unique_ptr<gfx::CommandBuffer>(commandBuffer));
 
-        m_modelMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::mat4x4), .usages=gfx::BufferUsage::uniformBuffer | gfx::BufferUsage::perFrameData});
-        assert(m_modelMatrix);
+        m_device->waitCommandBuffer(commandBuffer);
 
-        m_color = m_device->newBuffer(gfx::Buffer::Descriptor{.size=sizeof(glm::vec4), .usages=gfx::BufferUsage::uniformBuffer | gfx::BufferUsage::perFrameData});
-        assert(m_color);
+        ext::ranges::copy(cube_indices, stagingBuffer->content<uint32_t>());
+        commandBuffer = m_commandBufferPools.at(m_frameIdx)->get().release();
+        commandBuffer->beginBlitPass();
+        commandBuffer->copyBufferToBuffer(stagingBuffer, m_indexBuffer, m_indexBuffer->size());
+        commandBuffer->endBlitPass();
+        m_device->submitCommandBuffers(ext::unique_ptr<gfx::CommandBuffer>(commandBuffer));
+
+        for (auto i = 0; i < maxFrameInFlight; i++)
+        {
+            m_vpMatrix.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size=sizeof(glm::mat4x4),
+                .usages=gfx::BufferUsage::uniformBuffer,
+                .storageMode = gfx::ResourceStorageMode::hostVisible
+            });
+            assert(m_vpMatrix.at(i));
+
+            m_modelMatrix.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size=sizeof(glm::mat4x4),
+                .usages=gfx::BufferUsage::uniformBuffer,
+                .storageMode = gfx::ResourceStorageMode::hostVisible
+            });
+            assert(m_modelMatrix.at(i));
+
+            m_color.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size=sizeof(glm::vec3),
+                .usages=gfx::BufferUsage::uniformBuffer,
+                .storageMode = gfx::ResourceStorageMode::hostVisible
+            });
+            assert(m_color.at(i));
+        }
 
         ImGui::CreateContext();
 
@@ -264,113 +312,121 @@ public:
                 m_swapchain = m_device->newSwapchain(swapchainDescriptor);
                 assert(m_swapchain);
 
-                gfx::Texture::Descriptor depthTextureDescriptor = {
-                    .width = (uint32_t)width, .height = (uint32_t)height,
-                    .pixelFormat = gfx::PixelFormat::Depth32Float,
-                    .usages = gfx::TextureUsage::depthStencilAttachment,
-                    .storageMode = gfx::ResourceStorageMode::deviceLocal
-                };
-
-                m_depthTexture = m_device->newTexture(depthTextureDescriptor);
-
                 m_device->waitIdle();
 
-                constexpr glm::vec3 camPos = glm::vec3(0.0f, 0.0f,  3.0f);
-                constexpr glm::vec3 camDir = glm::vec3(0.0f, 0.0f, -1.0f);
-                constexpr glm::vec3 camUp  = glm::vec3(0.0f, 1.0f,  0.0f);
-                const glm::mat4 viewMatrix = glm::lookAt(camPos, camPos + camDir, camUp);
-                glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
-                *m_vpMatrix->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
+                for (auto i = 0; i < maxFrameInFlight; i++) {
+                    gfx::Texture::Descriptor depthTextureDescriptor = {
+                        .width = (uint32_t)width, .height = (uint32_t)height,
+                        .pixelFormat = gfx::PixelFormat::Depth32Float,
+                        .usages = gfx::TextureUsage::depthStencilAttachment,
+                        .storageMode = gfx::ResourceStorageMode::deviceLocal
+                    };
+
+                    m_depthTexture.at(i) = m_device->newTexture(depthTextureDescriptor);
+                }
             }
 
-            m_device->beginFrame();
+            if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
+                m_device->waitCommandBuffer(m_lastCommandBuffers.at(m_frameIdx));
+                m_lastCommandBuffers.at(m_frameIdx) = nullptr;
+            }
+
+            int width = 0, height = 0;
+            ::glfwGetFramebufferSize(m_window, &width, &height);
+            constexpr glm::vec3 camPos = glm::vec3(0.0f, 0.0f,  3.0f);
+            constexpr glm::vec3 camDir = glm::vec3(0.0f, 0.0f, -1.0f);
+            constexpr glm::vec3 camUp  = glm::vec3(0.0f, 1.0f,  0.0f);
+            const glm::mat4 viewMatrix = glm::lookAt(camPos, camPos + camDir, camUp);
+            glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
+            *m_vpMatrix.at(m_frameIdx)->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
+
+            m_device->imguiNewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
             {
-                m_device->imguiNewFrame();
-                ImGui_ImplGlfw_NewFrame();
-                ImGui::NewFrame();
+                ImGui::Begin("mc_cube");
                 {
-                    ImGui::Begin("mc_cube");
-                    {
-                        *m_modelMatrix->content<glm::mat4x4>() = glm::mat4(1.0f);
+                    *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::mat4(1.0f);
 
-                        ImGui::DragFloat3("position", reinterpret_cast<float*>(&m_cubePos), 0.01f, -5.0, 5.0);
-                        *m_modelMatrix->content<glm::mat4x4>() = glm::translate(*m_modelMatrix->content<glm::mat4x4>(), m_cubePos);
+                    ImGui::DragFloat3("position", ext::bit_cast<float*>(&m_cubePos), 0.01f, -5.0, 5.0);
+                    *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::translate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubePos);
 
-                        ImGui::DragFloat3("rotation", reinterpret_cast<float*>(&m_cubeRot), 0.01f, -ext::numbers::pi_v<float>, ext::numbers::pi_v<float>);
-                        *m_modelMatrix->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix->content<glm::mat4x4>(), m_cubeRot.x, glm::vec3(1, 0, 0));
-                        *m_modelMatrix->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix->content<glm::mat4x4>(), m_cubeRot.y, glm::vec3(0, 1, 0));
-                        *m_modelMatrix->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix->content<glm::mat4x4>(), m_cubeRot.z, glm::vec3(0, 0, 1));
+                    ImGui::DragFloat3("rotation", ext::bit_cast<float*>(&m_cubeRot), 0.01f, -ext::numbers::pi_v<float>, ext::numbers::pi_v<float>);
+                    *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeRot.x, glm::vec3(1, 0, 0));
+                    *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeRot.y, glm::vec3(0, 1, 0));
+                    *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeRot.z, glm::vec3(0, 0, 1));
 
-                        ImGui::DragFloat3("scale", reinterpret_cast<float*>(&m_cubeSca), 0.01f, -2, 2);
-                        *m_modelMatrix->content<glm::mat4x4>() = glm::scale(*m_modelMatrix->content<glm::mat4x4>(), m_cubeSca);
+                    ImGui::DragFloat3("scale", ext::bit_cast<float*>(&m_cubeSca), 0.01f, -2, 2);
+                    *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::scale(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeSca);
 
-                        ImGui::Spacing();
+                    ImGui::Spacing();
 
-                        static glm::vec3 color = { 1, 1, 1 };
-                        ImGui::ColorEdit3("color", reinterpret_cast<float*>(&color));
-                        *m_color->content<glm::vec3>() = color;
-                    }
-                    ImGui::End();
+                    static glm::vec3 color = { 1, 1, 1 };
+                    ImGui::ColorEdit3("color", ext::bit_cast<float*>(&color));
+                    *m_color.at(m_frameIdx)->content<glm::vec3>() = color;
                 }
-                ImGui::Render();
-
-                gfx::ParameterBlock& vpMatrixPbEncoder = m_device->parameterBlock(vpMatrixBpLayout);
-                vpMatrixPbEncoder.setBinding(0, m_vpMatrix);
-
-                gfx::ParameterBlock& modelMatrixPbEncoder = m_device->parameterBlock(modelMatrixBpLayout);
-                modelMatrixPbEncoder.setBinding(0, m_modelMatrix);
-
-                gfx::ParameterBlock& materialPbEncoder = m_device->parameterBlock(materialBpLayout);
-                materialPbEncoder.setBinding(0, m_color);
-
-                gfx::CommandBuffer& commandBuffer = m_device->commandBuffer();
-
-                ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
-                if (drawable == nullptr) {
-                    m_swapchain = nullptr;
-                    continue;
-                }
-
-                gfx::Framebuffer framebuffer = {
-                    .colorAttachments = {
-                        gfx::Framebuffer::Attachment{
-                            .loadAction = gfx::LoadAction::clear,
-                            .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
-                            .texture = drawable->texture()
-                        }
-                    },
-                    .depthAttachment = {
-                        gfx::Framebuffer::Attachment{
-                            .loadAction = gfx::LoadAction::clear,
-                            .clearDepth = 1.0f,
-                            .texture = m_depthTexture
-                        }
-                    }
-                };
-
-                commandBuffer.beginRenderPass(framebuffer);
-                {
-                    commandBuffer.usePipeline(m_graphicsPipeline);
-                    commandBuffer.setParameterBlock(vpMatrixPbEncoder, 0);
-                    commandBuffer.setParameterBlock(modelMatrixPbEncoder, 1);
-                    commandBuffer.setParameterBlock(materialPbEncoder, 2);
-                    commandBuffer.useVertexBuffer(m_vertexBuffer);
-                    commandBuffer.drawIndexedVertices(m_indexBuffer);
-
-                    commandBuffer.imGuiRenderDrawData(ImGui::GetDrawData());
-                }
-                commandBuffer.endRenderPass();
-
-                m_device->submitCommandBuffer(commandBuffer);
-                m_device->presentDrawable(drawable);
-
-                if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-                {
-                    ImGui::UpdatePlatformWindows();
-                    ImGui::RenderPlatformWindowsDefault();
-                }
+                ImGui::End();
             }
-            m_device->endFrame();
+            ImGui::Render();
+
+            ext::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = m_parameterBlockPools.at(m_frameIdx)->get(vpMatrixBpLayout);
+            vpMatrixPBlock->setBinding(0, m_vpMatrix.at(m_frameIdx));
+
+            ext::shared_ptr<gfx::ParameterBlock> modelMatrixPBlock = m_parameterBlockPools.at(m_frameIdx)->get(modelMatrixBpLayout);
+            modelMatrixPBlock->setBinding(0, m_modelMatrix.at(m_frameIdx));
+
+            ext::shared_ptr<gfx::ParameterBlock> materialPBlock = m_parameterBlockPools.at(m_frameIdx)->get(materialBpLayout);
+            materialPBlock->setBinding(0, m_color.at(m_frameIdx));
+
+            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+
+            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            if (drawable == nullptr) {
+                m_swapchain = nullptr;
+                continue;
+            }
+
+            gfx::Framebuffer framebuffer = {
+                .colorAttachments = {
+                    gfx::Framebuffer::Attachment{
+                        .loadAction = gfx::LoadAction::clear,
+                        .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
+                        .texture = drawable->texture()
+                    }
+                },
+                .depthAttachment = {
+                    gfx::Framebuffer::Attachment{
+                        .loadAction = gfx::LoadAction::clear,
+                        .clearDepth = 1.0f,
+                        .texture = m_depthTexture.at(m_frameIdx)
+                    }
+                }
+            };
+
+            commandBuffer->beginRenderPass(framebuffer);
+            {
+                commandBuffer->usePipeline(m_graphicsPipeline);
+                commandBuffer->setParameterBlock(vpMatrixPBlock, 0);
+                commandBuffer->setParameterBlock(modelMatrixPBlock, 1);
+                commandBuffer->setParameterBlock(materialPBlock, 2);
+                commandBuffer->useVertexBuffer(m_vertexBuffer);
+                commandBuffer->drawIndexedVertices(m_indexBuffer);
+
+                commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
+            }
+            commandBuffer->endRenderPass();
+            commandBuffer->presentDrawable(drawable);
+
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
+            m_device->submitCommandBuffers(ext::move(commandBuffer));
+
+            if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+            {
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+            }
+
+            m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
     }
 
@@ -393,16 +449,23 @@ private:
 
     ext::shared_ptr<gfx::Buffer> m_vertexBuffer;
     ext::shared_ptr<gfx::Buffer> m_indexBuffer;
-    ext::shared_ptr<gfx::Buffer> m_vpMatrix;
+
+    uint8_t m_frameIdx = 0;
+    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    ext::array<ext::unique_ptr<gfx::ParameterBlockPool>, maxFrameInFlight> m_parameterBlockPools;
+    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
+
+    ext::array<ext::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_vpMatrix;
 
     glm::vec3 m_cubePos = {0, 0, 0};
     glm::vec3 m_cubeRot = {0, 0, 0};
     glm::vec3 m_cubeSca = {1, 1, 1};
-    ext::shared_ptr<gfx::Buffer> m_modelMatrix;
+    ext::array<ext::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_modelMatrix;
 
-    ext::shared_ptr<gfx::Buffer> m_color;
+    ext::array<ext::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_color;
 
-    ext::shared_ptr<gfx::Texture> m_depthTexture;
+    ext::array<ext::shared_ptr<gfx::Texture>, maxFrameInFlight> m_depthTexture;
+
 };
 
 int main()

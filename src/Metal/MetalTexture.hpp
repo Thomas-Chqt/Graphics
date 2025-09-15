@@ -27,8 +27,8 @@ public:
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&)      = delete;
     
-    MetalTexture(const MetalDevice*, const id<MTLTexture>&, const Texture::Descriptor&);
-    MetalTexture(const MetalDevice*, const Texture::Descriptor&);
+    MetalTexture(const id<MTLTexture>&, const Texture::Descriptor&);
+    MetalTexture(const MetalDevice&, const Texture::Descriptor&);
 
     uint32_t width() const override;
     uint32_t height() const override;
@@ -36,27 +36,15 @@ public:
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
-    void replaceContent(void* data);
-
-    inline const id<MTLTexture>& mtltexture() const { return currentFrameData().mtlTexture; }
+    inline const id<MTLTexture>& mtltexture() const { return m_mtlTexture; }
 
     ~MetalTexture() override;
 
 private:
-    struct FrameData
-    {
-        id<MTLTexture> mtlTexture = nullptr;
-    };
-
-    FrameData& currentFrameData();
-    const FrameData& currentFrameData() const;
-
-    const MetalDevice* m_device;
     TextureUsages m_usages;
     ResourceStorageMode m_storageMode;
 
-    uint8_t m_imageCount;
-    PerFrameInFlight<FrameData> m_frameDatas;
+    id<MTLTexture> m_mtlTexture = nullptr;
     
 public:
     MetalTexture& operator = (const MetalTexture&) = delete;

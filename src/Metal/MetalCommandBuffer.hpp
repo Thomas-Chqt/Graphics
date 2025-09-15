@@ -17,11 +17,15 @@
 #include "Graphics/ParameterBlock.hpp"
 
 #include "Metal/MetalBuffer.hpp"
+#include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
+#include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalTexture.hpp"
 
 namespace gfx
 {
+
+class MetalCommandBufferPool;
 
 class MetalCommandBuffer : public CommandBuffer
 {
@@ -30,14 +34,16 @@ public:
     MetalCommandBuffer(const MetalCommandBuffer&) = delete;
     MetalCommandBuffer(MetalCommandBuffer&&) noexcept;
 
-    MetalCommandBuffer(const id<MTLCommandQueue>&);
+    MetalCommandBuffer(const id<MTLCommandQueue>&, MetalCommandBufferPool*);
+
+    CommandBufferPool* pool() override;
 
     void beginRenderPass(const Framebuffer&) override;
 
     void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
     void useVertexBuffer(const ext::shared_ptr<Buffer>&) override;
 
-    void setParameterBlock(const ParameterBlock&, uint32_t index) override;
+    void setParameterBlock(const ext::shared_ptr<const ParameterBlock>&, uint32_t index) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
     void drawIndexedVertices(const ext::shared_ptr<Buffer>& idxBuffer) override;
@@ -48,18 +54,37 @@ public:
 
     void endRenderPass() override;
 
-    const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }
-    const id<MTLCommandEncoder>& commandEncoder() const { return m_commandEncoder; }
+
+    void beginBlitPass() override;
+
+    void copyBufferToBuffer(const ext::shared_ptr<Buffer>& src, const ext::shared_ptr<Buffer>& dst, size_t size) override;
+
+    void endBlitPass() override;
+
+
+    void presentDrawable(const ext::shared_ptr<Drawable>&) override;
+
+
+    inline const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }
+    inline const id<MTLCommandEncoder>& commandEncoder() const { return m_commandEncoder; }
+    inline void clearSourcePool() { m_sourcePool = nullptr; }
 
     ~MetalCommandBuffer() override;
 
 private:
+    MetalCommandBufferPool* m_sourcePool = nullptr;
+
     id<MTLCommandBuffer> m_mtlCommandBuffer = nil;
     id<MTLCommandEncoder> m_commandEncoder = nil;
 
     ext::set<ext::shared_ptr<const MetalGraphicsPipeline>> m_usedPipelines;
-    ext::set<ext::shared_ptr<const MetalTexture>> m_usedTextures;
-    ext::set<ext::shared_ptr<const MetalBuffer>> m_usedBuffers;
+
+    ext::set<ext::shared_ptr<MetalTexture>> m_usedTextures;
+    ext::set<ext::shared_ptr<MetalBuffer>> m_usedBuffers;
+
+    ext::set<ext::shared_ptr<const MetalParameterBlock>> m_usedPBlock;
+
+    ext::set<ext::shared_ptr<MetalDrawable>> m_usedDrawables;
 
 public:
     MetalCommandBuffer& operator = (const MetalCommandBuffer&) = delete;

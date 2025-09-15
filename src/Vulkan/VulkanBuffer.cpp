@@ -29,60 +29,29 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor&
     if (m_storageMode == ResourceStorageMode::hostVisible)
         allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
-    for (auto& frameData : m_frameDatas)
-    {
-        VkBuffer buffer = VK_NULL_HANDLE;
-        vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &frameData.allocation, &frameData.allocInfo);
-        frameData.vkBuffer = ext::exchange(buffer, VK_NULL_HANDLE);
-
-        if (static_cast<bool>(desc.usages & BufferUsage::perFrameData) == false)
-            break;
-    }
-    if (desc.data)
-        setContent(desc.data, desc.size);
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &m_allocation, &m_allocInfo);
+    m_vkBuffer = ext::exchange(buffer, VK_NULL_HANDLE);
 }
 
 void VulkanBuffer::setContent(const void* data, size_t size)
 {
     assert(m_storageMode == ResourceStorageMode::hostVisible);
-    for (auto& frameData : m_frameDatas)
-    {
-        VkResult res = vmaCopyMemoryToAllocation(m_device->allocator(), data, frameData.allocation, 0, size);
-        if (res != VK_SUCCESS)
-            throw ext::runtime_error("vmaCopyMemoryToAllocation failed");
 
-        if (static_cast<bool>(m_usages & BufferUsage::perFrameData) == false)
-            break;
-    }
+    VkResult res = vmaCopyMemoryToAllocation(m_device->allocator(), data, m_allocation, 0, size);
+    if (res != VK_SUCCESS)
+        throw ext::runtime_error("vmaCopyMemoryToAllocation failed");
 }
 
 VulkanBuffer::~VulkanBuffer()
 {
-    for (auto& frameData : m_frameDatas)
-    {
-        vmaDestroyBuffer(m_device->allocator(), frameData.vkBuffer, frameData.allocation);
-
-        if (static_cast<bool>(m_usages & BufferUsage::perFrameData) == false)
-            break;
-    }
+    vmaDestroyBuffer(m_device->allocator(), m_vkBuffer, m_allocation);
 }
 
 void* VulkanBuffer::contentVoid()
 {
     assert(m_storageMode == ResourceStorageMode::hostVisible);
-    return currentFrameData().allocInfo.pMappedData;
-}
-
-VulkanBuffer::FrameData& VulkanBuffer::currentFrameData()
-{
-    uint64_t bufferCount = static_cast<bool>(m_usages & BufferUsage::perFrameData) ? m_frameDatas.size() : 1;
-    return m_frameDatas.at(m_device->currentFrameIdx() % bufferCount);
-}
-
-const VulkanBuffer::FrameData& VulkanBuffer::currentFrameData() const
-{
-    uint64_t bufferCount = static_cast<bool>(m_usages & BufferUsage::perFrameData) ? m_frameDatas.size() : 1;
-    return m_frameDatas.at(m_device->currentFrameIdx() % bufferCount);
+    return m_allocInfo.pMappedData;
 }
 
 }

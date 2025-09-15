@@ -43,7 +43,7 @@ VSOutput vertexMain(VSInput input)
 
 struct Material
 {
-    ConstantBuffer<float4> color;
+    ConstantBuffer<float3> color;
 }
 
 ParameterBlock<Material> material;
@@ -53,5 +53,5 @@ float4 fragmentMain(VSOutput input) : SV_TARGET
 {
     float dist = length(input.modelPos);
     float brightness = lerp(1.0, 0.5, saturate(dist / 0.866));
-    return material.color * brightness;
+    return float4(material.color, 1.0) * brightness;
 }

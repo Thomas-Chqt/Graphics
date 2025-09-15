@@ -10,39 +10,43 @@
 #include "Graphics/ParameterBlock.hpp"
 
 #include "Metal/MetalParameterBlockPool.hpp"
+#include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalDevice.hpp"
 
 namespace gfx
 {
 
 MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device)
+    : m_device(device)
 {
-    Buffer::Descriptor buffDesc = {
-        .size = 1024,
-        .usages = BufferUsage::uniformBuffer, // dont matter (but not perFrameData)
-        .storageMode = ResourceStorageMode::hostVisible};
-    m_argumentBuffer = MetalBuffer(device, buffDesc);
+    Buffer::Descriptor buffDesc = { .size = 1024, .storageMode = ResourceStorageMode::hostVisible };
+    m_argumentBuffer = ext::dynamic_pointer_cast<MetalBuffer>((ext::shared_ptr<Buffer>)m_device->newBuffer(buffDesc));
 }
 
-MetalParameterBlock& MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
+ext::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
 {
-    MetalParameterBlock& pbe = m_parameterBlocks.emplace_back(&m_argumentBuffer, m_nextOffset, pbLayout);
+    ext::unique_ptr<MetalParameterBlock> pBlock = ext::make_unique<MetalParameterBlock>(m_argumentBuffer, m_nextOffset, pbLayout, this);
     size_t usedSize = sizeof(uint64_t) * pbLayout.bindings.size();
     m_nextOffset += (usedSize + 31uz) & ~31uz;
-    return pbe;
+    m_usedParameterBlocks.insert(pBlock.get());
+    return pBlock;
 }
 
-void MetalParameterBlockPool::reset()
+void MetalParameterBlockPool::release(ParameterBlock* aPBlock)
 {
-    m_parameterBlocks.clear();
-    m_nextOffset = 0;
+    auto* pBlock = dynamic_cast<MetalParameterBlock*>(aPBlock);
+    assert(m_usedParameterBlocks.contains(pBlock));
+    m_usedParameterBlocks.erase(pBlock);
+    if (m_usedParameterBlocks.empty())
+        m_nextOffset = 0; // reset the pool
 }
 
-void MetalParameterBlockPool::clear()
+MetalParameterBlockPool::~MetalParameterBlockPool()
 {
-    m_parameterBlocks.clear();
-    m_nextOffset = 0;
-    m_argumentBuffer.clear();
+    for (auto* pBlock : m_usedParameterBlocks) {
+        // blocks can outlive the pool, this prevent releasing a block to a freed pool
+        pBlock->clearSourcePool();
+    }
 }
 
 } // namespace gfx

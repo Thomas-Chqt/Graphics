@@ -12,15 +12,16 @@
 
 #include "Graphics/Device.hpp"
 #include "Graphics/Swapchain.hpp"
-#include "Graphics/CommandBuffer.hpp"
-#include "Graphics/Drawable.hpp"
-#include "Graphics/ParameterBlock.hpp"
+#include "Graphics/ShaderLib.hpp"
+#include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/Buffer.hpp"
 #include "Graphics/Texture.hpp"
+#include "Graphics/CommandBufferPool.hpp"
+#include "Graphics/ParameterBlockPool.hpp"
+#include "Graphics/CommandBuffer.hpp"
+#include "Graphics/Enums.hpp"
 
-#include "Metal/MetalCommandBufferPool.hpp"
-#include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
-#include "Metal/MetalParameterBlockPool.hpp"
 
 namespace gfx
 {
@@ -34,59 +35,36 @@ public:
 
     MetalDevice(id<MTLDevice>&, const Device::Descriptor&);
 
+    inline Backend backend() const override { return Backend::metal; }
+
     ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;
     ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override;
     ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
+    ext::unique_ptr<CommandBufferPool> newCommandBufferPool() const override;
+    ext::unique_ptr<ParameterBlockPool> newParameterBlockPool() const override;
 
 #if defined (GFX_IMGUI_ENABLED)
     void imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat) const override;
-#endif
-
-#if defined(GFX_IMGUI_ENABLED)
     void imguiNewFrame() const override;
+    void imguiShutdown() override;
 #endif
 
-    void beginFrame() override;
- 
-    ParameterBlock& parameterBlock(const ParameterBlock::Layout&) override;
+    void submitCommandBuffers(ext::unique_ptr<CommandBuffer>&&) override;
+    void submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffer>>) override;
 
-    CommandBuffer& commandBuffer() override;
-
-    void submitCommandBuffer(CommandBuffer&) override;
-    void presentDrawable(const ext::shared_ptr<Drawable>&) override;
-
-    void endFrame() override;
-
-    void waitIdle() const override;
-
-    inline Backend backend() const override { return Backend::metal; }
-    inline uint32_t currentFrameIdx() const override { return static_cast<uint32_t>(ext::distance(m_frameDatas.begin(), PerFrameInFlight<FrameData>::const_iterator(m_currFrameData))); };
+    void waitCommandBuffer(const CommandBuffer*) override;
+    void waitIdle() override;
 
     inline const id<MTLDevice>& mtlDevice() const { return m_mtlDevice; }
-
-#if defined(GFX_IMGUI_ENABLED)
-    void imguiShutdown() const override;
-#endif
 
     ~MetalDevice() override;
 
 private:
-    struct FrameData
-    {
-        MetalParameterBlockPool pBlockPool;
-        MetalCommandBufferPool commandBufferPool;
-
-        ext::vector<MetalCommandBuffer*> submittedCommandBuffers;
-        MetalCommandBuffer* waitedCommandBuffer = nullptr;
-    };
-
     id<MTLDevice> m_mtlDevice = nil;
     id<MTLCommandQueue> m_queue = nil;
-
-    PerFrameInFlight<FrameData> m_frameDatas;
-    PerFrameInFlight<FrameData>::iterator m_currFrameData = m_frameDatas.begin();
+    ext::deque<ext::unique_ptr<MetalCommandBuffer>> m_submittedCommandBuffers;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

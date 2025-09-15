@@ -10,105 +10,90 @@
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanDevice.hpp"
+#include <cassert>
+#include <memory>
 
 namespace gfx
 {
 
-VulkanCommandBufferPool::VulkanCommandBufferPool(VulkanCommandBufferPool&& other) noexcept
-    : m_device(ext::exchange(other.m_device, nullptr)),
-      m_queueFamily(ext::exchange(other.m_queueFamily, QueueFamily{})),
-      m_pools(ext::move(other.m_pools))
-{
-    other.m_frontPool = &other.m_pools[0];
-    other.m_backPool = &other.m_pools[1];
-}
-
 VulkanCommandBufferPool::VulkanCommandBufferPool(const VulkanDevice* device, const QueueFamily& queueFamily)
-    : m_device(device), m_queueFamily(queueFamily)
+    : m_device(device)
 {
     auto commandPoolCreateInfo = vk::CommandPoolCreateInfo{}
-        .setQueueFamilyIndex(m_queueFamily.index);
+        .setQueueFamilyIndex(queueFamily.index);
 
-    m_pools[0].vkCommandPool = m_device->vkDevice().createCommandPool(commandPoolCreateInfo);
-    m_pools[1].vkCommandPool = m_device->vkDevice().createCommandPool(commandPoolCreateInfo);
+    m_vkCommandPool = ext::shared_ptr<vk::CommandPool>(
+        new vk::CommandPool(m_device->vkDevice().createCommandPool(commandPoolCreateInfo)), // NOLINT(cppcoreguidelines-owning-memory)
+        [device=m_device](vk::CommandPool* pool){
+            device->vkDevice().destroyCommandPool(*pool);
+            delete pool; // NOLINT(cppcoreguidelines-owning-memory)
+        }
+    );
 }
 
-VulkanCommandBuffer& VulkanCommandBufferPool::get()
+ext::unique_ptr<CommandBuffer> VulkanCommandBufferPool::get()
 {
-    assert(m_device);
-    VulkanCommandBuffer commandBuffer;
-    if (m_frontPool->free.empty() == false) {
-        commandBuffer = ext::move(m_frontPool->free.front());
-        m_frontPool->free.pop_front();
+    ext::unique_ptr<VulkanCommandBuffer> commandBuffer;
+    if (m_availableCommandBuffers.empty() == false) {
+        commandBuffer = ext::move(m_availableCommandBuffers.front());
+        m_availableCommandBuffers.pop_front();
     }
     else {
-        auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
-            .setCommandPool(m_frontPool->vkCommandPool)
-            .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(1);
-        commandBuffer = VulkanCommandBuffer(
-            ext::move(m_device->vkDevice().allocateCommandBuffers(commandBufferAllocateInfo).front()),
-            m_queueFamily);
+        commandBuffer = std::make_unique<VulkanCommandBuffer>(m_device, m_vkCommandPool, this);
     }
-    commandBuffer.begin();
-    return m_frontPool->inUse.emplace_back(std::move(commandBuffer));
+    assert(m_usedCommandBuffers.contains(commandBuffer.get()) == false);
+    // in vulkan, command buffers can be reused so the buffers in m_availableCommandBuffers already have a vk command buffer
+    m_usedCommandBuffers.insert(commandBuffer.get());
+    commandBuffer->begin();
+    return commandBuffer;
 }
 
-void VulkanCommandBufferPool::swapPools()
+void VulkanCommandBufferPool::release(ext::unique_ptr<CommandBuffer>&& aCommandBuffer) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
-    ext::swap(m_frontPool, m_backPool);
+    auto* commandBuffer = dynamic_cast<VulkanCommandBuffer*>(aCommandBuffer.release());
+    assert(commandBuffer);
+    commandBuffer->reuse();
+    // buffer cannot be reused directly, the pool need to be reset
+    m_resetableCommandBuffers.insert(ext::unique_ptr<VulkanCommandBuffer>(commandBuffer));
+    release(commandBuffer); // because reuse() dont call release
 }
 
-void VulkanCommandBufferPool::reset()
+void VulkanCommandBufferPool::release(CommandBuffer* aCommandBuffer)
 {
-    assert(m_device);
-    while(m_backPool->inUse.empty() == false) {
-        m_backPool->inUse.front().clear();
-        m_backPool->free.emplace_back(ext::move(m_backPool->inUse.front()));
-        m_backPool->inUse.pop_front();
-    }
-    m_device->vkDevice().resetCommandPool(m_backPool->vkCommandPool);
-}
-
-void VulkanCommandBufferPool::clear()
-{
-    for (auto& pool : m_pools)
-    {
-        for (auto& buff : pool.inUse) {
-            buff.clear();
+    auto* commandBuffer = dynamic_cast<VulkanCommandBuffer*>(aCommandBuffer);
+    assert(commandBuffer);
+    assert(m_usedCommandBuffers.contains(commandBuffer));
+    m_usedCommandBuffers.erase(commandBuffer);
+    if (m_usedCommandBuffers.empty()) {
+        // no more used command buffers, the pool can be reset
+        m_device->vkDevice().resetCommandPool(*m_vkCommandPool);
+        // the pool is reset, command buffers can be reused
+        while (m_resetableCommandBuffers.empty() == false) {
+            auto node = m_resetableCommandBuffers.extract(m_resetableCommandBuffers.begin());
+            m_availableCommandBuffers.push_back(ext::move(node.value()));
         }
-        if (pool.vkCommandPool) {
-            assert(m_device);
-            m_device->vkDevice().destroyCommandPool(pool.vkCommandPool);
-            pool.vkCommandPool = VK_NULL_HANDLE;
-        }
-        pool.inUse.clear();
-        pool.free.clear();
+        m_resetableCommandBuffers.clear();
     }
-    m_frontPool = &m_pools[0];
-    m_backPool = &m_pools[1];
-    m_queueFamily = QueueFamily{};
-    m_device = nullptr;
+}
+
+ext::unique_ptr<VulkanCommandBuffer> VulkanCommandBufferPool::getVulkan()
+{
+    ext::unique_ptr<CommandBuffer> cmdBuffer = get();
+    auto* vkCmdBuffer = dynamic_cast<VulkanCommandBuffer*>(cmdBuffer.release());
+    assert(vkCmdBuffer);
+    return ext::unique_ptr<VulkanCommandBuffer>(vkCmdBuffer);
 }
 
 VulkanCommandBufferPool::~VulkanCommandBufferPool()
 {
-    clear();
-}
-
-VulkanCommandBufferPool& VulkanCommandBufferPool::operator=(VulkanCommandBufferPool&& other) noexcept
-{
-    if (this != &other)
-    {
-        clear();
-        m_device = ext::exchange(other.m_device, nullptr);
-        m_queueFamily = ext::exchange(other.m_queueFamily, QueueFamily{});
-        m_pools = ext::move(other.m_pools);
-
-        other.m_frontPool = &other.m_pools[0];
-        other.m_backPool = &other.m_pools[1];
-    }
-    return *this;
+    // commandBuffers can outlive the pool, so clearing the pool
+    // prevent from trying to release a buffer to a freed pool
+    for (auto& cmdBuffer : m_usedCommandBuffers)
+        cmdBuffer->clearSourcePool();
+    for (auto& cmdBuffer : m_resetableCommandBuffers)
+        cmdBuffer->clearSourcePool();
+    for (auto& cmdBuffer : m_availableCommandBuffers)
+        cmdBuffer->clearSourcePool();
 }
 
 }

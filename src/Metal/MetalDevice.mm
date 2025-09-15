@@ -27,6 +27,7 @@
 #include "Metal/MetalTexture.hpp"
 
 #import "Metal/MetalEnums.h"
+#include <memory>
 
 namespace gfx
 {
@@ -35,16 +36,11 @@ MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor&) { @au
 {
     m_mtlDevice = [device retain];
     m_queue = [device newCommandQueue];
-
-    for (auto& frameData : m_frameDatas) {
-        frameData.pBlockPool = MetalParameterBlockPool(this);
-        frameData.commandBufferPool = MetalCommandBufferPool(&m_queue);
-    }
 }}
 
 ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
 {
-    return ext::make_unique<MetalSwapchain>(this, desc);
+    return ext::make_unique<MetalSwapchain>(*this, desc);
 }
 
 ext::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const ext::filesystem::path& path) const
@@ -59,111 +55,80 @@ ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const Graphic
 
 ext::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) const
 {
-    return ext::make_unique<MetalBuffer>(this, desc);
+    return ext::make_unique<MetalBuffer>(*this, desc);
 }
 
 ext::unique_ptr<Texture> MetalDevice::newTexture(const Texture::Descriptor& desc) const
 {
-    return ext::make_unique<MetalTexture>(this, desc);
+    return ext::make_unique<MetalTexture>(*this, desc);
+}
 
+ext::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const
+{
+    return ext::make_unique<MetalCommandBufferPool>(&m_queue);
+}
+
+ext::unique_ptr<ParameterBlockPool> MetalDevice::newParameterBlockPool() const
+{
+    return ext::make_unique<MetalParameterBlockPool>(this);
 }
 
 #if defined (GFX_IMGUI_ENABLED)
-void MetalDevice::imguiInit(ext::vector<PixelFormat> colorPixelFomats, ext::optional<PixelFormat> depthPixelFormat) const { @autoreleasepool
+void MetalDevice::imguiInit(ext::vector<PixelFormat> colorPixelFomats, ext::optional<PixelFormat> depthPixelFormat) const
 {
     ImGui_ImplMetal_Init(this, colorPixelFomats, depthPixelFormat);
-}}
-#endif
+}
 
-#if defined(GFX_IMGUI_ENABLED)
-void MetalDevice::imguiNewFrame() const { @autoreleasepool
+void MetalDevice::imguiNewFrame() const
 {
     ImGui_ImplMetal_NewFrame();
-}}
-#endif
-
-void MetalDevice::beginFrame() { @autoreleasepool
-{
-    if (m_currFrameData->waitedCommandBuffer != nullptr)
-    {
-        [m_currFrameData->waitedCommandBuffer->mtlCommandBuffer() waitUntilCompleted];
-        auto it = ext::ranges::find(m_currFrameData->submittedCommandBuffers, m_currFrameData->waitedCommandBuffer);
-        auto upBound = it == m_currFrameData->submittedCommandBuffers.end() ? it : ext::next(it);
-        m_currFrameData->submittedCommandBuffers.erase(m_currFrameData->submittedCommandBuffers.begin(), upBound);
-        m_currFrameData->waitedCommandBuffer = nullptr;
-    }
-
-    m_currFrameData->commandBufferPool.reset();
-    m_currFrameData->pBlockPool.reset();
-}}
-
-ParameterBlock& MetalDevice::parameterBlock(const ParameterBlock::Layout& pbLayout)
-{
-    return m_currFrameData->pBlockPool.get(pbLayout);
 }
 
-CommandBuffer& MetalDevice::commandBuffer()
-{
-    return m_currFrameData->commandBufferPool.get();
-}
-
-void MetalDevice::submitCommandBuffer(CommandBuffer& aCommandBuffer)
-{
-    auto* commandbuffer = dynamic_cast<MetalCommandBuffer*>(&aCommandBuffer);
-    assert(commandbuffer);
-    m_currFrameData->submittedCommandBuffers.push_back(commandbuffer);
-}
-
-void MetalDevice::presentDrawable(const ext::shared_ptr<Drawable>& _drawable) { @autoreleasepool
-{
-    ext::shared_ptr<MetalDrawable> drawable = ext::dynamic_pointer_cast<MetalDrawable>(_drawable);
-    [m_currFrameData->submittedCommandBuffers.back()->mtlCommandBuffer() presentDrawable:drawable->mtlDrawable()];
-    // TODO : keep strong ref to drawable
-}}
-
-void MetalDevice::endFrame() { @autoreleasepool
-{
-    for (auto& buff : m_currFrameData->submittedCommandBuffers)
-        [buff->mtlCommandBuffer() commit];
-
-    if (m_currFrameData->submittedCommandBuffers.empty() == false)
-        m_currFrameData->waitedCommandBuffer = m_currFrameData->submittedCommandBuffers.back();
-
-    m_currFrameData->commandBufferPool.swapPools();
-    m_currFrameData++;
-    if (m_currFrameData == m_frameDatas.end())
-        m_currFrameData = m_frameDatas.begin();
-}}
-
-void MetalDevice::waitIdle() const { @autoreleasepool
-{
-    for (auto& frameData : m_frameDatas) {
-        if (frameData.waitedCommandBuffer != nullptr) {
-            [frameData.waitedCommandBuffer->mtlCommandBuffer() waitUntilCompleted];
-            //auto it = ext::ranges::find(frameData.submittedCommandBuffers, frameData.waitedCommandBuffer);
-            //if (it != frameData.submittedCommandBuffers.end())
-            //    frameData.submittedCommandBuffers.erase(frameData.submittedCommandBuffers.begin(), ext::next(it));
-            //frameData.waitedCommandBuffer = nullptr;
-        }
-    }
-}}
-
-#if defined(GFX_IMGUI_ENABLED)
-void MetalDevice::imguiShutdown() const { @autoreleasepool
+void MetalDevice::imguiShutdown()
 {
     ImGui_ImplMetal_Shutdown();
-}}
+}
 #endif
+
+void MetalDevice::submitCommandBuffers(ext::unique_ptr<CommandBuffer>&& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+{
+    auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer.release());
+    assert(commandBuffer);
+
+    [commandBuffer->mtlCommandBuffer() commit];
+    m_submittedCommandBuffers.push_back(ext::unique_ptr<MetalCommandBuffer>(commandBuffer));
+}}
+
+void MetalDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffer>> commandBuffers)
+{
+    for (auto& commandBuffer : commandBuffers)
+        submitCommandBuffers(ext::move(commandBuffer));
+}
+
+void MetalDevice::waitCommandBuffer(const CommandBuffer* aCommandBuffer) { @autoreleasepool
+{
+    auto it = ext::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
+    if (it != m_submittedCommandBuffers.end())
+    {
+        [(*it)->mtlCommandBuffer() waitUntilCompleted];
+        ++it;
+        for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
+            if ((*curr)->pool())
+                (*curr)->pool()->release(ext::move(*curr));
+        }
+        m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
+    }
+}}
+
+void MetalDevice::waitIdle()
+{
+    if (m_submittedCommandBuffers.empty() == false)
+        waitCommandBuffer(m_submittedCommandBuffers.back().get());
+}
 
 MetalDevice::~MetalDevice() { @autoreleasepool
 {
     waitIdle();
-    for (auto& frameData : m_frameDatas) {
-        frameData.waitedCommandBuffer = nullptr;
-        frameData.submittedCommandBuffers.clear();
-        frameData.commandBufferPool.clear();
-        frameData.pBlockPool.clear();
-    }
     [m_queue release];
     [m_mtlDevice release];
 }}

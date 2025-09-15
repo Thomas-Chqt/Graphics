@@ -7,71 +7,59 @@
  * ---------------------------------------------------
  */
 
+#include "Graphics/CommandBuffer.hpp"
+
 #include "Metal/MetalCommandBufferPool.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
 
-class MTLCommandQueue;
-
 namespace gfx
 {
-
-MetalCommandBufferPool::MetalCommandBufferPool(MetalCommandBufferPool&& other) noexcept
-    : m_queue(ext::exchange(other.m_queue, nullptr)),
-      m_pools(ext::move(other.m_pools))
-{
-    other.m_frontPool = &other.m_pools[0];
-    other.m_backPool = &other.m_pools[1];
-}
 
 MetalCommandBufferPool::MetalCommandBufferPool(const id<MTLCommandQueue>* queue)
     : m_queue(queue)
 {
 }
 
-MetalCommandBuffer& MetalCommandBufferPool::get()
+ext::unique_ptr<CommandBuffer> MetalCommandBufferPool::get()
 {
-    MetalCommandBuffer b = MetalCommandBuffer(*m_queue);
-    m_frontPool->commandBuffers.push_back(ext::move(b));
-    return m_frontPool->commandBuffers.back();
+    ext::unique_ptr<MetalCommandBuffer> commandBuffer;
+    if (m_availableCommandBuffers.empty() == false) {
+        commandBuffer = ext::move(m_availableCommandBuffers.front());
+        m_availableCommandBuffers.pop_front();
+    }
+    else {
+        commandBuffer = std::make_unique<MetalCommandBuffer>();
+    }
+    assert(m_usedCommandBuffers.contains(commandBuffer.get()) == false);
+    *commandBuffer = MetalCommandBuffer(*m_queue, this); // in metal; the command buffer need to be destoyed and recreated every frame, so availabe command buffer are empty
+    m_usedCommandBuffers.insert(commandBuffer.get());
+    return commandBuffer;
 }
 
-void MetalCommandBufferPool::swapPools()
+void MetalCommandBufferPool::release(ext::unique_ptr<CommandBuffer>&& aCommandBuffer) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
-    ext::swap(m_frontPool, m_backPool);
+    auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer.release());
+    assert(commandBuffer);
+    *commandBuffer = MetalCommandBuffer(); // destructor will remove the buffer from m_usedCommandBuffers
+    assert(m_usedCommandBuffers.contains(commandBuffer) == false);
+    m_availableCommandBuffers.push_back(ext::unique_ptr<MetalCommandBuffer>(commandBuffer));
 }
 
-void MetalCommandBufferPool::reset()
+void MetalCommandBufferPool::release(CommandBuffer* aCommandBuffer)
 {
-    m_backPool->commandBuffers.clear();
-}
-
-void MetalCommandBufferPool::clear()
-{
-    m_frontPool = &m_pools[0];
-    m_backPool = &m_pools[1];
-    for (auto& pool : m_pools)
-        pool.commandBuffers.clear();
-    m_queue = nullptr;
+    auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer);
+    assert(commandBuffer);
+    assert(m_usedCommandBuffers.contains(commandBuffer));
+    m_usedCommandBuffers.erase(commandBuffer);
 }
 
 MetalCommandBufferPool::~MetalCommandBufferPool()
 {
-    clear();
-}
-
-MetalCommandBufferPool& MetalCommandBufferPool::operator=(MetalCommandBufferPool&& other) noexcept
-{
-    if (this != &other)
-    {
-        clear();
-
-        m_queue = ext::exchange(other.m_queue, nullptr);
-        m_pools = ext::move(other.m_pools);
-
-        other.m_frontPool = &other.m_pools[0];
-        other.m_backPool = &other.m_pools[1];
+    for (auto& cmdBuffer : m_usedCommandBuffers) {
+        // commandBuffers can outlive the pool, so clearing the pool
+        // prevent from trying to release a buffer to a freed pool
+        cmdBuffer->clearSourcePool();
     }
-    return *this;
 }
 
 }

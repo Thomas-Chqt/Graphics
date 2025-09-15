@@ -23,9 +23,9 @@ class MetalBuffer : public Buffer
 public:
     MetalBuffer() = default;
     MetalBuffer(const MetalBuffer&) = delete;
-    MetalBuffer(MetalBuffer&&) = default;
+    MetalBuffer(MetalBuffer&&) noexcept;
 
-    MetalBuffer(const MetalDevice*, const Buffer::Descriptor&);
+    MetalBuffer(const MetalDevice&, const Buffer::Descriptor&);
 
     size_t size() const override;
     inline BufferUsages usages() const override { return m_usages; };
@@ -33,9 +33,7 @@ public:
 
     void setContent(const void* data, size_t size) override;
 
-    const id<MTLBuffer>& mtlBuffer() const { return currentFrameData().mtlBuffer; }
-
-    void clear();
+    const id<MTLBuffer>& mtlBuffer() const { return m_mtlBuffer; }
 
     ~MetalBuffer() override;
 
@@ -43,20 +41,10 @@ protected:
     void* contentVoid() override;
 
 private:
-    struct FrameData
-    {
-        id<MTLBuffer> mtlBuffer = nil;
-    };
-
-    FrameData& currentFrameData();
-    const FrameData& currentFrameData() const;
-
-    const MetalDevice* m_device = nullptr;
     BufferUsages m_usages = BufferUsage::uniformBuffer;
     ResourceStorageMode m_storageMode = ResourceStorageMode::hostVisible;
 
-    uint32_t m_bufferCount = 0;
-    PerFrameInFlight<FrameData> m_frameDatas;
+    id<MTLBuffer> m_mtlBuffer = nil;
 
 public:
     MetalBuffer& operator = (const MetalBuffer&) = delete;

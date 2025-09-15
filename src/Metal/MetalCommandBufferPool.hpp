@@ -10,43 +10,38 @@
 #ifndef METALCOMMANDBUFFERPOOL_HPP
 #define METALCOMMANDBUFFERPOOL_HPP
 
+#include "Graphics/CommandBufferPool.hpp"
+#include "Graphics/CommandBuffer.hpp"
+
 #include "Metal/MetalCommandBuffer.hpp"
 
 namespace gfx
 {
 
-class MetalCommandBufferPool
+class MetalCommandBufferPool : public CommandBufferPool
 {
 public:
     MetalCommandBufferPool() = default;
     MetalCommandBufferPool(const MetalCommandBufferPool&) = delete;
-    MetalCommandBufferPool(MetalCommandBufferPool&&) noexcept;
+    MetalCommandBufferPool(MetalCommandBufferPool&&) = delete;
 
     MetalCommandBufferPool(const id<MTLCommandQueue>*);
-    
-    MetalCommandBuffer& get(); // get from the front pool
-    void swapPools(); // swap back and front pools
-    void reset(); // reset the back pool
-    void clear();
 
-    ~MetalCommandBufferPool();
+    ext::unique_ptr<CommandBuffer> get() override;
+    void release(ext::unique_ptr<CommandBuffer>&&) override;
+    void release(CommandBuffer*);
+
+    ~MetalCommandBufferPool() override;
 
 private:
-    struct PoolData
-    {
-        ext::deque<MetalCommandBuffer> commandBuffers;
-    };
-
     const id<MTLCommandQueue>* m_queue = nullptr;
 
-    ext::array<PoolData, 2> m_pools;
+    ext::deque<ext::unique_ptr<MetalCommandBuffer>> m_availableCommandBuffers;
+    ext::set<MetalCommandBuffer*> m_usedCommandBuffers;
 
-    PoolData* m_frontPool = &m_pools[0];
-    PoolData* m_backPool = &m_pools[1];
-    
 public:
     MetalCommandBufferPool& operator = (const MetalCommandBufferPool&) = delete;
-    MetalCommandBufferPool& operator = (MetalCommandBufferPool&&) noexcept;
+    MetalCommandBufferPool& operator = (MetalCommandBufferPool&&) = delete;
 };
 
 }

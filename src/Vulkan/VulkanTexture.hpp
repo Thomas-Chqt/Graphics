@@ -36,38 +36,30 @@ public:
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
-    inline const vk::Image& vkImage() const { return currentFrameData().vkImage; }
-    inline const vk::ImageView& vkImageView() const { return currentFrameData().vkImageView; }
-    inline ImageSyncState& syncState() { return currentFrameData().syncState; }
+    inline const vk::Image& vkImage() const { return m_vkImage; }
 
     inline const vk::ImageSubresourceRange& subresourceRange() const { return m_subresourceRange; }
+    inline const vk::ImageView& vkImageView() const { return m_vkImageView; }
+
+    inline ImageSyncState& syncState() { return m_syncState; }
 
     ~VulkanTexture() override;
 
 protected:
-    struct FrameData
-    {
-        vk::Image vkImage;
-        VmaAllocation allocation;
-        VmaAllocationInfo allocInfo;
-        vk::ImageView vkImageView;
-        ImageSyncState syncState;
-    };
-
-    FrameData& currentFrameData();
-    const FrameData& currentFrameData() const;
-
     const VulkanDevice* m_device = nullptr;
     uint32_t m_width, m_height;
     PixelFormat m_pixelFormat;
     TextureUsages m_usages;
     ResourceStorageMode m_storageMode;
 
-    bool m_shouldDestroyImg;
-    vk::ImageSubresourceRange m_subresourceRange;
+    VmaAllocation m_allocation = VK_NULL_HANDLE;
+    VmaAllocationInfo m_allocInfo = {};
+    vk::Image m_vkImage;
 
-    PerFrameInFlight<FrameData> m_frameDatas;
-    uint8_t m_imageCount;
+    vk::ImageSubresourceRange m_subresourceRange;
+    vk::ImageView m_vkImageView;
+
+    ImageSyncState m_syncState;
 
 public:
     VulkanTexture& operator=(const VulkanTexture&) = delete;

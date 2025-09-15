@@ -20,6 +20,18 @@
 #include <GLFW/glfw3.h>
 #include <backends/imgui_impl_glfw.h>
 
+#if defined(GFX_USE_UTILSCPP)
+    namespace ext = utl;
+#else
+    #include <memory>
+    #include <cassert>
+    #include <cstdint>
+    namespace ext = std;
+#endif
+
+#if __XCODE__
+    #include <unistd.h>
+#endif
 #if (defined(__GNUC__) || defined(__clang__))
     #define GFX_EXPORT __attribute__((visibility("default")))
 #elif defined(_MSC_VER)
@@ -42,22 +54,10 @@ GFX_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(
 
 }
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cassert>
-    #include <set>
-    #include <cstdint>
-    namespace ext = std;
-#endif
+constexpr uint32_t WINDOW_WIDTH = 800;
+constexpr uint32_t WINDOW_HEIGHT = 600;
 
-#if __XCODE__
-    #include <unistd.h>
-#endif
-
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+constexpr uint8_t maxFrameInFlight = 3;
 
 class Application
 {
@@ -69,6 +69,7 @@ public:
 #endif
         auto res = glfwInit();
         assert(res == GLFW_TRUE);
+        (void)res;
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
@@ -99,6 +100,10 @@ public:
         assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
 
+        for (uint8_t i = 0; i < maxFrameInFlight; i++) {
+            m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
+        }
+
         ImGui::CreateContext();
 
         ImGuiIO& io = ImGui::GetIO();
@@ -120,14 +125,14 @@ public:
 
     void loop()
     {
-        while (1)
+        while (true)
         {
             glfwPollEvents();
             if (glfwWindowShouldClose(m_window))
                 break;
 
             if (m_swapchain == nullptr) {
-                int width, height;
+                int width = 0, height = 0;
                 ::glfwGetFramebufferSize(m_window, &width, &height);
                 gfx::Swapchain::Descriptor swapchainDescriptor = {
                     .surface = m_surface.get(),
@@ -142,49 +147,55 @@ public:
                 m_device->waitIdle();
             }
 
+            if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
+                m_device->waitCommandBuffer(m_lastCommandBuffers.at(m_frameIdx));
+                m_lastCommandBuffers.at(m_frameIdx) = nullptr;
+            }
+
             m_device->imguiNewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
-            static bool showDemoWindow = true;
-            ImGui::ShowDemoWindow(&showDemoWindow);
+            {
+                static bool showDemoWindow = true;
+                ImGui::ShowDemoWindow(&showDemoWindow);
+            }
             ImGui::Render();
 
-            m_device->beginFrame();
-            {
-                gfx::CommandBuffer& commandBuffer = m_device->commandBuffer();
+            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
 
-                ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
-                if (drawable == nullptr) {
-                    m_swapchain = nullptr;
-                    continue;
-                }
-
-                gfx::Framebuffer framebuffer = {
-                    .colorAttachments = {
-                        gfx::Framebuffer::Attachment{
-                            .loadAction = gfx::LoadAction::clear,
-                            .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
-                            .texture = drawable->texture()
-                        } 
-                    }
-                };
-
-                commandBuffer.beginRenderPass(framebuffer);
-                {
-                    commandBuffer.imGuiRenderDrawData(ImGui::GetDrawData());
-                }
-                commandBuffer.endRenderPass();
-                
-                m_device->submitCommandBuffer(commandBuffer);
-                m_device->presentDrawable(drawable);
+            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            if (drawable == nullptr) {
+                m_swapchain = nullptr;
+                continue;
             }
-            m_device->endFrame();
+
+            gfx::Framebuffer framebuffer = {
+                .colorAttachments = {
+                    gfx::Framebuffer::Attachment{
+                        .loadAction = gfx::LoadAction::clear,
+                        .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
+                        .texture = drawable->texture()
+                    } 
+                }
+            };
+
+            commandBuffer->beginRenderPass(framebuffer);
+            {
+                commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
+            }
+            commandBuffer->endRenderPass();
+            commandBuffer->presentDrawable(drawable);
+            
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
+            m_device->submitCommandBuffers(ext::move(commandBuffer));
 
             if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
             {
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();
             }
+
+            m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
     }
 
@@ -199,11 +210,15 @@ public:
     }
 
 private:
-    GLFWwindow* m_window;
+    GLFWwindow* m_window = nullptr;
     ext::unique_ptr<gfx::Instance> m_instance;
     ext::unique_ptr<gfx::Surface> m_surface;
     ext::unique_ptr<gfx::Device> m_device;
     ext::unique_ptr<gfx::Swapchain> m_swapchain;
+
+    uint8_t m_frameIdx = 0;
+    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

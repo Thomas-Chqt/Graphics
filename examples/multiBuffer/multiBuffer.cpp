@@ -20,13 +20,14 @@
 #include "Graphics/Swapchain.hpp"
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <vector>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <memory>
     #include <cassert>
-    #include <set>
     #include <cstdint>
     #include <array>
     namespace ext = std;
@@ -36,9 +37,55 @@
     #include <unistd.h>
 #endif
 
+constexpr uint32_t WINDOW_WIDTH = 800;
+constexpr uint32_t WINDOW_HEIGHT = 600;
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+constexpr uint8_t maxFrameInFlight = 3;
+
+struct Vertex
+{
+    glm::vec2 pos;
+    glm::vec4 color;
+};
+
+constexpr ext::array<ext::array<Vertex, 6>, 4> vertices = {
+    ext::array<Vertex, 6> {
+        Vertex{ .pos=glm::vec2(-1.0f, -0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2(-1.0f,  1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 0.5f,  1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+
+        Vertex{ .pos=glm::vec2(-1.0f, -0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 0.5f,  1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 0.5f, -0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+    },
+    ext::array<Vertex, 6> {
+        Vertex{ .pos=glm::vec2(-0.5f, -0.5f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2(-0.5f,  1.0f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 1.0f,  1.0f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+
+        Vertex{ .pos=glm::vec2(-0.5f, -0.5f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 1.0f,  1.0f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 1.0f, -0.5f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+    },
+    ext::array<Vertex, 6> {
+        Vertex{ .pos=glm::vec2(-0.5f,  0.5f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 1.0f,  0.5f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 1.0f, -1.0f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
+
+        Vertex{ .pos=glm::vec2(-0.5f,  0.5f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 1.0f, -1.0f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2(-0.5f, -1.0f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
+    },
+    ext::array<Vertex, 6> {
+        Vertex{ .pos=glm::vec2(-1.0f, -1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2(-1.0f,  0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 0.5f,  0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+
+        Vertex{ .pos=glm::vec2(-1.0f, -1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 0.5f,  0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+        Vertex{ .pos=glm::vec2( 0.5f, -1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) }
+    }
+};
 
 class Application
 {
@@ -50,6 +97,7 @@ public:
 #endif
         auto res = glfwInit();
         assert(res == GLFW_TRUE);
+        (void)res;
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
@@ -105,76 +153,46 @@ public:
         m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
         assert(m_graphicsPipeline);
 
-        ext::array<float, (2 + 4) * 6> vertices[4] = {
-            {
-                /*.pos=*/-1.0f, -0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/-1.0f,  1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/ 0.5f,  1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
+        for (uint8_t i = 0; i < maxFrameInFlight; i++) {
+            m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
+        }
 
-                /*.pos=*/-1.0f, -0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/ 0.5f,  1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/ 0.5f, -0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f
-            },
-            {
-                /*.pos=*/-0.5f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
-                /*.pos=*/-0.5f,  1.0f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
-                /*.pos=*/ 1.0f,  1.0f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
-
-                /*.pos=*/-0.5f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
-                /*.pos=*/ 1.0f,  1.0f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
-                /*.pos=*/ 1.0f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f
-            },
-            {
-                /*.pos=*/-0.5f,  0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
-                /*.pos=*/ 1.0f,  0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
-                /*.pos=*/ 1.0f, -1.0f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
-
-                /*.pos=*/-0.5f,  0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
-                /*.pos=*/ 1.0f, -1.0f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f,
-                /*.pos=*/-0.5f, -1.0f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f
-            },
-            {
-                /*.pos=*/-1.0f, -1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/-1.0f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/ 0.5f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-
-                /*.pos=*/-1.0f, -1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/ 0.5f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-                /*.pos=*/ 0.5f, -1.0f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f
-            }
-        };
-
-        m_vertexBuffers[0] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[0].size(), .data = vertices[0].data(), .usages = gfx::BufferUsage::vertexBuffer
+        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(Vertex) * 6,
+            .usages = gfx::BufferUsage::copySource,
+            .storageMode = gfx::ResourceStorageMode::hostVisible
         });
-        assert(m_vertexBuffers[0]);
+        assert(stagingBuffer);
+        
+        for (uint64_t i = 0; i < vertices.size(); i++)
+        {
+            m_vertexBuffers.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size = sizeof(Vertex) * 6,
+                .usages = gfx::BufferUsage::vertexBuffer | gfx::BufferUsage::copyDestination,
+                .storageMode = gfx::ResourceStorageMode::deviceLocal
+            });
+            assert(m_vertexBuffers.at(i));
 
-        m_vertexBuffers[1] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[1].size(), .data = vertices[1].data(), .usages = gfx::BufferUsage::vertexBuffer
-        });
-        assert(m_vertexBuffers[1]);
-
-        m_vertexBuffers[2] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[2].size(), .data = vertices[2].data(), .usages = gfx::BufferUsage::vertexBuffer
-        });
-        assert(m_vertexBuffers[2]);
-
-        m_vertexBuffers[3] = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(float) * vertices[3].size(), .data = vertices[3].data(), .usages = gfx::BufferUsage::vertexBuffer
-        });
-        assert(m_vertexBuffers[3]);
+            ext::ranges::copy(vertices.at(i), stagingBuffer->content<Vertex>());
+            gfx::CommandBuffer* commandBuffer = m_commandBufferPools.at(m_frameIdx)->get().release();
+            commandBuffer->beginBlitPass();
+            commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffers.at(i), stagingBuffer->size());
+            commandBuffer->endBlitPass();
+            m_device->submitCommandBuffers(ext::unique_ptr<gfx::CommandBuffer>(commandBuffer));
+            m_device->waitCommandBuffer(commandBuffer);
+        }
     }
 
     void loop()
     {
-        while (1)
+        while (true)
         {
             glfwPollEvents();
             if (glfwWindowShouldClose(m_window))
                 break;
 
             if (m_swapchain == nullptr) {
-                int width, height;
+                int width = 0, height = 0;
                 ::glfwGetFramebufferSize(m_window, &width, &height);
                 gfx::Swapchain::Descriptor swapchainDescriptor = {
                     .surface = m_surface.get(),
@@ -189,70 +207,71 @@ public:
                 m_device->waitIdle();
             }
 
-            m_device->beginFrame();
-            {
-
-                ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
-                if (drawable == nullptr) {
-                    m_swapchain = nullptr;
-                    continue;
-                }
-
-                gfx::Framebuffer framebuffer = {
-                    .colorAttachments = {
-                        gfx::Framebuffer::Attachment{
-                            .loadAction = gfx::LoadAction::clear,
-                            .clearColor = {0.0f, 0.0f, 0.0f, 0.0f },
-                            .texture = drawable->texture()
-                        } 
-                    }
-                };
-
-                gfx::CommandBuffer& commandBuffer1 = m_device->commandBuffer();
-
-                commandBuffer1.beginRenderPass(framebuffer);
-                {
-                    commandBuffer1.usePipeline(m_graphicsPipeline);
-                    commandBuffer1.useVertexBuffer(m_vertexBuffers[0]);
-                    commandBuffer1.drawVertices(0, 6);
-                }
-                commandBuffer1.endRenderPass();
-
-                framebuffer.colorAttachments[0].loadAction = gfx::LoadAction::load;
-
-                commandBuffer1.beginRenderPass(framebuffer);
-                {
-                    commandBuffer1.usePipeline(m_graphicsPipeline);
-                    commandBuffer1.useVertexBuffer(m_vertexBuffers[1]);
-                    commandBuffer1.drawVertices(0, 6);
-                }
-                commandBuffer1.endRenderPass();
-
-                m_device->submitCommandBuffer(commandBuffer1);
-
-                gfx::CommandBuffer& commandBuffer2 = m_device->commandBuffer();
-
-                commandBuffer2.beginRenderPass(framebuffer);
-                {
-                    commandBuffer2.usePipeline(m_graphicsPipeline);
-                    commandBuffer2.useVertexBuffer(m_vertexBuffers[2]);
-                    commandBuffer2.drawVertices(0, 6);
-                }
-                commandBuffer2.endRenderPass();
-
-                commandBuffer2.beginRenderPass(framebuffer);
-                {
-                    commandBuffer2.usePipeline(m_graphicsPipeline);
-                    commandBuffer2.useVertexBuffer(m_vertexBuffers[3]);
-                    commandBuffer2.drawVertices(0, 6);
-                }
-                commandBuffer2.endRenderPass();
-
-                m_device->submitCommandBuffer(commandBuffer2);
-
-                m_device->presentDrawable(drawable);
+            if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
+                m_device->waitCommandBuffer(m_lastCommandBuffers.at(m_frameIdx));
+                m_lastCommandBuffers.at(m_frameIdx) = nullptr;
             }
-            m_device->endFrame();
+
+            ext::vector<ext::unique_ptr<gfx::CommandBuffer>> commandBuffers(2);
+            commandBuffers.at(0) = m_commandBufferPools.at(m_frameIdx)->get();
+            commandBuffers.at(1) = m_commandBufferPools.at(m_frameIdx)->get();
+
+            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            if (drawable == nullptr) {
+                m_swapchain = nullptr;
+                continue;
+            }
+
+            gfx::Framebuffer framebuffer = {
+                .colorAttachments = {
+                    gfx::Framebuffer::Attachment{
+                        .loadAction = gfx::LoadAction::clear,
+                        .clearColor = {0.0f, 0.0f, 0.0f, 0.0f },
+                        .texture = drawable->texture()
+                    } 
+                }
+            };
+
+            commandBuffers.at(0)->beginRenderPass(framebuffer);
+            {
+                commandBuffers.at(0)->usePipeline(m_graphicsPipeline);
+                commandBuffers.at(0)->useVertexBuffer(m_vertexBuffers[0]);
+                commandBuffers.at(0)->drawVertices(0, 6);
+            }
+            commandBuffers.at(0)->endRenderPass();
+
+            framebuffer.colorAttachments[0].loadAction = gfx::LoadAction::load;
+
+            commandBuffers.at(0)->beginRenderPass(framebuffer);
+            {
+                commandBuffers.at(0)->usePipeline(m_graphicsPipeline);
+                commandBuffers.at(0)->useVertexBuffer(m_vertexBuffers[1]);
+                commandBuffers.at(0)->drawVertices(0, 6);
+            }
+            commandBuffers.at(0)->endRenderPass();
+
+            commandBuffers.at(1)->beginRenderPass(framebuffer);
+            {
+                commandBuffers.at(1)->usePipeline(m_graphicsPipeline);
+                commandBuffers.at(1)->useVertexBuffer(m_vertexBuffers[2]);
+                commandBuffers.at(1)->drawVertices(0, 6);
+            }
+            commandBuffers.at(1)->endRenderPass();
+
+            commandBuffers.at(1)->beginRenderPass(framebuffer);
+            {
+                commandBuffers.at(1)->usePipeline(m_graphicsPipeline);
+                commandBuffers.at(1)->useVertexBuffer(m_vertexBuffers[3]);
+                commandBuffers.at(1)->drawVertices(0, 6);
+            }
+            commandBuffers.at(1)->endRenderPass();
+
+            commandBuffers.at(1)->presentDrawable(drawable);
+
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffers.at(1).get();
+            m_device->submitCommandBuffers(ext::move(commandBuffers));
+
+            m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
     }
 
@@ -263,13 +282,17 @@ public:
     }
 
 private:
-    GLFWwindow* m_window;
+    GLFWwindow* m_window = nullptr;
     ext::unique_ptr<gfx::Instance> m_instance;
     ext::unique_ptr<gfx::Surface> m_surface;
     ext::unique_ptr<gfx::Device> m_device;
     ext::unique_ptr<gfx::Swapchain> m_swapchain;
     ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
-    ext::shared_ptr<gfx::Buffer> m_vertexBuffers[4];
+    ext::array<ext::shared_ptr<gfx::Buffer>, 4> m_vertexBuffers;
+
+    uint8_t m_frameIdx = 0;
+    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

@@ -160,7 +160,7 @@ struct ImGui_ImplMetal_Data
             .usages = BufferUsage::vertexBuffer,
             .storageMode = ResourceStorageMode::hostVisible
         };
-        return ext::make_unique<MetalBuffer>(device, bufferDescriptor);
+        return ext::make_unique<MetalBuffer>(*device, bufferDescriptor);
     }
 };
 
@@ -574,7 +574,7 @@ void ImGui_ImplMetal_UpdateTexture(ImTextureData* tex) { @autoreleasepool
 #endif
         id<MTLTexture> texture = [bd->device->mtlDevice() newTextureWithDescriptor:textureDescriptor];
         [texture replaceRegion:MTLRegionMake2D(0, 0, (NSUInteger)tex->Width, (NSUInteger)tex->Height) mipmapLevel:0 withBytes:tex->Pixels bytesPerRow:(NSUInteger)tex->Width * 4];
-        auto* backend_tex = new MetalTexture(bd->device, texture, Texture::Descriptor{
+        auto* backend_tex = new MetalTexture(texture, Texture::Descriptor{
             .width=static_cast<uint32_t>(texture.width), .height=static_cast<uint32_t>(texture.height)});
 
         // Store identifiers

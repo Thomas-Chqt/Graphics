@@ -24,7 +24,7 @@ public:
     MetalDrawable(const MetalDrawable&) = delete;
     MetalDrawable(MetalDrawable&&) = delete;
 
-    MetalDrawable(const MetalDevice*, id<CAMetalDrawable>);
+    MetalDrawable(id<CAMetalDrawable>);
 
     ext::shared_ptr<Texture> texture() const override;
 
@@ -33,7 +33,6 @@ public:
     ~MetalDrawable() override;
 
 private:
-    const MetalDevice* m_device;
     id<CAMetalDrawable> m_mtlDrawable;
 
 public:

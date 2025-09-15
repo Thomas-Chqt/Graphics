@@ -18,35 +18,41 @@
 namespace gfx
 {
 
+class MetalParameterBlockPool;
+
 class MetalParameterBlock : public ParameterBlock
 {
 public:
     MetalParameterBlock() = delete;
     MetalParameterBlock(const MetalParameterBlock&) = delete;
-    MetalParameterBlock(MetalParameterBlock&&)      = default;
+    MetalParameterBlock(MetalParameterBlock&&) = delete;
 
-    MetalParameterBlock(MetalBuffer*, size_t offset, const ParameterBlock::Layout&);
+    MetalParameterBlock(const ext::shared_ptr<MetalBuffer>&, size_t offset, const ParameterBlock::Layout&, MetalParameterBlockPool*);
 
     void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) override;
 
     inline const MetalBuffer& argumentBuffer() const { return *m_argumentBuffer; }
     inline size_t offset() const { return m_offset; }
-    inline const ext::map<ParameterBlock::Binding, ext::shared_ptr<MetalBuffer>>& encodedBuffers() const { return m_encodedBuffers; };
+    inline const ParameterBlock::Layout& layout() const { return m_layout; }
+    inline void clearSourcePool() { m_sourcePool = nullptr; }
 
-    ~MetalParameterBlock() override = default;
+    inline const ext::map<ext::shared_ptr<MetalBuffer>, ParameterBlock::Binding>& encodedBuffers() const { return m_encodedBuffers; }
+
+    ~MetalParameterBlock() override;
 
 private:
-    MetalBuffer* m_argumentBuffer = nullptr;
+    ext::shared_ptr<MetalBuffer> m_argumentBuffer;
     size_t m_offset = 0;
-    ext::vector<ParameterBlock::Binding> m_bindings;
+    ParameterBlock::Layout m_layout;
+    MetalParameterBlockPool* m_sourcePool;
 
-    ext::map<ParameterBlock::Binding, ext::shared_ptr<MetalBuffer>> m_encodedBuffers;
+    ext::map<ext::shared_ptr<MetalBuffer>, ParameterBlock::Binding> m_encodedBuffers;
 
 public:
-    MetalParameterBlock& operator = (const MetalParameterBlock&) = delete;
-    MetalParameterBlock& operator = (MetalParameterBlock&&)      = default;
+    MetalParameterBlock& operator=(const MetalParameterBlock&) = delete;
+    MetalParameterBlock& operator=(MetalParameterBlock&&) = delete;
 };
 
-}
+} // namespace gfx
 
 #endif // METALPARAMETERBLOCK_HPP

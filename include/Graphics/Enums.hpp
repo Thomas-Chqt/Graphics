@@ -131,11 +131,11 @@ enum class VertexAttributeFormat : uint8_t
 
 enum class BufferUsage : uint8_t
 {
-    vertexBuffer  = 1 << 0,
-    indexBuffer   = 1 << 1,
-    uniformBuffer = 1 << 2,
-    perFrameData  = 1 << 3,  // one buffer per frame in flight TODO : remove (define trough other usages)
-    copySource    = 1 << 4
+    vertexBuffer    = 1 << 0,
+    indexBuffer     = 1 << 1,
+    uniformBuffer   = 1 << 2,
+    copySource      = 1 << 3,
+    copyDestination = 1 << 4
 };
 GFX_ENABLE_BITMASK_OPERATORS(BufferUsage);
 using BufferUsages = Flags<BufferUsage>;

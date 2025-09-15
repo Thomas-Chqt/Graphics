@@ -121,6 +121,8 @@ constexpr vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
         vkUsages |= vk::BufferUsageFlagBits::eUniformBuffer;
     if (use & BufferUsage::copySource)
         vkUsages |= vk::BufferUsageFlagBits::eTransferSrc;
+    if (use & BufferUsage::copyDestination)
+        vkUsages |= vk::BufferUsageFlagBits::eTransferDst;
 
     return vkUsages;
 }

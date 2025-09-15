@@ -21,14 +21,17 @@
 #include "Graphics/VertexLayout.hpp"
 
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <glm/glm.hpp>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
 #else
     #include <memory>
     #include <cassert>
-    #include <set>
     #include <cstdint>
+    #include <cstddef>
+    #include <utility>
     namespace ext = std;
 #endif
 
@@ -36,9 +39,22 @@
     #include <unistd.h>
 #endif
 
+constexpr uint32_t WINDOW_WIDTH = 800;
+constexpr uint32_t WINDOW_HEIGHT = 600;
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+struct Vertex
+{
+    glm::vec2 pos;
+    glm::vec3 color;
+};
+
+constexpr ext::array<Vertex, 3> vertices = {
+    Vertex{ .pos=glm::vec2( 0.0f,  0.5f), .color=glm::vec3(1.0f, 0.0f, 0.0f) },
+    Vertex{ .pos=glm::vec2( 0.5f, -0.5f), .color=glm::vec3(0.0f, 1.0f, 0.0f) },
+    Vertex{ .pos=glm::vec2(-0.5f, -0.5f), .color=glm::vec3(0.0f, 0.0f, 1.0f) } 
+};
+
+constexpr uint8_t maxFrameInFlight = 3;
 
 class Application
 {
@@ -50,9 +66,9 @@ public:
 #endif
         auto res = glfwInit();
         assert(res == GLFW_TRUE);
+        (void)res;
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
         m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
         assert(m_window);
 
@@ -86,15 +102,15 @@ public:
 
         gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
             .vertexLayout = gfx::VertexLayout{
-                .stride = sizeof(float) * 6,
+                .stride = sizeof(Vertex),
                 .attributes = {
                     gfx::VertexAttribute{
                         .format = gfx::VertexAttributeFormat::float2,
-                        .offset = 0
+                        .offset = offsetof(Vertex, pos)
                     },
                     gfx::VertexAttribute{
                         .format = gfx::VertexAttributeFormat::float3,
-                        .offset = sizeof(float) * 2
+                        .offset = offsetof(Vertex, color)
                     }
                 }
             },
@@ -105,28 +121,43 @@ public:
         m_graphicsPipeline = m_device->newGraphicsPipeline(gfxPipelineDescriptor);
         assert(m_graphicsPipeline);
 
-        float vertices[] = {
-            /*.pos=*/ 0.0f,  0.5f, /*.color=*/1.0f, 0.0f, 0.0f, 0.0f,
-            /*.pos=*/ 0.5f, -0.5f, /*.color=*/0.0f, 1.0f, 0.0f, 0.0f,
-            /*.pos=*/-0.5f, -0.5f, /*.color=*/0.0f, 0.0f, 1.0f, 0.0f 
-        };
+        for (uint8_t i = 0; i < maxFrameInFlight; i++) {
+            m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
+        }
 
         m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(vertices), .data = vertices, .usages = gfx::BufferUsage::vertexBuffer
+            .size = sizeof(Vertex) * vertices.size(),
+            .usages = gfx::BufferUsage::vertexBuffer | gfx::BufferUsage::copyDestination,
+            .storageMode = gfx::ResourceStorageMode::deviceLocal
         });
         assert(m_vertexBuffer);
+
+        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(Vertex) * vertices.size(),
+            .usages = gfx::BufferUsage::copySource,
+            .storageMode = gfx::ResourceStorageMode::hostVisible
+        });
+        assert(stagingBuffer);
+
+        ext::ranges::copy(vertices, stagingBuffer->content<Vertex>());
+        
+        ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+        commandBuffer->beginBlitPass();
+        commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, stagingBuffer->size());
+        commandBuffer->endBlitPass();
+        m_device->submitCommandBuffers(ext::move(commandBuffer));
     }
 
     void loop()
     {
-        while (1)
+        while (true)
         {
             glfwPollEvents();
             if (glfwWindowShouldClose(m_window))
                 break;
 
             if (m_swapchain == nullptr) {
-                int width, height;
+                int width = 0, height = 0;
                 ::glfwGetFramebufferSize(m_window, &width, &height);
                 gfx::Swapchain::Descriptor swapchainDescriptor = {
                     .surface = m_surface.get(),
@@ -141,42 +172,42 @@ public:
                 m_device->waitIdle();
             }
 
-            m_device->beginFrame();
-            {
-                gfx::CommandBuffer& commandBuffer = m_device->commandBuffer();
-
-                /*
-                 * pre passes
-                 */
-
-                ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
-                if (drawable == nullptr) {
-                    m_swapchain = nullptr;
-                    continue;
-                }
-
-                gfx::Framebuffer framebuffer = {
-                    .colorAttachments = {
-                        gfx::Framebuffer::Attachment{
-                            .loadAction = gfx::LoadAction::clear,
-                            .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
-                            .texture = drawable->texture()
-                        } 
-                    }
-                };
-
-                commandBuffer.beginRenderPass(framebuffer);
-                {
-                    commandBuffer.usePipeline(m_graphicsPipeline);
-                    commandBuffer.useVertexBuffer(m_vertexBuffer);
-                    commandBuffer.drawVertices(0, 3);
-                }
-                commandBuffer.endRenderPass();
-
-                m_device->submitCommandBuffer(commandBuffer);
-                m_device->presentDrawable(drawable);
+            if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
+                m_device->waitCommandBuffer(m_lastCommandBuffers.at(m_frameIdx));
+                m_lastCommandBuffers.at(m_frameIdx) = nullptr;
             }
-            m_device->endFrame();
+
+            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+
+            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            if (drawable == nullptr) {
+                m_swapchain = nullptr;
+                continue;
+            }
+
+            gfx::Framebuffer framebuffer = {
+                .colorAttachments = {
+                    gfx::Framebuffer::Attachment{
+                        .loadAction = gfx::LoadAction::clear,
+                        .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
+                        .texture = drawable->texture()
+                    } 
+                }
+            };
+
+            commandBuffer->beginRenderPass(framebuffer);
+            {
+                commandBuffer->usePipeline(m_graphicsPipeline);
+                commandBuffer->useVertexBuffer(m_vertexBuffer);
+                commandBuffer->drawVertices(0, 3);
+            }
+            commandBuffer->endRenderPass();
+            commandBuffer->presentDrawable(drawable);
+
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
+            m_device->submitCommandBuffers(ext::move(commandBuffer));
+
+            m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
     }
 
@@ -187,13 +218,16 @@ public:
     }
 
 private:
-    GLFWwindow* m_window;
+    GLFWwindow* m_window = nullptr;
     ext::unique_ptr<gfx::Instance> m_instance;
     ext::unique_ptr<gfx::Surface> m_surface;
     ext::unique_ptr<gfx::Device> m_device;
     ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
     ext::unique_ptr<gfx::Swapchain> m_swapchain;
     ext::shared_ptr<gfx::Buffer> m_vertexBuffer;
+    uint8_t m_frameIdx = 0;
+    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

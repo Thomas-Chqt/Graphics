@@ -15,19 +15,31 @@
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/Sync.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
+#include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
-#include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/imgui_impl_vulkan.h"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
+#include "Vulkan/VulkanCommandBufferPool.hpp"
+#include "Vulkan/VulkanDevice.hpp"
 
 namespace gfx
 {
 
-VulkanCommandBuffer::VulkanCommandBuffer(vk::CommandBuffer&& commandBuffer, const QueueFamily& queueFamily)
-    : m_vkCommandBuffer(std::move(commandBuffer)), m_queueFamily(queueFamily)
+VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const ext::shared_ptr<vk::CommandPool>& commandPool, VulkanCommandBufferPool* sourcePool)
+    : m_device(device), m_vkCommandPool(commandPool), m_sourcePool(sourcePool)
 {
+    auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
+        .setCommandPool(*m_vkCommandPool)
+        .setLevel(vk::CommandBufferLevel::ePrimary)
+        .setCommandBufferCount(1);
+    m_vkCommandBuffer = m_device->vkDevice().allocateCommandBuffers(commandBufferAllocateInfo).front();
+}
+
+CommandBufferPool* VulkanCommandBuffer::pool()
+{
+    return m_sourcePool;
 }
 
 void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
@@ -108,23 +120,28 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
             .setImageMemoryBarriers(imageMemoryBarriers));
     }
 
-    m_viewport = vk::Viewport{}
+    m_vkCommandBuffer.setViewport(0, vk::Viewport{}
         .setX(0)
         .setY(0)
         .setWidth(static_cast<float>(framebuffer.colorAttachments[0].texture->width()))
         .setHeight(static_cast<float>(framebuffer.colorAttachments[0].texture->height()))
         .setMinDepth(0)
-        .setMaxDepth(1);
+        .setMaxDepth(1));
 
-    m_scissor = vk::Rect2D{}
+    m_vkCommandBuffer.setScissor(0, vk::Rect2D{}
         .setOffset({.x=0, .y=0})
         .setExtent({
             .width = framebuffer.colorAttachments[0].texture->width(),
             .height = framebuffer.colorAttachments[0].texture->height()
-        });
+        }));
 
     auto renderingInfo = vk::RenderingInfo{}
-        .setRenderArea(m_scissor)
+        .setRenderArea(vk::Rect2D{}
+            .setOffset({.x=0, .y=0})
+            .setExtent({
+                .width = framebuffer.colorAttachments[0].texture->width(),
+                .height = framebuffer.colorAttachments[0].texture->height()
+            }))
         .setLayerCount(1)
         .setViewMask(0)
         .setColorAttachments(colorAttachmentInfos)
@@ -138,10 +155,9 @@ void VulkanCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipeli
     auto graphicsPipeline = ext::dynamic_pointer_cast<const VulkanGraphicsPipeline>(_graphicsPipeline);
 
     m_vkCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline->vkPipeline());
-    m_vkCommandBuffer.setViewport(0, m_viewport);
-    m_vkCommandBuffer.setScissor(0, m_scissor);
 
-    m_usedPipelines.push_back(graphicsPipeline);
+    m_usedPipelines.insert(graphicsPipeline);
+    m_boundPipeline = graphicsPipeline.get();
 }
 
 void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<Buffer>& aBuffer)
@@ -166,19 +182,21 @@ void VulkanCommandBuffer::useVertexBuffer(const ext::shared_ptr<Buffer>& aBuffer
     } else {
         auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(buffer, syncReq));
         assert(res1);
+        (void)res1;
         auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(buffer, bufferStateAfterSync(syncReq)));
         assert(res2);
+        (void)res2;
     }
 
     m_vkCommandBuffer.bindVertexBuffers(0, buffer->vkBuffer(), {0});
 }
 
-void VulkanCommandBuffer::setParameterBlock(const ParameterBlock& aPblock, uint32_t index)
+void VulkanCommandBuffer::setParameterBlock(const ext::shared_ptr<const ParameterBlock>& aPblock, uint32_t index)
 {
-    const auto& pBlock = dynamic_cast<const VulkanParameterBlock&>(aPblock);
+    const auto& pBlock = ext::dynamic_pointer_cast<const VulkanParameterBlock>(aPblock);
     ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
 
-    for (auto& [binding, buffer] : pBlock.usedBuffers())
+    for (auto& [buffer, binding] : pBlock->usedBuffers())
     {
         BufferSyncRequest syncReq{};
 
@@ -188,11 +206,10 @@ void VulkanCommandBuffer::setParameterBlock(const ParameterBlock& aPblock, uint3
             syncReq.stageMask |= vk::PipelineStageFlagBits2::eFragmentShader;
 
         if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead))) {
-            assert(binding.type == BindingType::uniformBuffer);
+            assert(binding.type == BindingType::uniformBuffer); // currently only uniform buffer are implemented
             syncReq.accessMask |= vk::AccessFlagBits2::eUniformRead;
         }
         if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite))) {
-            syncReq.accessMask |= vk::AccessFlagBits2::eShaderWrite;
             throw ext::runtime_error("not implemented");
         }
 
@@ -208,8 +225,10 @@ void VulkanCommandBuffer::setParameterBlock(const ParameterBlock& aPblock, uint3
         } else {
             auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(buffer, syncReq));
             assert(res1);
+            (void)res1;
             auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(buffer, bufferStateAfterSync(syncReq)));
             assert(res2);
+            (void)res2;
         }
     }
 
@@ -221,8 +240,11 @@ void VulkanCommandBuffer::setParameterBlock(const ParameterBlock& aPblock, uint3
 
         m_vkCommandBuffer.pipelineBarrier2(dependencyInfo);
     }
+    
+    assert(m_boundPipeline != nullptr);
+    m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_boundPipeline->pipelineLayout(), index, pBlock->descriptorSet(), {});
 
-    m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_usedPipelines.back()->pipelineLayout(), index, pBlock.descriptorSet(), {});
+    m_usedPBlock.insert(pBlock);
 }
 
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
@@ -252,8 +274,10 @@ void VulkanCommandBuffer::drawIndexedVertices(const ext::shared_ptr<Buffer>& aBu
     } else {
         auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(buffer, syncReq));
         assert(res1);
+        (void)res1;
         auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(buffer, bufferStateAfterSync(syncReq)));
         assert(res2);
+        (void)res2;
     }
 
     m_vkCommandBuffer.bindIndexBuffer(buffer->vkBuffer(), 0, vk::IndexType::eUint32);
@@ -272,15 +296,103 @@ void VulkanCommandBuffer::endRenderPass()
     m_vkCommandBuffer.endRendering();
 }
 
-void VulkanCommandBuffer::clear()
+void VulkanCommandBuffer::beginBlitPass()
 {
-    m_signalSemaphore = nullptr;
-    m_waitSemaphores.clear();
+    // nothing
+}
+
+void VulkanCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc, const ext::shared_ptr<Buffer>& aDst, size_t size)
+{
+    auto src = ext::dynamic_pointer_cast<VulkanBuffer>(aSrc);
+    assert(src);
+    auto dst = ext::dynamic_pointer_cast<VulkanBuffer>(aDst);
+    assert(dst);
+
+    assert(src->usages() & BufferUsage::copySource);
+    assert(dst->usages() & BufferUsage::copyDestination);
+
+    ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
+
+    BufferSyncRequest srcBufferSyncReq{};
+    srcBufferSyncReq.stageMask = vk::PipelineStageFlagBits2::eTransfer;
+    srcBufferSyncReq.accessMask = vk::AccessFlagBits2::eTransferRead;
+
+    auto srcBufferIt = m_bufferFinalSyncStates.find(src);
+    if (srcBufferIt != m_bufferFinalSyncStates.end()) {
+        auto barrier = syncBuffer(srcBufferIt->second, srcBufferSyncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setBuffer(src->vkBuffer());
+            barrier->setOffset(0);
+            barrier->setSize(vk::WholeSize);
+            bufferMemoryBarriers.push_back(*barrier);
+        }
+    } else {
+        auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(src, srcBufferSyncReq));
+        assert(res1);
+        (void)res1;
+        auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(src, bufferStateAfterSync(srcBufferSyncReq)));
+        assert(res2);
+        (void)res2;
+    }
+
+    BufferSyncRequest dstBufferSyncReq{};
+    dstBufferSyncReq.stageMask = vk::PipelineStageFlagBits2::eTransfer;
+    dstBufferSyncReq.accessMask = vk::AccessFlagBits2::eTransferWrite;
+
+    auto dstBufferIt = m_bufferFinalSyncStates.find(dst);
+    if (dstBufferIt != m_bufferFinalSyncStates.end()) {
+        auto barrier = syncBuffer(dstBufferIt->second, dstBufferSyncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setBuffer(dst->vkBuffer());
+            barrier->setOffset(0);
+            barrier->setSize(vk::WholeSize);
+            bufferMemoryBarriers.push_back(*barrier);
+        }
+    } else {
+        auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(dst, dstBufferSyncReq));
+        assert(res1);
+        (void)res1;
+        auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(dst, bufferStateAfterSync(dstBufferSyncReq)));
+        assert(res2);
+        (void)res2;
+    }
+
+    auto bufferCopy = vk::BufferCopy{}
+        .setSrcOffset(0)
+        .setDstOffset(0)
+        .setSize(size);
+    
+    m_vkCommandBuffer.copyBuffer(src->vkBuffer(), dst->vkBuffer(), bufferCopy);
+}
+
+void VulkanCommandBuffer::endBlitPass()
+{
+    // nothing
+}
+
+void VulkanCommandBuffer::presentDrawable(const ext::shared_ptr<Drawable>& aDrawable)
+{
+    auto drawable = ext::dynamic_pointer_cast<VulkanDrawable>(aDrawable);
+    m_presentedDrawables.insert(drawable);
+}
+
+void VulkanCommandBuffer::reuse()
+{
+    m_presentedDrawables.clear();
+    m_usedPBlock.clear();
     m_bufferFinalSyncStates.clear();
     m_bufferSyncRequests.clear();
     m_imageFinalSyncStates.clear();
     m_imageSyncRequests.clear();
+    m_boundPipeline = nullptr;
     m_usedPipelines.clear();
+}
+
+VulkanCommandBuffer::~VulkanCommandBuffer()
+{
+    if (m_sourcePool)
+        m_sourcePool->release(this);
+    m_device->vkDevice().freeCommandBuffers(*m_vkCommandPool, m_vkCommandBuffer);
 }
 
 }
