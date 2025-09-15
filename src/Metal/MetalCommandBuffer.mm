@@ -43,7 +43,7 @@ MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
 {
 }
 
-MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue, MetalCommandBufferPool* commandPool) 
+MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue, MetalCommandBufferPool* commandPool)
     : m_sourcePool(commandPool) { @autoreleasepool
 {
     m_mtlCommandBuffer = [[queue commandBuffer] retain];
@@ -214,7 +214,7 @@ void MetalCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc,
     m_usedBuffers.insert(dst);
 }}
 
-void MetalCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuffer, const ext::shared_ptr<Texture>& aTexture) { @autoreleasepool
+void MetalCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuffer, size_t bufferOffset, const ext::shared_ptr<Texture>& aTexture, uint32_t layerIndex) { @autoreleasepool
 {
     auto buffer = ext::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
@@ -223,17 +223,23 @@ void MetalCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuf
     assert(texture);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
-    assert(texture->pixelFormat() == PixelFormat::RGBA8Unorm);
+
+    size_t bytesPerPixel = pixelFormatSize(texture->pixelFormat());
+    size_t bytesPerRow = bytesPerPixel * texture->width();
+    size_t bytesPerImage = bytesPerRow * texture->height();
+
+    assert(bufferOffset + bytesPerImage <= buffer->size());
 
     [(id<MTLBlitCommandEncoder>)m_commandEncoder copyFromBuffer:buffer->mtlBuffer()
-                                                   sourceOffset:0
-                                              sourceBytesPerRow:sizeof(uint32_t) * texture->width()
-                                            sourceBytesPerImage:sizeof(uint32_t) * texture->width() * texture->height()
+                                                   sourceOffset:bufferOffset
+                                              sourceBytesPerRow:bytesPerRow
+                                            sourceBytesPerImage:bytesPerImage
                                                      sourceSize:MTLSizeMake(texture->width(), texture->height(), 1)
                                                       toTexture:texture->mtltexture()
-                                               destinationSlice:0
+                                               destinationSlice:layerIndex
                                                destinationLevel:0
                                               destinationOrigin:MTLOrigin{0, 0, 0}];
+
     m_usedBuffers.insert(buffer);
     m_usedTextures.insert(texture);
 }}

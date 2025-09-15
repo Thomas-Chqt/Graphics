@@ -41,6 +41,11 @@ MetalTexture::MetalTexture(const MetalDevice& device, const Texture::Descriptor&
         throw ext::runtime_error("metal texture creation failed");
 }}
 
+TextureType MetalTexture::type() const { @autoreleasepool
+{
+    return toTextureType([mtltexture() textureType]);
+}}
+
 uint32_t MetalTexture::width() const { @autoreleasepool
 {
     return static_cast<uint32_t>(mtltexture().width);
@@ -53,7 +58,7 @@ uint32_t MetalTexture::height() const { @autoreleasepool
 
 PixelFormat MetalTexture::pixelFormat() const { @autoreleasepool
 {
-    return toPixelFormat([mtltexture() pixelFormat]);   
+    return toPixelFormat([mtltexture() pixelFormat]);
 }}
 
 MetalTexture::~MetalTexture() { @autoreleasepool

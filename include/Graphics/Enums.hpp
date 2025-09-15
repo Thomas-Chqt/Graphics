@@ -15,6 +15,7 @@
     #include <concepts>
     #include <type_traits>
     #include <cstdint>
+    #include <stdexcept>
     namespace ext = std;
 #endif
 
@@ -183,7 +184,8 @@ using TextureUsages = Flags<TextureUsage>;
 
 enum class TextureType : uint8_t
 {
-    texture2d
+    texture2d,
+    textureCube
 };
 
 enum class SamplerAddressMode : uint8_t
@@ -198,6 +200,20 @@ enum class SamplerMinMagFilter : uint8_t
     Nearest,
     Linear
 };
+
+constexpr inline size_t pixelFormatSize(PixelFormat format)
+{
+    switch (format)
+    {
+    case PixelFormat::RGBA8Unorm:
+    case PixelFormat::BGRA8Unorm:
+    case PixelFormat::BGRA8Unorm_sRGB:
+    case PixelFormat::Depth32Float:
+        return 4;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
 
 } // namespace gfx
 

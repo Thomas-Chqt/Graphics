@@ -58,7 +58,8 @@ public:
     virtual void beginBlitPass() = 0;
 
     virtual void copyBufferToBuffer(const ext::shared_ptr<Buffer>& src, const ext::shared_ptr<Buffer>& dst, size_t size) = 0;
-    virtual void copyBufferToTexture(const ext::shared_ptr<Buffer>&, const ext::shared_ptr<Texture>&) = 0;
+    virtual void copyBufferToTexture(const ext::shared_ptr<Buffer>& buffer, size_t bufferOffset, const ext::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) = 0;
+    inline void copyBufferToTexture(const ext::shared_ptr<Buffer>& buffer, const ext::shared_ptr<Texture>& texture) { copyBufferToTexture(buffer, 0, texture); }
 
     virtual void endBlitPass() = 0;
 

@@ -409,7 +409,7 @@ void VulkanCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc
     m_vkCommandBuffer.copyBuffer(src->vkBuffer(), dst->vkBuffer(), bufferCopy);
 }
 
-void VulkanCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuffer, const ext::shared_ptr<Texture>& aTexture)
+void VulkanCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuffer, size_t bufferOffset, const ext::shared_ptr<Texture>& aTexture, uint32_t layerIndex)
 {
     auto buffer = ext::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
     assert(buffer);
@@ -418,6 +418,7 @@ void VulkanCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBu
 
     assert(buffer->usages() & BufferUsage::copySource);
     assert(texture->usages() & TextureUsage::copyDestination);
+    assert(bufferOffset + pixelFormatSize(texture->pixelFormat()) * texture->width() * texture->height() <= buffer->size());
 
     ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
     ext::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
@@ -481,10 +482,11 @@ void VulkanCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBu
     }
 
     auto bufferImageCopy = vk::BufferImageCopy{}
+        .setBufferOffset(bufferOffset)
         .setImageSubresource(vk::ImageSubresourceLayers{}
             .setAspectMask(texture->subresourceRange().aspectMask)
             .setMipLevel(0)
-            .setBaseArrayLayer(0)
+            .setBaseArrayLayer(layerIndex)
             .setLayerCount(1))
         .setImageExtent(vk::Extent3D{}
             .setWidth(texture->width())

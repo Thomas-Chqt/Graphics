@@ -13,3 +13,4 @@ build_xcode.nosync/
 .lsansuppr
 .idea/
 .zed/
+.github/copilot-instructions.md

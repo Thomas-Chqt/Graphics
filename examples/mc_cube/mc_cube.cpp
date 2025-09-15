@@ -197,10 +197,6 @@ public:
                     gfx::VertexAttribute{
                         .format = gfx::VertexAttributeFormat::float3,
                         .offset = offsetof(Vertex, pos)
-                    },
-                    gfx::VertexAttribute{
-                        .format = gfx::VertexAttributeFormat::float2,
-                        .offset = offsetof(Vertex, uv)
                     }
                 }
             },
@@ -268,10 +264,12 @@ public:
         {
             int width = 0;
             int height = 0;
-            stbi_uc* imgBytes = stbi_load(RESOURCE_DIR"/mc_grass.jpg", &width, &height, nullptr, STBI_rgb_alpha);
+            stbi_uc* sideBytes = stbi_load(RESOURCE_DIR"/mc_grass_side.jpg", &width, &height, nullptr, STBI_rgb_alpha);
+            stbi_uc* topBytes = stbi_load(RESOURCE_DIR"/mc_grass_top.jpg", &width, &height, nullptr, STBI_rgb_alpha);
+            stbi_uc* bottomBytes = stbi_load(RESOURCE_DIR"/mc_grass_bottom.jpg", &width, &height, nullptr, STBI_rgb_alpha);
 
             m_grassTexture = m_device->newTexture(gfx::Texture::Descriptor{
-                .type = gfx::TextureType::texture2d,
+                .type = gfx::TextureType::textureCube,
                 .width = static_cast<uint32_t>(width),
                 .height = static_cast<uint32_t>(height),
                 .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
@@ -279,19 +277,32 @@ public:
                 .storageMode = gfx::ResourceStorageMode::deviceLocal
             });
 
+            size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm);
             ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-                .size = static_cast<size_t>(width) * static_cast<size_t>(height) * sizeof(uint32_t),
+                .size = faceSize * 6, // 6 faces
                 .usages = gfx::BufferUsage::copySource,
                 .storageMode = gfx::ResourceStorageMode::hostVisible
             });
             assert(stagingBuffer);
 
-            ext::memcpy(stagingBuffer->content<stbi_uc>(), imgBytes, stagingBuffer->size());
-            stbi_image_free(imgBytes);
+            auto* bufferData = stagingBuffer->content<stbi_uc>();
+            ext::memcpy(bufferData + 0 * faceSize, sideBytes, faceSize);   // +X (right)
+            ext::memcpy(bufferData + 1 * faceSize, sideBytes, faceSize);   // -X (left)
+            ext::memcpy(bufferData + 2 * faceSize, topBytes, faceSize);    // +Y (top)
+            ext::memcpy(bufferData + 3 * faceSize, bottomBytes, faceSize); // -Y (bottom)
+            ext::memcpy(bufferData + 4 * faceSize, sideBytes, faceSize);   // +Z (front)
+            ext::memcpy(bufferData + 5 * faceSize, sideBytes, faceSize);   // -Z (back)
+
+            stbi_image_free(sideBytes);
+            stbi_image_free(topBytes);
+            stbi_image_free(bottomBytes);
 
             ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
             commandBuffer->beginBlitPass();
-            commandBuffer->copyBufferToTexture(stagingBuffer, m_grassTexture);
+            {
+                for (int face = 0; face < 6; ++face)
+                    commandBuffer->copyBufferToTexture(stagingBuffer, face * faceSize, m_grassTexture, face);
+            }
             commandBuffer->endBlitPass();
             m_device->submitCommandBuffers(ext::move(commandBuffer));
         }
@@ -509,8 +520,16 @@ private:
 
 int main()
 {
-    Application app;
-    app.init();
-    app.loop();
-    app.clean();
+    try
+    {
+        Application app;
+        app.init();
+        app.loop();
+        app.clean();
+    }
+    catch (...)
+    {
+        return -1;
+    }
+    return 0;
 }

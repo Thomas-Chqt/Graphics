@@ -131,6 +131,21 @@ constexpr MTLTextureType toMTLTextureType(TextureType type)
     {
     case TextureType::texture2d:
         return MTLTextureType2D;
+    case TextureType::textureCube:
+        return MTLTextureTypeCube;
+    default:
+        throw ext::runtime_error("not implemented");
+    }
+}
+
+constexpr TextureType toTextureType(MTLTextureType type)
+{
+    switch (type)
+    {
+    case MTLTextureType2D:
+        return TextureType::texture2d;
+    case MTLTextureTypeCube:
+        return TextureType::textureCube;
     default:
         throw ext::runtime_error("not implemented");
     }

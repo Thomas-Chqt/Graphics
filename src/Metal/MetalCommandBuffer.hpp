@@ -59,7 +59,7 @@ public:
     void beginBlitPass() override;
 
     void copyBufferToBuffer(const ext::shared_ptr<Buffer>& src, const ext::shared_ptr<Buffer>& dst, size_t size) override;
-    void copyBufferToTexture(const ext::shared_ptr<Buffer>&, const ext::shared_ptr<Texture>&) override;
+    void copyBufferToTexture(const ext::shared_ptr<Buffer>& buffer, size_t bufferOffset, const ext::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) override;
 
     void endBlitPass() override;
 

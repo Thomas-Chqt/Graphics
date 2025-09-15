@@ -30,6 +30,7 @@ public:
     VulkanTexture(const VulkanDevice*, vk::Image&&, const Texture::Descriptor&);
     VulkanTexture(const VulkanDevice*, const Texture::Descriptor&);
 
+    inline TextureType type() const override { return m_type; };
     inline uint32_t width() const override { return m_width; }
     inline uint32_t height() const override { return m_height; }
     inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
@@ -48,6 +49,7 @@ public:
 protected:
     const VulkanDevice* m_device = nullptr;
     uint32_t m_width, m_height;
+    TextureType m_type;
     PixelFormat m_pixelFormat;
     TextureUsages m_usages;
     ResourceStorageMode m_storageMode;

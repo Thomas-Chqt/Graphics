@@ -26,10 +26,11 @@ public:
     MetalTexture() = delete;
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&)      = delete;
-    
+
     MetalTexture(const id<MTLTexture>&, const Texture::Descriptor&);
     MetalTexture(const MetalDevice&, const Texture::Descriptor&);
 
+    TextureType type() const override;
     uint32_t width() const override;
     uint32_t height() const override;
     PixelFormat pixelFormat() const override;
@@ -45,7 +46,7 @@ private:
     ResourceStorageMode m_storageMode;
 
     id<MTLTexture> m_mtlTexture = nullptr;
-    
+
 public:
     MetalTexture& operator = (const MetalTexture&) = delete;
     MetalTexture& operator = (MetalTexture&&)      = delete;

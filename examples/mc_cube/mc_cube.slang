@@ -16,7 +16,7 @@ struct VSInput
 struct VSOutput
 {
     float4 pos : SV_Position;
-    float2 uv : TEXT_COORD;
+    float3 cubeDir : CUBE_DIR;
 };
 
 struct VpMatrix
@@ -38,13 +38,13 @@ VSOutput vertexMain(VSInput input)
     VSOutput output;
     float4x4 mvpMatrix = mul(modelMatrix.mat, vpMatrix.mat);
     output.pos = mul(float4(input.pos, 1.0), mvpMatrix);
-    output.uv = input.uv;
+    output.cubeDir = input.pos; // Use input position directly as cube direction
     return output;
 }
 
 struct Material
 {
-    Texture2D<float4> texture;
+    TextureCube<float4> texture;
     SamplerState sampler;
 }
 
@@ -53,5 +53,7 @@ ParameterBlock<Material> material;
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_TARGET
 {
-    return material.texture.Sample(material.sampler, input.uv);
+    // Use the cube direction directly (vertices are already centered on 0)
+    float3 sampleDir = normalize(input.cubeDir);
+    return material.texture.Sample(material.sampler, sampleDir);
 }
