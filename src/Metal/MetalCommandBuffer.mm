@@ -16,6 +16,7 @@
 
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalBuffer.hpp"
+#include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/imgui_impl_metal.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
@@ -36,6 +37,7 @@ MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
       m_usedPipelines(ext::move(other.m_usedPipelines)),
       m_usedTextures(ext::move(other.m_usedTextures)),
       m_usedBuffers(ext::move(other.m_usedBuffers)),
+      m_usedSamplers(ext::move(other.m_usedSamplers)),
       m_usedPBlock(ext::move(other.m_usedPBlock)),
       m_usedDrawables(ext::move(other.m_usedDrawables))
 {
@@ -122,13 +124,26 @@ void MetalCommandBuffer::setParameterBlock(const ext::shared_ptr<const Parameter
     for (const auto& [buffer, binding] : pBlock->encodedBuffers())
         [renderCommandEncoder useResource:buffer->mtlBuffer() usage:toMTLResourceUsage(binding.usages) stages:toMTLRenderStages(binding.usages)];
 
-    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }))
-        [renderCommandEncoder setVertexBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
+    for (const auto& [texture, binding] : pBlock->encodedTextures())
+        [renderCommandEncoder useResource:texture->mtltexture() usage:toMTLResourceUsage(binding.usages) stages:toMTLRenderStages(binding.usages)];
 
-    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }))
+    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
+        ext::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
+        ext::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }))
+    {
+        [renderCommandEncoder setVertexBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
+    }
+
+    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
+        ext::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
+        ext::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }))
+    {
         [renderCommandEncoder setFragmentBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
+    }
 
     m_usedBuffers.insert_range(pBlock->encodedBuffers() | ext::views::transform([](auto& pair) -> ext::shared_ptr<MetalBuffer> { return pair.first; }));
+    m_usedTextures.insert_range(pBlock->encodedTextures() | ext::views::transform([](auto& pair) -> ext::shared_ptr<MetalTexture> { return pair.first; }));
+    m_usedSamplers.insert_range(pBlock->encodedSamplers() | ext::views::transform([](auto& pair) -> ext::shared_ptr<MetalSampler> { return pair.first; }));
     m_usedPBlock.insert(pBlock);
 }}
 
@@ -199,6 +214,30 @@ void MetalCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc,
     m_usedBuffers.insert(dst);
 }}
 
+void MetalCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuffer, const ext::shared_ptr<Texture>& aTexture) { @autoreleasepool
+{
+    auto buffer = ext::dynamic_pointer_cast<MetalBuffer>(aBuffer);
+    assert(buffer);
+
+    auto texture = ext::dynamic_pointer_cast<MetalTexture>(aTexture);
+    assert(texture);
+
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
+    assert(texture->pixelFormat() == PixelFormat::RGBA8Unorm);
+
+    [(id<MTLBlitCommandEncoder>)m_commandEncoder copyFromBuffer:buffer->mtlBuffer()
+                                                   sourceOffset:0
+                                              sourceBytesPerRow:sizeof(uint32_t) * texture->width()
+                                            sourceBytesPerImage:sizeof(uint32_t) * texture->width() * texture->height()
+                                                     sourceSize:MTLSizeMake(texture->width(), texture->height(), 1)
+                                                      toTexture:texture->mtltexture()
+                                               destinationSlice:0
+                                               destinationLevel:0
+                                              destinationOrigin:MTLOrigin{0, 0, 0}];
+    m_usedBuffers.insert(buffer);
+    m_usedTextures.insert(texture);
+}}
+
 void MetalCommandBuffer::endBlitPass() { @autoreleasepool
 {
     assert(m_commandEncoder);
@@ -243,6 +282,7 @@ MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) 
         m_usedPipelines = ext::move(other.m_usedPipelines);
         m_usedTextures = ext::move(other.m_usedTextures);
         m_usedBuffers = ext::move(other.m_usedBuffers);
+        m_usedSamplers = ext::move(other.m_usedSamplers);
         m_usedPBlock = ext::move(other.m_usedPBlock);
         m_usedDrawables = ext::move(other.m_usedDrawables);
     }

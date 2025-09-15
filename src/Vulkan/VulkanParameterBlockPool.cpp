@@ -19,8 +19,10 @@ namespace gfx
 VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
     : m_device(device)
 {
-    ext::array<vk::DescriptorPoolSize, 1> poolSizes = {
-        vk::DescriptorPoolSize{.type=vk::DescriptorType::eUniformBuffer, .descriptorCount=10}
+    ext::array<vk::DescriptorPoolSize, 3> poolSizes = {
+        vk::DescriptorPoolSize{.type=vk::DescriptorType::eUniformBuffer, .descriptorCount=10},
+        vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampledImage, .descriptorCount=10},
+        vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampler, .descriptorCount=10}
     };
 
     auto descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo{}

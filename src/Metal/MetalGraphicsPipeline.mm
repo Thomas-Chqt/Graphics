@@ -15,6 +15,7 @@
 #include "Metal/MetalShaderFunction.hpp"
 
 #import "Metal/MetalEnums.h"
+#include <cstddef>
     
 namespace gfx
 {
@@ -96,8 +97,9 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
         depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;
         depthStencilDescriptor.depthWriteEnabled = YES;
     }
-
-    m_renderPipelineState = [device.mtlDevice() newRenderPipelineStateWithDescriptor:renderPipelineDescriptor error:nil];
+    
+    NSError* error = nil;
+    m_renderPipelineState = [device.mtlDevice() newRenderPipelineStateWithDescriptor:renderPipelineDescriptor error:&error];
     if (m_renderPipelineState == nil)
         throw ext::runtime_error("failed to create the RenderPipelineState");
     

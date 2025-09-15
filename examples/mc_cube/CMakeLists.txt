@@ -50,8 +50,17 @@ FetchContent_Declare(imgui
 set(IM_BUILD_GLFW ON)
 FetchContent_MakeAvailable(imgui)
 target_link_libraries(imgui PRIVATE glfw)
-
 set_target_properties(imgui PROPERTIES FOLDER "dependencies")
+
+FetchContent_Declare(stb_image
+    GIT_REPOSITORY    https://github.com/Thomas-Chqt/stb_image.git
+    GIT_TAG           a09b799a2ba95c14f511493db4ea59811b2fcc97
+    GIT_SHALLOW       1
+    GIT_PROGRESS      TRUE
+    FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(stb_image)
+set_target_properties(stb_image PROPERTIES FOLDER "dependencies")
 
 set(SHADER_TARGET_LIST)
 if (GFX_BUILD_METAL)
@@ -106,6 +115,7 @@ target_compile_definitions(mc_cube PRIVATE "SHADER_SLIB=\"${SHADER_SLIB}\"")
 if(CMAKE_GENERATOR STREQUAL "Xcode")
     target_compile_definitions(mc_cube PRIVATE "__XCODE__")
 endif()
+target_compile_definitions(mc_cube PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 
-target_link_libraries(mc_cube PRIVATE Graphics glfw glm::glm imgui)
+target_link_libraries(mc_cube PRIVATE Graphics glfw glm::glm imgui stb_image)
 add_dependencies(mc_cube mc_cube_shader)

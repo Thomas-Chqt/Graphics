@@ -14,6 +14,8 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalParameterBlockPool.hpp"
 
+static_assert(sizeof(MTLResourceID) == sizeof(uint64_t), "MTLResourceID is not 64 bits");
+
 namespace gfx
 {
 
@@ -32,6 +34,28 @@ void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer>
     content[idx] = buffer->mtlBuffer().gpuAddress;
 
     m_encodedBuffers.insert(ext::make_pair(buffer, m_layout.bindings[idx]));
+}}
+
+void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Texture>& aTexture) { @autoreleasepool
+{
+    auto texture = ext::dynamic_pointer_cast<MetalTexture>(aTexture);
+    assert(texture);
+
+    auto* content = ext::bit_cast<MTLResourceID*>(m_argumentBuffer->content<ext::byte>() + m_offset);
+    content[idx] = texture->mtltexture().gpuResourceID;
+
+    m_encodedTextures.insert(ext::make_pair(texture, m_layout.bindings[idx]));
+}}
+
+void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Sampler>& aSampler) { @autoreleasepool
+{
+    auto sampler = ext::dynamic_pointer_cast<MetalSampler>(aSampler);
+    assert(sampler);
+
+    auto* content = ext::bit_cast<MTLResourceID*>(m_argumentBuffer->content<ext::byte>() + m_offset);
+    content[idx] = sampler->mtlSamplerState().gpuResourceID;
+
+    m_encodedSamplers.insert(ext::make_pair(sampler, m_layout.bindings[idx]));
 }}
 
 MetalParameterBlock::~MetalParameterBlock()

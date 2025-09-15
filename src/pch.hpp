@@ -67,6 +67,7 @@ class MTLLibrary;
 class MTLFunction;
 class CAMetalLayer;
 class MTLTexture;
+class MTLSamplerState;
 
 #endif // __OBJC__
 #endif // GFX_BUILD_METAL

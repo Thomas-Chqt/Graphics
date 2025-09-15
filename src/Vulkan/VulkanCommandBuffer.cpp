@@ -17,6 +17,7 @@
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
+#include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/imgui_impl_vulkan.h"
@@ -195,6 +196,7 @@ void VulkanCommandBuffer::setParameterBlock(const ext::shared_ptr<const Paramete
 {
     const auto& pBlock = ext::dynamic_pointer_cast<const VulkanParameterBlock>(aPblock);
     ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
+    ext::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
 
     for (auto& [buffer, binding] : pBlock->usedBuffers())
     {
@@ -232,6 +234,48 @@ void VulkanCommandBuffer::setParameterBlock(const ext::shared_ptr<const Paramete
         }
     }
 
+    for (auto& [texture, binding] : pBlock->usedTextures())
+    {
+        ImageSyncRequest syncReq{};
+
+        if ((binding.usages & BindingUsage::vertexRead) || (binding.usages & BindingUsage::vertexWrite))
+            syncReq.stageMask |= vk::PipelineStageFlagBits2::eVertexShader;
+        if ((binding.usages & BindingUsage::fragmentRead) || (binding.usages & BindingUsage::fragmentWrite))
+            syncReq.stageMask |= vk::PipelineStageFlagBits2::eFragmentShader;
+
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead))) {
+            assert(binding.type == BindingType::sampledTexture);
+            syncReq.accessMask |= vk::AccessFlagBits2::eShaderRead;
+            syncReq.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            syncReq.preserveContent = true;
+        }
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite))) {
+            syncReq.accessMask |= vk::AccessFlagBits2::eShaderWrite;
+            syncReq.layout = vk::ImageLayout::eGeneral; // allow read and write;
+            syncReq.preserveContent = true;
+            throw ext::runtime_error("not implemented"); // never tested, because never had use case
+        }
+
+        auto it = m_imageFinalSyncStates.find(texture);
+        if (it != m_imageFinalSyncStates.end()) {
+            auto barrier = syncImage(it->second, syncReq); // will update the final sync state
+            if (barrier.has_value()) {
+                barrier->setImage(texture->vkImage());
+                barrier->setSubresourceRange(texture->subresourceRange());
+                imageMemoryBarriers.push_back(*barrier);
+            }
+        } else {
+            auto [it1, res1] = m_imageSyncRequests.insert(ext::make_pair(texture, syncReq));
+            assert(res1);
+            (void)res1;
+            auto [it2, res2] = m_imageFinalSyncStates.insert(ext::make_pair(texture, imageStateAfterSync(syncReq)));
+            assert(res2);
+            (void)res2;
+        }
+    }
+
+    m_usedSamplers.insert_range(pBlock->usedSamplers() | ext::views::transform([](auto& pair) { return pair.first; }));
+
     if (bufferMemoryBarriers.empty() == false)
     {
         auto dependencyInfo = vk::DependencyInfo{}
@@ -240,7 +284,7 @@ void VulkanCommandBuffer::setParameterBlock(const ext::shared_ptr<const Paramete
 
         m_vkCommandBuffer.pipelineBarrier2(dependencyInfo);
     }
-    
+
     assert(m_boundPipeline != nullptr);
     m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_boundPipeline->pipelineLayout(), index, pBlock->descriptorSet(), {});
 
@@ -361,8 +405,97 @@ void VulkanCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc
         .setSrcOffset(0)
         .setDstOffset(0)
         .setSize(size);
-    
+
     m_vkCommandBuffer.copyBuffer(src->vkBuffer(), dst->vkBuffer(), bufferCopy);
+}
+
+void VulkanCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuffer, const ext::shared_ptr<Texture>& aTexture)
+{
+    auto buffer = ext::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
+    assert(buffer);
+    auto texture = ext::dynamic_pointer_cast<VulkanTexture>(aTexture);
+    assert(texture);
+
+    assert(buffer->usages() & BufferUsage::copySource);
+    assert(texture->usages() & TextureUsage::copyDestination);
+
+    ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
+    ext::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
+
+    BufferSyncRequest bufferSyncReq{};
+    bufferSyncReq.stageMask = vk::PipelineStageFlagBits2::eTransfer;
+    bufferSyncReq.accessMask = vk::AccessFlagBits2::eTransferRead;
+
+    auto it1 = m_bufferFinalSyncStates.find(buffer);
+    if (it1 != m_bufferFinalSyncStates.end()) {
+        auto barrier = syncBuffer(it1->second, bufferSyncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setBuffer(buffer->vkBuffer());
+            barrier->setOffset(0);
+            barrier->setSize(vk::WholeSize);
+            bufferMemoryBarriers.push_back(*barrier);
+        }
+    } else {
+        auto [it1, res1] = m_bufferSyncRequests.insert(ext::make_pair(buffer, bufferSyncReq));
+        assert(res1);
+        (void)res1;
+        auto [it2, res2] = m_bufferFinalSyncStates.insert(ext::make_pair(buffer, bufferStateAfterSync(bufferSyncReq)));
+        assert(res2);
+        (void)res2;
+    }
+
+    ImageSyncRequest imageSyncReq{};
+    imageSyncReq.stageMask = vk::PipelineStageFlagBits2::eTransfer;
+    imageSyncReq.accessMask = vk::AccessFlagBits2::eTransferWrite;
+    imageSyncReq.layout = vk::ImageLayout::eTransferDstOptimal;
+    imageSyncReq.preserveContent = false;
+
+    auto it2 = m_imageFinalSyncStates.find(texture);
+    if (it2 != m_imageFinalSyncStates.end()) {
+        auto barrier = syncImage(it2->second, imageSyncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setImage(texture->vkImage());
+            barrier->setSubresourceRange(texture->subresourceRange());
+            imageMemoryBarriers.push_back(*barrier);
+        }
+    } else {
+        auto [it1, res1] = m_imageSyncRequests.insert(ext::make_pair(texture, imageSyncReq));
+        assert(res1);
+        (void)res1;
+        auto [it2, res2] = m_imageFinalSyncStates.insert(ext::make_pair(texture, imageStateAfterSync(imageSyncReq)));
+        assert(res2);
+        (void)res2;
+    }
+
+    if (bufferMemoryBarriers.empty() == false || imageMemoryBarriers.empty() == false)
+    {
+        auto dependencyInfo = vk::DependencyInfo{}
+            .setDependencyFlags(vk::DependencyFlags{});
+
+        if (bufferMemoryBarriers.empty() == false)
+            dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
+        if (imageMemoryBarriers.empty() == false)
+            dependencyInfo.setImageMemoryBarriers(imageMemoryBarriers);
+
+        m_vkCommandBuffer.pipelineBarrier2(dependencyInfo);
+    }
+
+    auto bufferImageCopy = vk::BufferImageCopy{}
+        .setImageSubresource(vk::ImageSubresourceLayers{}
+            .setAspectMask(texture->subresourceRange().aspectMask)
+            .setMipLevel(0)
+            .setBaseArrayLayer(0)
+            .setLayerCount(1))
+        .setImageExtent(vk::Extent3D{}
+            .setWidth(texture->width())
+            .setHeight(texture->height())
+            .setDepth(1));
+
+    m_vkCommandBuffer.copyBufferToImage(
+        buffer->vkBuffer(),
+        texture->vkImage(),
+        vk::ImageLayout::eTransferDstOptimal,
+        bufferImageCopy);
 }
 
 void VulkanCommandBuffer::endBlitPass()

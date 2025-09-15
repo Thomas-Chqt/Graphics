@@ -58,6 +58,7 @@ public:
     virtual void beginBlitPass() = 0;
 
     virtual void copyBufferToBuffer(const ext::shared_ptr<Buffer>& src, const ext::shared_ptr<Buffer>& dst, size_t size) = 0;
+    virtual void copyBufferToTexture(const ext::shared_ptr<Buffer>&, const ext::shared_ptr<Texture>&) = 0;
 
     virtual void endBlitPass() = 0;
 

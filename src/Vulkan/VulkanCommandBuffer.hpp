@@ -18,6 +18,7 @@
 
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
+#include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
@@ -58,6 +59,7 @@ public:
     void beginBlitPass() override;
 
     void copyBufferToBuffer(const ext::shared_ptr<Buffer>& src, const ext::shared_ptr<Buffer>& dst, size_t size) override;
+    void copyBufferToTexture(const ext::shared_ptr<Buffer>&, const ext::shared_ptr<Texture>&) override;
 
     void endBlitPass() override;
 
@@ -97,6 +99,8 @@ private:
 
     ext::map<ext::shared_ptr<VulkanBuffer>, BufferSyncRequest> m_bufferSyncRequests;
     ext::map<ext::shared_ptr<VulkanBuffer>, BufferSyncState> m_bufferFinalSyncStates;
+
+    ext::set<ext::shared_ptr<VulkanSampler>> m_usedSamplers;
 
     ext::set<ext::shared_ptr<const VulkanParameterBlock>> m_usedPBlock;
 

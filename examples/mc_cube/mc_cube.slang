@@ -10,12 +10,13 @@
 struct VSInput
 {
     float3 pos;
+    float2 uv;
 };
 
 struct VSOutput
 {
     float4 pos : SV_Position;
-    float3 modelPos : MODEL_POS;
+    float2 uv : TEXT_COORD;
 };
 
 struct VpMatrix
@@ -37,13 +38,14 @@ VSOutput vertexMain(VSInput input)
     VSOutput output;
     float4x4 mvpMatrix = mul(modelMatrix.mat, vpMatrix.mat);
     output.pos = mul(float4(input.pos, 1.0), mvpMatrix);
-    output.modelPos = input.pos;
+    output.uv = input.uv;
     return output;
 }
 
 struct Material
 {
-    ConstantBuffer<float3> color;
+    Texture2D<float4> texture;
+    SamplerState sampler;
 }
 
 ParameterBlock<Material> material;
@@ -51,7 +53,5 @@ ParameterBlock<Material> material;
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_TARGET
 {
-    float dist = length(input.modelPos);
-    float brightness = lerp(1.0, 0.5, saturate(dist / 0.866));
-    return float4(material.color, 1.0) * brightness;
+    return material.texture.Sample(material.sampler, input.uv);
 }

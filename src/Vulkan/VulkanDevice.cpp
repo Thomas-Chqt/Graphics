@@ -142,6 +142,11 @@ ext::unique_ptr<ParameterBlockPool> VulkanDevice::newParameterBlockPool() const
     return ext::make_unique<VulkanParameterBlockPool>(this);
 }
 
+ext::unique_ptr<Sampler> VulkanDevice::newSampler(const Sampler::Descriptor& desc) const
+{
+    return ext::make_unique<VulkanSampler>(this, desc);
+}
+
 #if defined (GFX_IMGUI_ENABLED)
 void VulkanDevice::imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat) const
 {

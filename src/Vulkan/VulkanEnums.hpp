@@ -188,6 +188,30 @@ constexpr vk::ImageAspectFlags toVkImageAspectFlags(TextureUsages use)
     return vkImgAspectFlags;
 }
 
+constexpr vk::SamplerAddressMode toVkSamplerAddressMode(SamplerAddressMode mode)
+{
+    switch (mode)
+    {
+        case SamplerAddressMode::ClampToEdge:
+            return vk::SamplerAddressMode::eClampToEdge;
+        case SamplerAddressMode::Repeat:
+            return vk::SamplerAddressMode::eRepeat;
+        case SamplerAddressMode::MirrorRepeat:
+            return vk::SamplerAddressMode::eMirroredRepeat;
+    }
+}
+
+constexpr vk::Filter toVkFilter(SamplerMinMagFilter mode)
+{
+    switch (mode)
+    {
+    case SamplerMinMagFilter::Nearest:
+        return vk::Filter::eNearest;
+    case SamplerMinMagFilter::Linear:
+        return vk::Filter::eLinear;
+    }
+}
+
 }
 
 #endif // VULKANENUMS_HPP

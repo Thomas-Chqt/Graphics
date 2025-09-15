@@ -21,6 +21,7 @@
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalTexture.hpp"
+#include "Metal/MetalSampler.hpp"
 
 namespace gfx
 {
@@ -58,6 +59,7 @@ public:
     void beginBlitPass() override;
 
     void copyBufferToBuffer(const ext::shared_ptr<Buffer>& src, const ext::shared_ptr<Buffer>& dst, size_t size) override;
+    void copyBufferToTexture(const ext::shared_ptr<Buffer>&, const ext::shared_ptr<Texture>&) override;
 
     void endBlitPass() override;
 
@@ -81,6 +83,7 @@ private:
 
     ext::set<ext::shared_ptr<MetalTexture>> m_usedTextures;
     ext::set<ext::shared_ptr<MetalBuffer>> m_usedBuffers;
+    ext::set<ext::shared_ptr<MetalSampler>> m_usedSamplers;
 
     ext::set<ext::shared_ptr<const MetalParameterBlock>> m_usedPBlock;
 

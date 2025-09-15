@@ -25,9 +25,9 @@
 #include "Metal/MetalShaderLib.hpp"
 #include "Metal/imgui_impl_metal.hpp"
 #include "Metal/MetalTexture.hpp"
+#include "Metal/MetalSampler.hpp"
 
 #import "Metal/MetalEnums.h"
-#include <memory>
 
 namespace gfx
 {
@@ -71,6 +71,11 @@ ext::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const
 ext::unique_ptr<ParameterBlockPool> MetalDevice::newParameterBlockPool() const
 {
     return ext::make_unique<MetalParameterBlockPool>(this);
+}
+
+ext::unique_ptr<Sampler> MetalDevice::newSampler(const Sampler::Descriptor& desc) const
+{
+    return ext::make_unique<MetalSampler>(*this, desc);
 }
 
 #if defined (GFX_IMGUI_ENABLED)

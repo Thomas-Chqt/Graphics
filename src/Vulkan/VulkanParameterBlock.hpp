@@ -14,6 +14,8 @@
 #include "Graphics/ParameterBlock.hpp"
 
 #include "Vulkan/VulkanBuffer.hpp"
+#include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanSampler.hpp"
 
 namespace gfx
 {
@@ -31,13 +33,17 @@ public:
     VulkanParameterBlock(const VulkanDevice*, const ext::shared_ptr<vk::DescriptorPool>&, const ParameterBlock::Layout&, VulkanParameterBlockPool*);
 
     void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) override;
+    void setBinding(uint32_t idx, const ext::shared_ptr<Texture>&) override;
+    void setBinding(uint32_t idx, const ext::shared_ptr<Sampler>&) override;
 
     inline const ParameterBlock::Layout& layout() const { return m_layout; }
     inline void clearSourcePool() { m_sourcePool = nullptr; }
 
     inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
 
-    inline const ext::map<ext::shared_ptr<VulkanBuffer>, ParameterBlock::Binding> usedBuffers() const { return m_usedBuffers; }
+    inline const ext::map<ext::shared_ptr<VulkanBuffer>, ParameterBlock::Binding>& usedBuffers() const { return m_usedBuffers; }
+    inline const ext::map<ext::shared_ptr<VulkanTexture>, ParameterBlock::Binding>& usedTextures() const { return m_usedTextures; }
+    inline const ext::map<ext::shared_ptr<VulkanSampler>, ParameterBlock::Binding>& usedSamplers() const { return m_usedSampler; }
 
     ~VulkanParameterBlock() override; 
 
@@ -50,6 +56,8 @@ private:
     vk::DescriptorSet m_descriptorSet;
 
     ext::map<ext::shared_ptr<VulkanBuffer>, ParameterBlock::Binding> m_usedBuffers;
+    ext::map<ext::shared_ptr<VulkanTexture>, ParameterBlock::Binding> m_usedTextures;
+    ext::map<ext::shared_ptr<VulkanSampler>, ParameterBlock::Binding> m_usedSampler;
 
 public:
     VulkanParameterBlock& operator=(const VulkanParameterBlock&) = delete;

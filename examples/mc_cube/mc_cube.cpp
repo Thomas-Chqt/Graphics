@@ -23,10 +23,12 @@
 #include "glm/fwd.hpp"
 
 #include <GLFW/glfw3.h>
+#include <cstring>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
+#include <stb_image/stb_image.h>
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -74,39 +76,40 @@ constexpr uint8_t maxFrameInFlight = 3;
 struct Vertex
 {
     glm::vec3 pos;
+    glm::vec2 uv;
 };
 
 constexpr ext::array<Vertex, 24> cube_vertices = {
     // Front face (+Z)
-    Vertex{ glm::vec3(-0.5f, -0.5f,  0.5f) },
-    Vertex{ glm::vec3( 0.5f, -0.5f,  0.5f) },
-    Vertex{ glm::vec3( 0.5f,  0.5f,  0.5f) },
-    Vertex{ glm::vec3(-0.5f,  0.5f,  0.5f) },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f) },
     // Back face (-Z)
-    Vertex{ glm::vec3( 0.5f, -0.5f, -0.5f) },
-    Vertex{ glm::vec3(-0.5f, -0.5f, -0.5f) },
-    Vertex{ glm::vec3(-0.5f,  0.5f, -0.5f) },
-    Vertex{ glm::vec3( 0.5f,  0.5f, -0.5f) },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f) },
     // Left face (-X)
-    Vertex{ glm::vec3(-0.5f, -0.5f, -0.5f) },
-    Vertex{ glm::vec3(-0.5f, -0.5f,  0.5f) },
-    Vertex{ glm::vec3(-0.5f,  0.5f,  0.5f) },
-    Vertex{ glm::vec3(-0.5f,  0.5f, -0.5f) },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f) },
     // Right face (+X)
-    Vertex{ glm::vec3( 0.5f, -0.5f,  0.5f) },
-    Vertex{ glm::vec3( 0.5f, -0.5f, -0.5f) },
-    Vertex{ glm::vec3( 0.5f,  0.5f, -0.5f) },
-    Vertex{ glm::vec3( 0.5f,  0.5f,  0.5f) },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f) },
     // Top face (+Y)
-    Vertex{ glm::vec3(-0.5f,  0.5f,  0.5f) },
-    Vertex{ glm::vec3( 0.5f,  0.5f,  0.5f) },
-    Vertex{ glm::vec3( 0.5f,  0.5f, -0.5f) },
-    Vertex{ glm::vec3(-0.5f,  0.5f, -0.5f) },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f) },
     // Bottom face (-Y)
-    Vertex{ glm::vec3(-0.5f, -0.5f, -0.5f) },
-    Vertex{ glm::vec3( 0.5f, -0.5f, -0.5f) },
-    Vertex{ glm::vec3( 0.5f, -0.5f,  0.5f) },
-    Vertex{ glm::vec3(-0.5f, -0.5f,  0.5f) }
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f) },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f) },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f) }
 };
 
 constexpr ext::array<uint32_t, 36> cube_indices = {
@@ -138,7 +141,8 @@ const gfx::ParameterBlock::Layout modelMatrixBpLayout = {
 
 const gfx::ParameterBlock::Layout materialBpLayout = {
     .bindings = {
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead }
+        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
+        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampler, .usages = gfx::BindingUsage::fragmentRead }
     }
 };
 
@@ -193,6 +197,10 @@ public:
                     gfx::VertexAttribute{
                         .format = gfx::VertexAttributeFormat::float3,
                         .offset = offsetof(Vertex, pos)
+                    },
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float2,
+                        .offset = offsetof(Vertex, uv)
                     }
                 }
             },
@@ -210,42 +218,85 @@ public:
             m_parameterBlockPools.at(i) = m_device->newParameterBlockPool();
         }
 
-        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = ext::max(sizeof(Vertex) * cube_vertices.size(), sizeof(uint32_t) * cube_indices.size()),
-            .usages = gfx::BufferUsage::copySource,
-            .storageMode = gfx::ResourceStorageMode::hostVisible
-        });
-        assert(stagingBuffer);
+        {
+            m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size = sizeof(Vertex) * cube_vertices.size(),
+                .usages = gfx::BufferUsage::vertexBuffer | gfx::BufferUsage::copyDestination,
+                .storageMode = gfx::ResourceStorageMode::deviceLocal
+            });
+            assert(m_vertexBuffer);
 
-        m_vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(Vertex) * cube_vertices.size(),
-            .usages = gfx::BufferUsage::vertexBuffer | gfx::BufferUsage::copyDestination,
-            .storageMode = gfx::ResourceStorageMode::deviceLocal
-        });
-        assert(m_vertexBuffer);
+            ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size = m_vertexBuffer->size(),
+                .usages = gfx::BufferUsage::copySource,
+                .storageMode = gfx::ResourceStorageMode::hostVisible
+            });
+            assert(stagingBuffer);
 
-        m_indexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(uint32_t) * cube_indices.size(),
-            .usages = gfx::BufferUsage::indexBuffer | gfx::BufferUsage::copyDestination,
-            .storageMode = gfx::ResourceStorageMode::deviceLocal
-        });
-        assert(m_indexBuffer);
+            ext::ranges::copy(cube_vertices, stagingBuffer->content<Vertex>());
 
-        ext::ranges::copy(cube_vertices, stagingBuffer->content<Vertex>());
-        gfx::CommandBuffer* commandBuffer = m_commandBufferPools.at(m_frameIdx)->get().release();
-        commandBuffer->beginBlitPass();
-        commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, m_vertexBuffer->size());
-        commandBuffer->endBlitPass();
-        m_device->submitCommandBuffers(ext::unique_ptr<gfx::CommandBuffer>(commandBuffer));
+            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            commandBuffer->beginBlitPass();
+            commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, m_vertexBuffer->size());
+            commandBuffer->endBlitPass();
+            m_device->submitCommandBuffers(ext::move(commandBuffer));
+        }
+        {
+            m_indexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size = sizeof(uint32_t) * cube_indices.size(),
+                .usages = gfx::BufferUsage::indexBuffer | gfx::BufferUsage::copyDestination,
+                .storageMode = gfx::ResourceStorageMode::deviceLocal
+            });
+            assert(m_indexBuffer);
 
-        m_device->waitCommandBuffer(commandBuffer);
+            ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size = m_indexBuffer->size(),
+                .usages = gfx::BufferUsage::copySource,
+                .storageMode = gfx::ResourceStorageMode::hostVisible
+            });
+            assert(stagingBuffer);
 
-        ext::ranges::copy(cube_indices, stagingBuffer->content<uint32_t>());
-        commandBuffer = m_commandBufferPools.at(m_frameIdx)->get().release();
-        commandBuffer->beginBlitPass();
-        commandBuffer->copyBufferToBuffer(stagingBuffer, m_indexBuffer, m_indexBuffer->size());
-        commandBuffer->endBlitPass();
-        m_device->submitCommandBuffers(ext::unique_ptr<gfx::CommandBuffer>(commandBuffer));
+            ext::ranges::copy(cube_indices, stagingBuffer->content<uint32_t>());
+
+            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            commandBuffer->beginBlitPass();
+            commandBuffer->copyBufferToBuffer(stagingBuffer, m_indexBuffer, m_indexBuffer->size());
+            commandBuffer->endBlitPass();
+            m_device->submitCommandBuffers(ext::move(commandBuffer));
+        }
+
+        {
+            int width = 0;
+            int height = 0;
+            stbi_uc* imgBytes = stbi_load(RESOURCE_DIR"/mc_grass.jpg", &width, &height, nullptr, STBI_rgb_alpha);
+
+            m_grassTexture = m_device->newTexture(gfx::Texture::Descriptor{
+                .type = gfx::TextureType::texture2d,
+                .width = static_cast<uint32_t>(width),
+                .height = static_cast<uint32_t>(height),
+                .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+                .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
+                .storageMode = gfx::ResourceStorageMode::deviceLocal
+            });
+
+            ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+                .size = static_cast<size_t>(width) * static_cast<size_t>(height) * sizeof(uint32_t),
+                .usages = gfx::BufferUsage::copySource,
+                .storageMode = gfx::ResourceStorageMode::hostVisible
+            });
+            assert(stagingBuffer);
+
+            ext::memcpy(stagingBuffer->content<stbi_uc>(), imgBytes, stagingBuffer->size());
+            stbi_image_free(imgBytes);
+
+            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            commandBuffer->beginBlitPass();
+            commandBuffer->copyBufferToTexture(stagingBuffer, m_grassTexture);
+            commandBuffer->endBlitPass();
+            m_device->submitCommandBuffers(ext::move(commandBuffer));
+        }
+
+        m_sampler = m_device->newSampler(gfx::Sampler::Descriptor{});
 
         for (auto i = 0; i < maxFrameInFlight; i++)
         {
@@ -262,13 +313,6 @@ public:
                 .storageMode = gfx::ResourceStorageMode::hostVisible
             });
             assert(m_modelMatrix.at(i));
-
-            m_color.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
-                .size=sizeof(glm::vec3),
-                .usages=gfx::BufferUsage::uniformBuffer,
-                .storageMode = gfx::ResourceStorageMode::hostVisible
-            });
-            assert(m_color.at(i));
         }
 
         ImGui::CreateContext();
@@ -358,12 +402,6 @@ public:
 
                     ImGui::DragFloat3("scale", ext::bit_cast<float*>(&m_cubeSca), 0.01f, -2, 2);
                     *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::scale(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeSca);
-
-                    ImGui::Spacing();
-
-                    static glm::vec3 color = { 1, 1, 1 };
-                    ImGui::ColorEdit3("color", ext::bit_cast<float*>(&color));
-                    *m_color.at(m_frameIdx)->content<glm::vec3>() = color;
                 }
                 ImGui::End();
             }
@@ -376,7 +414,8 @@ public:
             modelMatrixPBlock->setBinding(0, m_modelMatrix.at(m_frameIdx));
 
             ext::shared_ptr<gfx::ParameterBlock> materialPBlock = m_parameterBlockPools.at(m_frameIdx)->get(materialBpLayout);
-            materialPBlock->setBinding(0, m_color.at(m_frameIdx));
+            materialPBlock->setBinding(0, m_grassTexture);
+            materialPBlock->setBinding(1, m_sampler);
 
             ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
 
@@ -462,10 +501,10 @@ private:
     glm::vec3 m_cubeSca = {1, 1, 1};
     ext::array<ext::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_modelMatrix;
 
-    ext::array<ext::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_color;
-
     ext::array<ext::shared_ptr<gfx::Texture>, maxFrameInFlight> m_depthTexture;
 
+    ext::shared_ptr<gfx::Texture> m_grassTexture;
+    ext::shared_ptr<gfx::Sampler> m_sampler;
 };
 
 int main()

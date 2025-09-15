@@ -55,6 +55,7 @@ public:
     virtual ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
     virtual ext::unique_ptr<CommandBufferPool> newCommandBufferPool() const = 0;
     virtual ext::unique_ptr<ParameterBlockPool> newParameterBlockPool() const = 0;
+    virtual ext::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
     virtual void imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat = ext::nullopt) const = 0;

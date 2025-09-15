@@ -12,6 +12,8 @@
 
 #include "Graphics/Enums.hpp"
 #include "Graphics/Buffer.hpp"
+#include "Graphics/Texture.hpp"
+#include "Graphics/Sampler.hpp"
 
 #if defined(GFX_USE_UTILSCPP)
     namespace ext = utl;
@@ -47,6 +49,8 @@ public:
     ParameterBlock(const ParameterBlock&) = delete;
 
     virtual void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) = 0;
+    virtual void setBinding(uint32_t idx, const ext::shared_ptr<Texture>&) = 0;
+    virtual void setBinding(uint32_t idx, const ext::shared_ptr<Sampler>&) = 0;
 
     virtual ~ParameterBlock() = default;
 

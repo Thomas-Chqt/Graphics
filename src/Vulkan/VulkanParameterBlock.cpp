@@ -57,6 +57,47 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer
     m_usedBuffers.insert(ext::make_pair(buffer, m_layout.bindings.at(idx)));
 }
 
+void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Texture>& aTexture)
+{
+    auto texture = ext::dynamic_pointer_cast<VulkanTexture>(aTexture);
+
+    auto descriptorImageInfo = vk::DescriptorImageInfo{}
+        .setImageView(texture->vkImageView())
+        .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
+
+    auto writeDescriptorSet = vk::WriteDescriptorSet{}
+        .setDstSet(m_descriptorSet)
+        .setDstBinding(idx)
+        .setDstArrayElement(0)
+        .setDescriptorCount(1)
+        .setDescriptorType(vk::DescriptorType::eSampledImage)
+        .setImageInfo(descriptorImageInfo);
+
+    m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
+
+    m_usedTextures.insert(ext::make_pair(texture, m_layout.bindings.at(idx)));
+}
+
+void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Sampler>& aSampler)
+{
+    auto sampler = ext::dynamic_pointer_cast<VulkanSampler>(aSampler);
+
+    auto descriptorImageInfo = vk::DescriptorImageInfo{}
+        .setSampler(sampler->vkSampler());
+
+    auto writeDescriptorSet = vk::WriteDescriptorSet{}
+        .setDstSet(m_descriptorSet)
+        .setDstBinding(idx)
+        .setDstArrayElement(0)
+        .setDescriptorCount(1)
+        .setDescriptorType(vk::DescriptorType::eSampler)
+        .setImageInfo(descriptorImageInfo);
+
+    m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
+
+    m_usedSampler.insert(ext::make_pair(sampler, m_layout.bindings.at(idx)));
+}
+
 VulkanParameterBlock::~VulkanParameterBlock()
 {
     if (m_sourcePool != nullptr)
