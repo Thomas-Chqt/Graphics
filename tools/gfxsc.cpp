@@ -193,7 +193,7 @@ int main(int argc, char* argv[])
             Slang::ComPtr<slang::IBlob> targetCode;
             Slang::ComPtr<slang::IBlob> diagnosticsBlob;
             if (SLANG_FAILED(linkedProgram->getTargetCode(0, targetCode.writeRef(), diagnosticsBlob.writeRef())))
-                return std::println(stderr, "getTargetCode (metal): error"), 1;
+                return std::println(stderr, "getTargetCode (metal): error: {}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
             if (diagnosticsBlob != nullptr)
                 return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
 

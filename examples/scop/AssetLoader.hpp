@@ -1,15 +1,16 @@
 /*
  * ---------------------------------------------------
- * MeshLoader.hpp
+ * AssetLoader.hpp
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
  * Date: 2025/09/21 18:49:17
  * ---------------------------------------------------
  */
 
-#ifndef MESHLOADER_HPP
-#define MESHLOADER_HPP
+#ifndef ASSETLOADER_HPP
+#define ASSETLOADER_HPP
 
+#include "Graphics/Texture.hpp"
 #include "Material.hpp"
 
 #include <Graphics/Device.hpp>
@@ -29,6 +30,8 @@ struct Vertex
 {
     glm::vec3 pos;
     glm::vec2 uv;
+    glm::vec3 normal;
+    glm::vec3 tangent;
 };
 
 struct SubMesh
@@ -47,18 +50,27 @@ struct Mesh
     std::vector<SubMesh> subMeshes;
 };
 
-class MeshLoader
+class AssetLoader
 {
 public:
-    MeshLoader() = delete;
-    MeshLoader(const MeshLoader&) = delete;
-    MeshLoader(MeshLoader&&) = delete;
+    AssetLoader() = delete;
+    AssetLoader(const AssetLoader&) = delete;
+    AssetLoader(AssetLoader&&) = delete;
 
-    MeshLoader(gfx::Device*);
+    AssetLoader(gfx::Device*);
 
     Mesh builtinCube(const std::function<std::shared_ptr<Material>()>& mkMaterial);
 
-    ~MeshLoader() = default;
+    std::shared_ptr<gfx::Texture> loadTexture(const std::filesystem::path&, gfx::CommandBuffer* = nullptr);
+    std::shared_ptr<gfx::Texture> loadCubeTexture(const std::filesystem::path& right,
+                                                  const std::filesystem::path& left,
+                                                  const std::filesystem::path& top,
+                                                  const std::filesystem::path& bottom,
+                                                  const std::filesystem::path& front,
+                                                  const std::filesystem::path& back,
+                                                  gfx::CommandBuffer* = nullptr);
+
+    ~AssetLoader() = default;
 
 private:
     std::shared_ptr<gfx::Buffer> newVertexBuffer(const std::ranges::range auto& vertices, gfx::CommandBuffer& commandBuffer)
@@ -109,10 +121,10 @@ private:
     std::unique_ptr<gfx::CommandBufferPool> m_commandBufferPool;
 
 public:
-    MeshLoader& operator=(const MeshLoader&) = delete;
-    MeshLoader& operator=(MeshLoader&&) = delete;
+    AssetLoader& operator=(const AssetLoader&) = delete;
+    AssetLoader& operator=(AssetLoader&&) = delete;
 };
 
 } // namespace scop
 
-#endif // MESHLOADER_HPP
+#endif // ASSETLOADER_HPP

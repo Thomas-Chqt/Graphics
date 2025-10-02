@@ -8,7 +8,9 @@
  */
 
 #include "Renderer.hpp"
-#include "MeshLoader.hpp"
+#include "AssetLoader.hpp"
+#include "Material.hpp"
+#include "Light.hpp"
 
 #include <Graphics/Instance.hpp>
 #include <Graphics/Surface.hpp>
@@ -18,6 +20,7 @@
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
+#include <bit>
 #include <imgui.h>
 #include <glm/glm.hpp>
 
@@ -53,78 +56,6 @@ SCOP_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows
 
 constexpr uint32_t WINDOW_WIDTH = 800;
 constexpr uint32_t WINDOW_HEIGHT = 600;
-
-const gfx::ParameterBlock::Layout flatColorMaterialBpLayout = {
-    .bindings = {
-        gfx::ParameterBlock::Binding{.type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead},
-    }};
-
-class FlatColorMaterial : public scop::Material
-{
-public:
-    FlatColorMaterial(const gfx::Device& device)
-    {
-        m_color = device.newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(glm::vec3),
-            .usages = gfx::BufferUsage::uniformBuffer,
-            .storageMode = gfx::ResourceStorageMode::hostVisible});
-    }
-
-    FlatColorMaterial(const FlatColorMaterial&) = delete;
-    FlatColorMaterial(FlatColorMaterial&&) = delete;
-
-    static void createPipeline(gfx::Device& device)
-    {
-        if (s_graphicsPipeline != nullptr)
-            return;
-        ext::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/flat_color.slib");
-        assert(shaderLib);
-
-        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
-            .vertexLayout = gfx::VertexLayout{
-                .stride = sizeof(scop::Vertex),
-                .attributes = {
-                    gfx::VertexAttribute{
-                        .format = gfx::VertexAttributeFormat::float3,
-                        .offset = offsetof(scop::Vertex, pos)}}},
-            .vertexShader = &shaderLib->getFunction("vertexMain"),
-            .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = {gfx::PixelFormat::BGRA8Unorm},
-            .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
-            .parameterBlockLayouts = {scop::vpMatrixBpLayout, scop::modelMatrixBpLayout, flatColorMaterialBpLayout}};
-
-        s_graphicsPipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
-    }
-
-    inline static std::shared_ptr<gfx::GraphicsPipeline> getPipeline() { return s_graphicsPipeline; }
-
-    inline static void destroyPipeline() { s_graphicsPipeline.reset(); }
-
-    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return s_graphicsPipeline; }
-
-    std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override
-    {
-        ext::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(flatColorMaterialBpLayout);
-        parameterBlock->setBinding(0, m_color);
-        return parameterBlock;
-    }
-
-    inline const char* name() const override { return "flat_color"; };
-
-    inline glm::vec3 color() const { return *m_color->content<glm::vec3>(); }
-    inline void setColor(const glm::vec3& c) { *m_color->content<glm::vec3>() = c; }
-
-    ~FlatColorMaterial() override = default;
-
-private:
-    inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
-
-    ext::shared_ptr<gfx::Buffer> m_color;
-
-public:
-    FlatColorMaterial& operator=(const FlatColorMaterial&) = delete;
-    FlatColorMaterial& operator=(FlatColorMaterial&&) = delete;
-};
 
 int main()
 {
@@ -165,20 +96,32 @@ int main()
             throw std::runtime_error("surface does not support the fifo present mode");
 
         scop::Renderer renderer(device.get(), window, surface.get());
-        scop::MeshLoader meshLoader(device.get());
-        
-        FlatColorMaterial::createPipeline(*device);
+        scop::AssetLoader assetLoader(device.get());
+
+        scop::FlatColorMaterial::createPipeline(*device);
+        scop::TexturedCubeMaterial::createPipeline(*device);
 
         scop::FixCamera camera = scop::FixCamera();
 
-        std::shared_ptr<FlatColorMaterial> cubeMaterial = std::make_shared<FlatColorMaterial>(*device);
-        cubeMaterial->setColor({1, 1, 1});
+        scop::PointLight pointLight;
+        pointLight.setColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.8f);
+        glm::vec3 pointLightPos = {0, 0, 3};
 
-        scop::Mesh cube = meshLoader.builtinCube([&]() { return cubeMaterial; });
+        auto flatColorWhiteMaterial = std::make_shared<scop::FlatColorMaterial>(*device);
+        flatColorWhiteMaterial->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
+        flatColorWhiteMaterial->setShininess(32.0f);
+        flatColorWhiteMaterial->setSpecular(0.5f);
+
+        auto mcCubeMaterial = std::make_shared<scop::TexturedCubeMaterial>(*device);
+        mcCubeMaterial->setTexture(assetLoader.loadCubeTexture(RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_top.jpg", RESOURCE_DIR"/mc_grass_bottom.jpg", RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_side.jpg"));
+
+        scop::Mesh cube = assetLoader.builtinCube([&]() { return flatColorWhiteMaterial; });
 
         glm::vec3 cubePos = {0, 0, 0};
         glm::vec3 cubeRot = {0, 0, 0};
         glm::vec3 cubeSca = {1, 1, 1};
+
+        glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f;
 
         while (true)
         {
@@ -192,25 +135,63 @@ int main()
 
             ImGui::Begin("mc_cube");
             {
-                ImGui::DragFloat3("position", ext::bit_cast<float*>(&cubePos), 0.01f, -5.0, 5.0);
-                modelMatrix = glm::translate(modelMatrix, cubePos);
+                {
+                    ImGui::DragFloat3("position", ext::bit_cast<float*>(&cubePos), 0.01, -5.0, 5.0);
+                    modelMatrix = glm::translate(modelMatrix, cubePos);
 
-                ImGui::DragFloat3("rotation", ext::bit_cast<float*>(&cubeRot), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-                modelMatrix = glm::rotate(modelMatrix, cubeRot.x, glm::vec3(1, 0, 0));
-                modelMatrix = glm::rotate(modelMatrix, cubeRot.y, glm::vec3(0, 1, 0));
-                modelMatrix = glm::rotate(modelMatrix, cubeRot.z, glm::vec3(0, 0, 1));
+                    ImGui::DragFloat3("rotation", ext::bit_cast<float*>(&cubeRot), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+                    modelMatrix = glm::rotate(modelMatrix, cubeRot.x, glm::vec3(1, 0, 0));
+                    modelMatrix = glm::rotate(modelMatrix, cubeRot.y, glm::vec3(0, 1, 0));
+                    modelMatrix = glm::rotate(modelMatrix, cubeRot.z, glm::vec3(0, 0, 1));
 
-                ImGui::DragFloat3("scale", ext::bit_cast<float*>(&cubeSca), 0.01f, -2, 2);
-                modelMatrix = glm::scale(modelMatrix, cubeSca);
+                    ImGui::DragFloat3("scale", ext::bit_cast<float*>(&cubeSca), 0.01f, -2, 2);
+                    modelMatrix = glm::scale(modelMatrix, cubeSca);
+                }
+
+                ImGui::Spacing();
+
+                {
+                    glm::vec3 color = flatColorWhiteMaterial->color();
+                    ImGui::ColorEdit3("color", ext::bit_cast<float*>(&color));
+                    flatColorWhiteMaterial->setColor(color);
+
+                    float shininess = flatColorWhiteMaterial->shininess();
+                    ImGui::SliderFloat("shininess", &shininess, 0.1f, 32.0f);
+                    flatColorWhiteMaterial->setShininess(shininess);
+
+                    float specular = flatColorWhiteMaterial->specular();
+                    ImGui::SliderFloat("specular", &specular, 0, 1.0f);
+                    flatColorWhiteMaterial->setSpecular(specular);
+                }
+                
+                ImGui::Spacing();
+
+                {
+                    glm::vec3 lightColor = pointLight.color();
+                    ImGui::ColorEdit3("light color", ext::bit_cast<float*>(&lightColor));
+                    pointLight.setColor(lightColor);
+
+                    ImGui::DragFloat3("light position", ext::bit_cast<float*>(&pointLightPos), 0.01, -5.0, 5.0);
+                }
+
+                ImGui::Spacing();
+
+                {
+                    ImGui::ColorEdit3("ambient light color", ext::bit_cast<float*>(&ambientLightColor));
+                    renderer.setAmbientLightColor(ambientLightColor);
+                }
             }
             ImGui::End();
-
+            
             renderer.renderMesh(cube, modelMatrix);
+
+            renderer.addLight(pointLight,  pointLightPos);
 
             renderer.endFrame();
         }
 
-        FlatColorMaterial::destroyPipeline();
+        scop::TexturedCubeMaterial::destroyPipeline();
+        scop::FlatColorMaterial::destroyPipeline();
 
         glfwDestroyWindow(window);
         glfwTerminate();

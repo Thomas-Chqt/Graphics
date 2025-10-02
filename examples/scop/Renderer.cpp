@@ -8,12 +8,16 @@
  */
 
 #include "Renderer.hpp"
-#include "MeshLoader.hpp"
+#include "AssetLoader.hpp"
+#include "Light.hpp"
 
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -21,8 +25,6 @@
 #include <cassert>
 #include <memory>
 #include <utility>
-
-#define cfd m_frameDatas.at(m_frameIdx)
 
 namespace scop
 {
@@ -43,6 +45,11 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
             .usages = gfx::BufferUsage::uniformBuffer,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
         assert(frameData.vpMatrix);
+
+        frameData.sceneDataBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = sizeof(SceneData),
+            .usages = gfx::BufferUsage::uniformBuffer,
+            .storageMode = gfx::ResourceStorageMode::hostVisible});
     }
 
     ImGui::CreateContext();
@@ -104,6 +111,15 @@ void Renderer::beginFrame(const Camera& camera)
     glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
     *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * camera.viewMatrix();
 
+    cfsd = SceneData{
+        .cameraPosition = -camera.viewMatrix()[3],
+        .ambientLightColor = glm::vec3(0),
+        .directionalLightCount = 0,
+        .directionalLights = std::array<GPUDirectionalLight, 8>(),
+        .pointLightCount = 0,
+        .pointLights = std::array<GPUPointLight, 8>()
+    };
+
     m_device->imguiNewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -136,6 +152,28 @@ void Renderer::renderMesh(const Mesh& mesh, glm::mat4x4 worlTransform)
 
     for (auto& submesh : mesh.subMeshes)
         addSubmesh(submesh, worlTransform);
+}
+
+void Renderer::addLight(const Light& light, const glm::vec3& position)
+{
+    if (const auto* directionalLight = dynamic_cast<const DirectionalLight*>(&light))
+    {
+        if (static_cast<size_t>(cfsd.directionalLightCount) >= cfsd.directionalLights.size())
+            return;
+        cfsd.directionalLights.at(cfsd.directionalLightCount++) = GPUDirectionalLight{
+            .color = directionalLight->color(),
+            .position = position
+        };
+    }
+    else if (const auto* pointLight = dynamic_cast<const PointLight*>(&light))
+    {
+        if (static_cast<size_t>(cfsd.pointLightCount) >= cfsd.pointLights.size())
+            return;
+        cfsd.pointLights.at(cfsd.pointLightCount++) = GPUPointLight{
+            .color = pointLight->color(),
+            .position = position
+        };
+    }
 }
 
 void Renderer::endFrame()
@@ -173,14 +211,19 @@ void Renderer::endFrame()
         std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = cfd.parameterBlockPool->get(vpMatrixBpLayout);
         vpMatrixPBlock->setBinding(0, cfd.vpMatrix);
 
+        std::shared_ptr<gfx::ParameterBlock> sceneDataPBlock = cfd.parameterBlockPool->get(sceneDataBpLayout);
+        sceneDataPBlock->setBinding(0, cfd.sceneDataBuffer);
+
         for (auto& [pipeline, renderables] : cfd.renderables)
         {
             commandBuffer->usePipeline(pipeline);
             commandBuffer->setParameterBlock(vpMatrixPBlock, 0);
+            commandBuffer->setParameterBlock(sceneDataPBlock, 2);
+
             for (auto& [material, buffers] : renderables)
             {
                 std::shared_ptr<gfx::ParameterBlock> materialPBlock = material->makeParameterBlock(*cfd.parameterBlockPool);
-                commandBuffer->setParameterBlock(materialPBlock, 2);
+                commandBuffer->setParameterBlock(materialPBlock, 3);
                 for (auto& [vtxIdxBuffer, modelMatrices] : buffers)
                 {
                     auto& [vertexBuffer, indexBuffer] = vtxIdxBuffer;

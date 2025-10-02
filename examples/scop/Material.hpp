@@ -10,6 +10,8 @@
 #ifndef MATERIAL_HPP
 #define MATERIAL_HPP
 
+#include "Graphics/Sampler.hpp"
+#include "Graphics/Texture.hpp"
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlock.hpp>
 #include <Graphics/ParameterBlockPool.hpp>
@@ -30,8 +32,6 @@ public:
     virtual const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const = 0;
     virtual std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool&) const = 0;
 
-    virtual const char* name() const = 0;
-
     virtual ~Material() = default;
 
 protected:
@@ -45,6 +45,83 @@ public:
 
 protected:
     Material& operator=(Material&&) = default;
+};
+
+
+class FlatColorMaterial : public Material
+{
+public:
+    FlatColorMaterial() = delete;
+    FlatColorMaterial(const FlatColorMaterial&) = delete;
+    FlatColorMaterial(FlatColorMaterial&&) = delete;
+
+    FlatColorMaterial(const gfx::Device& device);
+
+    static void createPipeline(gfx::Device& device);
+    inline static std::shared_ptr<gfx::GraphicsPipeline> getPipeline() { return s_graphicsPipeline; }
+    inline static void destroyPipeline() { s_graphicsPipeline.reset(); }
+
+    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return s_graphicsPipeline; }
+
+    std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
+
+    inline glm::vec3 color() const { return *m_color->content<glm::vec3>(); }
+    inline void setColor(const glm::vec3& c) { *m_color->content<glm::vec3>() = c; }
+
+    inline float shininess() const { return *m_shininess->content<float>(); }
+    inline void setShininess(float s) { *m_shininess->content<float>() = s; }
+
+    inline float specular() const { return *m_specular->content<float>(); }
+    inline void setSpecular(float s) { *m_specular->content<float>() = s; }
+
+    ~FlatColorMaterial() override = default;
+
+private:
+    inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+
+    ext::shared_ptr<gfx::Buffer> m_color;
+    ext::shared_ptr<gfx::Buffer> m_shininess;
+    ext::shared_ptr<gfx::Buffer> m_specular;
+
+public:
+    FlatColorMaterial& operator=(const FlatColorMaterial&) = delete;
+    FlatColorMaterial& operator=(FlatColorMaterial&&) = delete;
+};
+
+class TexturedCubeMaterial : public Material
+{
+public:
+    TexturedCubeMaterial() = delete;
+    TexturedCubeMaterial(const TexturedCubeMaterial&) = delete;
+    TexturedCubeMaterial(TexturedCubeMaterial&&) = delete;
+
+    TexturedCubeMaterial(const gfx::Device& device);
+
+    static void createPipeline(gfx::Device& device);
+    inline static std::shared_ptr<gfx::GraphicsPipeline> getPipeline() { return s_graphicsPipeline; }
+    inline static void destroyPipeline() { s_graphicsPipeline.reset(); }
+
+    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return s_graphicsPipeline; }
+
+    std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
+
+    inline const ext::shared_ptr<gfx::Texture>& texture() const { return m_texture; }
+    inline void setTexture(const ext::shared_ptr<gfx::Texture>& t) { m_texture = t; }
+
+    inline const ext::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
+    inline void setSampler(const ext::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
+
+    ~TexturedCubeMaterial() override = default;
+
+private:
+    inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+
+    ext::shared_ptr<gfx::Texture> m_texture;
+    ext::shared_ptr<gfx::Sampler> m_sampler;
+
+public:
+    TexturedCubeMaterial& operator=(const TexturedCubeMaterial&) = delete;
+    TexturedCubeMaterial& operator=(TexturedCubeMaterial&&) = delete;
 };
 
 } // namespace scop
