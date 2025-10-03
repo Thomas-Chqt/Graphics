@@ -47,7 +47,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
         assert(frameData.vpMatrix);
 
         frameData.sceneDataBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(SceneData),
+            .size = sizeof(shader::SceneData),
             .usages = gfx::BufferUsage::uniformBuffer,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
     }
@@ -111,13 +111,13 @@ void Renderer::beginFrame(const Camera& camera)
     glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
     *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * camera.viewMatrix();
 
-    cfsd = SceneData{
+    cfsd = shader::SceneData{
         .cameraPosition = -camera.viewMatrix()[3],
         .ambientLightColor = glm::vec3(0),
         .directionalLightCount = 0,
-        .directionalLights = std::array<GPUDirectionalLight, 8>(),
+        .directionalLights = {},
         .pointLightCount = 0,
-        .pointLights = std::array<GPUPointLight, 8>()
+        .pointLights = {}
     };
 
     m_device->imguiNewFrame();
@@ -158,20 +158,20 @@ void Renderer::addLight(const Light& light, const glm::vec3& position)
 {
     if (const auto* directionalLight = dynamic_cast<const DirectionalLight*>(&light))
     {
-        if (static_cast<size_t>(cfsd.directionalLightCount) >= cfsd.directionalLights.size())
+        if (static_cast<size_t>(cfsd.directionalLightCount) >= sizeof(cfsd.directionalLights) / sizeof(cfsd.directionalLights[0]))
             return;
-        cfsd.directionalLights.at(cfsd.directionalLightCount++) = GPUDirectionalLight{
-            .color = directionalLight->color(),
-            .position = position
+        cfsd.directionalLights[cfsd.directionalLightCount++] = shader::DirectionalLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+            .position = position,
+            .color = directionalLight->color()
         };
     }
     else if (const auto* pointLight = dynamic_cast<const PointLight*>(&light))
     {
-        if (static_cast<size_t>(cfsd.pointLightCount) >= cfsd.pointLights.size())
+        if (static_cast<size_t>(cfsd.pointLightCount) >= sizeof(cfsd.pointLights) / sizeof(cfsd.pointLights[0]))
             return;
-        cfsd.pointLights.at(cfsd.pointLightCount++) = GPUPointLight{
-            .color = pointLight->color(),
-            .position = position
+        cfsd.pointLights[cfsd.pointLightCount++] = shader::PointLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+            .position = position,
+            .color = pointLight->color()
         };
     }
 }

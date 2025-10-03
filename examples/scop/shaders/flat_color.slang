@@ -7,8 +7,7 @@
  * ---------------------------------------------------
  */
 
-static const int LIGHT_TYPE_DIRECTIONAL = 0;
-static const int LIGHT_TYPE_POINT = 1;
+#include "scop_shader.h"
 
 struct VSInput
 {
@@ -23,93 +22,54 @@ struct VSOutput
     float3   normal;
 };
 
-struct VpMatrix
-{
-    ConstantBuffer<float4x4> mat;
-}
-ParameterBlock<VpMatrix> vpMatrix;
+ParameterBlockSingleCB(float4x4, 0, vpMatrix);
+#define vpMatrix vpMatrix.data
 
-struct ModelMatrix
-{
-    ConstantBuffer<float4x4> mat;
-}
-ParameterBlock<ModelMatrix> modelMatrix;
+ParameterBlockSingleCB(float4x4, 1, modelMatrix);
+#define modelMatrix modelMatrix.data
 
 [shader("vertex")]
 VSOutput vertexMain(VSInput input)
 {
-    float4 worldPos  = mul(float4(input.pos, 1.0), modelMatrix.mat);
+    float4 worldPos  = mul(float4(input.pos, 1.0), modelMatrix);
 
     VSOutput output;
     output.pos = worldPos.xyz;
-    output.clipPos = mul(worldPos, vpMatrix.mat);
-    output.normal = mul(input.normal, (float3x3)modelMatrix.mat);
+    output.clipPos = mul(worldPos, vpMatrix);
+    output.normal = mul(input.normal, (float3x3)modelMatrix);
     return output;
 }
 
-struct DirectionalLight
+ParameterBlockSingleCB(SceneData, 0, sceneData);
+#define sceneData sceneData.data
+
+ParameterBlockSingleCB(FlatColorMaterial, 0, material);
+#define material material.data
+
+float3 evalDirectionalLight(DirectionalLight light, float3 fragNormal, float3 cameraDir)
 {
-    float4 position;
-    float4 color;
-};
-
-struct PointLight
-{
-    float4 position;
-    float4 color;
-    float attenuation;
-};
-
-struct SceneDataCB
-{
-    float4 cameraPosition;
-    float4 ambientLightColor;
-
-    int directionalLightCount;
-    DirectionalLight directionalLights[8];
-
-    int pointLightCount;
-    PointLight pointLights[8];
-};
-
-struct SceneData
-{
-    ConstantBuffer<SceneDataCB> data;
-}
-ParameterBlock<SceneData> sceneData;
-
-struct Material
-{
-    ConstantBuffer<float3> diffuseColor;
-    ConstantBuffer<float>  shininess;
-    ConstantBuffer<float>  specular;
-}
-ParameterBlock<Material> material;
-
-float3 evalDirectionalLight(DirectionalLight light, Material material, float3 fragNormal, float3 cameraDir)
-{
-    float3 lightDir = normalize(light.position.xyz);
+    float3 lightDir = normalize(light.position);
     float3 halfwayDir = normalize(lightDir + cameraDir);
 
     float diffuseFactor = max(dot(fragNormal, lightDir), 0.0f);
     float specularFactor = pow(max(dot(fragNormal, halfwayDir), 0.0f), material.shininess) * material.specular;
 
-    float3 diffuse  = material.diffuseColor.rgb * light.color.rgb * diffuseFactor;
-    float3 specular =                             light.color.rgb * specularFactor;
+    float3 diffuse  = material.diffuseColor.rgb * light.color * diffuseFactor;
+    float3 specular =                             light.color * specularFactor;
 
-    return diffuseFactor + specular;
+    return diffuse + specular;
 }
 
-float3 evalPointLight(PointLight light, Material material, float3 fragPos, float3 fragNormal, float3 cameraDir)
+float3 evalPointLight(PointLight light, float3 fragPos, float3 fragNormal, float3 cameraDir)
 {
-    float3 lightDir = normalize(light.position.xyz - fragPos);
+    float3 lightDir = normalize(light.position - fragPos);
     float3 halfwayDir = normalize(lightDir + cameraDir);
 
     float diffuseFactor = max(dot(fragNormal, lightDir), 0.0f);
     float specularFactor = pow(max(dot(fragNormal, halfwayDir), 0.0f), material.shininess) * material.specular;
 
-    float3 diffuse  = material.diffuseColor.rgb * light.color.rgb * diffuseFactor;
-    float3 specular =                             light.color.rgb * specularFactor;
+    float3 diffuse  = material.diffuseColor.rgb * light.color * diffuseFactor;
+    float3 specular =                             light.color * specularFactor;
 
     return diffuse + specular;
 }
@@ -118,13 +78,13 @@ float3 evalPointLight(PointLight light, Material material, float3 fragPos, float
 float4 fragmentMain(VSOutput input) : SV_TARGET
 {
     float3 fragNormal = normalize(input.normal);
-    float3 cameraDir = normalize(sceneData.data.cameraPosition.xyz - input.pos);
+    float3 cameraDir = normalize(sceneData.cameraPosition - input.pos);
 
-    float3 finalColor = sceneData.data.ambientLightColor.rgb;
-    for (int i = 0; i < sceneData.data.directionalLightCount; ++i)
-        finalColor += evalDirectionalLight(sceneData.data.directionalLights[i], material, fragNormal, cameraDir);
-    for (int i = 0; i < sceneData.data.pointLightCount; ++i)
-        finalColor += evalPointLight(sceneData.data.pointLights[i], material, input.pos, fragNormal, cameraDir);
+    float3 finalColor = sceneData.ambientLightColor;
+    for (int i = 0; i < sceneData.directionalLightCount; ++i)
+        finalColor += evalDirectionalLight(sceneData.directionalLights[i], fragNormal, cameraDir);
+    for (int i = 0; i < sceneData.pointLightCount; ++i)
+        finalColor += evalPointLight(sceneData.pointLights[i], input.pos, fragNormal, cameraDir);
 
     return saturate(float4(finalColor, 1.0f));
 }

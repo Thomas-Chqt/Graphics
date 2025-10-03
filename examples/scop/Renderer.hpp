@@ -14,6 +14,7 @@
 #include "AssetLoader.hpp"
 #include "Material.hpp"
 #include "Light.hpp"
+#include "shaders/scop_shader.h"
 
 #include <Graphics/Surface.hpp>
 #include <Graphics/Device.hpp>
@@ -30,7 +31,7 @@
 #include <deque>
 
 #define cfd m_frameDatas.at(m_frameIdx)
-#define cfsd (*cfd.sceneDataBuffer->content<SceneData>())
+#define cfsd (*cfd.sceneDataBuffer->content<shader::SceneData>())
 
 namespace scop
 {
@@ -54,21 +55,6 @@ const gfx::ParameterBlock::Layout sceneDataBpLayout = {
         gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead }
     }
 };
-
-struct SceneData
-{
-    alignas(16) glm::vec3 cameraPosition;
-    alignas(16) glm::vec3 ambientLightColor;
-
-    alignas(16) int directionalLightCount;
-    std::array<GPUDirectionalLight, 8> directionalLights;
-
-    alignas(16) int pointLightCount;
-    std::array<GPUPointLight, 8> pointLights;
-};
-
-static_assert(offsetof(SceneData, ambientLightColor) == 16);
-static_assert(offsetof(SceneData, directionalLightCount) == 32);
 
 class Renderer
 {

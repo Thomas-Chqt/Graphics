@@ -24,6 +24,143 @@
 #include <string>
 #include <vector>
 
+// Compile shader for a specific target
+// Note: The session must be kept alive as the linkedProgram has internal dependencies on it
+static SlangResult compileForTarget(
+    slang::IGlobalSession* globalSession,
+    SlangCompileTarget targetFormat,
+    const std::vector<std::filesystem::path>& sources,
+    slang::ISession** outSession,
+    slang::IComponentType** outLinkedProgram)
+{
+    const char* targetName = (targetFormat == SLANG_METAL_LIB) ? "metal" : "spirv";
+    const char* targetDefine = (targetFormat == SLANG_METAL_LIB) ? "__METAL__" : "__SPIRV__";
+
+    slang::TargetDesc targetDesc = {
+        .format = targetFormat,
+        .profile = globalSession->findProfile(targetName)
+    };
+
+    // Preprocessor define for the target
+    slang::PreprocessorMacroDesc macroDesc = {
+        .name = targetDefine,
+        .value = "1"
+    };
+
+    std::vector<slang::CompilerOptionEntry> options = {
+        slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::GenerateWholeProgram,
+            .value = slang::CompilerOptionValue { .intValue0 = 1, }
+        }
+    };
+
+    // Add Vulkan-specific options for SPIRV target
+    if (targetFormat == SLANG_SPIRV)
+    {
+        options.push_back(slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::VulkanInvertY,
+            .value = slang::CompilerOptionValue { .intValue0 = 1, }
+        });
+        options.push_back(slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::EmitSpirvDirectly,
+            .value = slang::CompilerOptionValue { .intValue0 = 1, }
+        });
+    }
+
+    slang::SessionDesc sessionDesc = {
+        .targets = &targetDesc,
+        .targetCount = 1,
+        .preprocessorMacros = &macroDesc,
+        .preprocessorMacroCount = 1,
+        .compilerOptionEntries = options.data(),
+        .compilerOptionEntryCount = static_cast<uint32_t>(options.size())
+    };
+
+    SlangResult sessionResult = globalSession->createSession(sessionDesc, outSession);
+    if (SLANG_FAILED(sessionResult))
+    {
+        std::println(stderr, "createSession ({}): error", targetName);
+        return sessionResult;
+    }
+
+    std::vector<Slang::ComPtr<slang::IModule>> modules;
+    std::vector<Slang::ComPtr<slang::IEntryPoint>> entryPoints;
+
+    for (const auto& inputFilePath : sources)
+    {
+        std::ifstream inputFileStream(inputFilePath);
+        std::stringstream inputFileContent;
+        inputFileContent << inputFileStream.rdbuf();
+        Slang::ComPtr<slang::IModule> module;
+        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+        module = (*outSession)->loadModuleFromSourceString(
+            (const char*)inputFilePath.filename().replace_extension().c_str(),
+            (const char*)inputFilePath.c_str(),
+            (const char*)inputFileContent.str().c_str(),
+            diagnosticsBlob.writeRef()
+        );
+        if (diagnosticsBlob != nullptr)
+        {
+            std::println(stderr, "{}", (const char*)diagnosticsBlob->getBufferPointer());
+            return SLANG_FAIL;
+        }
+        if (module == nullptr)
+        {
+            std::println(stderr, "loadModule ({}): error", targetName);
+            return SLANG_FAIL;
+        }
+        modules.push_back(module);
+        for(int i = 0; i < module->getDefinedEntryPointCount(); i++)
+        {
+            Slang::ComPtr<slang::IEntryPoint> entryPoint;
+            SlangResult entryPointResult = module->getDefinedEntryPoint(i, entryPoint.writeRef());
+            if (SLANG_FAILED(entryPointResult))
+            {
+                std::println(stderr, "getDefinedEntryPoint ({}): error", targetName);
+                return entryPointResult;
+            }
+            entryPoints.push_back(entryPoint);
+        }
+    }
+
+    std::vector<slang::IComponentType*> components;
+    components.append_range(modules | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; }));
+    components.append_range(entryPoints | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; }));
+
+    Slang::ComPtr<slang::IComponentType> composedProgram;
+    {
+        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+        SlangResult composeResult = (*outSession)->createCompositeComponentType(components.data(), components.size(), composedProgram.writeRef(), diagnosticsBlob.writeRef());
+        if (diagnosticsBlob != nullptr)
+        {
+            std::println(stderr, "{}", (const char*)diagnosticsBlob->getBufferPointer());
+            return composeResult;
+        }
+        if (SLANG_FAILED(composeResult))
+        {
+            std::println(stderr, "createCompositeComponentType ({}): error", targetName);
+            return composeResult;
+        }
+    }
+
+    {
+        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+        SlangResult linkResult = composedProgram->link(outLinkedProgram, diagnosticsBlob.writeRef());
+        if (diagnosticsBlob != nullptr)
+        {
+            std::println(stderr, "{}", (const char*)diagnosticsBlob->getBufferPointer());
+            return linkResult;
+        }
+        if (SLANG_FAILED(linkResult))
+        {
+            std::println(stderr, "link ({}): error", targetName);
+            return linkResult;
+        }
+    }
+
+    return SLANG_OK;
+}
+
 int main(int argc, char* argv[])
 {
     argparse::ArgumentParser program("gfxsc", "0.1");
@@ -81,101 +218,6 @@ int main(int argc, char* argv[])
     if (SLANG_FAILED(createGlobalSession(globalSession.writeRef())))
         throw std::runtime_error("createGlobalSession: fail");
 
-    std::array<slang::TargetDesc, 2> targetDescs = {
-        slang::TargetDesc{
-            .format = SLANG_METAL_LIB,
-            .profile = globalSession->findProfile("metal")
-        },
-        slang::TargetDesc{
-            .format = SLANG_SPIRV,
-            .profile = globalSession->findProfile("spirv")
-        }
-    };
-
-    std::array<slang::CompilerOptionEntry, 3> options = {
-        slang::CompilerOptionEntry{
-            .name = slang::CompilerOptionName::VulkanInvertY,
-            .value = slang::CompilerOptionValue { .intValue0 = 1, }
-        },
-        slang::CompilerOptionEntry{
-            .name = slang::CompilerOptionName::EmitSpirvDirectly,
-            .value = slang::CompilerOptionValue { .intValue0 = 1, }
-        },
-        slang::CompilerOptionEntry{
-            .name = slang::CompilerOptionName::GenerateWholeProgram,
-            .value = slang::CompilerOptionValue { .intValue0 = 1, }
-        }
-    };
-
-    slang::SessionDesc sessionDesc = {
-        .targets = targetDescs.data(),
-        .targetCount = static_cast<SlangInt>(targetDescs.size()),
-        .compilerOptionEntries = options.data(),
-        .compilerOptionEntryCount = static_cast<uint32_t>(options.size())
-    };
-
-    Slang::ComPtr<slang::ISession> session;
-    {
-        SlangResult result = globalSession->createSession(sessionDesc, session.writeRef()) ;
-        if (SLANG_FAILED(result))
-            return std::println(stderr, "createSession: error"), 1;
-    }
-
-    std::vector<Slang::ComPtr<slang::IModule>> modules;
-    std::vector<Slang::ComPtr<slang::IEntryPoint>> entryPoints;
-
-    for (auto inputFilePath : program.get<std::vector<std::filesystem::path>>("sources"))
-    {
-        std::ifstream inputFileStream(inputFilePath);
-        std::stringstream inputFileContent;
-        inputFileContent << inputFileStream.rdbuf();
-        Slang::ComPtr<slang::IModule> module;
-        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-        module = session->loadModuleFromSourceString(
-            (const char*)inputFilePath.filename().replace_extension().c_str(),
-            (const char*)inputFilePath.c_str(),
-            (const char*)inputFileContent.str().c_str(),
-            diagnosticsBlob.writeRef()
-        );
-        if (diagnosticsBlob != nullptr)
-            return std::println(stderr, "{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
-        if (module == nullptr)
-            return std::println(stderr, "loadModule: error"), 1;
-        modules.push_back(module);
-        for(int i = 0; i < module->getDefinedEntryPointCount(); i++)
-        {
-            Slang::ComPtr<slang::IEntryPoint> entryPoint;
-            SlangResult result = module->getDefinedEntryPoint(i, entryPoint.writeRef());
-            if (SLANG_FAILED(result))
-                return std::println(stderr, "getDefinedEntryPoint: error"), 1;
-            entryPoints.push_back(entryPoint);
-        }
-    }
-
-    std::vector<slang::IComponentType*> components;
-    components.append_range(modules | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; }));
-    components.append_range(entryPoints | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; }));
-
-    Slang::ComPtr<slang::IComponentType> composedProgram;
-    {
-        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-        SlangResult result = session->createCompositeComponentType(components.data(), components.size(), composedProgram.writeRef(), diagnosticsBlob.writeRef());
-        if (diagnosticsBlob != nullptr)
-            return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
-        if (SLANG_FAILED(result))
-            return std::println(stderr, "createCompositeComponentType: error"), 1;
-    }
-
-    Slang::ComPtr<slang::IComponentType> linkedProgram;
-    {
-        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-        SlangResult result = composedProgram->link(linkedProgram.writeRef(), diagnosticsBlob.writeRef());
-        if (diagnosticsBlob != nullptr)
-            return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
-        if (SLANG_FAILED(result))
-            return std::println(stderr, "link: error"), 1;
-    }
-
     std::ofstream outFile(program.get<std::filesystem::path>("--output"), std::ios::binary);
     if (!outFile)
         return std::println(stderr, "faild to open output file"), 1;
@@ -189,10 +231,22 @@ int main(int argc, char* argv[])
 
     if ((program.get<uint32_t>("--targets") & 1 << SLANG_METAL_LIB) != 0)
     {
+        Slang::ComPtr<slang::ISession> metalSession;
+        Slang::ComPtr<slang::IComponentType> metalProgram;
+        SlangResult result = compileForTarget(
+            globalSession,
+            SLANG_METAL_LIB,
+            program.get<std::vector<std::filesystem::path>>("sources"),
+            metalSession.writeRef(),
+            metalProgram.writeRef()
+        );
+        if (SLANG_FAILED(result))
+            return 1;
+
         {
             Slang::ComPtr<slang::IBlob> targetCode;
             Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-            if (SLANG_FAILED(linkedProgram->getTargetCode(0, targetCode.writeRef(), diagnosticsBlob.writeRef())))
+            if (SLANG_FAILED(metalProgram->getTargetCode(0, targetCode.writeRef(), diagnosticsBlob.writeRef())))
                 return std::println(stderr, "getTargetCode (metal): error: {}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
             if (diagnosticsBlob != nullptr)
                 return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
@@ -209,7 +263,7 @@ int main(int argc, char* argv[])
         {
             Slang::ComPtr<slang::IBlob> targetReflection;
             Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-            slang::ProgramLayout* metalLayout = linkedProgram->getLayout(0, diagnosticsBlob.writeRef());
+            slang::ProgramLayout* metalLayout = metalProgram->getLayout(0, diagnosticsBlob.writeRef());
             if (diagnosticsBlob != nullptr)
                 return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
             if (metalLayout == nullptr)
@@ -217,23 +271,30 @@ int main(int argc, char* argv[])
             SlangResult result = metalLayout->toJson(targetReflection.writeRef());
             if (targetReflection == nullptr || SLANG_FAILED(result))
                 return std::println(stderr, "toJson (metal): error"), 1;
-
-            std::ofstream reflectionFile("metalRefelection.json");
-            if (!reflectionFile)
-                return std::println(stderr, "faild to open file"), 1;
-            reflectionFile.write(reinterpret_cast<const char*>(targetReflection->getBufferPointer()), targetReflection->getBufferSize());
         }
     }
 
     if ((program.get<uint32_t>("--targets") & 1 << SLANG_SPIRV) != 0)
     {
+        Slang::ComPtr<slang::ISession> spirvSession;
+        Slang::ComPtr<slang::IComponentType> spirvProgram;
+        SlangResult result = compileForTarget(
+            globalSession,
+            SLANG_SPIRV,
+            program.get<std::vector<std::filesystem::path>>("sources"),
+            spirvSession.writeRef(),
+            spirvProgram.writeRef()
+        );
+        if (SLANG_FAILED(result))
+            return 1;
+
         {
             Slang::ComPtr<slang::IBlob> targetCode;
             Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-            SlangResult result = linkedProgram->getTargetCode(1, targetCode.writeRef(), diagnosticsBlob.writeRef());
+            SlangResult codeResult = spirvProgram->getTargetCode(0, targetCode.writeRef(), diagnosticsBlob.writeRef());
             if (diagnosticsBlob != nullptr)
                 return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
-            if (SLANG_FAILED(result))
+            if (SLANG_FAILED(codeResult))
                 return std::println(stderr, "getTargetCode (spirv): error"), 1;
 
             std::string targetName = "spirv";
@@ -248,7 +309,7 @@ int main(int argc, char* argv[])
         {
             Slang::ComPtr<slang::IBlob> targetReflection;
             Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-            slang::ProgramLayout* spirvLayout = linkedProgram->getLayout(1, diagnosticsBlob.writeRef());
+            slang::ProgramLayout* spirvLayout = spirvProgram->getLayout(0, diagnosticsBlob.writeRef());
             if (diagnosticsBlob != nullptr)
                 return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
             if (spirvLayout == nullptr)
@@ -256,11 +317,6 @@ int main(int argc, char* argv[])
             SlangResult result = spirvLayout->toJson(targetReflection.writeRef());
             if (targetReflection == nullptr || SLANG_FAILED(result))
                 return std::println(stderr, "toJson (spirv): error"), 1;
-
-            std::ofstream reflectionFile("spirvRefelection.json");
-            if (!reflectionFile)
-                return std::println(stderr, "faild to open file"), 1;
-            reflectionFile.write(reinterpret_cast<const char*>(targetReflection->getBufferPointer()), targetReflection->getBufferSize());
         }
     }
 }

@@ -11,6 +11,9 @@
 #include "AssetLoader.hpp"
 #include "Graphics/Sampler.hpp"
 #include "Renderer.hpp"
+#include "shaders/scop_shader.h"
+#include "shaders/scop_shader.h"
+#undef float3
 
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlock.hpp>
@@ -34,22 +37,12 @@ const gfx::ParameterBlock::Layout flatColorMaterialBpLayout = {
 
 FlatColorMaterial::FlatColorMaterial(const gfx::Device& device)
 {
-    m_color = device.newBuffer(gfx::Buffer::Descriptor{
-        .size = sizeof(glm::vec3),
+    m_material = device.newBuffer(gfx::Buffer::Descriptor{
+        .size = sizeof(shader::FlatColorMaterial),
         .usages = gfx::BufferUsage::uniformBuffer,
-        .storageMode = gfx::ResourceStorageMode::hostVisible});
+        .storageMode = gfx::ResourceStorageMode::hostVisible}) ;
     setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-
-    m_shininess = device.newBuffer(gfx::Buffer::Descriptor{
-        .size = sizeof(float),
-        .usages = gfx::BufferUsage::uniformBuffer,
-        .storageMode = gfx::ResourceStorageMode::hostVisible});
     setShininess(32.0f);
-
-    m_specular = device.newBuffer(gfx::Buffer::Descriptor{
-        .size = sizeof(float),
-        .usages = gfx::BufferUsage::uniformBuffer,
-        .storageMode = gfx::ResourceStorageMode::hostVisible});
     setSpecular(0.5f);
 }
 
@@ -83,9 +76,7 @@ void FlatColorMaterial::createPipeline(gfx::Device& device)
 std::unique_ptr<gfx::ParameterBlock> FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
 {
     ext::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(flatColorMaterialBpLayout);
-    parameterBlock->setBinding(0, m_color);
-    parameterBlock->setBinding(1, m_shininess);
-    parameterBlock->setBinding(2, m_specular);
+    parameterBlock->setBinding(0, m_material);
     return parameterBlock;
 }
 

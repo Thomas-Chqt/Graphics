@@ -15,19 +15,6 @@
 namespace scop
 {
 
-struct GPUDirectionalLight
-{
-    alignas(16) glm::vec3 position;
-    alignas(16) glm::vec3 color;
-};
-
-struct GPUPointLight
-{
-    alignas(16) glm::vec3 position;
-    alignas(16) glm::vec3 color;
-    alignas(16) float attenuation;
-};
-
 class Light
 {
 public:

@@ -10,8 +10,11 @@
 #ifndef MATERIAL_HPP
 #define MATERIAL_HPP
 
-#include "Graphics/Sampler.hpp"
-#include "Graphics/Texture.hpp"
+#include "shaders/scop_shader.h"
+#undef float3
+
+#include <Graphics/Sampler.hpp>
+#include <Graphics/Texture.hpp>
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlock.hpp>
 #include <Graphics/ParameterBlockPool.hpp>
@@ -65,23 +68,21 @@ public:
 
     std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
 
-    inline glm::vec3 color() const { return *m_color->content<glm::vec3>(); }
-    inline void setColor(const glm::vec3& c) { *m_color->content<glm::vec3>() = c; }
+    inline glm::vec3 color() const { return m_material->content<shader::FlatColorMaterial>()->diffuseColor; }
+    inline void setColor(const glm::vec3& c) { m_material->content<shader::FlatColorMaterial>()->diffuseColor = c; }
 
-    inline float shininess() const { return *m_shininess->content<float>(); }
-    inline void setShininess(float s) { *m_shininess->content<float>() = s; }
+    inline float shininess() const { return m_material->content<shader::FlatColorMaterial>()->shininess; }
+    inline void setShininess(float s) { m_material->content<shader::FlatColorMaterial>()->shininess = s; }
 
-    inline float specular() const { return *m_specular->content<float>(); }
-    inline void setSpecular(float s) { *m_specular->content<float>() = s; }
+    inline float specular() const { return m_material->content<shader::FlatColorMaterial>()->specular; }
+    inline void setSpecular(float s) { m_material->content<shader::FlatColorMaterial>()->specular = s; }
 
     ~FlatColorMaterial() override = default;
 
 private:
     inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
 
-    ext::shared_ptr<gfx::Buffer> m_color;
-    ext::shared_ptr<gfx::Buffer> m_shininess;
-    ext::shared_ptr<gfx::Buffer> m_specular;
+    ext::shared_ptr<gfx::Buffer> m_material;
 
 public:
     FlatColorMaterial& operator=(const FlatColorMaterial&) = delete;
