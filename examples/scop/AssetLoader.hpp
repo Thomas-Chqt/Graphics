@@ -17,6 +17,7 @@
 #include <Graphics/CommandBuffer.hpp>
 
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <ranges>
@@ -60,6 +61,7 @@ public:
     AssetLoader(gfx::Device*);
 
     Mesh builtinCube(const std::function<std::shared_ptr<Material>()>& mkMaterial);
+    Mesh loadMesh(const std::filesystem::path&, const std::function<std::shared_ptr<Material>()>& mkMaterial);
 
     std::shared_ptr<gfx::Texture> loadTexture(const std::filesystem::path&, gfx::CommandBuffer* = nullptr);
     std::shared_ptr<gfx::Texture> loadCubeTexture(const std::filesystem::path& right,

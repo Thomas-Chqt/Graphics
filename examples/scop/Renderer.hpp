@@ -14,7 +14,6 @@
 #include "AssetLoader.hpp"
 #include "Material.hpp"
 #include "Light.hpp"
-#include "shaders/scop_shader.h"
 
 #include <Graphics/Surface.hpp>
 #include <Graphics/Device.hpp>
@@ -31,7 +30,7 @@
 #include <deque>
 
 #define cfd m_frameDatas.at(m_frameIdx)
-#define cfsd (*cfd.sceneDataBuffer->content<shader::SceneData>())
+#define cfsd (*cfd.sceneDataBuffer->content<SceneData>())
 
 namespace scop
 {
@@ -77,6 +76,18 @@ public:
     ~Renderer();
 
 private:
+    struct SceneData
+    {
+        glm::vec3 cameraPosition; float _padding0;
+        glm::vec3 ambientLightColor; float _padding1;
+
+        int directionalLightCount;
+        std::array<GPUDirectionalLight, 8> directionalLights;
+
+        int pointLightCount;
+        std::array<GPUPointLight, 8> pointLights;
+    };
+
     struct FrameData
     {
         std::unique_ptr<gfx::CommandBufferPool> commandBufferPool;

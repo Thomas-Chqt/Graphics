@@ -14,7 +14,7 @@ if (GFX_BUILD_VULKAN)
 endif()
 list(JOIN SHADER_TARGET_LIST "," SHADER_TARGETS)
 
-set(FLAT_COLOR_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/flat_color.slang")
+set(FLAT_COLOR_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/common_vertex.slang" "${CMAKE_CURRENT_SOURCE_DIR}/flat_color.slang")
 set(FLAT_COLOR_SLIB ${CMAKE_CURRENT_BINARY_DIR}/flat_color.slib)
 add_custom_command(
     OUTPUT ${FLAT_COLOR_SLIB}

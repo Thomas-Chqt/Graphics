@@ -9,16 +9,13 @@
 
 #include "Material.hpp"
 #include "AssetLoader.hpp"
-#include "Graphics/Sampler.hpp"
 #include "Renderer.hpp"
-#include "shaders/scop_shader.h"
-#include "shaders/scop_shader.h"
-#undef float3
 
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlock.hpp>
 #include <Graphics/ParameterBlockPool.hpp>
 #include <Graphics/Device.hpp>
+#include <Graphics/Sampler.hpp>
 
 #include <memory>
 
@@ -30,15 +27,13 @@ namespace scop
 const gfx::ParameterBlock::Layout flatColorMaterialBpLayout = {
     .bindings = {
         gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead },
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead },
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead },
     }
 };
 
 FlatColorMaterial::FlatColorMaterial(const gfx::Device& device)
 {
     m_material = device.newBuffer(gfx::Buffer::Descriptor{
-        .size = sizeof(shader::FlatColorMaterial),
+        .size = sizeof(GPUMaterial),
         .usages = gfx::BufferUsage::uniformBuffer,
         .storageMode = gfx::ResourceStorageMode::hostVisible}) ;
     setColor(glm::vec3(1.0f, 1.0f, 1.0f));
@@ -104,7 +99,10 @@ void TexturedCubeMaterial::createPipeline(gfx::Device& device)
             .attributes = {
                 gfx::VertexAttribute{
                     .format = gfx::VertexAttributeFormat::float3,
-                    .offset = offsetof(scop::Vertex, pos)}
+                    .offset = offsetof(Vertex, pos)},
+                gfx::VertexAttribute{
+                    .format = gfx::VertexAttributeFormat::float3,
+                    .offset = offsetof(Vertex, normal)}
             }},
         .vertexShader = &shaderLib->getFunction("vertexMain"),
         .fragmentShader = &shaderLib->getFunction("fragmentMain"),

@@ -20,9 +20,9 @@ VulkanDrawable::VulkanDrawable(const VulkanDevice* device)
     
 #if !defined (NDEBUG)
     auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
-        .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(m_imageAvailableSemaphore)))
+        .setObjectHandle(ext::bit_cast<uint64_t>(static_cast<VkSemaphore>(m_imageAvailableSemaphore)))
         .setObjectType(vk::ObjectType::eSemaphore)
-        .setPObjectName("drawable semaphore");
+        .setPObjectName("imageAvailableSemaphore");
     m_device->vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
 #endif
 }

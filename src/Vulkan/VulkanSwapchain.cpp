@@ -61,9 +61,9 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         .setPresentMode(toVkPresentModeKHR(desc.presentMode))
         .setClipped(vk::True);
     
-    static ext::map<const vk::SurfaceKHR*, vk::SwapchainKHR*> s_oldSwapchains;
+    static ext::map<const vk::SurfaceKHR*, vk::SwapchainKHR> s_oldSwapchains;
     if (s_oldSwapchains.contains(&vkSurface))
-        swapchainCreateInfo.setOldSwapchain(*s_oldSwapchains[&vkSurface]);
+        swapchainCreateInfo.setOldSwapchain(s_oldSwapchains[&vkSurface]);
 
     auto vkSwapchain = m_device->vkDevice().createSwapchainKHR(swapchainCreateInfo);
     auto vkSwapchainPtr = ext::shared_ptr<vk::SwapchainKHR>(
@@ -74,7 +74,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         }
     );
     m_vkSwapchain = vkSwapchainPtr.get();
-    s_oldSwapchains[&vkSurface] = m_vkSwapchain;
+    s_oldSwapchains[&vkSurface] = *m_vkSwapchain;
 
     Texture::Descriptor swapchainImageTexDesc = {
         .width = extent.width, .height = extent.height,

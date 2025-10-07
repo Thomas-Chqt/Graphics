@@ -32,6 +32,11 @@ namespace scop
 Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surface)
     : m_device(device), m_window(window), m_surface(surface)
 {
+    glfwSetWindowUserPointer(m_window, this);
+    glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){
+        static_cast<Renderer*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
+    });
+
     for (auto& frameData : m_frameDatas)
     {
         frameData.commandBufferPool = m_device->newCommandBufferPool();
@@ -47,7 +52,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
         assert(frameData.vpMatrix);
 
         frameData.sceneDataBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(shader::SceneData),
+            .size = sizeof(SceneData),
             .usages = gfx::BufferUsage::uniformBuffer,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
     }
@@ -73,19 +78,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
 
 void Renderer::beginFrame(const Camera& camera)
 {
-    if (cfd.lastCommandBuffer != nullptr)
-    {
-        m_device->waitCommandBuffer(cfd.lastCommandBuffer);
-        cfd.lastCommandBuffer = nullptr;
-        cfd.renderables.clear();
-        cfd.availableModelMatrixBuffers.append_range(cfd.usedModelMatrixBuffers);
-        cfd.usedModelMatrixBuffers.clear();
-    }
-
-    if (m_swapchain == nullptr)
-    {
-        m_device->waitIdle();
-
+    if (m_swapchain == nullptr) {
         int width = 0, height = 0;
         ::glfwGetFramebufferSize(m_window, &width, &height);
         gfx::Swapchain::Descriptor swapchainDescriptor = {
@@ -101,17 +94,25 @@ void Renderer::beginFrame(const Camera& camera)
         assert(m_swapchain);
 
         gfx::Texture::Descriptor depthTextureDescriptor = {
-            .width = (uint32_t)width, .height = (uint32_t)height, .pixelFormat = gfx::PixelFormat::Depth32Float, .usages = gfx::TextureUsage::depthStencilAttachment, .storageMode = gfx::ResourceStorageMode::deviceLocal};
+            .width = (uint32_t)width, .height = (uint32_t)height,
+            .pixelFormat = gfx::PixelFormat::Depth32Float,
+            .usages = gfx::TextureUsage::depthStencilAttachment,
+            .storageMode = gfx::ResourceStorageMode::deviceLocal
+        };
         for (auto& frameData : m_frameDatas)
             frameData.depthTexture = m_device->newTexture(depthTextureDescriptor);
+        m_device->waitIdle();
     }
 
-    int width = 0, height = 0;
-    ::glfwGetFramebufferSize(m_window, &width, &height);
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
-    *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * camera.viewMatrix();
+    if (cfd.lastCommandBuffer != nullptr) {
+        m_device->waitCommandBuffer(cfd.lastCommandBuffer);
+        cfd.lastCommandBuffer = nullptr;
+    }
 
-    cfsd = shader::SceneData{
+    cfd.renderables.clear();
+    cfd.availableModelMatrixBuffers.append_range(cfd.usedModelMatrixBuffers);
+    cfd.usedModelMatrixBuffers.clear();
+    cfsd = SceneData{
         .cameraPosition = -camera.viewMatrix()[3],
         .ambientLightColor = glm::vec3(0),
         .directionalLightCount = 0,
@@ -119,6 +120,12 @@ void Renderer::beginFrame(const Camera& camera)
         .pointLightCount = 0,
         .pointLights = {}
     };
+
+    int width = 0, height = 0;
+    ::glfwGetFramebufferSize(m_window, &width, &height);
+    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
+    *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * camera.viewMatrix();
+
 
     m_device->imguiNewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -160,7 +167,7 @@ void Renderer::addLight(const Light& light, const glm::vec3& position)
     {
         if (static_cast<size_t>(cfsd.directionalLightCount) >= sizeof(cfsd.directionalLights) / sizeof(cfsd.directionalLights[0]))
             return;
-        cfsd.directionalLights[cfsd.directionalLightCount++] = shader::DirectionalLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+        cfsd.directionalLights[cfsd.directionalLightCount++] = GPUDirectionalLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
             .position = position,
             .color = directionalLight->color()
         };
@@ -169,7 +176,7 @@ void Renderer::addLight(const Light& light, const glm::vec3& position)
     {
         if (static_cast<size_t>(cfsd.pointLightCount) >= sizeof(cfsd.pointLights) / sizeof(cfsd.pointLights[0]))
             return;
-        cfsd.pointLights[cfsd.pointLightCount++] = shader::PointLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+        cfsd.pointLights[cfsd.pointLightCount++] = GPUPointLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
             .position = position,
             .color = pointLight->color()
         };
@@ -183,8 +190,9 @@ void Renderer::endFrame()
     std::unique_ptr<gfx::CommandBuffer> commandBuffer = cfd.commandBufferPool->get();
 
     std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
-    if (drawable == nullptr)
-    {
+    if (drawable == nullptr) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
         m_swapchain = nullptr;
         return;
     }
@@ -242,17 +250,13 @@ void Renderer::endFrame()
         commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
     }
     commandBuffer->endRenderPass();
-
     commandBuffer->presentDrawable(drawable);
 
     cfd.lastCommandBuffer = commandBuffer.get();
     m_device->submitCommandBuffers(ext::move(commandBuffer));
 
-    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-    }
+    ImGui::UpdatePlatformWindows();
+    ImGui::RenderPlatformWindowsDefault();
 
     m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
 }

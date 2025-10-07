@@ -49,6 +49,12 @@ public:
     DirectionalLight& operator=(DirectionalLight&&) = default;
 };
 
+struct alignas(16) GPUDirectionalLight
+{
+    glm::vec3 position; float _padding0;
+    glm::vec3 color; float _padding1;
+};
+
 class PointLight : public Light
 {
 public:
@@ -68,6 +74,13 @@ public:
 public:
     PointLight& operator=(const PointLight&) = default;
     PointLight& operator=(PointLight&&) = default;
+};
+
+struct alignas(16) GPUPointLight
+{
+    glm::vec3 position; float _padding0;
+    glm::vec3 color; float _padding1;
+    float attenuation;
 };
 
 } // namespace scop

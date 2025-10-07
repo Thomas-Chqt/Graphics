@@ -20,7 +20,6 @@
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
-#include <bit>
 #include <imgui.h>
 #include <glm/glm.hpp>
 
@@ -30,6 +29,7 @@
 #include <cstdio>
 #include <exception>
 #include <numbers>
+#include <bit>
 
 #if __XCODE__
     #include <unistd.h>
@@ -71,7 +71,7 @@ int main()
         (void)res;
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
+        GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "scop", nullptr, nullptr);
         assert(window);
 
         std::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
@@ -115,11 +115,15 @@ int main()
         auto mcCubeMaterial = std::make_shared<scop::TexturedCubeMaterial>(*device);
         mcCubeMaterial->setTexture(assetLoader.loadCubeTexture(RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_top.jpg", RESOURCE_DIR"/mc_grass_bottom.jpg", RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_side.jpg"));
 
-        scop::Mesh cube = assetLoader.builtinCube([&]() { return flatColorWhiteMaterial; });
+        scop::Mesh cube = assetLoader.builtinCube([&]() { return mcCubeMaterial; });
+        glm::vec3 cubePosition = {0.5, 0, 0};
+        glm::vec3 cubeRotation = {0, 0, 0};
+        float cubeScale = 1.0f;
 
-        glm::vec3 cubePos = {0, 0, 0};
-        glm::vec3 cubeRot = {0, 0, 0};
-        glm::vec3 cubeSca = {1, 1, 1};
+        scop::Mesh chess = assetLoader.loadMesh(RESOURCE_DIR"/chess_set/chess_set.gltf", [&]() { return flatColorWhiteMaterial; });
+        glm::vec3 chessPosition = {-0.5, 0, 0};
+        glm::vec3 chessRotation = {0.5, 0, 0};
+        float chessScale = 1.5f;
 
         glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f;
 
@@ -131,21 +135,35 @@ int main()
 
             renderer.beginFrame(camera);
 
-            auto modelMatrix = glm::mat4x4(1.0f);
+            auto cubeModelMatrix = glm::mat4x4(1.0f);
+            auto chessModelMatrix = glm::mat4x4(1.0f);
 
-            ImGui::Begin("mc_cube");
+            ImGui::Begin("settings");
             {
                 {
-                    ImGui::DragFloat3("position", ext::bit_cast<float*>(&cubePos), 0.01, -5.0, 5.0);
-                    modelMatrix = glm::translate(modelMatrix, cubePos);
+                    ImGui::DragFloat3("cube position", ext::bit_cast<float*>(&cubePosition), 0.01, -5.0, 5.0);
+                    cubeModelMatrix = glm::translate(cubeModelMatrix, cubePosition);
 
-                    ImGui::DragFloat3("rotation", ext::bit_cast<float*>(&cubeRot), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-                    modelMatrix = glm::rotate(modelMatrix, cubeRot.x, glm::vec3(1, 0, 0));
-                    modelMatrix = glm::rotate(modelMatrix, cubeRot.y, glm::vec3(0, 1, 0));
-                    modelMatrix = glm::rotate(modelMatrix, cubeRot.z, glm::vec3(0, 0, 1));
+                    ImGui::DragFloat3("cube rotation", ext::bit_cast<float*>(&cubeRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+                    cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.x, glm::vec3(1, 0, 0));
+                    cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.y, glm::vec3(0, 1, 0));
+                    cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.z, glm::vec3(0, 0, 1));
 
-                    ImGui::DragFloat3("scale", ext::bit_cast<float*>(&cubeSca), 0.01f, -2, 2);
-                    modelMatrix = glm::scale(modelMatrix, cubeSca);
+                    ImGui::DragFloat("cube scale", ext::bit_cast<float*>(&cubeScale), 0.01f, 0.01f, 10);
+                    cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f) * cubeScale);
+                }
+                
+                {
+                    ImGui::DragFloat3("chess position", ext::bit_cast<float*>(&chessPosition), 0.01, -5.0, 5.0);
+                    chessModelMatrix = glm::translate(chessModelMatrix, chessPosition);
+
+                    ImGui::DragFloat3("chess rotation", ext::bit_cast<float*>(&chessRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+                    chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.x, glm::vec3(1, 0, 0));
+                    chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.y, glm::vec3(0, 1, 0));
+                    chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.z, glm::vec3(0, 0, 1));
+
+                    ImGui::DragFloat("chess scale", ext::bit_cast<float*>(&chessScale), 0.01f, 0.01f, 10);
+                    chessModelMatrix = glm::scale(chessModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f) * chessScale);
                 }
 
                 ImGui::Spacing();
@@ -183,7 +201,8 @@ int main()
             }
             ImGui::End();
             
-            renderer.renderMesh(cube, modelMatrix);
+            renderer.renderMesh(cube, cubeModelMatrix);
+            renderer.renderMesh(chess, chessModelMatrix);
 
             renderer.addLight(pointLight,  pointLightPos);
 

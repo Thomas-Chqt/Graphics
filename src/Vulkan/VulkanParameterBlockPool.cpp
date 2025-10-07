@@ -20,13 +20,13 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
     : m_device(device)
 {
     ext::array<vk::DescriptorPoolSize, 3> poolSizes = {
-        vk::DescriptorPoolSize{.type=vk::DescriptorType::eUniformBuffer, .descriptorCount=10},
+        vk::DescriptorPoolSize{.type=vk::DescriptorType::eUniformBuffer, .descriptorCount=1000},
         vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampledImage, .descriptorCount=10},
         vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampler, .descriptorCount=10}
     };
 
     auto descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo{}
-        .setMaxSets(10)
+        .setMaxSets(1000)
         .setPoolSizes(poolSizes);
 
     m_descriptorPool = ext::shared_ptr<vk::DescriptorPool>(

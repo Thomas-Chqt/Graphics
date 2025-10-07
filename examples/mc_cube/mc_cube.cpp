@@ -369,18 +369,15 @@ public:
                 m_swapchain = m_device->newSwapchain(swapchainDescriptor);
                 assert(m_swapchain);
 
-                m_device->waitIdle();
-
-                for (auto i = 0; i < maxFrameInFlight; i++) {
-                    gfx::Texture::Descriptor depthTextureDescriptor = {
-                        .width = (uint32_t)width, .height = (uint32_t)height,
-                        .pixelFormat = gfx::PixelFormat::Depth32Float,
-                        .usages = gfx::TextureUsage::depthStencilAttachment,
-                        .storageMode = gfx::ResourceStorageMode::deviceLocal
-                    };
-
+                gfx::Texture::Descriptor depthTextureDescriptor = {
+                    .width = (uint32_t)width, .height = (uint32_t)height,
+                    .pixelFormat = gfx::PixelFormat::Depth32Float,
+                    .usages = gfx::TextureUsage::depthStencilAttachment,
+                    .storageMode = gfx::ResourceStorageMode::deviceLocal
+                };
+                for (auto i = 0; i < maxFrameInFlight; i++)
                     m_depthTexture.at(i) = m_device->newTexture(depthTextureDescriptor);
-                }
+                m_device->waitIdle();
             }
 
             if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
@@ -434,6 +431,8 @@ public:
 
             ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
             if (drawable == nullptr) {
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
                 m_swapchain = nullptr;
                 continue;
             }
@@ -472,11 +471,8 @@ public:
             m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
             m_device->submitCommandBuffers(ext::move(commandBuffer));
 
-            if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-            {
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-            }
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
 
             m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }

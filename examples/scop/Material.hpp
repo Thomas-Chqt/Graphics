@@ -10,9 +10,6 @@
 #ifndef MATERIAL_HPP
 #define MATERIAL_HPP
 
-#include "shaders/scop_shader.h"
-#undef float3
-
 #include <Graphics/Sampler.hpp>
 #include <Graphics/Texture.hpp>
 #include <Graphics/GraphicsPipeline.hpp>
@@ -53,6 +50,13 @@ protected:
 
 class FlatColorMaterial : public Material
 {
+private:
+    struct GPUMaterial
+    {
+        glm::vec3 diffuseColor; float _padding;
+        float shininess;
+        float specular;
+    };
 public:
     FlatColorMaterial() = delete;
     FlatColorMaterial(const FlatColorMaterial&) = delete;
@@ -68,14 +72,14 @@ public:
 
     std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
 
-    inline glm::vec3 color() const { return m_material->content<shader::FlatColorMaterial>()->diffuseColor; }
-    inline void setColor(const glm::vec3& c) { m_material->content<shader::FlatColorMaterial>()->diffuseColor = c; }
+    inline glm::vec3 color() const { return m_material->content<GPUMaterial>()->diffuseColor; }
+    inline void setColor(const glm::vec3& c) { m_material->content<GPUMaterial>()->diffuseColor = c; }
 
-    inline float shininess() const { return m_material->content<shader::FlatColorMaterial>()->shininess; }
-    inline void setShininess(float s) { m_material->content<shader::FlatColorMaterial>()->shininess = s; }
+    inline float shininess() const { return m_material->content<GPUMaterial>()->shininess; }
+    inline void setShininess(float s) { m_material->content<GPUMaterial>()->shininess = s; }
 
-    inline float specular() const { return m_material->content<shader::FlatColorMaterial>()->specular; }
-    inline void setSpecular(float s) { m_material->content<shader::FlatColorMaterial>()->specular = s; }
+    inline float specular() const { return m_material->content<GPUMaterial>()->specular; }
+    inline void setSpecular(float s) { m_material->content<GPUMaterial>()->specular = s; }
 
     ~FlatColorMaterial() override = default;
 
@@ -124,6 +128,39 @@ public:
     TexturedCubeMaterial& operator=(const TexturedCubeMaterial&) = delete;
     TexturedCubeMaterial& operator=(TexturedCubeMaterial&&) = delete;
 };
+
+/*
+class TexturedMaterial : public Material
+{
+public:
+    TexturedMaterial() = delete;
+    TexturedMaterial(const TexturedMaterial&) = delete;
+    TexturedMaterial(TexturedMaterial&&) = delete;
+
+    TexturedMaterial(const gfx::Device& device);
+
+    static void createPipeline(gfx::Device& device);
+    inline static std::shared_ptr<gfx::GraphicsPipeline> getPipeline() { return s_graphicsPipeline; }
+    inline static void destroyPipeline() { s_graphicsPipeline.reset(); }
+
+    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return s_graphicsPipeline; }
+
+    std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
+
+    ~TexturedMaterial() override = default;
+
+private:
+    inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+
+    ext::shared_ptr<gfx::Sampler> m_sampler;
+    ext::shared_ptr<gfx::Texture> m_diffuseTexture;
+    ext::shared_ptr<gfx::Buffer> m_materialData;
+
+public:
+    TexturedMaterial& operator=(const TexturedMaterial&) = delete;
+    TexturedMaterial& operator=(TexturedMaterial&&) = delete;
+};
+*/
 
 } // namespace scop
 

@@ -62,6 +62,35 @@ FetchContent_Declare(stb_image
 FetchContent_MakeAvailable(stb_image)
 set_target_properties(stb_image PROPERTIES FOLDER "dependencies")
 
+FetchContent_Declare(assimp
+    GIT_REPOSITORY    https://github.com/assimp/assimp.git
+    GIT_TAG           v5.4.1
+    GIT_SHALLOW       1
+    GIT_PROGRESS      TRUE
+    FIND_PACKAGE_ARGS
+)
+set(ASSIMP_BUILD_TESTS                    OFF)
+set(ASSIMP_INSTALL                        OFF)
+set(ASSIMP_NO_EXPORT                      ON)
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF)
+set(ASSIMP_BUILD_OBJ_IMPORTER             ON)
+set(ASSIMP_BUILD_FBX_IMPORTER             ON)
+set(ASSIMP_BUILD_GLTF_IMPORTER            ON)
+set(CMAKE_POLICY_DEFAULT_CMP0175 OLD)
+FetchContent_MakeAvailable(assimp)
+unset(CMAKE_POLICY_DEFAULT_CMP0175)
+if(TARGET zlibstatic OR TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
+    set_target_properties(assimp PROPERTIES FOLDER "dependencies/assimp")
+    if(TARGET zlibstatic)
+        set_target_properties(zlibstatic PROPERTIES FOLDER "dependencies/assimp")
+    endif()
+    if(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
+        set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "dependencies/assimp")
+    endif()
+else()
+    set_target_properties(assimp PROPERTIES FOLDER "dependencies")
+endif()
+
 add_subdirectory(shaders)
 
 add_executable(scop)
@@ -97,5 +126,5 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
 endif()
 target_compile_definitions(scop PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 
-target_link_libraries(scop PRIVATE Graphics glfw glm::glm imgui stb_image)
+target_link_libraries(scop PRIVATE Graphics glfw glm::glm imgui stb_image assimp)
 add_dependencies(scop flat_color_shader textured_cube_shader)

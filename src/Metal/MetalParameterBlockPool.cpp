@@ -19,7 +19,7 @@ namespace gfx
 MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device)
     : m_device(device)
 {
-    Buffer::Descriptor buffDesc = { .size = 1024, .storageMode = ResourceStorageMode::hostVisible };
+    Buffer::Descriptor buffDesc = { .size = 10240, .storageMode = ResourceStorageMode::hostVisible };
     m_argumentBuffer = ext::dynamic_pointer_cast<MetalBuffer>((ext::shared_ptr<Buffer>)m_device->newBuffer(buffDesc));
 }
 

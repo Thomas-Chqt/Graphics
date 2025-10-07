@@ -30,6 +30,7 @@ static SlangResult compileForTarget(
     slang::IGlobalSession* globalSession,
     SlangCompileTarget targetFormat,
     const std::vector<std::filesystem::path>& sources,
+    const std::vector<std::filesystem::path>& includePaths,
     slang::ISession** outSession,
     slang::IComponentType** outLinkedProgram)
 {
@@ -67,9 +68,20 @@ static SlangResult compileForTarget(
         });
     }
 
+    // Convert include paths to C-style strings
+    std::vector<std::string> includePathStrings;
+    std::vector<const char*> includePathCStrs;
+    for (const auto& path : includePaths)
+    {
+        includePathStrings.push_back(path.string());
+        includePathCStrs.push_back(includePathStrings.back().c_str());
+    }
+
     slang::SessionDesc sessionDesc = {
         .targets = &targetDesc,
         .targetCount = 1,
+        .searchPaths = includePathCStrs.empty() ? nullptr : includePathCStrs.data(),
+        .searchPathCount = static_cast<SlangInt>(includePathCStrs.size()),
         .preprocessorMacros = &macroDesc,
         .preprocessorMacroCount = 1,
         .compilerOptionEntries = options.data(),
@@ -192,6 +204,18 @@ int main(int argc, char* argv[])
         })
         .required();
 
+    program.add_argument("-I")
+        .action([&](const std::string& s) -> std::filesystem::path {
+            auto path = std::filesystem::path(s);
+            if (!std::filesystem::exists(path))
+                throw std::runtime_error("include directory does not exist");
+            if (!std::filesystem::is_directory(path))
+                throw std::runtime_error("include path must be a directory");
+            return path;
+        })
+        .append()
+        .help("include directories for shader imports");
+
     program.add_argument("sources")
         .action([&](const std::string& s) -> std::filesystem::path {
             auto path = std::filesystem::path(s);
@@ -218,6 +242,13 @@ int main(int argc, char* argv[])
     if (SLANG_FAILED(createGlobalSession(globalSession.writeRef())))
         throw std::runtime_error("createGlobalSession: fail");
 
+    std::vector<std::filesystem::path> includePaths;
+    try {
+        includePaths = program.get<std::vector<std::filesystem::path>>("-I");
+    } catch (...) {
+        // No include paths specified, use empty vector
+    }
+
     std::ofstream outFile(program.get<std::filesystem::path>("--output"), std::ios::binary);
     if (!outFile)
         return std::println(stderr, "faild to open output file"), 1;
@@ -237,6 +268,7 @@ int main(int argc, char* argv[])
             globalSession,
             SLANG_METAL_LIB,
             program.get<std::vector<std::filesystem::path>>("sources"),
+            includePaths,
             metalSession.writeRef(),
             metalProgram.writeRef()
         );
@@ -282,6 +314,7 @@ int main(int argc, char* argv[])
             globalSession,
             SLANG_SPIRV,
             program.get<std::vector<std::filesystem::path>>("sources"),
+            includePaths,
             spirvSession.writeRef(),
             spirvProgram.writeRef()
         );

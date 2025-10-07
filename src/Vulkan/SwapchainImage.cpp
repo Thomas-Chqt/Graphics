@@ -21,9 +21,9 @@ SwapchainImage::SwapchainImage(const VulkanDevice* device, vk::Image&& image, co
 
 #if !defined (NDEBUG)
     auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
-        .setObjectHandle(reinterpret_cast<uint64_t>(static_cast<VkSemaphore>(m_imagePresentableSemaphore)))
+        .setObjectHandle(ext::bit_cast<uint64_t>(static_cast<VkSemaphore>(m_imagePresentableSemaphore)))
         .setObjectType(vk::ObjectType::eSemaphore)
-        .setPObjectName("swapchain image semaphore");
+        .setPObjectName("imagePresentableSemaphore");
     m_device->vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
 #endif
 }
