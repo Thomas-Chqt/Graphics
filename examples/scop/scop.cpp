@@ -141,7 +141,7 @@ int main()
             ImGui::Begin("settings");
             {
                 {
-                    ImGui::DragFloat3("cube position", ext::bit_cast<float*>(&cubePosition), 0.01, -5.0, 5.0);
+                    ImGui::DragFloat3("cube position", ext::bit_cast<float*>(&cubePosition), 0.01f, -5.0f, 5.0f);
                     cubeModelMatrix = glm::translate(cubeModelMatrix, cubePosition);
 
                     ImGui::DragFloat3("cube rotation", ext::bit_cast<float*>(&cubeRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
@@ -152,9 +152,9 @@ int main()
                     ImGui::DragFloat("cube scale", ext::bit_cast<float*>(&cubeScale), 0.01f, 0.01f, 10);
                     cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f) * cubeScale);
                 }
-                
+
                 {
-                    ImGui::DragFloat3("chess position", ext::bit_cast<float*>(&chessPosition), 0.01, -5.0, 5.0);
+                    ImGui::DragFloat3("chess position", ext::bit_cast<float*>(&chessPosition), 0.01f, -5.0f, 5.0f);
                     chessModelMatrix = glm::translate(chessModelMatrix, chessPosition);
 
                     ImGui::DragFloat3("chess rotation", ext::bit_cast<float*>(&chessRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
@@ -181,7 +181,7 @@ int main()
                     ImGui::SliderFloat("specular", &specular, 0, 1.0f);
                     flatColorWhiteMaterial->setSpecular(specular);
                 }
-                
+
                 ImGui::Spacing();
 
                 {
@@ -189,7 +189,7 @@ int main()
                     ImGui::ColorEdit3("light color", ext::bit_cast<float*>(&lightColor));
                     pointLight.setColor(lightColor);
 
-                    ImGui::DragFloat3("light position", ext::bit_cast<float*>(&pointLightPos), 0.01, -5.0, 5.0);
+                    ImGui::DragFloat3("light position", ext::bit_cast<float*>(&pointLightPos), 0.01f, -5.0f, 5.0f);
                 }
 
                 ImGui::Spacing();
@@ -200,7 +200,7 @@ int main()
                 }
             }
             ImGui::End();
-            
+
             renderer.renderMesh(cube, cubeModelMatrix);
             renderer.renderMesh(chess, chessModelMatrix);
 
@@ -218,5 +218,6 @@ int main()
     catch (const std::exception& e)
     {
         std::println(stderr, "{}", e.what());
+        return 1;
     }
 }

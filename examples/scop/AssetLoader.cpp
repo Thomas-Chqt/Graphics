@@ -191,7 +191,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, const std::functio
 
         dest.append_range(subMeshes);
     };
-    
+
     Mesh mesh = {
         .name = scene->mRootNode->mName.C_Str(),
         .subMeshes = std::span(scene->mRootNode->mMeshes, scene->mRootNode->mNumMeshes) | std::views::transform([&](uint32_t i) -> SubMesh {
@@ -221,7 +221,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
     }
     int width = 0;
     int height = 0;
-    UniqueStbiUc bytes = UniqueStbiUc(stbi_load(path.c_str(), &width, &height, nullptr, STBI_rgb_alpha), stbi_image_free);
+    UniqueStbiUc bytes = UniqueStbiUc(stbi_load(path.string().c_str(), &width, &height, nullptr, STBI_rgb_alpha), stbi_image_free);
 
     std::shared_ptr<gfx::Texture> texture = m_device->newTexture(gfx::Texture::Descriptor{
         .type = gfx::TextureType::texture2d,
@@ -272,7 +272,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
     int height = 0;
     std::map<std::filesystem::path, UniqueStbiUc> bytes;
 
-    UniqueStbiUc img(stbi_load(right.c_str(), &width, &height, nullptr, STBI_rgb_alpha), stbi_image_free);
+    UniqueStbiUc img(stbi_load(right.string().c_str(), &width, &height, nullptr, STBI_rgb_alpha), stbi_image_free);
     if (!img)
         throw std::runtime_error("failed to load cube face: " + right.string());
     bytes.emplace(right, std::move(img));
@@ -281,12 +281,12 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
         if (bytes.contains(path))
             continue;
         int w = 0, h = 0;
-        UniqueStbiUc img(stbi_load(path.c_str(), &w, &h, nullptr, STBI_rgb_alpha), stbi_image_free);
-        if (!img)
+        UniqueStbiUc img2(stbi_load(path.string().c_str(), &w, &h, nullptr, STBI_rgb_alpha), stbi_image_free);
+        if (!img2)
             throw std::runtime_error("failed to load cube face: " + path.string());
         if (w != width || h != height)
             throw std::runtime_error("all images of a cube must have the same size");
-        bytes.emplace(path, std::move(img));
+        bytes.emplace(path, std::move(img2));
     }
 
     std::shared_ptr<gfx::Texture> texture = m_device->newTexture(gfx::Texture::Descriptor{

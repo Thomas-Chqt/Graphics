@@ -68,10 +68,21 @@ static SlangResult compileForTarget(
         });
     }
 
+    // Automatically add source file directories to include paths (like slangc does)
+    std::vector<std::filesystem::path> allIncludePaths = includePaths;
+    for (const auto& sourcePath : sources)
+    {
+        auto parentPath = sourcePath.parent_path();
+        if (!parentPath.empty() && std::find(allIncludePaths.begin(), allIncludePaths.end(), parentPath) == allIncludePaths.end())
+        {
+            allIncludePaths.push_back(parentPath);
+        }
+    }
+
     // Convert include paths to C-style strings
     std::vector<std::string> includePathStrings;
     std::vector<const char*> includePathCStrs;
-    for (const auto& path : includePaths)
+    for (const auto& path : allIncludePaths)
     {
         includePathStrings.push_back(path.string());
         includePathCStrs.push_back(includePathStrings.back().c_str());
@@ -103,12 +114,17 @@ static SlangResult compileForTarget(
         std::ifstream inputFileStream(inputFilePath);
         std::stringstream inputFileContent;
         inputFileContent << inputFileStream.rdbuf();
+
+        std::string moduleName = inputFilePath.filename().replace_extension().string();
+        std::string sourcePathStr = inputFilePath.string();
+        std::string sourceContent = inputFileContent.str();
+
         Slang::ComPtr<slang::IModule> module;
         Slang::ComPtr<slang::IBlob> diagnosticsBlob;
         module = (*outSession)->loadModuleFromSourceString(
-            (const char*)inputFilePath.filename().replace_extension().c_str(),
-            (const char*)inputFilePath.c_str(),
-            (const char*)inputFileContent.str().c_str(),
+            moduleName.c_str(),
+            sourcePathStr.c_str(),
+            sourceContent.c_str(),
             diagnosticsBlob.writeRef()
         );
         if (diagnosticsBlob != nullptr)
@@ -352,4 +368,6 @@ int main(int argc, char* argv[])
                 return std::println(stderr, "toJson (spirv): error"), 1;
         }
     }
+
+    return 0;
 }

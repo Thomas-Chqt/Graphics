@@ -108,7 +108,7 @@ void TexturedCubeMaterial::createPipeline(gfx::Device& device)
         .fragmentShader = &shaderLib->getFunction("fragmentMain"),
         .colorAttachmentPxFormats = {gfx::PixelFormat::BGRA8Unorm},
         .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
-        .parameterBlockLayouts = {vpMatrixBpLayout, modelMatrixBpLayout, texturedCubeMaterialBpLayout}};
+        .parameterBlockLayouts = {vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, texturedCubeMaterialBpLayout}};
 
     s_graphicsPipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
 }
