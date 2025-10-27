@@ -28,7 +28,7 @@ constexpr vk::Format toVkFormat(PixelFormat pxf)
     case PixelFormat::Depth32Float:
         return vk::Format::eD32Sfloat;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -41,7 +41,7 @@ constexpr PixelFormat toPixelFormat(vk::Format fmt)
     case vk::Format::eB8G8R8A8Srgb:
         return PixelFormat::BGRA8Unorm_sRGB;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -53,7 +53,7 @@ constexpr vk::ColorSpaceKHR toVkColorSpaceKHR(PixelFormat pxf)
     case PixelFormat::BGRA8Unorm_sRGB:
         return vk::ColorSpaceKHR::eSrgbNonlinear;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -66,7 +66,7 @@ constexpr vk::PresentModeKHR toVkPresentModeKHR(PresentMode pmd)
     case PresentMode::mailbox:
         return vk::PresentModeKHR::eMailbox;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -79,7 +79,7 @@ constexpr PresentMode toPresentMode(vk::PresentModeKHR pmd)
     case vk::PresentModeKHR::eMailbox:
         return PresentMode::mailbox;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -92,7 +92,7 @@ constexpr vk::AttachmentLoadOp toVkAttachmentLoadOp(LoadAction loa)
     case LoadAction::clear:
         return vk::AttachmentLoadOp::eClear;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -105,14 +105,14 @@ constexpr vk::Format toVkFormat(VertexAttributeFormat fmt)
     case VertexAttributeFormat::float3:
         return vk::Format::eR32G32B32Sfloat;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
 constexpr vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
 {
     vk::BufferUsageFlags vkUsages;
-    
+
     if (use & BufferUsage::vertexBuffer)
         vkUsages |= vk::BufferUsageFlagBits::eVertexBuffer;
     if (use & BufferUsage::indexBuffer)
@@ -138,7 +138,7 @@ constexpr vk::DescriptorType toVkDescriptorType(BindingType tpe)
     case BindingType::sampler:
         return vk::DescriptorType::eSampler;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -154,14 +154,14 @@ constexpr vk::ShaderStageFlags toVkShaderStageFlags(BindingUsages use)
         vkShaderStageFlags |= vk::ShaderStageFlagBits::eFragment;
     if (use & BindingUsage::fragmentWrite)
         vkShaderStageFlags |= vk::ShaderStageFlagBits::eFragment;
-    
+
     return vkShaderStageFlags;
 }
 
 constexpr vk::ImageUsageFlags toVkImageUsageFlags(TextureUsages use)
 {
     vk::ImageUsageFlags vkUsages;
-    
+
     if (use & TextureUsage::shaderRead)
         vkUsages |= vk::ImageUsageFlagBits::eSampled;
     if (use & TextureUsage::colorAttachment)
@@ -177,7 +177,7 @@ constexpr vk::ImageUsageFlags toVkImageUsageFlags(TextureUsages use)
 constexpr vk::ImageAspectFlags toVkImageAspectFlags(TextureUsages use)
 {
     vk::ImageAspectFlags vkImgAspectFlags;
-    
+
     if (use & TextureUsage::shaderRead)
         vkImgAspectFlags |= vk::ImageAspectFlagBits::eColor;
     if (use & TextureUsage::colorAttachment)

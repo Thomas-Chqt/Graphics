@@ -20,11 +20,11 @@ MetalCommandBufferPool::MetalCommandBufferPool(const id<MTLCommandQueue>* queue)
 {
 }
 
-ext::unique_ptr<CommandBuffer> MetalCommandBufferPool::get()
+std::unique_ptr<CommandBuffer> MetalCommandBufferPool::get()
 {
-    ext::unique_ptr<MetalCommandBuffer> commandBuffer;
+    std::unique_ptr<MetalCommandBuffer> commandBuffer;
     if (m_availableCommandBuffers.empty() == false) {
-        commandBuffer = ext::move(m_availableCommandBuffers.front());
+        commandBuffer = std::move(m_availableCommandBuffers.front());
         m_availableCommandBuffers.pop_front();
     }
     else {
@@ -36,13 +36,13 @@ ext::unique_ptr<CommandBuffer> MetalCommandBufferPool::get()
     return commandBuffer;
 }
 
-void MetalCommandBufferPool::release(ext::unique_ptr<CommandBuffer>&& aCommandBuffer) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+void MetalCommandBufferPool::release(std::unique_ptr<CommandBuffer>&& aCommandBuffer) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
     auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer.release());
     assert(commandBuffer);
     *commandBuffer = MetalCommandBuffer(); // destructor will remove the buffer from m_usedCommandBuffers
     assert(m_usedCommandBuffers.contains(commandBuffer) == false);
-    m_availableCommandBuffers.push_back(ext::unique_ptr<MetalCommandBuffer>(commandBuffer));
+    m_availableCommandBuffers.push_back(std::unique_ptr<MetalCommandBuffer>(commandBuffer));
 }
 
 void MetalCommandBufferPool::release(CommandBuffer* aCommandBuffer)

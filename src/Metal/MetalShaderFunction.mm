@@ -18,12 +18,12 @@ MetalShaderFunction::MetalShaderFunction(MetalShaderFunction&& other) noexcept {
     m_mtlFunction = [other.m_mtlFunction retain];
 }}
 
-MetalShaderFunction::MetalShaderFunction(const id<MTLLibrary>& mtlLibrary, const ext::string& name) { @autoreleasepool
+MetalShaderFunction::MetalShaderFunction(const id<MTLLibrary>& mtlLibrary, const std::string& name) { @autoreleasepool
 {
     NSString* functionNameNSString = [[[NSString alloc] initWithCString:name.c_str() encoding:NSUTF8StringEncoding] autorelease];
     m_mtlFunction = [mtlLibrary newFunctionWithName:functionNameNSString];
     if (m_mtlFunction == nil)
-        throw ext::runtime_error("failed to create the MTLFunction");
+        throw std::runtime_error("failed to create the MTLFunction");
 }}
 
 MetalShaderFunction::~MetalShaderFunction() { @autoreleasepool
@@ -35,7 +35,7 @@ MetalShaderFunction& MetalShaderFunction::operator=(MetalShaderFunction&& other)
 {
     if (&other != this)
     {
-        ShaderFunction::operator=(ext::move(other));
+        ShaderFunction::operator=(std::move(other));
         m_mtlFunction = [other.m_mtlFunction retain];
     }
     return *this;

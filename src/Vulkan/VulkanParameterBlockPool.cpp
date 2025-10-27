@@ -19,7 +19,7 @@ namespace gfx
 VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
     : m_device(device)
 {
-    ext::array<vk::DescriptorPoolSize, 3> poolSizes = {
+    std::array<vk::DescriptorPoolSize, 3> poolSizes = {
         vk::DescriptorPoolSize{.type=vk::DescriptorType::eUniformBuffer, .descriptorCount=1000},
         vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampledImage, .descriptorCount=10},
         vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampler, .descriptorCount=10}
@@ -29,7 +29,7 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
         .setMaxSets(1000)
         .setPoolSizes(poolSizes);
 
-    m_descriptorPool = ext::shared_ptr<vk::DescriptorPool>(
+    m_descriptorPool = std::shared_ptr<vk::DescriptorPool>(
         new vk::DescriptorPool(m_device->vkDevice().createDescriptorPool(descriptorPoolCreateInfo)),
         [device=m_device](vk::DescriptorPool* pool){
             device->vkDevice().destroyDescriptorPool(*pool);
@@ -38,9 +38,9 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
     );
 }
 
-ext::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
+std::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
 {
-    auto pBlock = ext::make_unique<VulkanParameterBlock>(m_device, m_descriptorPool, pbLayout, this);
+    auto pBlock = std::make_unique<VulkanParameterBlock>(m_device, m_descriptorPool, pbLayout, this);
     m_usedParameterBlocks.insert(pBlock.get());
     return pBlock;
 }

@@ -1,6 +1,0 @@
-[submodule "dependencies/UtilsCPP"]
-	path = dependencies/UtilsCPP
-	url = https://github.com/Thomas-Chqt/UtilsCPP.git
-[submodule "dependencies/Math"]
-	path = dependencies/Math
-	url = https://github.com/Thomas-Chqt/Math.git

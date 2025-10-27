@@ -17,17 +17,17 @@ VulkanDrawable::VulkanDrawable(const VulkanDevice* device)
     : m_device(device)
 {
     m_imageAvailableSemaphore = m_device->vkDevice().createSemaphore(vk::SemaphoreCreateInfo{});
-    
-#if !defined (NDEBUG)
+
+#if !defined(NDEBUG)
     auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
-        .setObjectHandle(ext::bit_cast<uint64_t>(static_cast<VkSemaphore>(m_imageAvailableSemaphore)))
+        .setObjectHandle(std::bit_cast<uint64_t>(static_cast<VkSemaphore>(m_imageAvailableSemaphore)))
         .setObjectType(vk::ObjectType::eSemaphore)
         .setPObjectName("imageAvailableSemaphore");
     m_device->vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
 #endif
 }
 
-void VulkanDrawable::setSwapchainImage(const ext::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex)
+void VulkanDrawable::setSwapchainImage(const std::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex)
 {
     m_swapchainImage = swapchainImage;
     m_imageIndex = imageIndex;

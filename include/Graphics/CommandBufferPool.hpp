@@ -26,8 +26,8 @@ public:
     CommandBufferPool(const CommandBufferPool&) = delete;
     CommandBufferPool(CommandBufferPool&&) = delete;
 
-    virtual ext::unique_ptr<CommandBuffer> get() = 0;
-    virtual void release(ext::unique_ptr<CommandBuffer>&&) = 0;
+    virtual std::unique_ptr<CommandBuffer> get() = 0;
+    virtual void release(std::unique_ptr<CommandBuffer>&&) = 0;
 
     virtual ~CommandBufferPool() = default;
 

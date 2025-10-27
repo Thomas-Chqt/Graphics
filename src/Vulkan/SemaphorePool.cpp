@@ -14,8 +14,8 @@ namespace gfx
 {
 
 SemaphorePool::SemaphorePool(SemaphorePool&& other) noexcept
-    : m_device(ext::exchange(other.m_device, nullptr)),
-      m_pools(ext::move(other.m_pools))
+    : m_device(std::exchange(other.m_device, nullptr)),
+      m_pools(std::move(other.m_pools))
 {
     other.m_frontPool = &other.m_pools[0];
     other.m_backPool = &other.m_pools[1];
@@ -31,7 +31,7 @@ const vk::Semaphore* SemaphorePool::get()
     assert(m_device);
     vk::Semaphore semaphore;
     if (m_frontPool->free.empty() == false) {
-        semaphore = ext::move(m_frontPool->free.front());
+        semaphore = std::move(m_frontPool->free.front());
         m_frontPool->free.pop_front();
     } else {
         semaphore = m_device->vkDevice().createSemaphore(vk::SemaphoreCreateInfo{});
@@ -41,7 +41,7 @@ const vk::Semaphore* SemaphorePool::get()
 
 void SemaphorePool::swapPools()
 {
-    ext::swap(m_frontPool, m_backPool);
+    std::swap(m_frontPool, m_backPool);
 }
 
 void SemaphorePool::reset()
@@ -79,8 +79,8 @@ SemaphorePool& SemaphorePool::operator=(SemaphorePool&& other) noexcept
     if (this != &other)
     {
         clear();
-        m_device = ext::exchange(other.m_device, nullptr);
-        m_pools = ext::move(other.m_pools);
+        m_device = std::exchange(other.m_device, nullptr);
+        m_pools = std::move(other.m_pools);
 
         other.m_frontPool = &other.m_pools[0];
         other.m_backPool = &other.m_pools[1];

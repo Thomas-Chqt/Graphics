@@ -31,21 +31,21 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
     vk::SurfaceCapabilitiesKHR surfaceCapabilities = vkPhysicalDevice.getSurfaceCapabilitiesKHR(vkSurface);
     // TODO : chech image count
 
-    ext::vector<vk::SurfaceFormatKHR> surfaceFormats = vkPhysicalDevice.getSurfaceFormatsKHR(vkSurface);
-    assert(ext::ranges::any_of(surfaceFormats, [&desc](auto& f){
+    std::vector<vk::SurfaceFormatKHR> surfaceFormats = vkPhysicalDevice.getSurfaceFormatsKHR(vkSurface);
+    assert(std::ranges::any_of(surfaceFormats, [&desc](auto& f){
         return f.format == toVkFormat(desc.pixelFormat) && f.colorSpace == toVkColorSpaceKHR(desc.pixelFormat);
     }));
 
-    ext::vector<vk::PresentModeKHR> surfacePresentModes = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
-    assert(ext::ranges::any_of(surfacePresentModes, [&desc](auto& m){return m == toVkPresentModeKHR(desc.presentMode);}));
+    std::vector<vk::PresentModeKHR> surfacePresentModes = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
+    assert(std::ranges::any_of(surfacePresentModes, [&desc](auto& m){return m == toVkPresentModeKHR(desc.presentMode);}));
 
     vk::Extent2D extent;
-    if (surfaceCapabilities.currentExtent.width != ext::numeric_limits<uint32_t>::max())
+    if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
         extent = surfaceCapabilities.currentExtent;
     else
     {
-        extent.width = ext::clamp(desc.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
-        extent.height = ext::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
+        extent.width = std::clamp(desc.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
+        extent.height = std::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
     }
 
 
@@ -60,14 +60,14 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         .setPreTransform(surfaceCapabilities.currentTransform)
         .setPresentMode(toVkPresentModeKHR(desc.presentMode))
         .setClipped(vk::True);
-    
-    static ext::map<const vk::SurfaceKHR*, vk::SwapchainKHR> s_oldSwapchains;
+
+    static std::map<const vk::SurfaceKHR*, vk::SwapchainKHR> s_oldSwapchains;
     if (s_oldSwapchains.contains(&vkSurface))
         swapchainCreateInfo.setOldSwapchain(s_oldSwapchains[&vkSurface]);
 
     auto vkSwapchain = m_device->vkDevice().createSwapchainKHR(swapchainCreateInfo);
-    auto vkSwapchainPtr = ext::shared_ptr<vk::SwapchainKHR>(
-        new vk::SwapchainKHR(ext::move(vkSwapchain)),
+    auto vkSwapchainPtr = std::shared_ptr<vk::SwapchainKHR>(
+        new vk::SwapchainKHR(std::move(vkSwapchain)),
         [device=m_device](vk::SwapchainKHR* ptr){
             device->vkDevice().destroySwapchainKHR(*ptr);
             delete ptr; // NOLINT
@@ -84,19 +84,19 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
     };
 
     m_swapchainImages = m_device->vkDevice().getSwapchainImagesKHR(*vkSwapchainPtr)
-        | ext::views::transform([&](vk::Image& vkImage) { return ext::make_shared<SwapchainImage>(m_device, ext::move(vkImage), vkSwapchainPtr, swapchainImageTexDesc); })
-        | ext::ranges::to<ext::vector>();
+        | std::views::transform([&](vk::Image& vkImage) { return std::make_shared<SwapchainImage>(m_device, std::move(vkImage), vkSwapchainPtr, swapchainImageTexDesc); })
+        | std::ranges::to<std::vector>();
 
     m_drawables.resize(desc.drawableCount);
     for (auto& drawable : m_drawables)
-        drawable = ext::make_shared<VulkanDrawable>(m_device);
+        drawable = std::make_shared<VulkanDrawable>(m_device);
 }
 
-ext::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
+std::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
 {
-    ext::shared_ptr<VulkanDrawable> drawable = m_drawables.at(m_nextDrawableIndex);
+    std::shared_ptr<VulkanDrawable> drawable = m_drawables.at(m_nextDrawableIndex);
 
-    uint64_t timeout = ext::numeric_limits<uint64_t>::max();
+    uint64_t timeout = std::numeric_limits<uint64_t>::max();
     auto& semaphore = drawable->imageAvailableSemaphore();
 
     auto [result, value] = m_device->vkDevice().acquireNextImageKHR(*m_vkSwapchain, timeout, semaphore, nullptr);

@@ -29,10 +29,10 @@ public:
     VulkanInstance(const Instance::Descriptor&);
 
 #if defined(GFX_GLFW_ENABLED)
-    ext::unique_ptr<Surface> createSurface(GLFWwindow*) override;
+    std::unique_ptr<Surface> createSurface(GLFWwindow*) override;
 #endif
 
-    ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
+    std::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
     const vk::Instance& vkInstance() const { return m_vkInstance; }
 
@@ -40,10 +40,10 @@ public:
 
 private:
     vk::Instance m_vkInstance;
-#if !defined (NDEBUG)
+#if !defined(NDEBUG)
     VkDebugUtilsMessengerEXT m_debugMessenger;
 #endif
-    ext::vector<VulkanPhysicalDevice> m_physicalDevices;
+    std::vector<VulkanPhysicalDevice> m_physicalDevices;
 
 public:
     VulkanInstance& operator=(const VulkanInstance&) = delete;

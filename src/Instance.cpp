@@ -20,25 +20,25 @@
 namespace gfx
 {
 
-ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
+std::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 {
-    if (const char* val = ext::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
+    if (const char* val = std::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
     {
 #if defined(GFX_BUILD_METAL)
-        if (ext::strcmp(val, "METAL") == 0)
+        if (std::strcmp(val, "METAL") == 0)
         {
-            ext::println("using metal");
+            std::println("using metal");
             return newMetalInstance(desc);
         }
 #endif
 #if defined(GFX_BUILD_VULKAN)
-        if (ext::strcmp(val, "VULKAN") == 0)
+        if (std::strcmp(val, "VULKAN") == 0)
         {
-            ext::println("using vulkan");
+            std::println("using vulkan");
             return newVulkanInstance(desc);
         }
 #endif
-        throw ext::runtime_error(ext::format("unknown api name: {}", val));
+        throw std::runtime_error(std::format("unknown api name: {}", val));
     }
     else
     {
@@ -49,21 +49,21 @@ ext::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 #if defined(GFX_BUILD_VULKAN)
         return newVulkanInstance(desc);
 #endif
-        throw ext::runtime_error("unable to define default api");
+        throw std::runtime_error("unable to define default api");
     }
 }
 
 #if defined(GFX_BUILD_METAL)
-ext::unique_ptr<Instance> Instance::newMetalInstance(const Descriptor& desc)
+std::unique_ptr<Instance> Instance::newMetalInstance(const Descriptor& desc)
 {
-    return ext::make_unique<MetalInstance>(desc);
+    return std::make_unique<MetalInstance>(desc);
 }
 #endif
 
 #if defined(GFX_BUILD_VULKAN)
-ext::unique_ptr<Instance> Instance::newVulkanInstance(const Descriptor& desc)
+std::unique_ptr<Instance> Instance::newVulkanInstance(const Descriptor& desc)
 {
-    return ext::make_unique<VulkanInstance>(desc);
+    return std::make_unique<VulkanInstance>(desc);
 }
 #endif
 

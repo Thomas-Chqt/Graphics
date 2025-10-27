@@ -40,13 +40,13 @@ struct BufferSyncRequest : public ResourceSyncRequest { };
 
 struct BufferSyncState : public ResourceSyncState { };
 
-ext::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState&, const ResourceSyncRequest&);
+std::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState&, const ResourceSyncRequest&);
 ResourceSyncState resourceStateAfterSync(const ResourceSyncRequest&);
 
-ext::optional<vk::ImageMemoryBarrier2> syncImage(ImageSyncState&, const ImageSyncRequest&);
+std::optional<vk::ImageMemoryBarrier2> syncImage(ImageSyncState&, const ImageSyncRequest&);
 ImageSyncState imageStateAfterSync(const ImageSyncRequest&);
 
-ext::optional<vk::BufferMemoryBarrier2> syncBuffer(BufferSyncState&, const BufferSyncRequest&);
+std::optional<vk::BufferMemoryBarrier2> syncBuffer(BufferSyncState&, const BufferSyncRequest&);
 BufferSyncState bufferStateAfterSync(const BufferSyncRequest&);
 
 }

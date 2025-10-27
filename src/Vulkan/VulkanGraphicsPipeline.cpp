@@ -33,9 +33,9 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         .setModule(fragFunc->shaderModule())
         .setPName(fragFunc->name().c_str());
 
-    ext::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageCreateInfo, fragShaderStageCreateInfo };
+    std::array<vk::PipelineShaderStageCreateInfo, 2> shaderStages = { vertShaderStageCreateInfo, fragShaderStageCreateInfo };
 
-    ext::array<vk::DynamicState, 2> dynamicStates = {
+    std::array<vk::DynamicState, 2> dynamicStates = {
         vk::DynamicState::eViewport,
         vk::DynamicState::eScissor
     };
@@ -43,8 +43,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
     auto dynamicStateCreateInfo = vk::PipelineDynamicStateCreateInfo{}
         .setDynamicStates(dynamicStates);
 
-    ext::array<vk::VertexInputBindingDescription, 1> vertexInputBindingDescriptions;
-    ext::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
+    std::array<vk::VertexInputBindingDescription, 1> vertexInputBindingDescriptions;
+    std::vector<vk::VertexInputAttributeDescription> vertexInputAttributeDescriptions;
     vk::PipelineVertexInputStateCreateInfo vertexInputStateCreateInfo;
 
     if (auto& vertexLayout =  desc.vertexLayout)
@@ -133,13 +133,13 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
             .setAlphaBlendOp(vk::BlendOp::eAdd);
     }
 
-    ext::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates(desc.colorAttachmentPxFormats.size(), colorBlendAttachmentState);
+    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates(desc.colorAttachmentPxFormats.size(), colorBlendAttachmentState);
 
     auto colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo{}
         .setLogicOpEnable(false)
         .setAttachments(colorBlendAttachmentStates);
 
-    ext::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
+    std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
     if (desc.parameterBlockLayouts.empty() == false)
     {
         descriptorSetLayouts.reserve(desc.parameterBlockLayouts.size());
@@ -151,7 +151,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
 
     m_pipelineLayout = m_device->vkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 
-    ext::vector<vk::Format> colorAttachmentFormats;
+    std::vector<vk::Format> colorAttachmentFormats;
     colorAttachmentFormats.reserve(desc.colorAttachmentPxFormats.size());
     for (PixelFormat pxf : desc.colorAttachmentPxFormats)
         colorAttachmentFormats.push_back(toVkFormat(pxf));
@@ -177,8 +177,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
 
     auto [result, pipelines] = m_device->vkDevice().createGraphicsPipelines(vk::PipelineCache{}, graphicsPipelineCreateInfo);
     if (result != vk::Result::eSuccess)
-        throw ext::runtime_error("failed to create the GraphicsPipeline");
-    m_vkPipeline = ext::move(pipelines.front());
+        throw std::runtime_error("failed to create the GraphicsPipeline");
+    m_vkPipeline = std::move(pipelines.front());
 }
 
 VulkanGraphicsPipeline::~VulkanGraphicsPipeline()

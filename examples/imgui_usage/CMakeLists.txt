@@ -5,6 +5,10 @@
 # Date: 2025/07/27 10:41:59
 # ---------------------------------------------------
 
+include(FetchContent)
+
+## GLFW ##########################################################
+
 FetchContent_Declare(glfw3
     GIT_REPOSITORY    https://github.com/glfw/glfw.git
     GIT_TAG           3.4
@@ -20,13 +24,16 @@ if(NOT GLFW_BUILD_WAYLAND)
     set(GLFW_BUILD_WAYLAND OFF)
 endif()
 FetchContent_MakeAvailable(glfw3)
-
-if (TARGET update_mappings)
-    set_target_properties(glfw PROPERTIES FOLDER "dependencies/GLFW3")
-    set_target_properties(update_mappings PROPERTIES FOLDER "dependencies/GLFW3")
-else()
-    set_target_properties(glfw PROPERTIES FOLDER "dependencies")
+if (glfw3_SOURCE_DIR)
+    if (TARGET update_mappings)
+        set_target_properties(glfw PROPERTIES FOLDER "dependencies/GLFW3")
+        set_target_properties(update_mappings PROPERTIES FOLDER "dependencies/GLFW3")
+    else()
+        set_target_properties(glfw PROPERTIES FOLDER "dependencies")
+    endif()
 endif()
+
+## IMGUI ###############################################################
 
 FetchContent_Declare(imgui
     GIT_REPOSITORY    https://github.com/Thomas-Chqt/imgui.git
@@ -38,8 +45,11 @@ FetchContent_Declare(imgui
 set(IM_BUILD_GLFW ON)
 FetchContent_MakeAvailable(imgui)
 target_link_libraries(imgui PRIVATE glfw)
+if (imgui_SOURCE_DIR)
+    set_target_properties(imgui PROPERTIES FOLDER "dependencies")
+endif()
 
-set_target_properties(imgui PROPERTIES FOLDER "dependencies")
+##################################################################
 
 add_executable(imgui_usage)
 

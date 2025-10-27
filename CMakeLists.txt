@@ -7,28 +7,30 @@
 
 cmake_minimum_required(VERSION 3.22)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 include(FetchContent)
+
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(CMAKE_WARN_DEPRECATED OFF CACHE BOOL "")
+set(FETCHCONTENT_QUIET OFF)
 
 project(Graphics)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 
 if (APPLE)
-    option(GFX_BUILD_METAL "Build the metal backend"              ON)
+    option(GFX_BUILD_METAL "Build the metal backend" ON)
 endif()
-option(GFX_BUILD_VULKAN    "Build the vulkan backend"             ON)
-option(GFX_USE_UTILSCPP    "Use the UtilsCPP library"            OFF)
-option(GFX_USE_MATH        "Use a custom math library"           OFF)
-option(GFX_ENABLE_IMGUI    "Build with imgui capabilities"       OFF)
-option(GFX_ENABLE_GLFW     "Build with glfw capabilities"        OFF)
-option(GFX_BUILD_EXAMPLES  "Build Graphics examples executables" OFF)
-option(GFX_INSTALL         "Enable the install command"           ON)
+option(GFX_BUILD_VULKAN   "Build the vulkan backend"             ON)
+option(GFX_ENABLE_IMGUI   "Build with imgui capabilities"       OFF)
+option(GFX_ENABLE_GLFW    "Build with glfw capabilities"        OFF)
+option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
+option(GFX_INSTALL        "Enable the install command"           ON)
 
 if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
     message(FATAL_ERROR "Not yet implemented")
 endif()
-
-set(FETCHCONTENT_QUIET FALSE)
 
 enable_language(CXX)
 
@@ -61,39 +63,18 @@ if (APPLE AND GFX_BUILD_METAL)
 endif()
 
 if (GFX_BUILD_VULKAN)
-    find_package(Vulkan QUIET)
-    if (NOT Vulkan_FOUND)
-        message(WARNING "Vulkan not found, disabling vulkan backend")
-        set(GFX_BUILD_VULKAN OFF CACHE BOOL "Build the vulkan backend" FORCE)
-    else()
-        message(STATUS "Vulkan found")
-    endif()
+    FetchContent_Declare(Vulkan
+        GIT_REPOSITORY    https://github.com/KhronosGroup/Vulkan-Headers.git
+        GIT_TAG           vulkan-sdk-1.4.321.0
+        GIT_SHALLOW       1
+        GIT_PROGRESS      TRUE
+        FIND_PACKAGE_ARGS
+    )
+    FetchContent_MakeAvailable(Vulkan)
 endif()
 
 if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
     message(FATAL_ERROR "One backend must be build")
-endif()
-
-if (GFX_USE_UTILSCPP)
-    if(NOT TARGET UtilsCPP)
-        find_program(GIT_PATH git REQUIRED)
-        execute_process(COMMAND ${GIT_PATH} submodule update --init dependencies/UtilsCPP WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-        set(UTILSCPP_BUILD_TESTS OFF)
-        set(UTILSCPP_INSTALL ${GFX_INSTALL})
-        add_subdirectory(UtilsCPP)
-        set_target_properties(UtilsCPP PROPERTIES FOLDER "dependencies")
-    endif()
-
-    if (GFX_USE_MATH)
-        if(NOT TARGET Math)
-            find_program(GIT_PATH git REQUIRED)
-            execute_process(COMMAND ${GIT_PATH} submodule update --init dependencies/Math WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-            set(MATH_BUILD_TESTS OFF)
-            set(MATH_INSTALL ${GFX_INSTALL})
-            add_subdirectory(Math)
-            set_target_properties(Math PROPERTIES FOLDER "dependencies")
-        endif()
-    endif()
 endif()
 
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
@@ -119,8 +100,10 @@ if (GFX_BUILD_VULKAN)
         FIND_PACKAGE_ARGS
     )
     FetchContent_MakeAvailable(VulkanMemoryAllocator)
+    target_compile_definitions(VulkanMemoryAllocator PUBLIC "VMA_STATIC_VULKAN_FUNCTIONS=0")
+    target_compile_definitions(VulkanMemoryAllocator PUBLIC "VMA_DYNAMIC_VULKAN_FUNCTIONS=1")
+    target_link_libraries(VulkanMemoryAllocator PRIVATE Vulkan::Headers)
     set_target_properties(VulkanMemoryAllocator PROPERTIES FOLDER "dependencies")
-    target_link_libraries(VulkanMemoryAllocator PRIVATE Vulkan::Vulkan)
 endif()
 
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`
@@ -143,25 +126,27 @@ endif()
 target_sources(Graphics PRIVATE ${GFX_SRC})
 
 if (GFX_BUILD_METAL)
-    file(GLOB_RECURSE METAL_SRC "src/Metal/*.cpp" "src/Metal/*.mm" "src/Metal/*.hpp" "src/Metal/*.h")
+    file(GLOB_RECURSE GFX_METAL_SRC "src/Metal/*.cpp" "src/Metal/*.mm" "src/Metal/*.hpp" "src/Metal/*.h")
     if (NOT GFX_ENABLE_IMGUI)
-        list(REMOVE_ITEM METAL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.mm" "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.h")
-    else()
-        # set_source_files_properties("src/Metal/imgui_impl_metal.mm" PROPERTIES COMPILE_FLAGS -fobjc-arc)
+        list(REMOVE_ITEM GFX_METAL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.mm" "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.h")
     endif()
-    target_sources(Graphics PRIVATE ${METAL_SRC})
+    target_sources(Graphics PRIVATE ${GFX_METAL_SRC})
 endif()
 
 if (GFX_BUILD_VULKAN)
-    file(GLOB_RECURSE VULKAN_SRC "src/Vulkan/*.cpp" "src/Vulkan/*.hpp" "src/Vulkan/*.h")
+    file(GLOB_RECURSE GFX_VULKAN_SRC "src/Vulkan/*.cpp" "src/Vulkan/*.hpp" "src/Vulkan/*.h")
     if (NOT GFX_ENABLE_IMGUI)
-        list(REMOVE_ITEM VULKAN_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.h")
+        list(REMOVE_ITEM GFX_VULKAN_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.h")
     endif()
-    target_sources(Graphics PRIVATE ${VULKAN_SRC})
+    target_sources(Graphics PRIVATE ${GFX_VULKAN_SRC})
 endif()
 
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 target_precompile_headers(Graphics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/pch.hpp")
+
+if (GFX_BUILD_VULKAN AND GFX_ENABLE_IMGUI)
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+endif()
 
 if (GFX_BUILD_METAL)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_METAL")
@@ -169,11 +154,9 @@ endif()
 
 if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_VULKAN")
-    target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_NO_CONSTRUCTORS")
-    target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1")
-    target_compile_definitions(Graphics PUBLIC "VMA_STATIC_VULKAN_FUNCTIONS=0")
-    target_compile_definitions(Graphics PUBLIC "VMA_DYNAMIC_VULKAN_FUNCTIONS=1")
-    target_compile_definitions(Graphics PUBLIC "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
+    target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1")
+    target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_NO_CONSTRUCTORS")
+    target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
 endif()
 
 if (GFX_ENABLE_IMGUI)
@@ -184,20 +167,12 @@ if (GFX_ENABLE_GLFW)
     target_compile_definitions(Graphics PUBLIC "GFX_GLFW_ENABLED")
 endif()
 
-if (GFX_USE_UTILSCPP)
-    target_compile_definitions(Graphics PUBLIC "GFX_USE_UTILSCPP")
-endif()
-
-if (GFX_USE_MATH)
-    target_compile_definitions(Graphics PUBLIC "GFX_USE_MATH")
-endif()
-
 if (GFX_BUILD_METAL)
     target_link_libraries(Graphics PRIVATE ${METAL_FRAMEWORK} ${QUARTZ_CORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK})
 endif()
 
 if (GFX_BUILD_VULKAN)
-    target_link_libraries(Graphics PRIVATE Vulkan::Vulkan VulkanMemoryAllocator)
+    target_link_libraries(Graphics PRIVATE Vulkan::Headers VulkanMemoryAllocator)
 endif()
 
 if (GFX_USE_UTILSCPP)

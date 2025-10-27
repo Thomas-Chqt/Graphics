@@ -19,9 +19,13 @@ VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace
 {
-    ext::vector<const char*> getRequiredExtensions()
+#if !defined(NDEBUG)
+    constexpr auto kValidationLayers = std::to_array({"VK_LAYER_KHRONOS_validation"});
+#endif
+
+    std::vector<const char*> getRequiredExtensions()
     {
-        ext::vector<const char*> extensions;
+        std::vector<const char*> extensions;
 
 #if defined(GFX_GLFW_ENABLED)
         uint32_t glfwExtensionCount = 0;
@@ -30,9 +34,21 @@ namespace
             extensions.insert(extensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount); // NOLINT
 #endif
 
-#if !defined (NDEBUG)
+#if !defined(NDEBUG)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        extensions.push_back("VK_EXT_layer_settings");
+
+        // Check if VK_EXT_layer_settings is available before adding it
+        std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
+        bool layerSettingsAvailable = false;
+        for (const auto& ext : availableExtensions) {
+            if (strcmp(ext.extensionName, "VK_EXT_layer_settings") == 0) {
+                layerSettingsAvailable = true;
+                break;
+            }
+        }
+        if (layerSettingsAvailable) {
+            extensions.push_back("VK_EXT_layer_settings");
+        }
 #endif
 
 #if defined(__APPLE__)
@@ -43,22 +59,20 @@ namespace
     }
 
     template<size_t S>
-    bool hasLayers(const ext::array<const char*, S>& wantedLayers)
+    std::vector<const char*> getAvailableLayers(const std::array<const char*, S>& wantedLayers)
     {
         std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
+        std::vector<const char*> result;
+
         for (const char* wantedLayer : wantedLayers) {
-            bool layerFound = false;
             for (const vk::LayerProperties& availableLayer : availableLayers) {
                 if (strcmp(wantedLayer, availableLayer.layerName) == 0) {
-                    layerFound = true;
+                    result.push_back(wantedLayer);
                     break;
                 }
             }
-
-            if (!layerFound)
-                return false;
         }
-        return true;
+        return result;
     }
 }
 
@@ -67,11 +81,11 @@ namespace gfx
 
 VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
 {
-    VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
-    
+    VULKAN_HPP_DEFAULT_DISPATCHER.init();
+
     uint32_t instanceVersion = vk::enumerateInstanceVersion();
     if (VK_VERSION_MAJOR(instanceVersion) < 1 || VK_VERSION_MINOR(instanceVersion) < 2) {
-        throw ext::runtime_error("instance version is lower than 1.2");
+        throw std::runtime_error("instance version is lower than 1.2");
     }
 
     auto applicationInfo = vk::ApplicationInfo{}
@@ -81,7 +95,7 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         .setEngineVersion(VK_MAKE_VERSION(desc.engineVersion[0], desc.engineVersion[1], desc.engineVersion[2]))
         .setApiVersion(VK_VERSION_MINOR(instanceVersion) >= 3 ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2);
 
-    ext::vector<const char*> extensions = getRequiredExtensions();
+    std::vector<const char*> extensions = getRequiredExtensions();
 
     vk::InstanceCreateFlags flags = {};
 #if defined(__APPLE__)
@@ -93,27 +107,20 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         .setPEnabledExtensionNames(extensions)
         .setFlags(flags);
 
-#if !defined (NDEBUG)
-    constexpr auto layers =  ext::to_array({"VK_LAYER_KHRONOS_validation"});
-    if (hasLayers(layers) == false)
-        throw ext::runtime_error("required layer not present");
-    instanceCreateInfo.setPEnabledLayerNames(layers);
-    
-    auto validateSyncSetting = ext::to_array({vk::True});
+#if !defined(NDEBUG)
+    std::vector<const char*> enabledLayers = getAvailableLayers(kValidationLayers);
+    instanceCreateInfo.setPEnabledLayerNames(enabledLayers);
 
-    const auto layerSettings = ext::to_array<vk::LayerSettingEXT>({
-        vk::LayerSettingEXT{}
-            .setPLayerName("VK_LAYER_KHRONOS_validation")
-            .setPSettingName("validate_sync") // enable syncronization validation
-            .setType(vk::LayerSettingTypeEXT::eBool32)
-            .setValues(validateSyncSetting),
-    });
-
-    auto layerSettingsCreateInfo = vk::LayerSettingsCreateInfoEXT{}
-        .setSettings(layerSettings);
+    // Check if VK_EXT_layer_settings extension is available
+    bool hasLayerSettingsExt = false;
+    for (const char* ext : extensions) {
+        if (strcmp(ext, "VK_EXT_layer_settings") == 0) {
+            hasLayerSettingsExt = true;
+            break;
+        }
+    }
 
     auto debugCreateInfo = vk::DebugUtilsMessengerCreateInfoEXT{}
-        .setPNext(&layerSettingsCreateInfo)
         .setMessageSeverity(
             //vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
             //vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo |
@@ -126,9 +133,25 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
             vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
         )
         .setPfnUserCallback([](vk::DebugUtilsMessageSeverityFlagBitsEXT, vk::DebugUtilsMessageTypeFlagsEXT, const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void*) -> vk::Bool32 {
-            ext::println(stderr, "{}", pCallbackData->pMessage);
+            std::println(stderr, "{}", pCallbackData->pMessage);
             return vk::False;
         });
+
+    // Only use layer settings if the extension is available
+    auto validateSyncSetting = std::to_array({vk::True});
+    const auto layerSettings = std::to_array<vk::LayerSettingEXT>({
+        vk::LayerSettingEXT{}
+            .setPLayerName("VK_LAYER_KHRONOS_validation")
+            .setPSettingName("validate_sync") // enable syncronization validation
+            .setType(vk::LayerSettingTypeEXT::eBool32)
+            .setValues(validateSyncSetting),
+    });
+    auto layerSettingsCreateInfo = vk::LayerSettingsCreateInfoEXT{}
+        .setSettings(layerSettings);
+
+    if (hasLayerSettingsExt) {
+        debugCreateInfo.setPNext(&layerSettingsCreateInfo);
+    }
 
     instanceCreateInfo.setPNext(&debugCreateInfo);
 #endif
@@ -137,23 +160,23 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkInstance);
 
-#if !defined (NDEBUG)
+#if !defined(NDEBUG)
     m_debugMessenger = m_vkInstance.createDebugUtilsMessengerEXT(debugCreateInfo);
 #endif
 
     m_physicalDevices = m_vkInstance.enumeratePhysicalDevices()
-        | ext::views::transform([](auto& d){ return VulkanPhysicalDevice(d); })
-        | ext::ranges::to<ext::vector>();
+        | std::views::transform([](auto& d){ return VulkanPhysicalDevice(d); })
+        | std::ranges::to<std::vector>();
 }
 
 #if defined(GFX_GLFW_ENABLED)
-ext::unique_ptr<Surface> VulkanInstance::createSurface(GLFWwindow* glfwWindow)
+std::unique_ptr<Surface> VulkanInstance::createSurface(GLFWwindow* glfwWindow)
 {
-    return ext::make_unique<VulkanSurface>(m_vkInstance, glfwWindow);
+    return std::make_unique<VulkanSurface>(m_vkInstance, glfwWindow);
 }
 #endif
 
-ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc)
+std::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc)
 {
     VulkanDevice::Descriptor vulkandeviceDescriptor = {
         .deviceDescriptor = &desc,
@@ -170,16 +193,16 @@ ext::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc
     if (desc.queueCaps.present.empty() == false)
         vulkandeviceDescriptor.deviceExtensions.push_back(vk::KHRSwapchainExtensionName);
 
-    auto suitableDevices = m_physicalDevices | ext::views::filter([&](auto d) { return d.isSuitable(vulkandeviceDescriptor); });
+    auto suitableDevices = m_physicalDevices | std::views::filter([&](auto d) { return d.isSuitable(vulkandeviceDescriptor); });
     if (suitableDevices.empty())
-        throw ext::runtime_error("no suitable device found");
+        throw std::runtime_error("no suitable device found");
 
-    return ext::make_unique<VulkanDevice>(this, &suitableDevices.front(), vulkandeviceDescriptor);
+    return std::make_unique<VulkanDevice>(this, &suitableDevices.front(), vulkandeviceDescriptor);
 }
 
 VulkanInstance::~VulkanInstance()
 {
-#if !defined (NDEBUG)
+#if !defined(NDEBUG)
     m_vkInstance.destroyDebugUtilsMessengerEXT(m_debugMessenger);
 #endif
     m_vkInstance.destroy();

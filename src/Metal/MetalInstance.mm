@@ -22,13 +22,13 @@ MetalInstance::MetalInstance(const Instance::Descriptor&)
 }
 
 #if defined(GFX_GLFW_ENABLED)
-ext::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow)
+std::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow)
 {
-    return ext::make_unique<MetalSurface>(glfwWindow);
+    return std::make_unique<MetalSurface>(glfwWindow);
 }
 #endif
 
-ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc)
+std::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc)
 {
     @autoreleasepool
     {
@@ -44,7 +44,7 @@ ext::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc)
         for (NSUInteger i = 0; i < mtlDevices.count; i++)
             m_devices.push_back([[mtlDevices objectAtIndex:i] retain]);
 
-        return ext::make_unique<MetalDevice>(m_devices.front(), desc);
+        return std::make_unique<MetalDevice>(m_devices.front(), desc);
     }
 }
 

@@ -26,7 +26,7 @@ public:
     ParameterBlockPool(const ParameterBlockPool&) = delete;
     ParameterBlockPool(ParameterBlockPool&&) = delete;
 
-    virtual ext::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) = 0;
+    virtual std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) = 0;
 
     virtual ~ParameterBlockPool() = default;
 

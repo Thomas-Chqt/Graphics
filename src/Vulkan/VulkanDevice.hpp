@@ -36,7 +36,7 @@ public:
     struct Descriptor
     {
         const Device::Descriptor* deviceDescriptor;
-        ext::vector<const char*> deviceExtensions;
+        std::vector<const char*> deviceExtensions;
     };
 
 public:
@@ -48,23 +48,23 @@ public:
 
     inline Backend backend() const override { return Backend::vulkan; }
 
-    ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
-    ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const override;
-    ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override; // need non cont to cache descriptorSetLayouts
-    ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
-    ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
-    ext::unique_ptr<CommandBufferPool> newCommandBufferPool() const override;
-    ext::unique_ptr<ParameterBlockPool> newParameterBlockPool() const override;
-    ext::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const override;
+    std::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
+    std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const override;
+    std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override; // need non cont to cache descriptorSetLayouts
+    std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
+    std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
+    std::unique_ptr<CommandBufferPool> newCommandBufferPool() const override;
+    std::unique_ptr<ParameterBlockPool> newParameterBlockPool() const override;
+    std::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const override;
 
 #if defined (GFX_IMGUI_ENABLED)
-    void imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat) const override;
+    void imguiInit(std::vector<PixelFormat> colorAttachmentPxFormats, std::optional<PixelFormat> depthAttachmentPxFormat) const override;
     void imguiNewFrame() const override;
     void imguiShutdown() override;
 #endif
 
-    void submitCommandBuffers(ext::unique_ptr<CommandBuffer>&&) override;
-    void submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffer>>) override;
+    void submitCommandBuffers(std::unique_ptr<CommandBuffer>&&) override;
+    void submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>>) override;
 
     void waitCommandBuffer(const CommandBuffer*) override;
     void waitIdle() override;
@@ -89,8 +89,8 @@ private:
     VmaAllocator m_allocator = VK_NULL_HANDLE;
     vk::Semaphore m_timelineSemaphore;
 
-    ext::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayoutCache;
-    ext::deque<ext::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
+    std::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayoutCache;
+    std::deque<std::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
     uint64_t m_nextSignaledTimeValue = 1;
 
 public:

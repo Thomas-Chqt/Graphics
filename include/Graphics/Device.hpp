@@ -48,23 +48,23 @@ public:
 
     virtual Backend backend() const = 0;
 
-    virtual ext::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
-    virtual ext::unique_ptr<ShaderLib> newShaderLib(const ext::filesystem::path&) const = 0;
-    virtual ext::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) = 0;
-    virtual ext::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
-    virtual ext::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
-    virtual ext::unique_ptr<CommandBufferPool> newCommandBufferPool() const = 0;
-    virtual ext::unique_ptr<ParameterBlockPool> newParameterBlockPool() const = 0;
-    virtual ext::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const = 0;
+    virtual std::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
+    virtual std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const = 0;
+    virtual std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) = 0;
+    virtual std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
+    virtual std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
+    virtual std::unique_ptr<CommandBufferPool> newCommandBufferPool() const = 0;
+    virtual std::unique_ptr<ParameterBlockPool> newParameterBlockPool() const = 0;
+    virtual std::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)
-    virtual void imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat = ext::nullopt) const = 0;
+    virtual void imguiInit(std::vector<PixelFormat> colorAttachmentPxFormats, std::optional<PixelFormat> depthAttachmentPxFormat = std::nullopt) const = 0;
     virtual void imguiNewFrame() const = 0;
     virtual void imguiShutdown() = 0;
 #endif
 
-    virtual void submitCommandBuffers(ext::unique_ptr<CommandBuffer>&&) = 0;
-    virtual void submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffer>>) = 0;
+    virtual void submitCommandBuffers(std::unique_ptr<CommandBuffer>&&) = 0;
+    virtual void submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>>) = 0;
 
     virtual void waitCommandBuffer(const CommandBuffer*) = 0;
     virtual void waitIdle() = 0;

@@ -38,48 +38,48 @@ MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor&) { @au
     m_queue = [device newCommandQueue];
 }}
 
-ext::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
+std::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
 {
-    return ext::make_unique<MetalSwapchain>(*this, desc);
+    return std::make_unique<MetalSwapchain>(*this, desc);
 }
 
-ext::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const ext::filesystem::path& path) const
+std::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const std::filesystem::path& path) const
 {
-    return ext::make_unique<MetalShaderLib>(*this, path);
+    return std::make_unique<MetalShaderLib>(*this, path);
 }
 
-ext::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
+std::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
 {
-    return ext::make_unique<MetalGraphicsPipeline>(*this, desc);
+    return std::make_unique<MetalGraphicsPipeline>(*this, desc);
 }
 
-ext::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) const
+std::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) const
 {
-    return ext::make_unique<MetalBuffer>(*this, desc);
+    return std::make_unique<MetalBuffer>(*this, desc);
 }
 
-ext::unique_ptr<Texture> MetalDevice::newTexture(const Texture::Descriptor& desc) const
+std::unique_ptr<Texture> MetalDevice::newTexture(const Texture::Descriptor& desc) const
 {
-    return ext::make_unique<MetalTexture>(*this, desc);
+    return std::make_unique<MetalTexture>(*this, desc);
 }
 
-ext::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const
+std::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const
 {
-    return ext::make_unique<MetalCommandBufferPool>(&m_queue);
+    return std::make_unique<MetalCommandBufferPool>(&m_queue);
 }
 
-ext::unique_ptr<ParameterBlockPool> MetalDevice::newParameterBlockPool() const
+std::unique_ptr<ParameterBlockPool> MetalDevice::newParameterBlockPool() const
 {
-    return ext::make_unique<MetalParameterBlockPool>(this);
+    return std::make_unique<MetalParameterBlockPool>(this);
 }
 
-ext::unique_ptr<Sampler> MetalDevice::newSampler(const Sampler::Descriptor& desc) const
+std::unique_ptr<Sampler> MetalDevice::newSampler(const Sampler::Descriptor& desc) const
 {
-    return ext::make_unique<MetalSampler>(*this, desc);
+    return std::make_unique<MetalSampler>(*this, desc);
 }
 
 #if defined (GFX_IMGUI_ENABLED)
-void MetalDevice::imguiInit(ext::vector<PixelFormat> colorPixelFomats, ext::optional<PixelFormat> depthPixelFormat) const
+void MetalDevice::imguiInit(std::vector<PixelFormat> colorPixelFomats, std::optional<PixelFormat> depthPixelFormat) const
 {
     ImGui_ImplMetal_Init(this, colorPixelFomats, depthPixelFormat);
 }
@@ -95,31 +95,31 @@ void MetalDevice::imguiShutdown()
 }
 #endif
 
-void MetalDevice::submitCommandBuffers(ext::unique_ptr<CommandBuffer>&& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+void MetalDevice::submitCommandBuffers(std::unique_ptr<CommandBuffer>&& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
     auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer.release());
     assert(commandBuffer);
 
     [commandBuffer->mtlCommandBuffer() commit];
-    m_submittedCommandBuffers.push_back(ext::unique_ptr<MetalCommandBuffer>(commandBuffer));
+    m_submittedCommandBuffers.push_back(std::unique_ptr<MetalCommandBuffer>(commandBuffer));
 }}
 
-void MetalDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffer>> commandBuffers)
+void MetalDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>> commandBuffers)
 {
     for (auto& commandBuffer : commandBuffers)
-        submitCommandBuffers(ext::move(commandBuffer));
+        submitCommandBuffers(std::move(commandBuffer));
 }
 
 void MetalDevice::waitCommandBuffer(const CommandBuffer* aCommandBuffer) { @autoreleasepool
 {
-    auto it = ext::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
+    auto it = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
     if (it != m_submittedCommandBuffers.end())
     {
         [(*it)->mtlCommandBuffer() waitUntilCompleted];
         ++it;
         for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
             if ((*curr)->pool())
-                (*curr)->pool()->release(ext::move(*curr));
+                (*curr)->pool()->release(std::move(*curr));
         }
         m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
     }

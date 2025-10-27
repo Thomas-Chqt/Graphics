@@ -141,28 +141,28 @@ int main()
             ImGui::Begin("settings");
             {
                 {
-                    ImGui::DragFloat3("cube position", ext::bit_cast<float*>(&cubePosition), 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat3("cube position", std::bit_cast<float*>(&cubePosition), 0.01f, -5.0f, 5.0f);
                     cubeModelMatrix = glm::translate(cubeModelMatrix, cubePosition);
 
-                    ImGui::DragFloat3("cube rotation", ext::bit_cast<float*>(&cubeRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+                    ImGui::DragFloat3("cube rotation", std::bit_cast<float*>(&cubeRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
                     cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.x, glm::vec3(1, 0, 0));
                     cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.y, glm::vec3(0, 1, 0));
                     cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.z, glm::vec3(0, 0, 1));
 
-                    ImGui::DragFloat("cube scale", ext::bit_cast<float*>(&cubeScale), 0.01f, 0.01f, 10);
+                    ImGui::DragFloat("cube scale", std::bit_cast<float*>(&cubeScale), 0.01f, 0.01f, 10);
                     cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f) * cubeScale);
                 }
 
                 {
-                    ImGui::DragFloat3("chess position", ext::bit_cast<float*>(&chessPosition), 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat3("chess position", std::bit_cast<float*>(&chessPosition), 0.01f, -5.0f, 5.0f);
                     chessModelMatrix = glm::translate(chessModelMatrix, chessPosition);
 
-                    ImGui::DragFloat3("chess rotation", ext::bit_cast<float*>(&chessRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+                    ImGui::DragFloat3("chess rotation", std::bit_cast<float*>(&chessRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
                     chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.x, glm::vec3(1, 0, 0));
                     chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.y, glm::vec3(0, 1, 0));
                     chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.z, glm::vec3(0, 0, 1));
 
-                    ImGui::DragFloat("chess scale", ext::bit_cast<float*>(&chessScale), 0.01f, 0.01f, 10);
+                    ImGui::DragFloat("chess scale", std::bit_cast<float*>(&chessScale), 0.01f, 0.01f, 10);
                     chessModelMatrix = glm::scale(chessModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f) * chessScale);
                 }
 
@@ -170,7 +170,7 @@ int main()
 
                 {
                     glm::vec3 color = flatColorWhiteMaterial->color();
-                    ImGui::ColorEdit3("color", ext::bit_cast<float*>(&color));
+                    ImGui::ColorEdit3("color", std::bit_cast<float*>(&color));
                     flatColorWhiteMaterial->setColor(color);
 
                     float shininess = flatColorWhiteMaterial->shininess();
@@ -186,16 +186,16 @@ int main()
 
                 {
                     glm::vec3 lightColor = pointLight.color();
-                    ImGui::ColorEdit3("light color", ext::bit_cast<float*>(&lightColor));
+                    ImGui::ColorEdit3("light color", std::bit_cast<float*>(&lightColor));
                     pointLight.setColor(lightColor);
 
-                    ImGui::DragFloat3("light position", ext::bit_cast<float*>(&pointLightPos), 0.01f, -5.0f, 5.0f);
+                    ImGui::DragFloat3("light position", std::bit_cast<float*>(&pointLightPos), 0.01f, -5.0f, 5.0f);
                 }
 
                 ImGui::Spacing();
 
                 {
-                    ImGui::ColorEdit3("ambient light color", ext::bit_cast<float*>(&ambientLightColor));
+                    ImGui::ColorEdit3("ambient light color", std::bit_cast<float*>(&ambientLightColor));
                     renderer.setAmbientLightColor(ambientLightColor);
                 }
             }

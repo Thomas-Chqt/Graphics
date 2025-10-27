@@ -27,7 +27,7 @@ struct QueueCapabilities
     bool graphics;
     bool compute;
     bool transfer;
-    ext::vector<Surface*> present;
+    std::vector<Surface*> present;
 };
 
 }

@@ -22,8 +22,8 @@ public:
     MetalShaderFunction(const MetalShaderFunction&) = delete;
     MetalShaderFunction(MetalShaderFunction&&) noexcept ;
 
-    MetalShaderFunction(const id<MTLLibrary>&, const ext::string&);
-    
+    MetalShaderFunction(const id<MTLLibrary>&, const std::string&);
+
     inline id<MTLFunction> mtlFunction() { return m_mtlFunction; }
 
     ~MetalShaderFunction() override;

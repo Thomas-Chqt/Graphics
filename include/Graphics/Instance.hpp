@@ -34,30 +34,30 @@ class Instance
 public:
     struct Descriptor
     {
-        ext::string appName;
-        ext::array<int, 3> appVersion;
-        ext::string engineName;
-        ext::array<int, 3> engineVersion;
+        std::string appName;
+        std::array<int, 3> appVersion;
+        std::string engineName;
+        std::array<int, 3> engineVersion;
     };
 
 public:
     Instance(const Instance&) = delete;
     Instance(Instance&&) = delete;
 
-    static ext::unique_ptr<Instance> newInstance(const Descriptor&);
+    static std::unique_ptr<Instance> newInstance(const Descriptor&);
 
 #if defined(GFX_BUILD_METAL)
-    static ext::unique_ptr<Instance> newMetalInstance(const Descriptor&);
+    static std::unique_ptr<Instance> newMetalInstance(const Descriptor&);
 #endif
 #if defined(GFX_BUILD_VULKAN)
-    static ext::unique_ptr<Instance> newVulkanInstance(const Descriptor&);
-#endif
-    
-#if defined(GFX_GLFW_ENABLED)
-    virtual ext::unique_ptr<Surface> createSurface(GLFWwindow*) = 0;
+    static std::unique_ptr<Instance> newVulkanInstance(const Descriptor&);
 #endif
 
-    virtual ext::unique_ptr<Device> newDevice(const Device::Descriptor&) = 0;
+#if defined(GFX_GLFW_ENABLED)
+    virtual std::unique_ptr<Surface> createSurface(GLFWwindow*) = 0;
+#endif
+
+    virtual std::unique_ptr<Device> newDevice(const Device::Descriptor&) = 0;
 
     virtual ~Instance() = default;
 

@@ -14,11 +14,11 @@
 namespace gfx
 {
 
-MetalShaderLib::MetalShaderLib(const MetalDevice& device, const ext::filesystem::path& filepath)
+MetalShaderLib::MetalShaderLib(const MetalDevice& device, const std::filesystem::path& filepath)
     : ShaderLib(filepath) { @autoreleasepool
 {
     if (m_metalBytes.empty())
-        throw ext::runtime_error("No Metal shader found in the package");
+        throw std::runtime_error("No Metal shader found in the package");
 
     NSError* error = nil;
     dispatch_data_t data = dispatch_data_create(m_metalBytes.data(), m_metalBytes.size(), dispatch_get_main_queue(), DISPATCH_DATA_DESTRUCTOR_DEFAULT);
@@ -26,10 +26,10 @@ MetalShaderLib::MetalShaderLib(const MetalDevice& device, const ext::filesystem:
     m_mtlLibrary = [device.mtlDevice() newLibraryWithData:data error:&error];
 
     if (error != nil)
-        throw ext::runtime_error([error.localizedDescription cStringUsingEncoding:NSUTF8StringEncoding]);
+        throw std::runtime_error([error.localizedDescription cStringUsingEncoding:NSUTF8StringEncoding]);
 }}
 
-MetalShaderFunction& MetalShaderLib::getFunction(const ext::string& name) { @autoreleasepool
+MetalShaderFunction& MetalShaderLib::getFunction(const std::string& name) { @autoreleasepool
 {
     auto it = m_shaderFunctions.find(name);
     if (it == m_shaderFunctions.end())
@@ -42,7 +42,7 @@ MetalShaderFunction& MetalShaderLib::getFunction(const ext::string& name) { @aut
 }}
 
 MetalShaderLib::~MetalShaderLib() { @autoreleasepool
-{ 
+{
     m_shaderFunctions.clear();
     [m_mtlLibrary release];
 }}

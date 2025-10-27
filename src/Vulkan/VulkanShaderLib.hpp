@@ -26,9 +26,9 @@ public:
     VulkanShaderLib(const VulkanShaderLib&) = delete;
     VulkanShaderLib(VulkanShaderLib&&) = delete;
 
-    VulkanShaderLib(const VulkanDevice&, const ext::filesystem::path&);
+    VulkanShaderLib(const VulkanDevice&, const std::filesystem::path&);
 
-    VulkanShaderFunction& getFunction(const ext::string&) override;
+    VulkanShaderFunction& getFunction(const std::string&) override;
 
     ~VulkanShaderLib();
 
@@ -36,7 +36,7 @@ private:
     const VulkanDevice* m_device;
     vk::ShaderModule m_vkShaderModule;
 
-    ext::map<ext::string, VulkanShaderFunction> m_shaderFunctions;
+    std::map<std::string, VulkanShaderFunction> m_shaderFunctions;
 
 public:
     VulkanShaderLib& operator=(const VulkanShaderLib&) = delete;

@@ -35,7 +35,7 @@ struct VertexLayout
     size_t stride;
     // stepFunction
     // stepRate
-    ext::vector<VertexAttribute> attributes;
+    std::vector<VertexAttribute> attributes;
 };
 
 }

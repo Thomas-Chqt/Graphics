@@ -26,7 +26,7 @@ public:
 
     MetalDrawable(id<CAMetalDrawable>);
 
-    ext::shared_ptr<Texture> texture() const override;
+    std::shared_ptr<Texture> texture() const override;
 
     const id<CAMetalDrawable>& mtlDrawable() const { return m_mtlDrawable; }
 

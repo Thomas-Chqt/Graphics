@@ -30,15 +30,15 @@ namespace gfx
 {
 
 MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
-    : CommandBuffer(ext::move(other)),
-      m_sourcePool(ext::exchange(other.m_sourcePool, nullptr)),
-      m_mtlCommandBuffer(ext::exchange(other.m_mtlCommandBuffer, nil)),
-      m_commandEncoder(ext::exchange(other.m_commandEncoder, nil)),
-      m_usedPipelines(ext::move(other.m_usedPipelines)),
-      m_usedTextures(ext::move(other.m_usedTextures)),
-      m_usedBuffers(ext::move(other.m_usedBuffers)),
-      m_usedSamplers(ext::move(other.m_usedSamplers)),
-      m_usedPBlock(ext::move(other.m_usedPBlock))
+    : CommandBuffer(std::move(other)),
+      m_sourcePool(std::exchange(other.m_sourcePool, nullptr)),
+      m_mtlCommandBuffer(std::exchange(other.m_mtlCommandBuffer, nil)),
+      m_commandEncoder(std::exchange(other.m_commandEncoder, nil)),
+      m_usedPipelines(std::move(other.m_usedPipelines)),
+      m_usedTextures(std::move(other.m_usedTextures)),
+      m_usedBuffers(std::move(other.m_usedBuffers)),
+      m_usedSamplers(std::move(other.m_usedSamplers)),
+      m_usedPBlock(std::move(other.m_usedPBlock))
 {
 }
 
@@ -61,7 +61,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
 
     for (int i = 0; auto& colorAttachment : framebuffer.colorAttachments)
     {
-        auto texture = ext::dynamic_pointer_cast<MetalTexture>(colorAttachment.texture);
+        auto texture = std::dynamic_pointer_cast<MetalTexture>(colorAttachment.texture);
         assert(texture);
         renderPassDescriptor.colorAttachments[i].loadAction = toMTLLoadAction(colorAttachment.loadAction);
         renderPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
@@ -74,7 +74,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
 
     if (auto& depthAttachment = framebuffer.depthAttachment)
     {
-        auto texture = ext::dynamic_pointer_cast<MetalTexture>(depthAttachment->texture);
+        auto texture = std::dynamic_pointer_cast<MetalTexture>(depthAttachment->texture);
         renderPassDescriptor.depthAttachment.loadAction = toMTLLoadAction(depthAttachment->loadAction);
         renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
         renderPassDescriptor.depthAttachment.clearDepth = depthAttachment->clearDepth;
@@ -85,9 +85,9 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
     m_commandEncoder = [[m_mtlCommandBuffer renderCommandEncoderWithDescriptor: renderPassDescriptor] retain];
 }}
 
-void MetalCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
+void MetalCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
 {
-    auto graphicsPipeline = ext::dynamic_pointer_cast<const MetalGraphicsPipeline>(_graphicsPipeline);
+    auto graphicsPipeline = std::dynamic_pointer_cast<const MetalGraphicsPipeline>(_graphicsPipeline);
     assert(graphicsPipeline);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
@@ -100,9 +100,9 @@ void MetalCommandBuffer::usePipeline(const ext::shared_ptr<const GraphicsPipelin
     m_usedPipelines.insert(graphicsPipeline);
 }}
 
-void MetalCommandBuffer::useVertexBuffer(const ext::shared_ptr<Buffer>& aBuffer) { @autoreleasepool
+void MetalCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer) { @autoreleasepool
 {
-    auto buffer = ext::dynamic_pointer_cast<MetalBuffer>(aBuffer);
+    auto buffer = std::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
@@ -113,9 +113,9 @@ void MetalCommandBuffer::useVertexBuffer(const ext::shared_ptr<Buffer>& aBuffer)
     m_usedBuffers.insert(buffer);
 }}
 
-void MetalCommandBuffer::setParameterBlock(const ext::shared_ptr<const ParameterBlock>& aPBlock, uint32_t index) { @autoreleasepool
+void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const ParameterBlock>& aPBlock, uint32_t index) { @autoreleasepool
 {
-    const auto& pBlock = ext::dynamic_pointer_cast<const MetalParameterBlock>(aPBlock);
+    const auto& pBlock = std::dynamic_pointer_cast<const MetalParameterBlock>(aPBlock);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
@@ -126,23 +126,23 @@ void MetalCommandBuffer::setParameterBlock(const ext::shared_ptr<const Parameter
     for (const auto& [texture, binding] : pBlock->encodedTextures())
         [renderCommandEncoder useResource:texture->mtltexture() usage:toMTLResourceUsage(binding.usages) stages:toMTLRenderStages(binding.usages)];
 
-    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
-        ext::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
-        ext::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }))
+    if (std::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
+        std::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
+        std::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }))
     {
         [renderCommandEncoder setVertexBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
     }
 
-    if (ext::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
-        ext::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
-        ext::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }))
+    if (std::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
+        std::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
+        std::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }))
     {
         [renderCommandEncoder setFragmentBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
     }
 
-    m_usedBuffers.insert_range(pBlock->encodedBuffers() | ext::views::transform([](auto& pair) -> ext::shared_ptr<MetalBuffer> { return pair.first; }));
-    m_usedTextures.insert_range(pBlock->encodedTextures() | ext::views::transform([](auto& pair) -> ext::shared_ptr<MetalTexture> { return pair.first; }));
-    m_usedSamplers.insert_range(pBlock->encodedSamplers() | ext::views::transform([](auto& pair) -> ext::shared_ptr<MetalSampler> { return pair.first; }));
+    m_usedBuffers.insert_range(pBlock->encodedBuffers() | std::views::transform([](auto& pair) -> std::shared_ptr<MetalBuffer> { return pair.first; }));
+    m_usedTextures.insert_range(pBlock->encodedTextures() | std::views::transform([](auto& pair) -> std::shared_ptr<MetalTexture> { return pair.first; }));
+    m_usedSamplers.insert_range(pBlock->encodedSamplers() | std::views::transform([](auto& pair) -> std::shared_ptr<MetalSampler> { return pair.first; }));
     m_usedPBlock.insert(pBlock);
 }}
 
@@ -154,9 +154,9 @@ void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autorel
     [renderCommandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
 }}
 
-void MetalCommandBuffer::drawIndexedVertices(const ext::shared_ptr<Buffer>& buffer) { @autoreleasepool
+void MetalCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& buffer) { @autoreleasepool
 {
-    auto idxBuffer = ext::dynamic_pointer_cast<MetalBuffer>(buffer);
+    auto idxBuffer = std::dynamic_pointer_cast<MetalBuffer>(buffer);
     assert(idxBuffer);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
@@ -194,12 +194,12 @@ void MetalCommandBuffer::beginBlitPass() { @autoreleasepool
     m_commandEncoder = [[m_mtlCommandBuffer blitCommandEncoder] retain];
 }}
 
-void MetalCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc, const ext::shared_ptr<Buffer>& aDst, size_t size) { @autoreleasepool
+void MetalCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc, const std::shared_ptr<Buffer>& aDst, size_t size) { @autoreleasepool
 {
-    auto src = ext::dynamic_pointer_cast<MetalBuffer>(aSrc);
+    auto src = std::dynamic_pointer_cast<MetalBuffer>(aSrc);
     assert(src);
 
-    auto dst = ext::dynamic_pointer_cast<MetalBuffer>(aDst);
+    auto dst = std::dynamic_pointer_cast<MetalBuffer>(aDst);
     assert(dst);
 
     assert(src->usages() & BufferUsage::copySource && dst->usages() & BufferUsage::copyDestination);
@@ -213,12 +213,12 @@ void MetalCommandBuffer::copyBufferToBuffer(const ext::shared_ptr<Buffer>& aSrc,
     m_usedBuffers.insert(dst);
 }}
 
-void MetalCommandBuffer::copyBufferToTexture(const ext::shared_ptr<Buffer>& aBuffer, size_t bufferOffset, const ext::shared_ptr<Texture>& aTexture, uint32_t layerIndex) { @autoreleasepool
+void MetalCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBuffer, size_t bufferOffset, const std::shared_ptr<Texture>& aTexture, uint32_t layerIndex) { @autoreleasepool
 {
-    auto buffer = ext::dynamic_pointer_cast<MetalBuffer>(aBuffer);
+    auto buffer = std::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
 
-    auto texture = ext::dynamic_pointer_cast<MetalTexture>(aTexture);
+    auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
     assert(texture);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
@@ -251,9 +251,9 @@ void MetalCommandBuffer::endBlitPass() { @autoreleasepool
     m_commandEncoder = nil;
 }}
 
-void MetalCommandBuffer::presentDrawable(const ext::shared_ptr<Drawable>& aDrawable) { @autoreleasepool
+void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawable) { @autoreleasepool
 {
-    auto drawable = ext::dynamic_pointer_cast<MetalDrawable>(aDrawable);
+    auto drawable = std::dynamic_pointer_cast<MetalDrawable>(aDrawable);
     assert(drawable);
 
     [m_mtlCommandBuffer presentDrawable:drawable->mtlDrawable()];
@@ -280,14 +280,14 @@ MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) 
         if (m_mtlCommandBuffer != nil)
             [m_mtlCommandBuffer release];
 
-        m_sourcePool = ext::exchange(other.m_sourcePool, nullptr);
-        m_mtlCommandBuffer = ext::exchange(other.m_mtlCommandBuffer, nil);
-        m_commandEncoder = ext::exchange(other.m_commandEncoder, nil);
-        m_usedPipelines = ext::move(other.m_usedPipelines);
-        m_usedTextures = ext::move(other.m_usedTextures);
-        m_usedBuffers = ext::move(other.m_usedBuffers);
-        m_usedSamplers = ext::move(other.m_usedSamplers);
-        m_usedPBlock = ext::move(other.m_usedPBlock);
+        m_sourcePool = std::exchange(other.m_sourcePool, nullptr);
+        m_mtlCommandBuffer = std::exchange(other.m_mtlCommandBuffer, nil);
+        m_commandEncoder = std::exchange(other.m_commandEncoder, nil);
+        m_usedPipelines = std::move(other.m_usedPipelines);
+        m_usedTextures = std::move(other.m_usedTextures);
+        m_usedBuffers = std::move(other.m_usedBuffers);
+        m_usedSamplers = std::move(other.m_usedSamplers);
+        m_usedPBlock = std::move(other.m_usedPBlock);
     }
     return *this;
 }}

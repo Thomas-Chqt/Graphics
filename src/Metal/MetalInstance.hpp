@@ -27,16 +27,16 @@ public:
     MetalInstance(const Instance::Descriptor&);
 
 #if defined(GFX_GLFW_ENABLED)
-    ext::unique_ptr<Surface> createSurface(GLFWwindow*) override;
+    std::unique_ptr<Surface> createSurface(GLFWwindow*) override;
 #endif
 
-    ext::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
+    std::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
     ~MetalInstance() override;
 
 private:
     NSAutoreleasePool* m_autoReleasePool;
-    ext::vector<id<MTLDevice>> m_devices;
+    std::vector<id<MTLDevice>> m_devices;
 
 public:
     MetalInstance& operator=(const MetalInstance&) = delete;

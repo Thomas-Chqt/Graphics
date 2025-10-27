@@ -32,15 +32,15 @@ public:
     ShaderLib(const ShaderLib&) = delete;
     ShaderLib(ShaderLib&&) = delete;
 
-    virtual ShaderFunction& getFunction(const ext::string&) = 0;
+    virtual ShaderFunction& getFunction(const std::string&) = 0;
 
     virtual ~ShaderLib() = default;
 
 protected:
-    ShaderLib(const ext::filesystem::path&);
+    ShaderLib(const std::filesystem::path&);
 
-    ext::vector<ext::byte> m_metalBytes;
-    ext::vector<ext::byte> m_spirvBytes;
+    std::vector<std::byte> m_metalBytes;
+    std::vector<std::byte> m_spirvBytes;
 
 public:
     ShaderLib& operator=(const ShaderLib&) = delete;

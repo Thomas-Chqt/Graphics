@@ -26,16 +26,16 @@ public:
     MetalShaderLib(const MetalShaderLib&) = delete;
     MetalShaderLib(MetalShaderLib&&) = delete;
 
-    MetalShaderLib(const MetalDevice& device, const ext::filesystem::path& filepath);
+    MetalShaderLib(const MetalDevice& device, const std::filesystem::path& filepath);
 
-    MetalShaderFunction& getFunction(const ext::string&) override;
+    MetalShaderFunction& getFunction(const std::string&) override;
 
     ~MetalShaderLib() override;
 
 private:
     id<MTLLibrary> m_mtlLibrary;
 
-    ext::map<ext::string, MetalShaderFunction> m_shaderFunctions;
+    std::map<std::string, MetalShaderFunction> m_shaderFunctions;
 
 public:
     MetalShaderLib& operator=(const MetalShaderLib&) = delete;

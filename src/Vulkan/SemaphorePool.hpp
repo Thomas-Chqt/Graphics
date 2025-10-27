@@ -34,13 +34,13 @@ public:
 private:
     struct PoolData
     {
-        ext::deque<vk::Semaphore> free;
-        ext::deque<vk::Semaphore> inUse;
+        std::deque<vk::Semaphore> free;
+        std::deque<vk::Semaphore> inUse;
     };
 
     const VulkanDevice* m_device = nullptr;
 
-    ext::array<PoolData, 2> m_pools;
+    std::array<PoolData, 2> m_pools;
 
     PoolData* m_frontPool = &m_pools[0];
     PoolData* m_backPool = &m_pools[1];

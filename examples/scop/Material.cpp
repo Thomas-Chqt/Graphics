@@ -45,7 +45,7 @@ void FlatColorMaterial::createPipeline(gfx::Device& device)
 {
     if (s_graphicsPipeline != nullptr)
         return;
-    ext::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/flat_color.slib");
+    std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/flat_color.slib");
     assert(shaderLib);
 
     gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
@@ -70,7 +70,7 @@ void FlatColorMaterial::createPipeline(gfx::Device& device)
 
 std::unique_ptr<gfx::ParameterBlock> FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
 {
-    ext::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(flatColorMaterialBpLayout);
+    std::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(flatColorMaterialBpLayout);
     parameterBlock->setBinding(0, m_material);
     return parameterBlock;
 }
@@ -90,7 +90,7 @@ void TexturedCubeMaterial::createPipeline(gfx::Device& device)
 {
     if (s_graphicsPipeline != nullptr)
         return;
-    ext::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/textured_cube.slib");
+    std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/textured_cube.slib");
     assert(shaderLib);
 
     gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
@@ -115,7 +115,7 @@ void TexturedCubeMaterial::createPipeline(gfx::Device& device)
 
 std::unique_ptr<gfx::ParameterBlock> TexturedCubeMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
 {
-    ext::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(texturedCubeMaterialBpLayout);
+    std::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(texturedCubeMaterialBpLayout);
     parameterBlock->setBinding(0, m_texture);
     parameterBlock->setBinding(1, m_sampler);
     return parameterBlock;

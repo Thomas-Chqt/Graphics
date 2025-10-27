@@ -233,7 +233,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
     });
     assert(texture);
 
-    ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+    std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
         .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm),
         .usages = gfx::BufferUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::hostVisible
@@ -300,7 +300,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
     assert(texture);
 
     size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm);
-    ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+    std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
         .size = faceSize * 6, // 6 faces
         .usages = gfx::BufferUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::hostVisible
@@ -308,12 +308,12 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
     assert(stagingBuffer);
 
     auto* bufferData = stagingBuffer->content<stbi_uc>();
-    ext::memcpy(bufferData + 0 * faceSize, bytes.at(right).get(), faceSize);  // +X (right)
-    ext::memcpy(bufferData + 1 * faceSize, bytes.at(left).get(), faceSize);   // -X (left)
-    ext::memcpy(bufferData + 2 * faceSize, bytes.at(top).get(), faceSize);    // +Y (top)
-    ext::memcpy(bufferData + 3 * faceSize, bytes.at(bottom).get(), faceSize); // -Y (bottom)
-    ext::memcpy(bufferData + 4 * faceSize, bytes.at(front).get(), faceSize);  // +Z (front)
-    ext::memcpy(bufferData + 5 * faceSize, bytes.at(back).get(), faceSize);   // -Z (back)
+    std::memcpy(bufferData + 0 * faceSize, bytes.at(right).get(), faceSize);  // +X (right)
+    std::memcpy(bufferData + 1 * faceSize, bytes.at(left).get(), faceSize);   // -X (left)
+    std::memcpy(bufferData + 2 * faceSize, bytes.at(top).get(), faceSize);    // +Y (top)
+    std::memcpy(bufferData + 3 * faceSize, bytes.at(bottom).get(), faceSize); // -Y (bottom)
+    std::memcpy(bufferData + 4 * faceSize, bytes.at(front).get(), faceSize);  // +Z (front)
+    std::memcpy(bufferData + 5 * faceSize, bytes.at(back).get(), faceSize);   // -Z (back)
 
     if (newCommandBuffer != nullptr)
         newCommandBuffer->beginBlitPass();

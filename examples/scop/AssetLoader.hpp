@@ -84,13 +84,13 @@ private:
             .storageMode = gfx::ResourceStorageMode::deviceLocal});
         assert(vertexBuffer);
 
-        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+        std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
             .size = vertexBuffer->size(),
             .usages = gfx::BufferUsage::copySource,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
         assert(stagingBuffer);
 
-        ext::ranges::copy(vertices, stagingBuffer->content<Vertex>());
+        std::ranges::copy(vertices, stagingBuffer->content<Vertex>());
 
         commandBuffer.copyBufferToBuffer(stagingBuffer, vertexBuffer, vertexBuffer->size());
 
@@ -106,13 +106,13 @@ private:
             .storageMode = gfx::ResourceStorageMode::deviceLocal});
         assert(indexBuffer);
 
-        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+        std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
             .size = indexBuffer->size(),
             .usages = gfx::BufferUsage::copySource,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
         assert(stagingBuffer);
 
-        ext::ranges::copy(indices, stagingBuffer->content<uint32_t>());
+        std::ranges::copy(indices, stagingBuffer->content<uint32_t>());
 
         commandBuffer.copyBufferToBuffer(stagingBuffer, indexBuffer, indexBuffer->size());
 

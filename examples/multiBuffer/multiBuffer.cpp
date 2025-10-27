@@ -48,8 +48,8 @@ struct Vertex
     glm::vec4 color;
 };
 
-constexpr ext::array<ext::array<Vertex, 6>, 4> vertices = {
-    ext::array<Vertex, 6> {
+constexpr std::array<std::array<Vertex, 6>, 4> vertices = {
+    std::array<Vertex, 6> {
         Vertex{ .pos=glm::vec2(-1.0f, -0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2(-1.0f,  1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2( 0.5f,  1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
@@ -58,7 +58,7 @@ constexpr ext::array<ext::array<Vertex, 6>, 4> vertices = {
         Vertex{ .pos=glm::vec2( 0.5f,  1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2( 0.5f, -0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
     },
-    ext::array<Vertex, 6> {
+    std::array<Vertex, 6> {
         Vertex{ .pos=glm::vec2(-0.5f, -0.5f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2(-0.5f,  1.0f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2( 1.0f,  1.0f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
@@ -67,7 +67,7 @@ constexpr ext::array<ext::array<Vertex, 6>, 4> vertices = {
         Vertex{ .pos=glm::vec2( 1.0f,  1.0f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2( 1.0f, -0.5f), .color=glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
     },
-    ext::array<Vertex, 6> {
+    std::array<Vertex, 6> {
         Vertex{ .pos=glm::vec2(-0.5f,  0.5f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
         Vertex{ .pos=glm::vec2( 1.0f,  0.5f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
         Vertex{ .pos=glm::vec2( 1.0f, -1.0f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
@@ -76,7 +76,7 @@ constexpr ext::array<ext::array<Vertex, 6>, 4> vertices = {
         Vertex{ .pos=glm::vec2( 1.0f, -1.0f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
         Vertex{ .pos=glm::vec2(-0.5f, -1.0f), .color=glm::vec4(0.0f, 0.0f, 1.0f, 0.0f) },
     },
-    ext::array<Vertex, 6> {
+    std::array<Vertex, 6> {
         Vertex{ .pos=glm::vec2(-1.0f, -1.0f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2(-1.0f,  0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
         Vertex{ .pos=glm::vec2( 0.5f,  0.5f), .color=glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
@@ -128,8 +128,8 @@ public:
 
         assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
-        
-        ext::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
+
+        std::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
         assert(shaderLib);
 
         gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
@@ -157,13 +157,13 @@ public:
             m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
         }
 
-        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+        std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
             .size = sizeof(Vertex) * 6,
             .usages = gfx::BufferUsage::copySource,
             .storageMode = gfx::ResourceStorageMode::hostVisible
         });
         assert(stagingBuffer);
-        
+
         for (uint64_t i = 0; i < vertices.size(); i++)
         {
             m_vertexBuffers.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
@@ -173,12 +173,12 @@ public:
             });
             assert(m_vertexBuffers.at(i));
 
-            ext::ranges::copy(vertices.at(i), stagingBuffer->content<Vertex>());
+            std::ranges::copy(vertices.at(i), stagingBuffer->content<Vertex>());
             gfx::CommandBuffer* commandBuffer = m_commandBufferPools.at(m_frameIdx)->get().release();
             commandBuffer->beginBlitPass();
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffers.at(i), stagingBuffer->size());
             commandBuffer->endBlitPass();
-            m_device->submitCommandBuffers(ext::unique_ptr<gfx::CommandBuffer>(commandBuffer));
+            m_device->submitCommandBuffers(std::unique_ptr<gfx::CommandBuffer>(commandBuffer));
             m_device->waitCommandBuffer(commandBuffer);
         }
     }
@@ -212,11 +212,11 @@ public:
                 m_lastCommandBuffers.at(m_frameIdx) = nullptr;
             }
 
-            ext::vector<ext::unique_ptr<gfx::CommandBuffer>> commandBuffers(2);
+            std::vector<std::unique_ptr<gfx::CommandBuffer>> commandBuffers(2);
             commandBuffers.at(0) = m_commandBufferPools.at(m_frameIdx)->get();
             commandBuffers.at(1) = m_commandBufferPools.at(m_frameIdx)->get();
 
-            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
             if (drawable == nullptr) {
                 m_swapchain = nullptr;
                 continue;
@@ -228,7 +228,7 @@ public:
                         .loadAction = gfx::LoadAction::clear,
                         .clearColor = {0.0f, 0.0f, 0.0f, 0.0f },
                         .texture = drawable->texture()
-                    } 
+                    }
                 }
             };
 
@@ -269,7 +269,7 @@ public:
             commandBuffers.at(1)->presentDrawable(drawable);
 
             m_lastCommandBuffers.at(m_frameIdx) = commandBuffers.at(1).get();
-            m_device->submitCommandBuffers(ext::move(commandBuffers));
+            m_device->submitCommandBuffers(std::move(commandBuffers));
 
             m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
@@ -283,16 +283,16 @@ public:
 
 private:
     GLFWwindow* m_window = nullptr;
-    ext::unique_ptr<gfx::Instance> m_instance;
-    ext::unique_ptr<gfx::Surface> m_surface;
-    ext::unique_ptr<gfx::Device> m_device;
-    ext::unique_ptr<gfx::Swapchain> m_swapchain;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
-    ext::array<ext::shared_ptr<gfx::Buffer>, 4> m_vertexBuffers;
+    std::unique_ptr<gfx::Instance> m_instance;
+    std::unique_ptr<gfx::Surface> m_surface;
+    std::unique_ptr<gfx::Device> m_device;
+    std::unique_ptr<gfx::Swapchain> m_swapchain;
+    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    std::array<std::shared_ptr<gfx::Buffer>, 4> m_vertexBuffers;
 
     uint8_t m_frameIdx = 0;
-    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

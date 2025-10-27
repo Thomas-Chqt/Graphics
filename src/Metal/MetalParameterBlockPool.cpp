@@ -20,12 +20,12 @@ MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device)
     : m_device(device)
 {
     Buffer::Descriptor buffDesc = { .size = 10240, .storageMode = ResourceStorageMode::hostVisible };
-    m_argumentBuffer = ext::dynamic_pointer_cast<MetalBuffer>((ext::shared_ptr<Buffer>)m_device->newBuffer(buffDesc));
+    m_argumentBuffer = std::dynamic_pointer_cast<MetalBuffer>((std::shared_ptr<Buffer>)m_device->newBuffer(buffDesc));
 }
 
-ext::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
+std::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
 {
-    ext::unique_ptr<MetalParameterBlock> pBlock = ext::make_unique<MetalParameterBlock>(m_argumentBuffer, m_nextOffset, pbLayout, this);
+    std::unique_ptr<MetalParameterBlock> pBlock = std::make_unique<MetalParameterBlock>(m_argumentBuffer, m_nextOffset, pbLayout, this);
     size_t usedSize = sizeof(uint64_t) * pbLayout.bindings.size();
     m_nextOffset += (usedSize + 31uz) & ~31uz;
     m_usedParameterBlocks.insert(pBlock.get());

@@ -38,7 +38,7 @@ MetalTexture::MetalTexture(const MetalDevice& device, const Texture::Descriptor&
 
     m_mtlTexture = [device.mtlDevice() newTextureWithDescriptor:mtlTextureDescriptor];
     if (m_mtlTexture == nil)
-        throw ext::runtime_error("metal texture creation failed");
+        throw std::runtime_error("metal texture creation failed");
 }}
 
 TextureType MetalTexture::type() const { @autoreleasepool

@@ -23,13 +23,13 @@ namespace gfx
 {
 
 template<typename T>
-    requires ext::is_enum_v<T> && ext::unsigned_integral<ext::underlying_type_t<T>>
+    requires std::is_enum_v<T> && std::unsigned_integral<std::underlying_type_t<T>>
 class Flags
 {
 public:
     constexpr Flags() : m_value(0) {}
 
-    constexpr Flags(T value) : m_value(static_cast<ext::underlying_type_t<T>>(value)) {}
+    constexpr Flags(T value) : m_value(static_cast<std::underlying_type_t<T>>(value)) {}
 
     [[nodiscard]] constexpr inline T value() const { return m_value; }
 
@@ -49,9 +49,9 @@ public:
     constexpr inline explicit operator bool() const { return m_value != 0; }
 
 private:
-    constexpr Flags(ext::underlying_type_t<T> value) : m_value(value) {}
+    constexpr Flags(std::underlying_type_t<T> value) : m_value(value) {}
 
-    ext::underlying_type_t<T> m_value;
+    std::underlying_type_t<T> m_value;
 };
 
 template<typename E>
@@ -68,28 +68,28 @@ struct enable_bitmask_operators
     };
 
 template<typename E>
-    requires ext::is_enum_v<E> && enable_bitmask_operators<E>::enable
+    requires std::is_enum_v<E> && enable_bitmask_operators<E>::enable
 [[nodiscard]] inline Flags<E> operator|(E lhs, E rhs)
 {
     return Flags(lhs) | Flags(rhs);
 }
 
 template<typename E>
-    requires ext::is_enum_v<E> && enable_bitmask_operators<E>::enable
+    requires std::is_enum_v<E> && enable_bitmask_operators<E>::enable
 [[nodiscard]] inline Flags<E> operator&(E lhs, E rhs)
 {
     return Flags(lhs) & Flags(rhs);
 }
 
 template<typename E>
-    requires ext::is_enum_v<E> && enable_bitmask_operators<E>::enable
+    requires std::is_enum_v<E> && enable_bitmask_operators<E>::enable
 [[nodiscard]] inline Flags<E> operator^(E lhs, E rhs)
 {
     return Flags(lhs) ^ Flags(rhs);
 }
 
 template<typename E>
-    requires ext::is_enum_v<E> && enable_bitmask_operators<E>::enable
+    requires std::is_enum_v<E> && enable_bitmask_operators<E>::enable
 [[nodiscard]] inline Flags<E> operator~(E val)
 {
     return ~Flags(val);
@@ -211,7 +211,7 @@ constexpr inline size_t pixelFormatSize(PixelFormat format)
     case PixelFormat::Depth32Float:
         return 4;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 

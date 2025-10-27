@@ -29,7 +29,7 @@ public:
 
     VulkanParameterBlockPool(const VulkanDevice*);
 
-    ext::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
+    std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
     void release(ParameterBlock*);
 
     ~VulkanParameterBlockPool() override;
@@ -37,9 +37,9 @@ public:
 private:
     const VulkanDevice* m_device = nullptr;
 
-    ext::shared_ptr<vk::DescriptorPool> m_descriptorPool; // blocks can outlive the pool, only the vk::DescriptorPool need to remain alive
+    std::shared_ptr<vk::DescriptorPool> m_descriptorPool; // blocks can outlive the pool, only the vk::DescriptorPool need to remain alive
 
-    ext::set<VulkanParameterBlock*> m_usedParameterBlocks;
+    std::set<VulkanParameterBlock*> m_usedParameterBlocks;
 
 public:
     VulkanParameterBlockPool& operator=(const VulkanParameterBlockPool&) = delete;

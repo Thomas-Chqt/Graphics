@@ -30,7 +30,7 @@ public:
 
     MetalParameterBlockPool(const MetalDevice*);
 
-    ext::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
+    std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
     void release(ParameterBlock*);
 
     ~MetalParameterBlockPool() override;
@@ -38,10 +38,10 @@ public:
 private:
     const MetalDevice* m_device = nullptr; // to allow creating more argument buffers in the future
 
-    ext::shared_ptr<MetalBuffer> m_argumentBuffer; // blocks can outlive the pool, only the argument buffer need to remain alive
+    std::shared_ptr<MetalBuffer> m_argumentBuffer; // blocks can outlive the pool, only the argument buffer need to remain alive
     size_t m_nextOffset = 0;
 
-    ext::set<MetalParameterBlock*> m_usedParameterBlocks;
+    std::set<MetalParameterBlock*> m_usedParameterBlocks;
 
 public:
     MetalParameterBlockPool& operator=(const MetalParameterBlockPool&) = delete;

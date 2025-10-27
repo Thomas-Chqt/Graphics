@@ -22,7 +22,7 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, vk::Image&& vkImage, co
       m_pixelFormat(desc.pixelFormat),
       m_usages(desc.usages),
       m_storageMode(desc.storageMode),
-      m_vkImage(ext::move(vkImage))
+      m_vkImage(std::move(vkImage))
 {
     m_subresourceRange = vk::ImageSubresourceRange{}
           .setAspectMask(toVkImageAspectFlags(desc.usages))
@@ -75,7 +75,7 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descript
 
     VkImage image = VK_NULL_HANDLE;
     vmaCreateImage(m_device->allocator(), &imageCreateInfo, &allocationCreateInfo, &image, &m_allocation, &m_allocInfo);
-    m_vkImage = ext::exchange(image, VK_NULL_HANDLE);
+    m_vkImage = std::exchange(image, VK_NULL_HANDLE);
 
     m_subresourceRange = vk::ImageSubresourceRange{}
         .setAspectMask(toVkImageAspectFlags(desc.usages))

@@ -22,7 +22,7 @@ MetalDrawable::MetalDrawable(id<CAMetalDrawable> mtlDrawable) { @autoreleasepool
     m_mtlDrawable = [mtlDrawable retain];
 }}
 
-ext::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
+std::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
 {
     id<MTLTexture> mtlTexture = m_mtlDrawable.texture;
     Texture::Descriptor desc = {
@@ -33,7 +33,7 @@ ext::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
         .usages = TextureUsage::colorAttachment,
         .storageMode = ResourceStorageMode::deviceLocal
     };
-    return ext::make_shared<MetalTexture>(m_mtlDrawable.texture, desc);
+    return std::make_shared<MetalTexture>(m_mtlDrawable.texture, desc);
 }}
 
 MetalDrawable::~MetalDrawable()

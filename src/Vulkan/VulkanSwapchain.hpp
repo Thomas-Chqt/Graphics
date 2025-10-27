@@ -31,16 +31,16 @@ public:
 
     VulkanSwapchain(const VulkanDevice*, const Swapchain::Descriptor&);
 
-    ext::shared_ptr<Drawable> nextDrawable() override;
+    std::shared_ptr<Drawable> nextDrawable() override;
 
     ~VulkanSwapchain() override = default;
 
 private:
     const VulkanDevice* m_device;
-    
+
     vk::SwapchainKHR* m_vkSwapchain;
-    ext::vector<ext::shared_ptr<SwapchainImage>> m_swapchainImages;
-    ext::vector<ext::shared_ptr<VulkanDrawable>> m_drawables;
+    std::vector<std::shared_ptr<SwapchainImage>> m_swapchainImages;
+    std::vector<std::shared_ptr<VulkanDrawable>> m_drawables;
     uint32_t m_nextDrawableIndex = 0;
 
 public:

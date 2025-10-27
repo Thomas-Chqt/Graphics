@@ -17,7 +17,7 @@
 namespace gfx
 {
 
-VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const ext::shared_ptr<vk::DescriptorPool>& descriptorPool, const ParameterBlock::Layout& layout, VulkanParameterBlockPool* sourcePool)
+VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const std::shared_ptr<vk::DescriptorPool>& descriptorPool, const ParameterBlock::Layout& layout, VulkanParameterBlockPool* sourcePool)
     : m_device(device),
       m_descriptorPool(descriptorPool),
       m_layout(layout),
@@ -27,17 +27,17 @@ VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const ext
         .setDescriptorPool(*m_descriptorPool)
         .setDescriptorSetCount(1)
         .setSetLayouts(m_device->descriptorSetLayout(layout)); // need to be in cache
- 
-    ext::vector<vk::DescriptorSet> descriptorSets = m_device->vkDevice().allocateDescriptorSets(descriptorSetAllocateInfo);
-    if (descriptorSets.empty())
-        throw ext::runtime_error("failed to allocate descriptorSet");
 
-    m_descriptorSet = ext::move(descriptorSets.front());
+    std::vector<vk::DescriptorSet> descriptorSets = m_device->vkDevice().allocateDescriptorSets(descriptorSetAllocateInfo);
+    if (descriptorSets.empty())
+        throw std::runtime_error("failed to allocate descriptorSet");
+
+    m_descriptorSet = std::move(descriptorSets.front());
 }
 
-void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer>& aBuffer)
+void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Buffer>& aBuffer)
 {
-    auto buffer = ext::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
+    auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
 
     auto bufferDescriptorInfo = vk::DescriptorBufferInfo{}
         .setBuffer(buffer->vkBuffer())
@@ -54,12 +54,12 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer
 
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
 
-    m_usedBuffers.insert(ext::make_pair(buffer, m_layout.bindings.at(idx)));
+    m_usedBuffers.insert(std::make_pair(buffer, m_layout.bindings.at(idx)));
 }
 
-void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Texture>& aTexture)
+void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Texture>& aTexture)
 {
-    auto texture = ext::dynamic_pointer_cast<VulkanTexture>(aTexture);
+    auto texture = std::dynamic_pointer_cast<VulkanTexture>(aTexture);
 
     auto descriptorImageInfo = vk::DescriptorImageInfo{}
         .setImageView(texture->vkImageView())
@@ -75,12 +75,12 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Textur
 
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
 
-    m_usedTextures.insert(ext::make_pair(texture, m_layout.bindings.at(idx)));
+    m_usedTextures.insert(std::make_pair(texture, m_layout.bindings.at(idx)));
 }
 
-void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Sampler>& aSampler)
+void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Sampler>& aSampler)
 {
-    auto sampler = ext::dynamic_pointer_cast<VulkanSampler>(aSampler);
+    auto sampler = std::dynamic_pointer_cast<VulkanSampler>(aSampler);
 
     auto descriptorImageInfo = vk::DescriptorImageInfo{}
         .setSampler(sampler->vkSampler());
@@ -95,7 +95,7 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Sample
 
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
 
-    m_usedSampler.insert(ext::make_pair(sampler, m_layout.bindings.at(idx)));
+    m_usedSampler.insert(std::make_pair(sampler, m_layout.bindings.at(idx)));
 }
 
 VulkanParameterBlock::~VulkanParameterBlock()

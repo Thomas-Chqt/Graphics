@@ -95,10 +95,10 @@ private:
 
         std::shared_ptr<gfx::Buffer> vpMatrix;
 
-        ext::shared_ptr<gfx::Texture> depthTexture;
+        std::shared_ptr<gfx::Texture> depthTexture;
 
-        ext::deque<std::shared_ptr<gfx::Buffer>> availableModelMatrixBuffers;
-        ext::deque<std::shared_ptr<gfx::Buffer>> usedModelMatrixBuffers;
+        std::deque<std::shared_ptr<gfx::Buffer>> availableModelMatrixBuffers;
+        std::deque<std::shared_ptr<gfx::Buffer>> usedModelMatrixBuffers;
 
         std::shared_ptr<gfx::Buffer> sceneDataBuffer;
 

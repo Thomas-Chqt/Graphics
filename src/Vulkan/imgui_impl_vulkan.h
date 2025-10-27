@@ -38,7 +38,7 @@
 //     - Do not simply add it in a .cpp file!
 // (2) Call ImGui_ImplVulkan_LoadFunctions() before ImGui_ImplVulkan_Init() with your custom function.
 // If you have no idea what this is, leave it alone!
-//#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 
 // Convenience support for Volk
 // (you can also technically use IMGUI_IMPL_VULKAN_NO_PROTOTYPES + wrap Volk via ImGui_ImplVulkan_LoadFunctions().)
@@ -49,6 +49,10 @@
 #endif
 #if defined(VK_USE_PLATFORM_WIN32_KHR) && !defined(NOMINMAX)
 #define NOMINMAX
+#endif
+
+#ifdef IMGUI_IMPL_VULKAN_CPP
+#include "pch.hpp"
 #endif
 
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_dynamic_rendering)

@@ -19,43 +19,43 @@ static_assert(sizeof(MTLResourceID) == sizeof(uint64_t), "MTLResourceID is not 6
 namespace gfx
 {
 
-MetalParameterBlock::MetalParameterBlock(const ext::shared_ptr<MetalBuffer>& argumentBuffer, size_t offset, const ParameterBlock::Layout& layout, MetalParameterBlockPool* srcPool)
+MetalParameterBlock::MetalParameterBlock(const std::shared_ptr<MetalBuffer>& argumentBuffer, size_t offset, const ParameterBlock::Layout& layout, MetalParameterBlockPool* srcPool)
     : m_argumentBuffer(argumentBuffer), m_offset(offset), m_layout(layout), m_sourcePool(srcPool)
 {
     assert((argumentBuffer->size() - m_offset) >= (m_layout.bindings.size() * sizeof(uint64_t)));
 }
 
-void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Buffer>& aBuffer) { @autoreleasepool
+void MetalParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Buffer>& aBuffer) { @autoreleasepool
 {
-    auto buffer = ext::dynamic_pointer_cast<MetalBuffer>(aBuffer);
+    auto buffer = std::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
 
-    auto* content = ext::bit_cast<uint64_t*>(m_argumentBuffer->content<ext::byte>() + m_offset);
+    auto* content = std::bit_cast<uint64_t*>(m_argumentBuffer->content<std::byte>() + m_offset);
     content[idx] = buffer->mtlBuffer().gpuAddress;
 
-    m_encodedBuffers.insert(ext::make_pair(buffer, m_layout.bindings[idx]));
+    m_encodedBuffers.insert(std::make_pair(buffer, m_layout.bindings[idx]));
 }}
 
-void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Texture>& aTexture) { @autoreleasepool
+void MetalParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Texture>& aTexture) { @autoreleasepool
 {
-    auto texture = ext::dynamic_pointer_cast<MetalTexture>(aTexture);
+    auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
     assert(texture);
 
-    auto* content = ext::bit_cast<MTLResourceID*>(m_argumentBuffer->content<ext::byte>() + m_offset);
+    auto* content = std::bit_cast<MTLResourceID*>(m_argumentBuffer->content<std::byte>() + m_offset);
     content[idx] = texture->mtltexture().gpuResourceID;
 
-    m_encodedTextures.insert(ext::make_pair(texture, m_layout.bindings[idx]));
+    m_encodedTextures.insert(std::make_pair(texture, m_layout.bindings[idx]));
 }}
 
-void MetalParameterBlock::setBinding(uint32_t idx, const ext::shared_ptr<Sampler>& aSampler) { @autoreleasepool
+void MetalParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Sampler>& aSampler) { @autoreleasepool
 {
-    auto sampler = ext::dynamic_pointer_cast<MetalSampler>(aSampler);
+    auto sampler = std::dynamic_pointer_cast<MetalSampler>(aSampler);
     assert(sampler);
 
-    auto* content = ext::bit_cast<MTLResourceID*>(m_argumentBuffer->content<ext::byte>() + m_offset);
+    auto* content = std::bit_cast<MTLResourceID*>(m_argumentBuffer->content<std::byte>() + m_offset);
     content[idx] = sampler->mtlSamplerState().gpuResourceID;
 
-    m_encodedSamplers.insert(ext::make_pair(sampler, m_layout.bindings[idx]));
+    m_encodedSamplers.insert(std::make_pair(sampler, m_layout.bindings[idx]));
 }}
 
 MetalParameterBlock::~MetalParameterBlock()

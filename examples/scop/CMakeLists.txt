@@ -7,6 +7,8 @@
 
 include(FetchContent)
 
+## GLFW ##########################################################
+
 FetchContent_Declare(glfw3
     GIT_REPOSITORY    https://github.com/glfw/glfw.git
     GIT_TAG           3.4
@@ -22,23 +24,30 @@ if(NOT GLFW_BUILD_WAYLAND)
     set(GLFW_BUILD_WAYLAND OFF)
 endif()
 FetchContent_MakeAvailable(glfw3)
-
-if (TARGET update_mappings)
-    set_target_properties(glfw PROPERTIES FOLDER "dependencies/GLFW3")
-    set_target_properties(update_mappings PROPERTIES FOLDER "dependencies/GLFW3")
-else()
-    set_target_properties(glfw PROPERTIES FOLDER "dependencies")
+if (glfw3_SOURCE_DIR)
+    if (TARGET update_mappings)
+        set_target_properties(glfw PROPERTIES FOLDER "dependencies/GLFW3")
+        set_target_properties(update_mappings PROPERTIES FOLDER "dependencies/GLFW3")
+    else()
+        set_target_properties(glfw PROPERTIES FOLDER "dependencies")
+    endif()
 endif()
+
+## GLM ###############################################################
 
 FetchContent_Declare(gml
     GIT_REPOSITORY    https://github.com/g-truc/glm.git
     GIT_TAG           1.0.1
     GIT_SHALLOW       1
     GIT_PROGRESS      TRUE
-    FIND_PACKAGE_ARGS
+    FIND_PACKAGE_ARGS NAMES glm
 )
 FetchContent_MakeAvailable(gml)
-set_target_properties(glm PROPERTIES FOLDER "dependencies")
+if (gml_SOURCE_DIR)
+    set_target_properties(glm PROPERTIES FOLDER "dependencies")
+endif()
+
+## IMGUI ###############################################################
 
 FetchContent_Declare(imgui
     GIT_REPOSITORY    https://github.com/Thomas-Chqt/imgui.git
@@ -50,7 +59,11 @@ FetchContent_Declare(imgui
 set(IM_BUILD_GLFW ON)
 FetchContent_MakeAvailable(imgui)
 target_link_libraries(imgui PRIVATE glfw)
-set_target_properties(imgui PROPERTIES FOLDER "dependencies")
+if (imgui_SOURCE_DIR)
+    set_target_properties(imgui PROPERTIES FOLDER "dependencies")
+endif()
+
+## STB_IMAGE ###############################################################
 
 FetchContent_Declare(stb_image
     GIT_REPOSITORY    https://github.com/Thomas-Chqt/stb_image.git
@@ -60,7 +73,11 @@ FetchContent_Declare(stb_image
     FIND_PACKAGE_ARGS
 )
 FetchContent_MakeAvailable(stb_image)
-set_target_properties(stb_image PROPERTIES FOLDER "dependencies")
+if (stb_image_SOURCE_DIR)
+    set_target_properties(stb_image PROPERTIES FOLDER "dependencies")
+endif()
+
+## ASSIMP ###################################################################
 
 FetchContent_Declare(assimp
     GIT_REPOSITORY    https://github.com/assimp/assimp.git
@@ -79,17 +96,21 @@ set(ASSIMP_BUILD_GLTF_IMPORTER            ON)
 set(CMAKE_POLICY_DEFAULT_CMP0175 OLD)
 FetchContent_MakeAvailable(assimp)
 unset(CMAKE_POLICY_DEFAULT_CMP0175)
-if(TARGET zlibstatic OR TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
-    set_target_properties(assimp PROPERTIES FOLDER "dependencies/assimp")
-    if(TARGET zlibstatic)
-        set_target_properties(zlibstatic PROPERTIES FOLDER "dependencies/assimp")
+if (assimp_SOURCE_DIR)
+    if(TARGET zlibstatic OR TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
+        set_target_properties(assimp PROPERTIES FOLDER "dependencies/assimp")
+        if(TARGET zlibstatic)
+            set_target_properties(zlibstatic PROPERTIES FOLDER "dependencies/assimp")
+        endif()
+        if(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
+            set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "dependencies/assimp")
+        endif()
+    else()
+        set_target_properties(assimp PROPERTIES FOLDER "dependencies")
     endif()
-    if(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
-        set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "dependencies/assimp")
-    endif()
-else()
-    set_target_properties(assimp PROPERTIES FOLDER "dependencies")
 endif()
+
+##################################################################
 
 add_subdirectory(shaders)
 
@@ -126,5 +147,5 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
 endif()
 target_compile_definitions(scop PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 
-target_link_libraries(scop PRIVATE Graphics glfw glm::glm imgui stb_image assimp)
+target_link_libraries(scop PRIVATE Graphics glfw glm::glm imgui stb_image assimp::assimp)
 add_dependencies(scop flat_color_shader textured_cube_shader)

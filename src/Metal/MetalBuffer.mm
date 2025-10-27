@@ -17,10 +17,10 @@ namespace gfx
 {
 
 MetalBuffer::MetalBuffer(MetalBuffer&& other) noexcept
-    : Buffer(ext::move(other)),
-      m_usages(ext::exchange(other.m_usages, BufferUsage::uniformBuffer)),
-      m_storageMode(ext::exchange(other.m_storageMode, ResourceStorageMode::hostVisible)),
-      m_mtlBuffer(ext::exchange(other.m_mtlBuffer, nil))
+    : Buffer(std::move(other)),
+      m_usages(std::exchange(other.m_usages, BufferUsage::uniformBuffer)),
+      m_storageMode(std::exchange(other.m_storageMode, ResourceStorageMode::hostVisible)),
+      m_mtlBuffer(std::exchange(other.m_mtlBuffer, nil))
 {
 }
 
@@ -33,7 +33,7 @@ MetalBuffer::MetalBuffer(const MetalDevice& device, const Buffer::Descriptor& de
     m_mtlBuffer = [device.mtlDevice() newBufferWithLength:desc.size options:ressourceOptions];
 
     if (m_mtlBuffer == nil)
-        throw ext::runtime_error("mtl buffer creation failed");
+        throw std::runtime_error("mtl buffer creation failed");
 }}
 
 size_t MetalBuffer::size() const { @autoreleasepool
@@ -63,14 +63,14 @@ void* MetalBuffer::contentVoid() { @autoreleasepool
 
 MetalBuffer& MetalBuffer::operator = (MetalBuffer&& other) noexcept { @autoreleasepool
 {
-    Buffer::operator=(ext::move(other));
+    Buffer::operator=(std::move(other));
     if (this != &other)
     {
         if (m_mtlBuffer != nil)
             [m_mtlBuffer release];
-        m_usages = ext::exchange(other.m_usages, BufferUsage::uniformBuffer);
-        m_storageMode = ext::exchange(other.m_storageMode, ResourceStorageMode::hostVisible);
-        m_mtlBuffer = ext::exchange(other.m_mtlBuffer, nil);
+        m_usages = std::exchange(other.m_usages, BufferUsage::uniformBuffer);
+        m_storageMode = std::exchange(other.m_storageMode, ResourceStorageMode::hostVisible);
+        m_mtlBuffer = std::exchange(other.m_mtlBuffer, nil);
     }
     return *this;
 }}

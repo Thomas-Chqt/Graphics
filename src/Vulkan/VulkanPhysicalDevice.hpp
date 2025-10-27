@@ -23,8 +23,8 @@ public:
 
     bool isSuitable(const VulkanDevice::Descriptor&) const;
 
-    ext::vector<QueueFamily> getQueueFamilies() const;
-    bool suportExtensions(const ext::vector<const char*>& extensionNames) const;
+    std::vector<QueueFamily> getQueueFamilies() const;
+    bool suportExtensions(const std::vector<const char*>& extensionNames) const;
 
     uint32_t findSuitableMemoryTypeIdx(vk::MemoryPropertyFlags, uint32_t mask) const;
 };

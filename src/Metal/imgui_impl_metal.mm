@@ -32,9 +32,9 @@ namespace
 struct FramebufferDescriptor
 {
     uint32_t sampleCount = 1;
-    ext::vector<PixelFormat> colorPixelFormats;
-    ext::optional<PixelFormat> depthPixelFormat;
-    ext::optional<PixelFormat> stencilPixelFormat;
+    std::vector<PixelFormat> colorPixelFormats;
+    std::optional<PixelFormat> depthPixelFormat;
+    std::optional<PixelFormat> stencilPixelFormat;
 
     // Comparison operators to allow use as a key in ordered containers (e.g., std::map)
     friend bool operator==(const FramebufferDescriptor& a, const FramebufferDescriptor& b)
@@ -107,34 +107,34 @@ struct ImGui_ImplMetal_Data
     const MetalDevice* device = nullptr;
     FramebufferDescriptor framebufferDescriptor;
 
-    ext::map<FramebufferDescriptor, MetalGraphicsPipeline> graphicsPipelineCache;
-    ext::vector<ext::unique_ptr<MetalBuffer>> bufferCache;
-    ext::map<MetalBuffer*, double> bufferLastReuseTimes;
+    std::map<FramebufferDescriptor, MetalGraphicsPipeline> graphicsPipelineCache;
+    std::vector<std::unique_ptr<MetalBuffer>> bufferCache;
+    std::map<MetalBuffer*, double> bufferLastReuseTimes;
     double lastBufferCachePurge = GetMachAbsoluteTimeInSeconds();
-    ext::mutex bufferCacheMtx;
+    std::mutex bufferCacheMtx;
     MetalSampler linearSampler;
 
-    ext::unique_ptr<MetalBuffer> bufferOfLenght(uint32_t len)
+    std::unique_ptr<MetalBuffer> bufferOfLenght(uint32_t len)
     {
         double now = GetMachAbsoluteTimeInSeconds();
 
         {
-            ext::scoped_lock<ext::mutex> lock(this->bufferCacheMtx);
+            std::scoped_lock<std::mutex> lock(this->bufferCacheMtx);
 
             // Purge old buffers that haven't been useful for a while
             if (now - this->lastBufferCachePurge > 1.0)
             {
-                auto res = this->bufferCache | ext::views::filter([&](auto& buff) -> bool {
+                auto res = this->bufferCache | std::views::filter([&](auto& buff) -> bool {
                     return this->bufferLastReuseTimes[buff.get()] <= this->lastBufferCachePurge;
                 });
-                ext::vector<ext::unique_ptr<MetalBuffer>> survivors;
-                ext::map<MetalBuffer*, double> survivorsLastReuseTimes;
+                std::vector<std::unique_ptr<MetalBuffer>> survivors;
+                std::map<MetalBuffer*, double> survivorsLastReuseTimes;
                 for (auto& buff : res) {
-                    survivors.push_back(ext::move(buff));
+                    survivors.push_back(std::move(buff));
                     survivorsLastReuseTimes[buff.get()] = this->bufferLastReuseTimes[buff.get()];
                 }
-                this->bufferCache = ext::move(survivors);
-                this->bufferLastReuseTimes = ext::move(survivorsLastReuseTimes);
+                this->bufferCache = std::move(survivors);
+                this->bufferLastReuseTimes = std::move(survivorsLastReuseTimes);
                 this->lastBufferCachePurge = now;
             }
 
@@ -147,7 +147,7 @@ struct ImGui_ImplMetal_Data
 
             if (bestCandidate != this->bufferCache.end())
             {
-                ext::unique_ptr<MetalBuffer> buff = ext::move(*bestCandidate);
+                std::unique_ptr<MetalBuffer> buff = std::move(*bestCandidate);
                 this->bufferCache.erase(bestCandidate);
                 this->bufferLastReuseTimes[buff.get()] = now;
                 return buff;
@@ -160,7 +160,7 @@ struct ImGui_ImplMetal_Data
             .usages = BufferUsage::vertexBuffer,
             .storageMode = ResourceStorageMode::hostVisible
         };
-        return ext::make_unique<MetalBuffer>(*device, bufferDescriptor);
+        return std::make_unique<MetalBuffer>(*device, bufferDescriptor);
     }
 };
 
@@ -191,7 +191,7 @@ void ImGui_ImplMetal_SetupRenderState(ImDrawData* draw_data, id<MTLCommandBuffer
 
 }
 
-void ImGui_ImplMetal_Init(const MetalDevice* device, const ext::vector<PixelFormat>& colorPixelFomats, const ext::optional<PixelFormat>& depthPixelFormat) { @autoreleasepool
+void ImGui_ImplMetal_Init(const MetalDevice* device, const std::vector<PixelFormat>& colorPixelFomats, const std::optional<PixelFormat>& depthPixelFormat) { @autoreleasepool
 {
     ImGuiIO& io = GetIO();
     IMGUI_CHECKVERSION();
@@ -291,14 +291,14 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
     {
         // No luck; make a new render pipeline state
         // Cache render pipeline state for later reuse
-        auto [it, res] = bd->graphicsPipelineCache.insert(ext::make_pair(bd->framebufferDescriptor, graphicPipelineStateForFramebufferDescriptor(*bd->device, bd->framebufferDescriptor)));
+        auto [it, res] = bd->graphicsPipelineCache.insert(std::make_pair(bd->framebufferDescriptor, graphicPipelineStateForFramebufferDescriptor(*bd->device, bd->framebufferDescriptor)));
         graphicsPipeline = it;
     }
 
     size_t vertexBufferLength = (size_t)draw_data->TotalVtxCount * sizeof(ImDrawVert);
     size_t indexBufferLength = (size_t)draw_data->TotalIdxCount * sizeof(ImDrawIdx);
-    ext::unique_ptr<MetalBuffer> vertexBuffer = bd->bufferOfLenght(vertexBufferLength);
-    ext::unique_ptr<MetalBuffer> indexBuffer = bd->bufferOfLenght(indexBufferLength);
+    std::unique_ptr<MetalBuffer> vertexBuffer = bd->bufferOfLenght(vertexBufferLength);
+    std::unique_ptr<MetalBuffer> indexBuffer = bd->bufferOfLenght(indexBufferLength);
 
     ImGui_ImplMetal_SetupRenderState(draw_data, commandBuffer, commandEncoder, graphicsPipeline->second, *vertexBuffer, 0);
 
@@ -365,7 +365,7 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
 
                 // Bind texture, Draw
                 if (ImTextureID tex_id = pcmd->GetTexID())
-                    [commandEncoder setFragmentTexture:ext::bit_cast<id<MTLTexture>>(tex_id) atIndex:0];
+                    [commandEncoder setFragmentTexture:std::bit_cast<id<MTLTexture>>(tex_id) atIndex:0];
 
                 [commandEncoder setVertexBufferOffset:(vertexBufferOffset + pcmd->VtxOffset * sizeof(ImDrawVert)) atIndex:5];
                 [commandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
@@ -386,9 +386,9 @@ void ImGui_ImplMetal_RenderDrawData(ImDrawData* draw_data, id<MTLCommandBuffer> 
     [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer>) {
       dispatch_async(dispatch_get_main_queue(), ^{
         {
-            ext::scoped_lock<ext::mutex> lock(bd->bufferCacheMtx);
-            bd->bufferCache.push_back(ext::unique_ptr<MetalBuffer>(vertexBufferPtr));
-            bd->bufferCache.push_back(ext::unique_ptr<MetalBuffer>(indexBufferPtr));
+            std::scoped_lock<std::mutex> lock(bd->bufferCacheMtx);
+            bd->bufferCache.push_back(std::unique_ptr<MetalBuffer>(vertexBufferPtr));
+            bd->bufferCache.push_back(std::unique_ptr<MetalBuffer>(indexBufferPtr));
         }
       });
     }];
@@ -483,8 +483,8 @@ void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*) { @autorelease
 
     bd->framebufferDescriptor = FramebufferDescriptor{
         .colorPixelFormats = { toPixelFormat(drawable.texture.pixelFormat) },
-        .depthPixelFormat = ext::nullopt,
-        .stencilPixelFormat = ext::nullopt
+        .depthPixelFormat = std::nullopt,
+        .stencilPixelFormat = std::nullopt
     };
 
     id<MTLCommandBuffer> commandBuffer = [data->CommandQueue commandBuffer];
@@ -515,7 +515,7 @@ void ImGui_ImplMetal_CreateDeviceObjects() { @autoreleasepool
 {
     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
 
-    bd->graphicsPipelineCache.insert(ext::make_pair(bd->framebufferDescriptor, graphicPipelineStateForFramebufferDescriptor(*bd->device, bd->framebufferDescriptor)));
+    bd->graphicsPipelineCache.insert(std::make_pair(bd->framebufferDescriptor, graphicPipelineStateForFramebufferDescriptor(*bd->device, bd->framebufferDescriptor)));
     // ImGui_ImplMetal_CreateDeviceObjectsForPlatformWindows
     // {
     ImGuiPlatformIO& platform_io = GetPlatformIO();
@@ -527,7 +527,7 @@ void ImGui_ImplMetal_CreateDeviceObjects() { @autoreleasepool
 
 MetalGraphicsPipeline graphicPipelineStateForFramebufferDescriptor(const MetalDevice& device, const FramebufferDescriptor& framebufferDescriptor)
 {
-    ext::unique_ptr<ShaderLib> shaderLib = device.newShaderLib(GFX_SHADER_SLIB);
+    std::unique_ptr<ShaderLib> shaderLib = device.newShaderLib(GFX_SHADER_SLIB);
 
     GraphicsPipeline::Descriptor graphicsPipelineDescriptor = {
         .vertexLayout = VertexLayout{
@@ -609,7 +609,7 @@ void ImGui_ImplMetal_SetupRenderState(ImDrawData* draw_data, id<MTLCommandBuffer
         [commandEncoder setDepthStencilState:graphicsPipeline.depthStencilState()];
 
     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
-    
+
     [commandEncoder setFragmentSamplerState:bd->linearSampler.mtlSamplerState() atIndex:0];
 
     // Setup viewport, orthographic projection matrix

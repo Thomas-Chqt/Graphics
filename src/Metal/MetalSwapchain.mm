@@ -31,10 +31,10 @@ MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descr
     m_mtlLayer.drawableSize = CGSize{CGFloat(desc.width), CGFloat(desc.height)};
     m_mtlLayer.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
 }}
-    
-ext::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
+
+std::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
 {
-    return ext::make_shared<MetalDrawable>([m_mtlLayer nextDrawable]);
+    return std::make_shared<MetalDrawable>([m_mtlLayer nextDrawable]);
 }}
 
 MetalSwapchain::~MetalSwapchain() { @autoreleasepool

@@ -25,7 +25,7 @@ MetalSurface::MetalSurface(GLFWwindow* glfwWindow) { @autoreleasepool
 }}
 #endif
 
-const ext::set<PixelFormat> MetalSurface::supportedPixelFormats(const Device&) const
+const std::set<PixelFormat> MetalSurface::supportedPixelFormats(const Device&) const
 {
     return {
         PixelFormat::BGRA8Unorm,
@@ -33,7 +33,7 @@ const ext::set<PixelFormat> MetalSurface::supportedPixelFormats(const Device&) c
     };
 }
 
-const ext::set<PresentMode> MetalSurface::supportedPresentModes(const Device&) const
+const std::set<PresentMode> MetalSurface::supportedPresentModes(const Device&) const
 {
     return {
         PresentMode::fifo

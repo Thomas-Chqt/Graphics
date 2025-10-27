@@ -10,12 +10,6 @@
 #ifndef GRAPHICS_PCH_HPP
 #define GRAPHICS_PCH_HPP
 
-#if defined(GFX_USE_UTILSCPP)
-
-namespace ext = utl;  // NOLINT
-
-#else // GFX_USE_UTILSCPP
-
 #include <cstdint>    // IWYU pragma: keep
 #include <stdexcept>  // IWYU pragma: keep
 #include <cstring>    // IWYU pragma: keep
@@ -37,9 +31,6 @@ namespace ext = utl;  // NOLINT
 #include <print>      // IWYU pragma: keep
 #include <ctime>      // IWYU pragma: keep
 #include <mutex>      // IWYU pragma: keep
-namespace ext = std;  // NOLINT
-
-#endif // GFX_USE_UTILSCPP
 
 #if defined(GFX_BUILD_METAL)
 #if defined(__OBJC__)

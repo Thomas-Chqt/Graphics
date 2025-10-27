@@ -48,10 +48,10 @@ struct Vertex
     glm::vec3 color;
 };
 
-constexpr ext::array<Vertex, 3> vertices = {
+constexpr std::array<Vertex, 3> vertices = {
     Vertex{ .pos=glm::vec2( 0.0f,  0.5f), .color=glm::vec3(1.0f, 0.0f, 0.0f) },
     Vertex{ .pos=glm::vec2( 0.5f, -0.5f), .color=glm::vec3(0.0f, 1.0f, 0.0f) },
-    Vertex{ .pos=glm::vec2(-0.5f, -0.5f), .color=glm::vec3(0.0f, 0.0f, 1.0f) } 
+    Vertex{ .pos=glm::vec2(-0.5f, -0.5f), .color=glm::vec3(0.0f, 0.0f, 1.0f) }
 };
 
 constexpr uint8_t maxFrameInFlight = 3;
@@ -96,8 +96,8 @@ public:
 
         assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
-        
-        ext::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
+
+        std::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
         assert(shaderLib);
 
         gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
@@ -132,20 +132,20 @@ public:
         });
         assert(m_vertexBuffer);
 
-        ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+        std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
             .size = sizeof(Vertex) * vertices.size(),
             .usages = gfx::BufferUsage::copySource,
             .storageMode = gfx::ResourceStorageMode::hostVisible
         });
         assert(stagingBuffer);
 
-        ext::ranges::copy(vertices, stagingBuffer->content<Vertex>());
-        
-        ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+        std::ranges::copy(vertices, stagingBuffer->content<Vertex>());
+
+        std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
         commandBuffer->beginBlitPass();
         commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, stagingBuffer->size());
         commandBuffer->endBlitPass();
-        m_device->submitCommandBuffers(ext::move(commandBuffer));
+        m_device->submitCommandBuffers(std::move(commandBuffer));
     }
 
     void loop()
@@ -177,9 +177,9 @@ public:
                 m_lastCommandBuffers.at(m_frameIdx) = nullptr;
             }
 
-            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
 
-            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
             if (drawable == nullptr) {
                 m_swapchain = nullptr;
                 continue;
@@ -191,7 +191,7 @@ public:
                         .loadAction = gfx::LoadAction::clear,
                         .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
                         .texture = drawable->texture()
-                    } 
+                    }
                 }
             };
 
@@ -205,7 +205,7 @@ public:
             commandBuffer->presentDrawable(drawable);
 
             m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
-            m_device->submitCommandBuffers(ext::move(commandBuffer));
+            m_device->submitCommandBuffers(std::move(commandBuffer));
 
             m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
@@ -219,15 +219,15 @@ public:
 
 private:
     GLFWwindow* m_window = nullptr;
-    ext::unique_ptr<gfx::Instance> m_instance;
-    ext::unique_ptr<gfx::Surface> m_surface;
-    ext::unique_ptr<gfx::Device> m_device;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
-    ext::unique_ptr<gfx::Swapchain> m_swapchain;
-    ext::shared_ptr<gfx::Buffer> m_vertexBuffer;
+    std::unique_ptr<gfx::Instance> m_instance;
+    std::unique_ptr<gfx::Surface> m_surface;
+    std::unique_ptr<gfx::Device> m_device;
+    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    std::unique_ptr<gfx::Swapchain> m_swapchain;
+    std::shared_ptr<gfx::Buffer> m_vertexBuffer;
     uint8_t m_frameIdx = 0;
-    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

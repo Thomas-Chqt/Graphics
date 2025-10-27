@@ -30,11 +30,11 @@ public:
 
     VulkanDrawable(const VulkanDevice*);
 
-    inline ext::shared_ptr<Texture> texture() const override { return m_swapchainImage; }
-    inline ext::shared_ptr<VulkanTexture> vulkanTexture() const { return m_swapchainImage; }
-    inline ext::shared_ptr<SwapchainImage> swapchainImage() const { return m_swapchainImage; }
+    inline std::shared_ptr<Texture> texture() const override { return m_swapchainImage; }
+    inline std::shared_ptr<VulkanTexture> vulkanTexture() const { return m_swapchainImage; }
+    inline std::shared_ptr<SwapchainImage> swapchainImage() const { return m_swapchainImage; }
 
-    void setSwapchainImage(const ext::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex);
+    void setSwapchainImage(const std::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex);
 
     inline const vk::SwapchainKHR& swapchain() const { return m_swapchainImage->swapchain(); }
     inline uint32_t imageIndex() const { return m_imageIndex; }
@@ -48,7 +48,7 @@ private:
     const VulkanDevice* m_device;
     vk::Semaphore m_imageAvailableSemaphore;
 
-    ext::shared_ptr<SwapchainImage> m_swapchainImage;
+    std::shared_ptr<SwapchainImage> m_swapchainImage;
     uint32_t m_imageIndex = 0;
 
 public:

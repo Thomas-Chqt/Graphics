@@ -38,7 +38,7 @@ namespace gfx
 VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalDevice* phyDevice, const VulkanDevice::Descriptor& desc)
     : m_instance(instance), m_physicalDevice(phyDevice)
 {
-    assert((m_physicalDevice->getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty() == false);
+    assert((m_physicalDevice->getQueueFamilies() | std::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).empty() == false);
 
     auto synchronization2Feature = vk::PhysicalDeviceSynchronization2Features{}
         .setSynchronization2(vk::True);
@@ -51,20 +51,20 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setTimelineSemaphore(vk::True)
         .setPNext(dynamicRenderingFeature);
 
-    m_queueFamily = (m_physicalDevice->getQueueFamilies() | ext::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).front();
+    m_queueFamily = (m_physicalDevice->getQueueFamilies() | std::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).front();
     float queuePriority = 1.0f;
     auto queueCreateInfo = vk::DeviceQueueCreateInfo{}
         .setQueueFamilyIndex(m_queueFamily.index)
         .setQueueCount(1)
         .setPQueuePriorities(&queuePriority);
 
-    ext::vector<const char*> enabledExtensions = desc.deviceExtensions | ext::views::filter([&](const char* ext) {
+    std::vector<const char*> enabledExtensions = desc.deviceExtensions | std::views::filter([&](const char* ext) {
         if (strcmp(ext, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0 && m_physicalDevice->getProperties().apiVersion >= vk::ApiVersion13)
             return false;
         if (strcmp(ext, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0 && m_physicalDevice->getProperties().apiVersion >= vk::ApiVersion13)
             return false;
         return true;
-    }) | ext::ranges::to<ext::vector>();
+    }) | std::ranges::to<std::vector>();
 
     vk::PhysicalDeviceFeatures deviceFeatures{};
 
@@ -81,8 +81,8 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     m_queue = m_vkDevice.getQueue(m_queueFamily.index, 0);
 
     VmaVulkanFunctions vulkanFunctions = {};
-    vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
-    vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+    vulkanFunctions.vkGetInstanceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr;
+    vulkanFunctions.vkGetDeviceProcAddr = VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr;
 
     VmaAllocatorCreateInfo allocatorCreateInfo = {
         .flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT,
@@ -95,7 +95,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
 
     auto res = vmaCreateAllocator(&allocatorCreateInfo, &m_allocator);
     if (res != VK_SUCCESS)
-        throw ext::runtime_error("vmaCreateAllocator failed");
+        throw std::runtime_error("vmaCreateAllocator failed");
 
     m_timelineSemaphore = m_vkDevice.createSemaphore(vk::SemaphoreCreateInfo{}
         .setPNext(vk::SemaphoreTypeCreateInfo{}
@@ -103,52 +103,52 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
             .setInitialValue(0)));
 }
 
-ext::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
+std::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
 {
-    return ext::make_unique<VulkanSwapchain>(this, desc);
+    return std::make_unique<VulkanSwapchain>(this, desc);
 }
 
-ext::unique_ptr<ShaderLib> VulkanDevice::newShaderLib(const ext::filesystem::path& path) const
+std::unique_ptr<ShaderLib> VulkanDevice::newShaderLib(const std::filesystem::path& path) const
 {
-    return ext::make_unique<VulkanShaderLib>(*this, path);
+    return std::make_unique<VulkanShaderLib>(*this, path);
 }
 
-ext::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
+std::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
 {
     for (auto& pbl : desc.parameterBlockLayouts)
         (void)descriptorSetLayout(pbl); // add to cache, will create the layout if not present
-    return ext::make_unique<VulkanGraphicsPipeline>(this, desc);
+    return std::make_unique<VulkanGraphicsPipeline>(this, desc);
 }
 
-ext::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) const
+std::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) const
 {
-    return ext::make_unique<VulkanBuffer>(this, desc);
+    return std::make_unique<VulkanBuffer>(this, desc);
 }
 
-ext::unique_ptr<Texture> VulkanDevice::newTexture(const Texture::Descriptor& desc) const
+std::unique_ptr<Texture> VulkanDevice::newTexture(const Texture::Descriptor& desc) const
 {
-    return ext::make_unique<VulkanTexture>(this, desc);
+    return std::make_unique<VulkanTexture>(this, desc);
 }
 
-ext::unique_ptr<CommandBufferPool> VulkanDevice::newCommandBufferPool() const
+std::unique_ptr<CommandBufferPool> VulkanDevice::newCommandBufferPool() const
 {
-    return ext::make_unique<VulkanCommandBufferPool>(this, m_queueFamily);
+    return std::make_unique<VulkanCommandBufferPool>(this, m_queueFamily);
 }
 
-ext::unique_ptr<ParameterBlockPool> VulkanDevice::newParameterBlockPool() const
+std::unique_ptr<ParameterBlockPool> VulkanDevice::newParameterBlockPool() const
 {
-    return ext::make_unique<VulkanParameterBlockPool>(this);
+    return std::make_unique<VulkanParameterBlockPool>(this);
 }
 
-ext::unique_ptr<Sampler> VulkanDevice::newSampler(const Sampler::Descriptor& desc) const
+std::unique_ptr<Sampler> VulkanDevice::newSampler(const Sampler::Descriptor& desc) const
 {
-    return ext::make_unique<VulkanSampler>(this, desc);
+    return std::make_unique<VulkanSampler>(this, desc);
 }
 
 #if defined (GFX_IMGUI_ENABLED)
-void VulkanDevice::imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, ext::optional<PixelFormat> depthAttachmentPxFormat) const
+void VulkanDevice::imguiInit(std::vector<PixelFormat> colorAttachmentPxFormats, std::optional<PixelFormat> depthAttachmentPxFormat) const
 {
-    ext::vector<vk::Format> colorAttachmentFormats;
+    std::vector<vk::Format> colorAttachmentFormats;
     colorAttachmentFormats.reserve(colorAttachmentPxFormats.size());
     for (PixelFormat pxf : colorAttachmentPxFormats)
     colorAttachmentFormats.push_back(toVkFormat(pxf));
@@ -159,6 +159,15 @@ void VulkanDevice::imguiInit(ext::vector<PixelFormat> colorAttachmentPxFormats, 
         pipelineRenderingCreateInfo.setDepthAttachmentFormat(toVkFormat(depthAttachmentPxFormat.value()));
 
     constexpr auto minAllocSize = static_cast<VkDeviceSize>(1024*1024);
+
+    ImGui_ImplVulkan_LoadFunctions(
+        VK_API_VERSION_1_2,
+        [](const char* function_name, void* user_data) -> PFN_vkVoidFunction {
+            auto* instance = static_cast<VkInstance>(user_data);
+            return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(instance, function_name);
+        },
+        static_cast<void*>(m_instance->vkInstance())
+    );
 
     ImGui_ImplVulkan_InitInfo initInfo = {
         .ApiVersion = m_physicalDevice->getProperties().apiVersion,
@@ -197,34 +206,34 @@ void VulkanDevice::imguiShutdown()
 }
 #endif
 
-void VulkanDevice::submitCommandBuffers(ext::unique_ptr<CommandBuffer>&& aCommandBuffer)
+void VulkanDevice::submitCommandBuffers(std::unique_ptr<CommandBuffer>&& aCommandBuffer)
 {
-    ext::vector<ext::unique_ptr<CommandBuffer>> vec(1);
-    vec.at(0) = ext::move(aCommandBuffer);
-    submitCommandBuffers(ext::move(vec));
+    std::vector<std::unique_ptr<CommandBuffer>> vec(1);
+    vec.at(0) = std::move(aCommandBuffer);
+    submitCommandBuffers(std::move(vec));
 }
 
-void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffer>> aCommandBuffers)
+void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>> aCommandBuffers)
 {
-    ext::vector<vk::CommandBuffer> vkCommandBuffers;
+    std::vector<vk::CommandBuffer> vkCommandBuffers;
 
-    ext::vector<vk::Semaphore> waitSemaphores;
-    ext::vector<uint64_t> waitSemaphoreValues;
-    ext::vector<vk::PipelineStageFlags> waitDstStageMasks;
+    std::vector<vk::Semaphore> waitSemaphores;
+    std::vector<uint64_t> waitSemaphoreValues;
+    std::vector<vk::PipelineStageFlags> waitDstStageMasks;
 
-    ext::vector<vk::Semaphore> signalSemaphores;
-    ext::vector<uint64_t> signalSemaphoreValues;
+    std::vector<vk::Semaphore> signalSemaphores;
+    std::vector<uint64_t> signalSemaphoreValues;
 
-    ext::vector<vk::Semaphore> presentWaitSemaphores;
-    ext::vector<vk::SwapchainKHR> presentedSwapchains;
-    ext::vector<uint32_t> presentedImageIndices;
+    std::vector<vk::Semaphore> presentWaitSemaphores;
+    std::vector<vk::SwapchainKHR> presentedSwapchains;
+    std::vector<uint32_t> presentedImageIndices;
 
-    for (ext::unique_ptr<VulkanCommandBuffer> commandBuffer : aCommandBuffers | ext::views::transform([](auto& c) { return ext::unique_ptr<VulkanCommandBuffer>(dynamic_cast<VulkanCommandBuffer*>(c.release())); }))
+    for (std::unique_ptr<VulkanCommandBuffer> commandBuffer : aCommandBuffers | std::views::transform([](auto& c) { return std::unique_ptr<VulkanCommandBuffer>(dynamic_cast<VulkanCommandBuffer*>(c.release())); }))
     {
         assert(commandBuffer);
 
-        ext::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
-        ext::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
+        std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
+        std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
 
         for (auto& [image, syncReq] : commandBuffer->imageSyncRequests())
         {
@@ -232,7 +241,7 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
             // to the list of wait semaphores
             if (auto swapchainImg = dynamic_pointer_cast<SwapchainImage>(image)) {
                 // no ideal to do a linear seach but we need to keep the order for the association with the valueq
-                if (ext::ranges::find(waitSemaphores, swapchainImg->imageAvailableSemaphore()) == waitSemaphores.end()) {
+                if (std::ranges::find(waitSemaphores, swapchainImg->imageAvailableSemaphore()) == waitSemaphores.end()) {
                     waitSemaphores.push_back(swapchainImg->imageAvailableSemaphore());
                     waitSemaphoreValues.push_back(0); // not a timeline semaphore, value doesnt matter
                     waitDstStageMasks.emplace_back(vk::PipelineStageFlagBits::eAllCommands);
@@ -276,7 +285,7 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
             ImageSyncRequest syncReq = {
                 .layout = vk::ImageLayout::ePresentSrcKHR,
                 .preserveContent = true};
-            
+
             if (auto memoryBarrier = syncImage(drawable->swapchainImage()->syncState(), syncReq))
             {
                 memoryBarrier->setImage(drawable->swapchainImage()->vkImage());
@@ -308,13 +317,13 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
             // if a barrier is needed, we need to create a command buffer for it
             // using the same pool a the submitted command buffer so they have the same lifetime
             assert(commandBuffer->poolVulkan());
-            ext::unique_ptr<VulkanCommandBuffer> barrierCmdBuffer = commandBuffer->poolVulkan()->getVulkan();
+            std::unique_ptr<VulkanCommandBuffer> barrierCmdBuffer = commandBuffer->poolVulkan()->getVulkan();
             barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
             barrierCmdBuffer->end();
             // barrierCmdBuffer is added before the user command buffer
             barrierCmdBuffer->setSignaledTimeValue(m_nextSignaledTimeValue);
             vkCommandBuffers.push_back(barrierCmdBuffer->vkCommandBuffer());
-            m_submittedCommandBuffers.push_back(ext::move(barrierCmdBuffer));
+            m_submittedCommandBuffers.push_back(std::move(barrierCmdBuffer));
         }
 
         commandBuffer->end();
@@ -322,7 +331,7 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
         // wating on one command buffer will wait all the command buffer of the submit groupe
         commandBuffer->setSignaledTimeValue(m_nextSignaledTimeValue);
         vkCommandBuffers.push_back(commandBuffer->vkCommandBuffer());
-        m_submittedCommandBuffers.push_back(ext::move(commandBuffer));
+        m_submittedCommandBuffers.push_back(std::move(commandBuffer));
     }
 
     // currently useless because it dont make sense to call this function with an empty vector
@@ -336,7 +345,7 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
         auto timelineSemaphoreSubmitInfo = vk::TimelineSemaphoreSubmitInfo{}
             .setWaitSemaphoreValues(waitSemaphoreValues)
             .setSignalSemaphoreValues(signalSemaphoreValues);
-    
+
         auto submitInfo = vk::SubmitInfo{}
             .setPNext(timelineSemaphoreSubmitInfo)
             .setWaitSemaphores(waitSemaphores)
@@ -346,7 +355,7 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
 
         m_queue.submit(submitInfo);
     }
-    
+
     // for offscreen rendering or compute only
     if (presentedSwapchains.empty() == false)
     {
@@ -362,18 +371,18 @@ void VulkanDevice::submitCommandBuffers(ext::vector<ext::unique_ptr<CommandBuffe
 
 void VulkanDevice::waitCommandBuffer(const CommandBuffer* aCommandBuffer)
 {
-    auto it = ext::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
+    auto it = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
     if (it != m_submittedCommandBuffers.end())
     {
         auto semaphoreWaitInfo = vk::SemaphoreWaitInfo{}
             .setSemaphores(m_timelineSemaphore)
             .setValues((*it)->signaledTimeValue());
-        if (m_vkDevice.waitSemaphores(semaphoreWaitInfo, ext::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
-            throw ext::runtime_error("failed to wait timeline semaphore");
+        if (m_vkDevice.waitSemaphores(semaphoreWaitInfo, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
+            throw std::runtime_error("failed to wait timeline semaphore");
         ++it;
         for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
             if ((*curr)->pool())
-                (*curr)->pool()->release(ext::move(*curr));
+                (*curr)->pool()->release(std::move(*curr));
         }
         m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
     }
@@ -385,7 +394,7 @@ void VulkanDevice::waitIdle()
     auto it = m_submittedCommandBuffers.end();
     for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
         if ((*curr)->pool())
-            (*curr)->pool()->release(ext::move(*curr));
+            (*curr)->pool()->release(std::move(*curr));
     }
     m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
 }
@@ -395,7 +404,7 @@ const vk::DescriptorSetLayout& VulkanDevice::descriptorSetLayout(const Parameter
     auto it = m_descriptorSetLayoutCache.find(pbLayout);
     if (it == m_descriptorSetLayoutCache.end())
     {
-        ext::vector<vk::DescriptorSetLayoutBinding> vkBindings;
+        std::vector<vk::DescriptorSetLayoutBinding> vkBindings;
         for (uint32_t i = 0; const auto& binding : pbLayout.bindings) {
             vkBindings.push_back(vk::DescriptorSetLayoutBinding{}
                 .setBinding(i)
@@ -407,7 +416,7 @@ const vk::DescriptorSetLayout& VulkanDevice::descriptorSetLayout(const Parameter
         auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo{}
             .setBindings(vkBindings);
         vk::DescriptorSetLayout dsLayout = m_vkDevice.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
-        auto [newIt, res] = m_descriptorSetLayoutCache.insert(ext::make_pair(pbLayout, dsLayout));
+        auto [newIt, res] = m_descriptorSetLayoutCache.insert(std::make_pair(pbLayout, dsLayout));
         assert(res);
         it = newIt;
     }

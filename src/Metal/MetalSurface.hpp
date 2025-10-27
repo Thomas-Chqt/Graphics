@@ -27,8 +27,8 @@ public:
     MetalSurface(GLFWwindow*);
 #endif
 
-    const ext::set<PixelFormat> supportedPixelFormats(const Device&) const override;
-    const ext::set<PresentMode> supportedPresentModes(const Device&) const override;
+    const std::set<PixelFormat> supportedPixelFormats(const Device&) const override;
+    const std::set<PresentMode> supportedPresentModes(const Device&) const override;
 
     CAMetalLayer* mtlLayer() const { return m_mtlLayer; }
 

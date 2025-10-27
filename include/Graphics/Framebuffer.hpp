@@ -32,12 +32,12 @@ struct Framebuffer
     struct Attachment
     {
         LoadAction loadAction = LoadAction::load;
-        union { ext::array<float, 4> clearColor; float clearDepth; };
-        ext::shared_ptr<Texture> texture;
+        union { std::array<float, 4> clearColor; float clearDepth; };
+        std::shared_ptr<Texture> texture;
     };
 
-    ext::vector<Attachment> colorAttachments;
-    ext::optional<Attachment> depthAttachment;
+    std::vector<Attachment> colorAttachments;
+    std::optional<Attachment> depthAttachment;
 };
 
 }

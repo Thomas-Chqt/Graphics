@@ -7,6 +7,8 @@
 
 include(FetchContent)
 
+## GLFW ##########################################################
+
 FetchContent_Declare(glfw3
     GIT_REPOSITORY    https://github.com/glfw/glfw.git
     GIT_TAG           3.4
@@ -22,23 +24,30 @@ if(NOT GLFW_BUILD_WAYLAND)
     set(GLFW_BUILD_WAYLAND OFF)
 endif()
 FetchContent_MakeAvailable(glfw3)
-
-if (TARGET update_mappings)
-    set_target_properties(glfw PROPERTIES FOLDER "dependencies/GLFW3")
-    set_target_properties(update_mappings PROPERTIES FOLDER "dependencies/GLFW3")
-else()
-    set_target_properties(glfw PROPERTIES FOLDER "dependencies")
+if (glfw3_SOURCE_DIR)
+    if (TARGET update_mappings)
+        set_target_properties(glfw PROPERTIES FOLDER "dependencies/GLFW3")
+        set_target_properties(update_mappings PROPERTIES FOLDER "dependencies/GLFW3")
+    else()
+        set_target_properties(glfw PROPERTIES FOLDER "dependencies")
+    endif()
 endif()
+
+## GLM ###############################################################
 
 FetchContent_Declare(gml
     GIT_REPOSITORY    https://github.com/g-truc/glm.git
     GIT_TAG           1.0.1
     GIT_SHALLOW       1
     GIT_PROGRESS      TRUE
-    FIND_PACKAGE_ARGS
+    FIND_PACKAGE_ARGS NAMES glm
 )
 FetchContent_MakeAvailable(gml)
-set_target_properties(glm PROPERTIES FOLDER "dependencies")
+if (gml_SOURCE_DIR)
+    set_target_properties(glm PROPERTIES FOLDER "dependencies")
+endif()
+
+##################################################################
 
 set(SHADER_TARGET_LIST)
 if (GFX_BUILD_METAL)

@@ -12,7 +12,7 @@
 namespace gfx
 {
 
-VulkanShaderFunction::VulkanShaderFunction(const vk::ShaderModule* shaderModule, const ext::string& name)
+VulkanShaderFunction::VulkanShaderFunction(const vk::ShaderModule* shaderModule, const std::string& name)
     : m_shaderModule(shaderModule), m_name(name)
 {
 }

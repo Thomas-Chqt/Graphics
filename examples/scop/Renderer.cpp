@@ -154,7 +154,7 @@ void Renderer::renderMesh(const Mesh& mesh, glm::mat4x4 worlTransform)
         for (auto& submesh : submesh.subMeshes)
             addSubmesh(submesh, *modelMatrix->content<glm::mat4x4>());
 
-        cfd.renderables[submesh.material->graphicsPipleine()][submesh.material][ext::make_pair(submesh.vertexBuffer, submesh.indexBuffer)].push_back(modelMatrix);
+        cfd.renderables[submesh.material->graphicsPipleine()][submesh.material][std::make_pair(submesh.vertexBuffer, submesh.indexBuffer)].push_back(modelMatrix);
     };
 
     for (auto& submesh : mesh.subMeshes)
@@ -253,7 +253,7 @@ void Renderer::endFrame()
     commandBuffer->presentDrawable(drawable);
 
     cfd.lastCommandBuffer = commandBuffer.get();
-    m_device->submitCommandBuffers(ext::move(commandBuffer));
+    m_device->submitCommandBuffers(std::move(commandBuffer));
 
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();

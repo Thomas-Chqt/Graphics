@@ -16,7 +16,7 @@
 
 namespace gfx
 {
-    
+
 VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor& desc)
     : m_device(device), m_size(desc.size), m_usages(desc.usages), m_storageMode(desc.storageMode)
 {
@@ -31,7 +31,7 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor&
 
     VkBuffer buffer = VK_NULL_HANDLE;
     vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &m_allocation, &m_allocInfo);
-    m_vkBuffer = ext::exchange(buffer, VK_NULL_HANDLE);
+    m_vkBuffer = std::exchange(buffer, VK_NULL_HANDLE);
 }
 
 void VulkanBuffer::setContent(const void* data, size_t size)
@@ -40,7 +40,7 @@ void VulkanBuffer::setContent(const void* data, size_t size)
 
     VkResult res = vmaCopyMemoryToAllocation(m_device->allocator(), data, m_allocation, 0, size);
     if (res != VK_SUCCESS)
-        throw ext::runtime_error("vmaCopyMemoryToAllocation failed");
+        throw std::runtime_error("vmaCopyMemoryToAllocation failed");
 }
 
 VulkanBuffer::~VulkanBuffer()

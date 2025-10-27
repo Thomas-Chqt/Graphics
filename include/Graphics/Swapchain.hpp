@@ -42,7 +42,7 @@ public:
     Swapchain(const Swapchain&) = delete;
     Swapchain(Swapchain&&) = delete;
 
-    virtual ext::shared_ptr<Drawable> nextDrawable() = 0;
+    virtual std::shared_ptr<Drawable> nextDrawable() = 0;
 
     virtual ~Swapchain() = default;
 

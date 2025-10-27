@@ -18,7 +18,7 @@ namespace gfx
 {
 
 MetalSampler::MetalSampler(MetalSampler&& other) noexcept
-    : m_mtlSamplerState(ext::exchange(other.m_mtlSamplerState, nil))
+    : m_mtlSamplerState(std::exchange(other.m_mtlSamplerState, nil))
 {
 }
 
@@ -35,7 +35,7 @@ MetalSampler::MetalSampler(const MetalDevice& device, const Sampler::Descriptor&
 
     m_mtlSamplerState = [device.mtlDevice() newSamplerStateWithDescriptor:mtlSamplerDescriptor];
     if (m_mtlSamplerState == nil)
-        throw ext::runtime_error("sampler state creation failed");
+        throw std::runtime_error("sampler state creation failed");
 }}
 
 MetalSampler::~MetalSampler()
@@ -50,7 +50,7 @@ MetalSampler& MetalSampler::operator=(MetalSampler&& other) noexcept
     {
         if(m_mtlSamplerState != nil)
             [m_mtlSamplerState release];
-        m_mtlSamplerState = ext::exchange(other.m_mtlSamplerState, nil);
+        m_mtlSamplerState = std::exchange(other.m_mtlSamplerState, nil);
     }
     return *this;
 }

@@ -79,7 +79,7 @@ struct Vertex
     glm::vec2 uv;
 };
 
-constexpr ext::array<Vertex, 24> cube_vertices = {
+constexpr std::array<Vertex, 24> cube_vertices = {
     // Front face (+Z)
     Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f) },
     Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f) },
@@ -112,7 +112,7 @@ constexpr ext::array<Vertex, 24> cube_vertices = {
     Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f) }
 };
 
-constexpr ext::array<uint32_t, 36> cube_indices = {
+constexpr std::array<uint32_t, 36> cube_indices = {
     // Front face
     0, 1, 2, 0, 2, 3,
     // Back face
@@ -187,7 +187,7 @@ public:
         assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
 
-        ext::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
+        std::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
         assert(shaderLib);
 
         gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
@@ -222,20 +222,20 @@ public:
             });
             assert(m_vertexBuffer);
 
-            ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size = m_vertexBuffer->size(),
                 .usages = gfx::BufferUsage::copySource,
                 .storageMode = gfx::ResourceStorageMode::hostVisible
             });
             assert(stagingBuffer);
 
-            ext::ranges::copy(cube_vertices, stagingBuffer->content<Vertex>());
+            std::ranges::copy(cube_vertices, stagingBuffer->content<Vertex>());
 
-            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
             commandBuffer->beginBlitPass();
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, m_vertexBuffer->size());
             commandBuffer->endBlitPass();
-            m_device->submitCommandBuffers(ext::move(commandBuffer));
+            m_device->submitCommandBuffers(std::move(commandBuffer));
         }
 
         {
@@ -246,20 +246,20 @@ public:
             });
             assert(m_indexBuffer);
 
-            ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size = m_indexBuffer->size(),
                 .usages = gfx::BufferUsage::copySource,
                 .storageMode = gfx::ResourceStorageMode::hostVisible
             });
             assert(stagingBuffer);
 
-            ext::ranges::copy(cube_indices, stagingBuffer->content<uint32_t>());
+            std::ranges::copy(cube_indices, stagingBuffer->content<uint32_t>());
 
-            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
             commandBuffer->beginBlitPass();
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_indexBuffer, m_indexBuffer->size());
             commandBuffer->endBlitPass();
-            m_device->submitCommandBuffers(ext::move(commandBuffer));
+            m_device->submitCommandBuffers(std::move(commandBuffer));
         }
 
         {
@@ -279,7 +279,7 @@ public:
             });
 
             size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm);
-            ext::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size = faceSize * 6, // 6 faces
                 .usages = gfx::BufferUsage::copySource,
                 .storageMode = gfx::ResourceStorageMode::hostVisible
@@ -287,25 +287,25 @@ public:
             assert(stagingBuffer);
 
             auto* bufferData = stagingBuffer->content<stbi_uc>();
-            ext::memcpy(bufferData + 0 * faceSize, sideBytes, faceSize);   // +X (right)
-            ext::memcpy(bufferData + 1 * faceSize, sideBytes, faceSize);   // -X (left)
-            ext::memcpy(bufferData + 2 * faceSize, topBytes, faceSize);    // +Y (top)
-            ext::memcpy(bufferData + 3 * faceSize, bottomBytes, faceSize); // -Y (bottom)
-            ext::memcpy(bufferData + 4 * faceSize, sideBytes, faceSize);   // +Z (front)
-            ext::memcpy(bufferData + 5 * faceSize, sideBytes, faceSize);   // -Z (back)
+            std::memcpy(bufferData + 0 * faceSize, sideBytes, faceSize);   // +X (right)
+            std::memcpy(bufferData + 1 * faceSize, sideBytes, faceSize);   // -X (left)
+            std::memcpy(bufferData + 2 * faceSize, topBytes, faceSize);    // +Y (top)
+            std::memcpy(bufferData + 3 * faceSize, bottomBytes, faceSize); // -Y (bottom)
+            std::memcpy(bufferData + 4 * faceSize, sideBytes, faceSize);   // +Z (front)
+            std::memcpy(bufferData + 5 * faceSize, sideBytes, faceSize);   // -Z (back)
 
             stbi_image_free(sideBytes);
             stbi_image_free(topBytes);
             stbi_image_free(bottomBytes);
 
-            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
             commandBuffer->beginBlitPass();
             {
                 for (int face = 0; face < 6; ++face)
                     commandBuffer->copyBufferToTexture(stagingBuffer, face * faceSize, m_grassTexture, face);
             }
             commandBuffer->endBlitPass();
-            m_device->submitCommandBuffers(ext::move(commandBuffer));
+            m_device->submitCommandBuffers(std::move(commandBuffer));
         }
 
         m_sampler = m_device->newSampler(gfx::Sampler::Descriptor{});
@@ -402,34 +402,34 @@ public:
                 {
                     *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::mat4(1.0f);
 
-                    ImGui::DragFloat3("position", ext::bit_cast<float*>(&m_cubePos), 0.01f, -5.0, 5.0);
+                    ImGui::DragFloat3("position", std::bit_cast<float*>(&m_cubePos), 0.01f, -5.0, 5.0);
                     *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::translate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubePos);
 
-                    ImGui::DragFloat3("rotation", ext::bit_cast<float*>(&m_cubeRot), 0.01f, -ext::numbers::pi_v<float>, ext::numbers::pi_v<float>);
+                    ImGui::DragFloat3("rotation", std::bit_cast<float*>(&m_cubeRot), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
                     *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeRot.x, glm::vec3(1, 0, 0));
                     *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeRot.y, glm::vec3(0, 1, 0));
                     *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::rotate(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeRot.z, glm::vec3(0, 0, 1));
 
-                    ImGui::DragFloat3("scale", ext::bit_cast<float*>(&m_cubeSca), 0.01f, -2, 2);
+                    ImGui::DragFloat3("scale", std::bit_cast<float*>(&m_cubeSca), 0.01f, -2, 2);
                     *m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>() = glm::scale(*m_modelMatrix.at(m_frameIdx)->content<glm::mat4x4>(), m_cubeSca);
                 }
                 ImGui::End();
             }
             ImGui::Render();
 
-            ext::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = m_parameterBlockPools.at(m_frameIdx)->get(vpMatrixBpLayout);
+            std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = m_parameterBlockPools.at(m_frameIdx)->get(vpMatrixBpLayout);
             vpMatrixPBlock->setBinding(0, m_vpMatrix.at(m_frameIdx));
 
-            ext::shared_ptr<gfx::ParameterBlock> modelMatrixPBlock = m_parameterBlockPools.at(m_frameIdx)->get(modelMatrixBpLayout);
+            std::shared_ptr<gfx::ParameterBlock> modelMatrixPBlock = m_parameterBlockPools.at(m_frameIdx)->get(modelMatrixBpLayout);
             modelMatrixPBlock->setBinding(0, m_modelMatrix.at(m_frameIdx));
 
-            ext::shared_ptr<gfx::ParameterBlock> materialPBlock = m_parameterBlockPools.at(m_frameIdx)->get(materialBpLayout);
+            std::shared_ptr<gfx::ParameterBlock> materialPBlock = m_parameterBlockPools.at(m_frameIdx)->get(materialBpLayout);
             materialPBlock->setBinding(0, m_grassTexture);
             materialPBlock->setBinding(1, m_sampler);
 
-            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
 
-            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
             if (drawable == nullptr) {
                 ImGui::UpdatePlatformWindows();
                 ImGui::RenderPlatformWindowsDefault();
@@ -469,7 +469,7 @@ public:
             commandBuffer->presentDrawable(drawable);
 
             m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
-            m_device->submitCommandBuffers(ext::move(commandBuffer));
+            m_device->submitCommandBuffers(std::move(commandBuffer));
 
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
@@ -489,31 +489,31 @@ public:
 
 private:
     GLFWwindow* m_window = nullptr;
-    ext::unique_ptr<gfx::Instance> m_instance;
-    ext::unique_ptr<gfx::Surface> m_surface;
-    ext::unique_ptr<gfx::Device> m_device;
-    ext::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
-    ext::unique_ptr<gfx::Swapchain> m_swapchain;
+    std::unique_ptr<gfx::Instance> m_instance;
+    std::unique_ptr<gfx::Surface> m_surface;
+    std::unique_ptr<gfx::Device> m_device;
+    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    std::unique_ptr<gfx::Swapchain> m_swapchain;
 
-    ext::shared_ptr<gfx::Buffer> m_vertexBuffer;
-    ext::shared_ptr<gfx::Buffer> m_indexBuffer;
+    std::shared_ptr<gfx::Buffer> m_vertexBuffer;
+    std::shared_ptr<gfx::Buffer> m_indexBuffer;
 
     uint8_t m_frameIdx = 0;
-    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    ext::array<ext::unique_ptr<gfx::ParameterBlockPool>, maxFrameInFlight> m_parameterBlockPools;
-    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    std::array<std::unique_ptr<gfx::ParameterBlockPool>, maxFrameInFlight> m_parameterBlockPools;
+    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 
-    ext::array<ext::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_vpMatrix;
+    std::array<std::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_vpMatrix;
 
     glm::vec3 m_cubePos = {0, 0, 0};
     glm::vec3 m_cubeRot = {0, 0, 0};
     glm::vec3 m_cubeSca = {1, 1, 1};
-    ext::array<ext::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_modelMatrix;
+    std::array<std::shared_ptr<gfx::Buffer>, maxFrameInFlight> m_modelMatrix;
 
-    ext::array<ext::shared_ptr<gfx::Texture>, maxFrameInFlight> m_depthTexture;
+    std::array<std::shared_ptr<gfx::Texture>, maxFrameInFlight> m_depthTexture;
 
-    ext::shared_ptr<gfx::Texture> m_grassTexture;
-    ext::shared_ptr<gfx::Sampler> m_sampler;
+    std::shared_ptr<gfx::Texture> m_grassTexture;
+    std::shared_ptr<gfx::Sampler> m_sampler;
 };
 
 int main()

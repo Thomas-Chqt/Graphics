@@ -22,16 +22,16 @@ public:
     VulkanShaderFunction(const VulkanShaderFunction&) = delete;
     VulkanShaderFunction(VulkanShaderFunction&&) = default;
 
-    VulkanShaderFunction(const vk::ShaderModule*, const ext::string&);
+    VulkanShaderFunction(const vk::ShaderModule*, const std::string&);
 
     const vk::ShaderModule& shaderModule(void) const { return *m_shaderModule; }
-    const ext::string& name(void) const { return m_name; }
+    const std::string& name(void) const { return m_name; }
 
     ~VulkanShaderFunction() = default;
 
 private:
     const vk::ShaderModule* m_shaderModule;
-    ext::string m_name;
+    std::string m_name;
 
 public:
     VulkanShaderFunction& operator = (const VulkanShaderFunction&) = delete;

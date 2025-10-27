@@ -17,7 +17,7 @@
 namespace gfx
 {
 
-void ImGui_ImplMetal_Init(const MetalDevice*, const ext::vector<PixelFormat>&, const ext::optional<PixelFormat>&);
+void ImGui_ImplMetal_Init(const MetalDevice*, const std::vector<PixelFormat>&, const std::optional<PixelFormat>&);
 void ImGui_ImplMetal_Shutdown();
 void ImGui_ImplMetal_NewFrame();
 void ImGui_ImplMetal_RenderDrawData(ImDrawData*, id<MTLCommandBuffer>, id<MTLRenderCommandEncoder>);

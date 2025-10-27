@@ -20,8 +20,8 @@ namespace gfx
 {
 
 MetalGraphicsPipeline::MetalGraphicsPipeline(MetalGraphicsPipeline&& other) noexcept
-    : m_renderPipelineState(ext::exchange(other.m_renderPipelineState, nil)),
-      m_depthStencilState(ext::exchange(other.m_depthStencilState, nil))
+    : m_renderPipelineState(std::exchange(other.m_renderPipelineState, nil)),
+      m_depthStencilState(std::exchange(other.m_depthStencilState, nil))
 {
 }
 
@@ -84,7 +84,7 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
                 break;
 
             case BlendOperation::blendingOff:
-                ext::unreachable();
+                std::unreachable();
             }
         }
     }
@@ -100,13 +100,13 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
     NSError* error = nil;
     m_renderPipelineState = [device.mtlDevice() newRenderPipelineStateWithDescriptor:renderPipelineDescriptor error:&error];
     if (m_renderPipelineState == nil)
-        throw ext::runtime_error("failed to create the RenderPipelineState");
+        throw std::runtime_error("failed to create the RenderPipelineState");
 
     if (depthStencilDescriptor != nil)
     {
         m_depthStencilState = [device.mtlDevice() newDepthStencilStateWithDescriptor:depthStencilDescriptor];
         if (m_renderPipelineState == nil)
-            throw ext::runtime_error("failed to create DepthStencilState");
+            throw std::runtime_error("failed to create DepthStencilState");
     }
 }}
 
@@ -124,8 +124,8 @@ MetalGraphicsPipeline& MetalGraphicsPipeline::operator=(MetalGraphicsPipeline&& 
         if (m_depthStencilState)
             [m_depthStencilState release];
         [m_renderPipelineState release];
-        m_renderPipelineState = ext::exchange(other.m_renderPipelineState, nil);
-        m_depthStencilState = ext::exchange(other.m_depthStencilState, nil);
+        m_renderPipelineState = std::exchange(other.m_renderPipelineState, nil);
+        m_depthStencilState = std::exchange(other.m_depthStencilState, nil);
     }
     return *this;
 }

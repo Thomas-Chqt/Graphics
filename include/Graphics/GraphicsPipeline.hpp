@@ -31,17 +31,17 @@ class GraphicsPipeline
 public:
     struct Descriptor
     {
-        ext::optional<VertexLayout> vertexLayout;
+        std::optional<VertexLayout> vertexLayout;
 
         ShaderFunction* vertexShader;
         ShaderFunction* fragmentShader;
 
-        ext::vector<PixelFormat> colorAttachmentPxFormats;
-        ext::optional<PixelFormat> depthAttachmentPxFormat;
-        
+        std::vector<PixelFormat> colorAttachmentPxFormats;
+        std::optional<PixelFormat> depthAttachmentPxFormat;
+
         BlendOperation blendOperation = BlendOperation::blendingOff;
 
-        ext::vector<ParameterBlock::Layout> parameterBlockLayouts;
+        std::vector<ParameterBlock::Layout> parameterBlockLayouts;
     };
 
 public:

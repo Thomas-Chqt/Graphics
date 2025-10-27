@@ -30,8 +30,8 @@ public:
     Surface(const Surface&) = delete;
     Surface(Surface&&) = delete;
 
-    virtual const ext::set<PixelFormat> supportedPixelFormats(const Device&) const = 0;
-    virtual const ext::set<PresentMode> supportedPresentModes(const Device&) const = 0;
+    virtual const std::set<PixelFormat> supportedPixelFormats(const Device&) const = 0;
+    virtual const std::set<PresentMode> supportedPresentModes(const Device&) const = 0;
 
     virtual ~Surface() = default;
 

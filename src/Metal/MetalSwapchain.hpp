@@ -26,7 +26,7 @@ public:
 
     MetalSwapchain(const MetalDevice&, const Swapchain::Descriptor&);
 
-    ext::shared_ptr<Drawable> nextDrawable() override;
+    std::shared_ptr<Drawable> nextDrawable() override;
 
     ~MetalSwapchain() override;
 

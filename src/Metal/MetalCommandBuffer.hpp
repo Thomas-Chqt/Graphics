@@ -41,13 +41,13 @@ public:
 
     void beginRenderPass(const Framebuffer&) override;
 
-    void usePipeline(const ext::shared_ptr<const GraphicsPipeline>&) override;
-    void useVertexBuffer(const ext::shared_ptr<Buffer>&) override;
+    void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) override;
+    void useVertexBuffer(const std::shared_ptr<Buffer>&) override;
 
-    void setParameterBlock(const ext::shared_ptr<const ParameterBlock>&, uint32_t index) override;
+    void setParameterBlock(const std::shared_ptr<const ParameterBlock>&, uint32_t index) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
-    void drawIndexedVertices(const ext::shared_ptr<Buffer>& idxBuffer) override;
+    void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) override;
 
 #if defined(GFX_IMGUI_ENABLED)
     void imGuiRenderDrawData(ImDrawData*) const override;
@@ -58,13 +58,13 @@ public:
 
     void beginBlitPass() override;
 
-    void copyBufferToBuffer(const ext::shared_ptr<Buffer>& src, const ext::shared_ptr<Buffer>& dst, size_t size) override;
-    void copyBufferToTexture(const ext::shared_ptr<Buffer>& buffer, size_t bufferOffset, const ext::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) override;
+    void copyBufferToBuffer(const std::shared_ptr<Buffer>& src, const std::shared_ptr<Buffer>& dst, size_t size) override;
+    void copyBufferToTexture(const std::shared_ptr<Buffer>& buffer, size_t bufferOffset, const std::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) override;
 
     void endBlitPass() override;
 
 
-    void presentDrawable(const ext::shared_ptr<Drawable>&) override;
+    void presentDrawable(const std::shared_ptr<Drawable>&) override;
 
 
     inline const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }
@@ -79,13 +79,13 @@ private:
     id<MTLCommandBuffer> m_mtlCommandBuffer = nil;
     id<MTLCommandEncoder> m_commandEncoder = nil;
 
-    ext::set<ext::shared_ptr<const MetalGraphicsPipeline>> m_usedPipelines;
+    std::set<std::shared_ptr<const MetalGraphicsPipeline>> m_usedPipelines;
 
-    ext::set<ext::shared_ptr<MetalTexture>> m_usedTextures;
-    ext::set<ext::shared_ptr<MetalBuffer>> m_usedBuffers;
-    ext::set<ext::shared_ptr<MetalSampler>> m_usedSamplers;
+    std::set<std::shared_ptr<MetalTexture>> m_usedTextures;
+    std::set<std::shared_ptr<MetalBuffer>> m_usedBuffers;
+    std::set<std::shared_ptr<MetalSampler>> m_usedSamplers;
 
-    ext::set<ext::shared_ptr<const MetalParameterBlock>> m_usedPBlock;
+    std::set<std::shared_ptr<const MetalParameterBlock>> m_usedPBlock;
 
 public:
     MetalCommandBuffer& operator = (const MetalCommandBuffer&) = delete;

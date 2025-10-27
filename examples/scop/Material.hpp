@@ -86,7 +86,7 @@ public:
 private:
     inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
 
-    ext::shared_ptr<gfx::Buffer> m_material;
+    std::shared_ptr<gfx::Buffer> m_material;
 
 public:
     FlatColorMaterial& operator=(const FlatColorMaterial&) = delete;
@@ -110,19 +110,19 @@ public:
 
     std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
 
-    inline const ext::shared_ptr<gfx::Texture>& texture() const { return m_texture; }
-    inline void setTexture(const ext::shared_ptr<gfx::Texture>& t) { m_texture = t; }
+    inline const std::shared_ptr<gfx::Texture>& texture() const { return m_texture; }
+    inline void setTexture(const std::shared_ptr<gfx::Texture>& t) { m_texture = t; }
 
-    inline const ext::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
-    inline void setSampler(const ext::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
+    inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
+    inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
 
     ~TexturedCubeMaterial() override = default;
 
 private:
     inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
 
-    ext::shared_ptr<gfx::Texture> m_texture;
-    ext::shared_ptr<gfx::Sampler> m_sampler;
+    std::shared_ptr<gfx::Texture> m_texture;
+    std::shared_ptr<gfx::Sampler> m_sampler;
 
 public:
     TexturedCubeMaterial& operator=(const TexturedCubeMaterial&) = delete;
@@ -152,9 +152,9 @@ public:
 private:
     inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
 
-    ext::shared_ptr<gfx::Sampler> m_sampler;
-    ext::shared_ptr<gfx::Texture> m_diffuseTexture;
-    ext::shared_ptr<gfx::Buffer> m_materialData;
+    std::shared_ptr<gfx::Sampler> m_sampler;
+    std::shared_ptr<gfx::Texture> m_diffuseTexture;
+    std::shared_ptr<gfx::Buffer> m_materialData;
 
 public:
     TexturedMaterial& operator=(const TexturedMaterial&) = delete;

@@ -161,9 +161,9 @@ public:
             }
             ImGui::Render();
 
-            ext::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
 
-            ext::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
+            std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
             if (drawable == nullptr) {
                 m_swapchain = nullptr;
                 continue;
@@ -175,7 +175,7 @@ public:
                         .loadAction = gfx::LoadAction::clear,
                         .clearColor = { 0.0f, 0.0f, 0.0f, 0.0f },
                         .texture = drawable->texture()
-                    } 
+                    }
                 }
             };
 
@@ -185,9 +185,9 @@ public:
             }
             commandBuffer->endRenderPass();
             commandBuffer->presentDrawable(drawable);
-            
+
             m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
-            m_device->submitCommandBuffers(ext::move(commandBuffer));
+            m_device->submitCommandBuffers(std::move(commandBuffer));
 
             if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
             {
@@ -211,14 +211,14 @@ public:
 
 private:
     GLFWwindow* m_window = nullptr;
-    ext::unique_ptr<gfx::Instance> m_instance;
-    ext::unique_ptr<gfx::Surface> m_surface;
-    ext::unique_ptr<gfx::Device> m_device;
-    ext::unique_ptr<gfx::Swapchain> m_swapchain;
+    std::unique_ptr<gfx::Instance> m_instance;
+    std::unique_ptr<gfx::Surface> m_surface;
+    std::unique_ptr<gfx::Device> m_device;
+    std::unique_ptr<gfx::Swapchain> m_swapchain;
 
     uint8_t m_frameIdx = 0;
-    ext::array<ext::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    ext::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
+    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

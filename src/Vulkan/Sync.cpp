@@ -12,7 +12,7 @@
 namespace gfx
 {
 
-ext::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState& state, const ResourceSyncRequest& request)
+std::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState& state, const ResourceSyncRequest& request)
 {
     constexpr vk::AccessFlags2 writeMask = vk::AccessFlagBits2::eShaderWrite
         | vk::AccessFlagBits2::eTransferWrite
@@ -21,7 +21,7 @@ ext::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState& state, c
         | vk::AccessFlagBits2::eHostWrite
         | vk::AccessFlagBits2::eMemoryWrite;
 
-    ext::optional<vk::MemoryBarrier2> memoryBarrier;
+    std::optional<vk::MemoryBarrier2> memoryBarrier;
 
     const bool hadPrevUse = state.accessMask != vk::AccessFlags2{};
     const bool prevWrote = (state.accessMask & writeMask) != vk::AccessFlags2{};
@@ -45,10 +45,10 @@ ResourceSyncState resourceStateAfterSync(const ResourceSyncRequest& request)
     };
 }
 
-ext::optional<vk::ImageMemoryBarrier2> syncImage(ImageSyncState& state, const ImageSyncRequest& request)
+std::optional<vk::ImageMemoryBarrier2> syncImage(ImageSyncState& state, const ImageSyncRequest& request)
 {
-    ext::optional<vk::MemoryBarrier2> memoryBarrier = syncResource(state, request);
-    ext::optional<vk::ImageMemoryBarrier2> imageMemoryBarrier;
+    std::optional<vk::MemoryBarrier2> memoryBarrier = syncResource(state, request);
+    std::optional<vk::ImageMemoryBarrier2> imageMemoryBarrier;
     if (memoryBarrier.has_value())
     {
         const vk::ImageLayout oldLayout = (request.layout == state.layout) ? state.layout : (request.preserveContent ? state.layout : vk::ImageLayout::eUndefined);
@@ -88,10 +88,10 @@ ImageSyncState imageStateAfterSync(const ImageSyncRequest& request)
     return newState;
 }
 
-ext::optional<vk::BufferMemoryBarrier2> syncBuffer(BufferSyncState& state, const BufferSyncRequest& request)
+std::optional<vk::BufferMemoryBarrier2> syncBuffer(BufferSyncState& state, const BufferSyncRequest& request)
 {
-    ext::optional<vk::MemoryBarrier2> memoryBarrier = syncResource(state, request);
-    ext::optional<vk::BufferMemoryBarrier2> bufferMemoryBarrier;
+    std::optional<vk::MemoryBarrier2> memoryBarrier = syncResource(state, request);
+    std::optional<vk::BufferMemoryBarrier2> bufferMemoryBarrier;
     if (memoryBarrier.has_value())
     {
         bufferMemoryBarrier = vk::BufferMemoryBarrier2{}

@@ -40,7 +40,7 @@ public:
 
     struct Layout
     {
-        ext::vector<ParameterBlock::Binding> bindings;
+        std::vector<ParameterBlock::Binding> bindings;
 
         bool operator<(const Layout& rhs) const noexcept { return bindings < rhs.bindings; }
     };
@@ -48,9 +48,9 @@ public:
 public:
     ParameterBlock(const ParameterBlock&) = delete;
 
-    virtual void setBinding(uint32_t idx, const ext::shared_ptr<Buffer>&) = 0;
-    virtual void setBinding(uint32_t idx, const ext::shared_ptr<Texture>&) = 0;
-    virtual void setBinding(uint32_t idx, const ext::shared_ptr<Sampler>&) = 0;
+    virtual void setBinding(uint32_t idx, const std::shared_ptr<Buffer>&) = 0;
+    virtual void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) = 0;
+    virtual void setBinding(uint32_t idx, const std::shared_ptr<Sampler>&) = 0;
 
     virtual ~ParameterBlock() = default;
 

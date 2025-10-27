@@ -30,7 +30,7 @@ constexpr MTLPixelFormat toMTLPixelFormat(PixelFormat pxf)
     case PixelFormat::Depth32Float:
         return MTLPixelFormatDepth32Float;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -45,7 +45,7 @@ constexpr PixelFormat toPixelFormat(MTLPixelFormat pxf)
     case MTLPixelFormatBGRA8Unorm_sRGB:
         return PixelFormat::BGRA8Unorm_sRGB;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -58,7 +58,7 @@ constexpr MTLLoadAction toMTLLoadAction(LoadAction lac)
     case LoadAction::clear:
         return MTLLoadActionClear;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -75,7 +75,7 @@ constexpr MTLVertexFormat toMetalVertexAttributeFormat(VertexAttributeFormat for
     case VertexAttributeFormat::uint:
         return MTLVertexFormatUInt;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -91,7 +91,7 @@ constexpr MTLResourceUsage toMTLResourceUsage(BindingUsages usages)
         mtlResourceUsage |= MTLResourceUsageRead;
     if (usages & BindingUsage::fragmentWrite)
         mtlResourceUsage |= MTLResourceUsageWrite;
-    
+
     return mtlResourceUsage;
 }
 
@@ -107,7 +107,7 @@ constexpr MTLRenderStages toMTLRenderStages(BindingUsages usages)
         mtlRenderStages |= MTLRenderStageFragment;
     if (usages & BindingUsage::fragmentWrite)
         mtlRenderStages |= MTLRenderStageFragment;
-    
+
     return mtlRenderStages;
 }
 
@@ -134,7 +134,7 @@ constexpr MTLTextureType toMTLTextureType(TextureType type)
     case TextureType::textureCube:
         return MTLTextureTypeCube;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -147,7 +147,7 @@ constexpr TextureType toTextureType(MTLTextureType type)
     case MTLTextureTypeCube:
         return TextureType::textureCube;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -162,7 +162,7 @@ constexpr MTLSamplerAddressMode toMTLSamplerAddressMode(SamplerAddressMode addre
     case SamplerAddressMode::MirrorRepeat:
         return MTLSamplerAddressModeMirrorRepeat;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -175,7 +175,7 @@ constexpr MTLSamplerMinMagFilter toMTLSamplerMinMagFilter(SamplerMinMagFilter fi
     case SamplerMinMagFilter::Linear:
         return MTLSamplerMinMagFilterLinear;
     default:
-        throw ext::runtime_error("not implemented");
+        throw std::runtime_error("not implemented");
     }
 }
 
