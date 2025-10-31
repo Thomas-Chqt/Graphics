@@ -61,14 +61,14 @@ float4 fragmentMain(VSOutput input) : SV_TARGET
 {
     // Use the cube direction directly (vertices are already centered on 0)
     float3 sampleDir = normalize(input.cubeDir);
-    
+
     phong::FragmentContext fragCtx;
     fragCtx.position = input.pos;
     fragCtx.normal = normalize(input.normal);
     fragCtx.cameraDir = normalize(sceneData.cameraPosition - input.pos);
     fragCtx.diffuseColor = material.texture.Sample(material.sampler, normalize(input.cubeDir));
+    fragCtx.specularColor = float3(0.0f);
     fragCtx.shininess = 32;
-    fragCtx.specularIntensity = 0;
 
     float3 finalColor = fragCtx.diffuseColor * sceneData.ambientLightColor;
     for (int i = 0; i < sceneData.directionalLightCount; ++i)

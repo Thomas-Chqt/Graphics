@@ -151,4 +151,4 @@ endif()
 target_compile_definitions(scop PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 
 target_link_libraries(scop PRIVATE Graphics glm::glm imgui stb_image assimp::assimp)
-add_dependencies(scop flat_color_shader textured_cube_shader)
+add_dependencies(scop flat_color_shader textured_cube_shader textured_shader)

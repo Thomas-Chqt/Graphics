@@ -11,9 +11,9 @@
 #define RENDERER_HPP
 
 #include "Camera.hpp"
-#include "AssetLoader.hpp"
 #include "Material.hpp"
 #include "Light.hpp"
+#include "Mesh.hpp"
 
 #include <Graphics/Surface.hpp>
 #include <Graphics/Device.hpp>

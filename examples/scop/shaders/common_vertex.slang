@@ -12,6 +12,7 @@ module common_vertex;
 struct VSInput
 {
     float3 pos;
+    float2 uv;
     float3 normal;
 };
 
@@ -19,6 +20,7 @@ struct VSOutput
 {
     float3 pos;
     float4 clipPos : SV_Position;
+    float2 uv;
     float3 normal;
 };
 
@@ -38,6 +40,7 @@ VSOutput vertexMain(VSInput input)
     VSOutput output;
     output.pos = worldPos.xyz;
     output.clipPos = mul(worldPos, vpMatrix);
+    output.uv = input.uv;
     output.normal = mul(input.normal, (float3x3)modelMatrix);
     return output;
 }

@@ -1,9 +1,9 @@
 /*
  * ---------------------------------------------------
- * flat_color.slang
+ * textured.slang
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
- * Date: 2025/09/23 09:12:21
+ * Date: 2025/10/30 08:54:54
  * ---------------------------------------------------
  */
 
@@ -22,19 +22,26 @@ struct _SceneData { ConstantBuffer<SceneData> data; };
 ParameterBlock<_SceneData> sceneData;
 #define sceneData sceneData.data
 
-struct Material
+struct MaterialData
 {
     float3 diffuseColor;
 #ifdef __SPIRV__
-    float _padding;
+    float _padding0;
+#endif
+    float3 specularColor;
+#ifdef __SPIRV__
+    float _padding1;
 #endif
     float shininess;
-    float specular;
 };
 
-struct _Material { ConstantBuffer<Material> data; };
-ParameterBlock<_Material> material;
-#define material material.data
+struct Material
+{
+    SamplerState sampler;
+    Texture2D<float3> diffuseTexture;
+    ConstantBuffer<MaterialData> data;
+}
+ParameterBlock<Material> material;
 
 [shader("fragment")]
 float4 fragmentMain(FSInput input) : SV_TARGET
@@ -43,9 +50,9 @@ float4 fragmentMain(FSInput input) : SV_TARGET
     fragCtx.position      = input.pos;
     fragCtx.normal        = normalize(input.normal);
     fragCtx.cameraDir     = normalize(sceneData.cameraPosition - input.pos);
-    fragCtx.diffuseColor  = material.diffuseColor;
-    fragCtx.specularColor = float3(material.specular);
-    fragCtx.shininess     = material.shininess;
+    fragCtx.diffuseColor  = material.data.diffuseColor * material.diffuseTexture.Sample(material.sampler, input.uv);
+    fragCtx.specularColor = material.data.specularColor;
+    fragCtx.shininess     = material.data.shininess;
 
     float3 finalColor = sceneData.ambientLightColor;
     for (int i = 0; i < sceneData.directionalLightCount; ++i)

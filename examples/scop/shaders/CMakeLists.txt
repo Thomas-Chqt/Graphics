@@ -38,4 +38,16 @@ add_custom_command(
 add_custom_target(textured_cube_shader ALL DEPENDS ${TEXTURED_CUBE_SLIB})
 set_target_properties(textured_cube_shader PROPERTIES FOLDER "examples/scop/shader")
 
+set(TEXTURED_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/common_vertex.slang" "${CMAKE_CURRENT_SOURCE_DIR}/textured.slang")
+set(TEXTURED_SLIB ${CMAKE_CURRENT_BINARY_DIR}/textured.slib)
+add_custom_command(
+    OUTPUT ${TEXTURED_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${TEXTURED_SLIB} ${TEXTURED_SSRC}
+    DEPENDS gfxsc ${TEXTURED_SSRC}
+    COMMENT "Building texturede_shader shaders"
+    VERBATIM
+)
+add_custom_target(textured_shader ALL DEPENDS ${TEXTURED_SLIB})
+set_target_properties(textured_shader PROPERTIES FOLDER "examples/scop/shader")
+
 set(SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)

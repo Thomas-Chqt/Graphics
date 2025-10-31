@@ -8,8 +8,8 @@
  */
 
 #include "Renderer.hpp"
-#include "AssetLoader.hpp"
 #include "Light.hpp"
+#include "Mesh.hpp"
 
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>

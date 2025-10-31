@@ -10,46 +10,27 @@
 #ifndef ASSETLOADER_HPP
 #define ASSETLOADER_HPP
 
-#include "Graphics/Texture.hpp"
+#include "Mesh.hpp"
+#include "Vertex.hpp"
 #include "Material.hpp"
 
 #include <Graphics/Device.hpp>
 #include <Graphics/CommandBuffer.hpp>
-
-#include <cstdint>
-#include <filesystem>
-#include <functional>
-#include <memory>
-#include <ranges>
+#include <Graphics/Texture.hpp>
+#include <Graphics/Buffer.hpp>
 
 #include <glm/glm.hpp>
 
+#include <cstdint>
+#include <filesystem>
+#include <memory>
+#include <ranges>
+#include <vector>
+
+struct aiTexture;
+
 namespace scop
 {
-
-struct Vertex
-{
-    glm::vec3 pos;
-    glm::vec2 uv;
-    glm::vec3 normal;
-    glm::vec3 tangent;
-};
-
-struct SubMesh
-{
-    std::string name;
-    glm::mat4x4 transform;
-    std::shared_ptr<gfx::Buffer> vertexBuffer;
-    std::shared_ptr<gfx::Buffer> indexBuffer;
-    std::shared_ptr<Material> material;
-    std::vector<SubMesh> subMeshes;
-};
-
-struct Mesh
-{
-    std::string name;
-    std::vector<SubMesh> subMeshes;
-};
 
 class AssetLoader
 {
@@ -60,21 +41,18 @@ public:
 
     AssetLoader(gfx::Device*);
 
-    Mesh builtinCube(const std::function<std::shared_ptr<Material>()>& mkMaterial);
-    Mesh loadMesh(const std::filesystem::path&, const std::function<std::shared_ptr<Material>()>& mkMaterial);
+    Mesh builtinCube(const std::shared_ptr<Material>&);
+    Mesh loadMesh(const std::filesystem::path&);
 
     std::shared_ptr<gfx::Texture> loadTexture(const std::filesystem::path&, gfx::CommandBuffer* = nullptr);
-    std::shared_ptr<gfx::Texture> loadCubeTexture(const std::filesystem::path& right,
-                                                  const std::filesystem::path& left,
-                                                  const std::filesystem::path& top,
-                                                  const std::filesystem::path& bottom,
-                                                  const std::filesystem::path& front,
-                                                  const std::filesystem::path& back,
-                                                  gfx::CommandBuffer* = nullptr);
+    std::shared_ptr<gfx::Texture> loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer* = nullptr);
+    std::shared_ptr<gfx::Texture> getSolidColorTexture(const glm::vec4&, gfx::CommandBuffer* = nullptr);
 
     ~AssetLoader() = default;
 
 private:
+    std::shared_ptr<gfx::Texture> loadEmbeddedTexture(const aiTexture*, gfx::CommandBuffer* = nullptr);
+
     std::shared_ptr<gfx::Buffer> newVertexBuffer(const std::ranges::range auto& vertices, gfx::CommandBuffer& commandBuffer)
         requires std::same_as<std::ranges::range_value_t<decltype(vertices)>, Vertex>
     {
@@ -121,6 +99,7 @@ private:
 
     gfx::Device* m_device;
     std::unique_ptr<gfx::CommandBufferPool> m_commandBufferPool;
+    std::vector<std::pair<glm::vec4, std::shared_ptr<gfx::Texture>>> m_solidColorTextureCache;
 
 public:
     AssetLoader& operator=(const AssetLoader&) = delete;

@@ -10,13 +10,15 @@
 #ifndef CAMERA_HPP
 #define CAMERA_HPP
 
+#include "Entity.hpp"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace scop
 {
 
-class Camera
+class Camera : public Entity
 {
 public:
     virtual glm::mat4x4 viewMatrix() const = 0;

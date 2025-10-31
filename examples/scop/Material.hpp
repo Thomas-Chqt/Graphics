@@ -129,9 +129,16 @@ public:
     TexturedCubeMaterial& operator=(TexturedCubeMaterial&&) = delete;
 };
 
-/*
 class TexturedMaterial : public Material
 {
+private:
+    struct GPUMaterialData
+    {
+        glm::vec3 diffuseColor; float _padding0; // TODO : change to vec4
+        glm::vec3 specularColor; float _padding1;
+        float shininess;
+    };
+
 public:
     TexturedMaterial() = delete;
     TexturedMaterial(const TexturedMaterial&) = delete;
@@ -147,6 +154,21 @@ public:
 
     std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
 
+    inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
+    inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
+
+    inline glm::vec3 diffuseColor() const { return m_materialData->content<GPUMaterialData>()->diffuseColor; }
+    inline void setDiffuseColor(const glm::vec3& c) { m_materialData->content<GPUMaterialData>()->diffuseColor = c; }
+
+    inline const std::shared_ptr<gfx::Texture>& diffuseTexture() const { return m_diffuseTexture; }
+    inline void setDiffuseTexture(const std::shared_ptr<gfx::Texture>& t) { m_diffuseTexture = t; }
+
+    inline glm::vec3 specularColor() const { return m_materialData->content<GPUMaterialData>()->specularColor; }
+    inline void setSpecularColor(const glm::vec3& s) { m_materialData->content<GPUMaterialData>()->specularColor = s; }
+
+    inline float shininess() const { return m_materialData->content<GPUMaterialData>()->shininess; }
+    inline void setShininess(float s) { m_materialData->content<GPUMaterialData>()->shininess = s; }
+
     ~TexturedMaterial() override = default;
 
 private:
@@ -160,7 +182,6 @@ public:
     TexturedMaterial& operator=(const TexturedMaterial&) = delete;
     TexturedMaterial& operator=(TexturedMaterial&&) = delete;
 };
-*/
 
 } // namespace scop
 

@@ -10,12 +10,14 @@
 #ifndef SCOP_LIGHT_HPP
 #define SCOP_LIGHT_HPP
 
+#include "Entity.hpp"
+
 #include <glm/glm.hpp>
 
 namespace scop
 {
 
-class Light
+class Light : public Entity
 {
 public:
     inline const glm::vec3& color() const { return m_color; }

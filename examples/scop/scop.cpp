@@ -7,6 +7,7 @@
  * ---------------------------------------------------
  */
 
+#include "Entity.hpp"
 #include "Renderer.hpp"
 #include "AssetLoader.hpp"
 #include "Material.hpp"
@@ -25,6 +26,7 @@
 
 #include <cassert>
 #include <memory>
+#include <numbers>
 #include <print>
 #include <cstdio>
 #include <exception>
@@ -43,15 +45,16 @@
     #error "unknown compiler"
 #endif
 
-extern "C" {
-SCOP_EXPORT ImGuiContext* GetCurrentContext() { return ImGui::GetCurrentContext(); }
-SCOP_EXPORT ImGuiIO* GetIO() { return &ImGui::GetIO(); }
-SCOP_EXPORT ImGuiPlatformIO* GetPlatformIO() { return &ImGui::GetPlatformIO(); }
-SCOP_EXPORT ImGuiViewport* GetMainViewport() { return ImGui::GetMainViewport(); }
-SCOP_EXPORT bool DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx) { return ImGui::DebugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx); }
-SCOP_EXPORT void* MemAlloc(size_t size) { return ImGui::MemAlloc(size); }
-SCOP_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
-SCOP_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
+extern "C"
+{
+    SCOP_EXPORT ImGuiContext* GetCurrentContext() { return ImGui::GetCurrentContext(); }
+    SCOP_EXPORT ImGuiIO* GetIO() { return &ImGui::GetIO(); }
+    SCOP_EXPORT ImGuiPlatformIO* GetPlatformIO() { return &ImGui::GetPlatformIO(); }
+    SCOP_EXPORT ImGuiViewport* GetMainViewport() { return ImGui::GetMainViewport(); }
+    SCOP_EXPORT bool DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx) { return ImGui::DebugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx); }
+    SCOP_EXPORT void* MemAlloc(size_t size) { return ImGui::MemAlloc(size); }
+    SCOP_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
+    SCOP_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
 }
 
 constexpr uint32_t WINDOW_WIDTH = 800;
@@ -100,6 +103,7 @@ int main()
 
         scop::FlatColorMaterial::createPipeline(*device);
         scop::TexturedCubeMaterial::createPipeline(*device);
+        scop::TexturedMaterial::createPipeline(*device);
 
         scop::FixCamera camera = scop::FixCamera();
 
@@ -107,23 +111,11 @@ int main()
         pointLight.setColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.8f);
         glm::vec3 pointLightPos = {0, 0, 3};
 
-        auto flatColorWhiteMaterial = std::make_shared<scop::FlatColorMaterial>(*device);
-        flatColorWhiteMaterial->setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-        flatColorWhiteMaterial->setShininess(32.0f);
-        flatColorWhiteMaterial->setSpecular(0.5f);
+        scop::RenderableEntity afterTheRain = assetLoader.loadMesh(RESOURCE_DIR"/after_the_rain.glb");
 
-        auto mcCubeMaterial = std::make_shared<scop::TexturedCubeMaterial>(*device);
-        mcCubeMaterial->setTexture(assetLoader.loadCubeTexture(RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_top.jpg", RESOURCE_DIR"/mc_grass_bottom.jpg", RESOURCE_DIR"/mc_grass_side.jpg", RESOURCE_DIR"/mc_grass_side.jpg"));
-
-        scop::Mesh cube = assetLoader.builtinCube([&]() { return mcCubeMaterial; });
-        glm::vec3 cubePosition = {0.5, 0, 0};
-        glm::vec3 cubeRotation = {0, 0, 0};
-        float cubeScale = 1.0f;
-
-        scop::Mesh chess = assetLoader.loadMesh(RESOURCE_DIR"/chess_set/chess_set.gltf", [&]() { return flatColorWhiteMaterial; });
-        glm::vec3 chessPosition = {-0.5, 0, 0};
-        glm::vec3 chessRotation = {0.5, 0, 0};
-        float chessScale = 1.5f;
+        afterTheRain.setPosition({0.310f, 0.720f, 0.020f});
+        afterTheRain.setRotation({-1.200f, std::numbers::pi_v<float>, 0.0f});
+        afterTheRain.setScale(0.040f);
 
         glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f;
 
@@ -135,51 +127,20 @@ int main()
 
             renderer.beginFrame(camera);
 
-            auto cubeModelMatrix = glm::mat4x4(1.0f);
-            auto chessModelMatrix = glm::mat4x4(1.0f);
-
             ImGui::Begin("settings");
             {
                 {
-                    ImGui::DragFloat3("cube position", std::bit_cast<float*>(&cubePosition), 0.01f, -5.0f, 5.0f);
-                    cubeModelMatrix = glm::translate(cubeModelMatrix, cubePosition);
+                    glm::vec3 position = afterTheRain.position();
+                    ImGui::DragFloat3("afterTheRain position", std::bit_cast<float*>(&position), 0.01f, -5.0f, 5.0f);
+                    afterTheRain.setPosition(position);
 
-                    ImGui::DragFloat3("cube rotation", std::bit_cast<float*>(&cubeRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-                    cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.x, glm::vec3(1, 0, 0));
-                    cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.y, glm::vec3(0, 1, 0));
-                    cubeModelMatrix = glm::rotate(cubeModelMatrix, cubeRotation.z, glm::vec3(0, 0, 1));
+                    glm::vec3 rotation = afterTheRain.rotation();
+                    ImGui::DragFloat3("afterTheRain rotation", std::bit_cast<float*>(&rotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+                    afterTheRain.setRotation(rotation);
 
-                    ImGui::DragFloat("cube scale", std::bit_cast<float*>(&cubeScale), 0.01f, 0.01f, 10);
-                    cubeModelMatrix = glm::scale(cubeModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f) * cubeScale);
-                }
-
-                {
-                    ImGui::DragFloat3("chess position", std::bit_cast<float*>(&chessPosition), 0.01f, -5.0f, 5.0f);
-                    chessModelMatrix = glm::translate(chessModelMatrix, chessPosition);
-
-                    ImGui::DragFloat3("chess rotation", std::bit_cast<float*>(&chessRotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-                    chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.x, glm::vec3(1, 0, 0));
-                    chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.y, glm::vec3(0, 1, 0));
-                    chessModelMatrix = glm::rotate(chessModelMatrix, chessRotation.z, glm::vec3(0, 0, 1));
-
-                    ImGui::DragFloat("chess scale", std::bit_cast<float*>(&chessScale), 0.01f, 0.01f, 10);
-                    chessModelMatrix = glm::scale(chessModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f) * chessScale);
-                }
-
-                ImGui::Spacing();
-
-                {
-                    glm::vec3 color = flatColorWhiteMaterial->color();
-                    ImGui::ColorEdit3("color", std::bit_cast<float*>(&color));
-                    flatColorWhiteMaterial->setColor(color);
-
-                    float shininess = flatColorWhiteMaterial->shininess();
-                    ImGui::SliderFloat("shininess", &shininess, 0.1f, 32.0f);
-                    flatColorWhiteMaterial->setShininess(shininess);
-
-                    float specular = flatColorWhiteMaterial->specular();
-                    ImGui::SliderFloat("specular", &specular, 0, 1.0f);
-                    flatColorWhiteMaterial->setSpecular(specular);
+                    float scale = afterTheRain.scale();
+                    ImGui::DragFloat("afterTheRain scale", std::bit_cast<float*>(&scale), 0.01f, 0.01f, 10);
+                    afterTheRain.setScale(scale);
                 }
 
                 ImGui::Spacing();
@@ -201,14 +162,14 @@ int main()
             }
             ImGui::End();
 
-            renderer.renderMesh(cube, cubeModelMatrix);
-            renderer.renderMesh(chess, chessModelMatrix);
+            renderer.renderMesh(afterTheRain.mesh(), afterTheRain.modelMatrix());
 
-            renderer.addLight(pointLight,  pointLightPos);
+            renderer.addLight(pointLight, pointLightPos);
 
             renderer.endFrame();
         }
 
+        scop::TexturedMaterial::destroyPipeline();
         scop::TexturedCubeMaterial::destroyPipeline();
         scop::FlatColorMaterial::destroyPipeline();
 
