@@ -13,14 +13,9 @@
 #include "Graphics/Device.hpp"
 #include "Graphics/Surface.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <string>
-    #include <array>
-    namespace ext = std;
-#endif
+#include <memory>
+#include <string>
+#include <array>
 
 #if defined(GFX_GLFW_ENABLED)
     struct GLFWwindow;

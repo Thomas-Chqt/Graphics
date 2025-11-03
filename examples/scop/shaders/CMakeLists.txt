@@ -26,25 +26,13 @@ add_custom_command(
 add_custom_target(flat_color_shader ALL DEPENDS ${FLAT_COLOR_SLIB})
 set_target_properties(flat_color_shader PROPERTIES FOLDER "examples/scop/shader")
 
-set(TEXTURED_CUBE_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/textured_cube.slang")
-set(TEXTURED_CUBE_SLIB ${CMAKE_CURRENT_BINARY_DIR}/textured_cube.slib)
-add_custom_command(
-    OUTPUT ${TEXTURED_CUBE_SLIB}
-    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${TEXTURED_CUBE_SLIB} ${TEXTURED_CUBE_SSRC}
-    DEPENDS gfxsc ${TEXTURED_CUBE_SSRC}
-    COMMENT "Building textured_cube_shader shaders"
-    VERBATIM
-)
-add_custom_target(textured_cube_shader ALL DEPENDS ${TEXTURED_CUBE_SLIB})
-set_target_properties(textured_cube_shader PROPERTIES FOLDER "examples/scop/shader")
-
 set(TEXTURED_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/common_vertex.slang" "${CMAKE_CURRENT_SOURCE_DIR}/textured.slang")
 set(TEXTURED_SLIB ${CMAKE_CURRENT_BINARY_DIR}/textured.slib)
 add_custom_command(
     OUTPUT ${TEXTURED_SLIB}
     COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${TEXTURED_SLIB} ${TEXTURED_SSRC}
     DEPENDS gfxsc ${TEXTURED_SSRC}
-    COMMENT "Building texturede_shader shaders"
+    COMMENT "Building textured_shader shaders"
     VERBATIM
 )
 add_custom_target(textured_shader ALL DEPENDS ${TEXTURED_SLIB})

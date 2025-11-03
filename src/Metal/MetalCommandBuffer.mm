@@ -94,6 +94,8 @@ void MetalCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipelin
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
 
     [renderCommandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
+    [renderCommandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+    [renderCommandEncoder setCullMode:toMTLCullMode(graphicsPipeline->cullMode())];
     if (graphicsPipeline->depthStencilState() != nil)
         [renderCommandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
 

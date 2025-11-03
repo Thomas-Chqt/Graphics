@@ -179,4 +179,19 @@ constexpr MTLSamplerMinMagFilter toMTLSamplerMinMagFilter(SamplerMinMagFilter fi
     }
 }
 
+constexpr MTLCullMode toMTLCullMode(CullMode cullMode)
+{
+    switch (cullMode)
+    {
+    case CullMode::none:
+        return MTLCullModeNone;
+    case CullMode::front:
+        return MTLCullModeFront;
+    case CullMode::back:
+        return MTLCullModeBack;
+    default:
+        throw std::runtime_error("not implemented");
+    }
+}
+
 }

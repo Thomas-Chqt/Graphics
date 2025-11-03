@@ -12,10 +12,7 @@
 
 #include "Graphics/CommandBuffer.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <memory>
-#endif
+#include <memory>
 
 namespace gfx
 {

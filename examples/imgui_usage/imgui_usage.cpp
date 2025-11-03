@@ -20,14 +20,9 @@
 #include <GLFW/glfw3.h>
 #include <backends/imgui_impl_glfw.h>
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cassert>
-    #include <cstdint>
-    namespace ext = std;
-#endif
+#include <memory>
+#include <cassert>
+#include <cstdint>
 
 #if __XCODE__
     #include <unistd.h>

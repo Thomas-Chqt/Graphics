@@ -10,7 +10,7 @@
 #ifndef SCOP_LIGHT_HPP
 #define SCOP_LIGHT_HPP
 
-#include "Entity.hpp"
+#include "Entity/Entity.hpp"
 
 #include <glm/glm.hpp>
 
@@ -23,7 +23,7 @@ public:
     inline const glm::vec3& color() const { return m_color; }
     inline void setColor(const glm::vec3& c) { m_color = c; }
 
-    virtual ~Light() = default;
+    ~Light() override = default;
 
 protected:
     Light() = default;
@@ -51,12 +51,6 @@ public:
     DirectionalLight& operator=(DirectionalLight&&) = default;
 };
 
-struct alignas(16) GPUDirectionalLight
-{
-    glm::vec3 position; float _padding0;
-    glm::vec3 color; float _padding1;
-};
-
 class PointLight : public Light
 {
 public:
@@ -76,13 +70,6 @@ public:
 public:
     PointLight& operator=(const PointLight&) = default;
     PointLight& operator=(PointLight&&) = default;
-};
-
-struct alignas(16) GPUPointLight
-{
-    glm::vec3 position; float _padding0;
-    glm::vec3 color; float _padding1;
-    float attenuation;
 };
 
 } // namespace scop

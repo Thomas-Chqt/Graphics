@@ -15,14 +15,9 @@
 #include "Graphics/Texture.hpp"
 #include "Graphics/Sampler.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <vector>
-    #include <cstdint>
-    #include <memory>
-    namespace ext = std;
-#endif
+#include <vector>
+#include <cstdint>
+#include <memory>
 
 namespace gfx
 {

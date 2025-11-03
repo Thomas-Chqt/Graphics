@@ -13,15 +13,10 @@
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <vector>
-    #include <memory>
-    #include <optional>
-    #include <array>
-    namespace ext = std;
-#endif
+#include <vector>
+#include <memory>
+#include <optional>
+#include <array>
 
 namespace gfx
 {

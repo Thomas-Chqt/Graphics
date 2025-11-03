@@ -11,8 +11,9 @@
 #define ASSETLOADER_HPP
 
 #include "Mesh.hpp"
-#include "Vertex.hpp"
 #include "Material.hpp"
+
+#include "shaders/Vertex.slang"
 
 #include <Graphics/Device.hpp>
 #include <Graphics/CommandBuffer.hpp>
@@ -54,10 +55,10 @@ private:
     std::shared_ptr<gfx::Texture> loadEmbeddedTexture(const aiTexture*, gfx::CommandBuffer* = nullptr);
 
     std::shared_ptr<gfx::Buffer> newVertexBuffer(const std::ranges::range auto& vertices, gfx::CommandBuffer& commandBuffer)
-        requires std::same_as<std::ranges::range_value_t<decltype(vertices)>, Vertex>
+        requires std::same_as<std::ranges::range_value_t<decltype(vertices)>, shader::Vertex>
     {
         std::shared_ptr<gfx::Buffer> vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(Vertex) * vertices.size(),
+            .size = sizeof(shader::Vertex) * vertices.size(),
             .usages = gfx::BufferUsage::vertexBuffer | gfx::BufferUsage::copyDestination,
             .storageMode = gfx::ResourceStorageMode::deviceLocal});
         assert(vertexBuffer);
@@ -68,7 +69,7 @@ private:
             .storageMode = gfx::ResourceStorageMode::hostVisible});
         assert(stagingBuffer);
 
-        std::ranges::copy(vertices, stagingBuffer->content<Vertex>());
+        std::ranges::copy(vertices, stagingBuffer->content<shader::Vertex>());
 
         commandBuffer.copyBufferToBuffer(stagingBuffer, vertexBuffer, vertexBuffer->size());
 

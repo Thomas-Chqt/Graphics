@@ -16,11 +16,8 @@
 #include "Graphics/ParameterBlock.hpp"
 #include "Graphics/Drawable.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <memory>
-    #include <cstdint>
-#endif
+#include <memory>
+#include <cstdint>
 
 #if defined(GFX_IMGUI_ENABLED)
     struct ImDrawData;

@@ -9,7 +9,7 @@
 
 module phong_shading;
 
-import light;
+import Light;
 
 namespace phong
 {

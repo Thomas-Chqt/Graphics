@@ -15,13 +15,8 @@
 #include "Graphics/Enums.hpp"
 #include "Graphics/VertexLayout.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <vector>
-    #include <optional>
-    namespace ext = std;
-#endif
+#include <vector>
+#include <optional>
 
 namespace gfx
 {
@@ -40,6 +35,7 @@ public:
         std::optional<PixelFormat> depthAttachmentPxFormat;
 
         BlendOperation blendOperation = BlendOperation::blendingOff;
+        CullMode cullMode = CullMode::none;
 
         std::vector<ParameterBlock::Layout> parameterBlockLayouts;
     };

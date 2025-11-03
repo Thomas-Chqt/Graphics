@@ -12,12 +12,7 @@
 
 #include "Graphics/Enums.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl; // NOLINT
-#else
-    #include <cstddef>
-    namespace ext = std; // NOLINT
-#endif
+#include <cstddef>
 
 namespace gfx
 {
@@ -50,7 +45,7 @@ protected:
     Buffer(Buffer&&) = default;
 
     virtual void* contentVoid() = 0;
-    
+
 public:
     Buffer& operator = (const Buffer&) = delete;
 

@@ -68,9 +68,9 @@ std::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const
     return std::make_unique<MetalCommandBufferPool>(&m_queue);
 }
 
-std::unique_ptr<ParameterBlockPool> MetalDevice::newParameterBlockPool() const
+std::unique_ptr<ParameterBlockPool> MetalDevice::newParameterBlockPool(const ParameterBlockPool::Descriptor& descriptor) const
 {
-    return std::make_unique<MetalParameterBlockPool>(this);
+    return std::make_unique<MetalParameterBlockPool>(this, descriptor);
 }
 
 std::unique_ptr<Sampler> MetalDevice::newSampler(const Sampler::Descriptor& desc) const

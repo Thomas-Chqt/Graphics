@@ -9,19 +9,16 @@
 
 module common_vertex;
 
-struct VSInput
-{
-    float3 pos;
-    float2 uv;
-    float3 normal;
-};
+import Vertex;
 
-struct VSOutput
+public struct VSOutput
 {
-    float3 pos;
-    float4 clipPos : SV_Position;
-    float2 uv;
-    float3 normal;
+    public float3 pos;
+    public float4 clipPos : SV_Position;
+    public float2 uv;
+    public float3 tangent;
+    public float3 bitangent;
+    public float3 normal;
 };
 
 struct _VPMatrix { ConstantBuffer<float4x4> data; };
@@ -33,14 +30,17 @@ ParameterBlock<_ModelMatrix> modelMatrix;
 #define modelMatrix modelMatrix.data
 
 [shader("vertex")]
-VSOutput vertexMain(VSInput input)
+VSOutput vertexMain(Vertex input)
 {
     float4 worldPos  = mul(float4(input.pos, 1.0), modelMatrix);
+    float3 bitangent = cross(input.normal, input.tangent);
 
     VSOutput output;
-    output.pos = worldPos.xyz;
-    output.clipPos = mul(worldPos, vpMatrix);
-    output.uv = input.uv;
-    output.normal = mul(input.normal, (float3x3)modelMatrix);
+    output.pos       = worldPos.xyz;
+    output.clipPos   = mul(worldPos, vpMatrix);
+    output.uv        = input.uv;
+    output.tangent   = mul(input.tangent, (float3x3)modelMatrix);
+    output.bitangent = mul(bitangent, (float3x3)modelMatrix);
+    output.normal    = mul(input.normal,  (float3x3)modelMatrix);
     return output;
 }

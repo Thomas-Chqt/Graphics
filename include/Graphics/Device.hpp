@@ -21,15 +21,10 @@
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Enums.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <filesystem>
-    #include <optional>
-    #include <vector>
-    namespace ext = std;
-#endif
+#include <memory>
+#include <filesystem>
+#include <optional>
+#include <vector>
 
 namespace gfx
 {
@@ -54,7 +49,7 @@ public:
     virtual std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
     virtual std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
     virtual std::unique_ptr<CommandBufferPool> newCommandBufferPool() const = 0;
-    virtual std::unique_ptr<ParameterBlockPool> newParameterBlockPool() const = 0;
+    virtual std::unique_ptr<ParameterBlockPool> newParameterBlockPool(const ParameterBlockPool::Descriptor&) const = 0;
     virtual std::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const = 0;
 
 #if defined(GFX_IMGUI_ENABLED)

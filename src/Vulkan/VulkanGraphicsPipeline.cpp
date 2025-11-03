@@ -88,8 +88,8 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         .setRasterizerDiscardEnable(false)
         .setPolygonMode(vk::PolygonMode::eFill)
         .setLineWidth(1.0f)
-        .setCullMode(vk::CullModeFlagBits::eNone)
-        .setFrontFace(vk::FrontFace::eClockwise)
+        .setCullMode(toVkCullModeFlags(desc.cullMode))
+        .setFrontFace(vk::FrontFace::eCounterClockwise)
         .setDepthBiasEnable(false);
 
     auto multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo{}

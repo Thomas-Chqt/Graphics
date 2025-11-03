@@ -10,6 +10,9 @@
 #ifndef MATERIAL_HPP
 #define MATERIAL_HPP
 
+#include "shaders/flat_color.slang"
+#include "shaders/textured.slang"
+
 #include <Graphics/Sampler.hpp>
 #include <Graphics/Texture.hpp>
 #include <Graphics/GraphicsPipeline.hpp>
@@ -38,8 +41,6 @@ protected:
     Material() = default;
     Material(Material&&) = default;
 
-    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
-
 public:
     Material& operator=(const Material&) = delete;
 
@@ -47,135 +48,86 @@ protected:
     Material& operator=(Material&&) = default;
 };
 
-
 class FlatColorMaterial : public Material
 {
-private:
-    struct GPUMaterial
-    {
-        glm::vec3 diffuseColor; float _padding;
-        float shininess;
-        float specular;
-    };
 public:
     FlatColorMaterial() = delete;
     FlatColorMaterial(const FlatColorMaterial&) = delete;
     FlatColorMaterial(FlatColorMaterial&&) = delete;
 
-    FlatColorMaterial(const gfx::Device& device);
+    FlatColorMaterial(gfx::Device& device); // need non const for gfx pipeline
 
-    static void createPipeline(gfx::Device& device);
-    inline static std::shared_ptr<gfx::GraphicsPipeline> getPipeline() { return s_graphicsPipeline; }
-    inline static void destroyPipeline() { s_graphicsPipeline.reset(); }
-
-    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return s_graphicsPipeline; }
-
+    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
     std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
 
-    inline glm::vec3 color() const { return m_material->content<GPUMaterial>()->diffuseColor; }
-    inline void setColor(const glm::vec3& c) { m_material->content<GPUMaterial>()->diffuseColor = c; }
+    inline glm::vec4 diffuseColor() const { return m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor; }
+    inline void setDiffuseColor(const glm::vec4& d) { m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor = d; }
 
-    inline float shininess() const { return m_material->content<GPUMaterial>()->shininess; }
-    inline void setShininess(float s) { m_material->content<GPUMaterial>()->shininess = s; }
+    inline glm::vec3 specularColor() const { return m_materialData->content<shader::flat_color::MaterialData>()->specularColor; }
+    inline void setSpecularColor(glm::vec3 s) { m_materialData->content<shader::flat_color::MaterialData>()->specularColor = s; }
 
-    inline float specular() const { return m_material->content<GPUMaterial>()->specular; }
-    inline void setSpecular(float s) { m_material->content<GPUMaterial>()->specular = s; }
+    inline float shininess() const { return m_materialData->content<shader::flat_color::MaterialData>()->shininess; }
+    inline void setShininess(float s) { m_materialData->content<shader::flat_color::MaterialData>()->shininess = s; }
 
     ~FlatColorMaterial() override = default;
 
 private:
-    inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+    inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
 
-    std::shared_ptr<gfx::Buffer> m_material;
+    std::shared_ptr<gfx::Buffer> m_materialData;
 
 public:
     FlatColorMaterial& operator=(const FlatColorMaterial&) = delete;
     FlatColorMaterial& operator=(FlatColorMaterial&&) = delete;
 };
 
-class TexturedCubeMaterial : public Material
-{
-public:
-    TexturedCubeMaterial() = delete;
-    TexturedCubeMaterial(const TexturedCubeMaterial&) = delete;
-    TexturedCubeMaterial(TexturedCubeMaterial&&) = delete;
-
-    TexturedCubeMaterial(const gfx::Device& device);
-
-    static void createPipeline(gfx::Device& device);
-    inline static std::shared_ptr<gfx::GraphicsPipeline> getPipeline() { return s_graphicsPipeline; }
-    inline static void destroyPipeline() { s_graphicsPipeline.reset(); }
-
-    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return s_graphicsPipeline; }
-
-    std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
-
-    inline const std::shared_ptr<gfx::Texture>& texture() const { return m_texture; }
-    inline void setTexture(const std::shared_ptr<gfx::Texture>& t) { m_texture = t; }
-
-    inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
-    inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
-
-    ~TexturedCubeMaterial() override = default;
-
-private:
-    inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
-
-    std::shared_ptr<gfx::Texture> m_texture;
-    std::shared_ptr<gfx::Sampler> m_sampler;
-
-public:
-    TexturedCubeMaterial& operator=(const TexturedCubeMaterial&) = delete;
-    TexturedCubeMaterial& operator=(TexturedCubeMaterial&&) = delete;
-};
-
 class TexturedMaterial : public Material
 {
-private:
-    struct GPUMaterialData
-    {
-        glm::vec3 diffuseColor; float _padding0; // TODO : change to vec4
-        glm::vec3 specularColor; float _padding1;
-        float shininess;
-    };
-
 public:
     TexturedMaterial() = delete;
     TexturedMaterial(const TexturedMaterial&) = delete;
     TexturedMaterial(TexturedMaterial&&) = delete;
 
-    TexturedMaterial(const gfx::Device& device);
+    TexturedMaterial(gfx::Device& device);
 
-    static void createPipeline(gfx::Device& device);
-    inline static std::shared_ptr<gfx::GraphicsPipeline> getPipeline() { return s_graphicsPipeline; }
-    inline static void destroyPipeline() { s_graphicsPipeline.reset(); }
-
-    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return s_graphicsPipeline; }
-
+    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
     std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
 
     inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
     inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
 
-    inline glm::vec3 diffuseColor() const { return m_materialData->content<GPUMaterialData>()->diffuseColor; }
-    inline void setDiffuseColor(const glm::vec3& c) { m_materialData->content<GPUMaterialData>()->diffuseColor = c; }
+    inline glm::vec4 diffuseColor() const { return m_materialData->content<shader::textured::MaterialData>()->diffuseColor; }
+    inline void setDiffuseColor(const glm::vec4& c) { m_materialData->content<shader::textured::MaterialData>()->diffuseColor = c; }
 
     inline const std::shared_ptr<gfx::Texture>& diffuseTexture() const { return m_diffuseTexture; }
     inline void setDiffuseTexture(const std::shared_ptr<gfx::Texture>& t) { m_diffuseTexture = t; }
 
-    inline glm::vec3 specularColor() const { return m_materialData->content<GPUMaterialData>()->specularColor; }
-    inline void setSpecularColor(const glm::vec3& s) { m_materialData->content<GPUMaterialData>()->specularColor = s; }
+    inline glm::vec3 specularColor() const { return m_materialData->content<shader::textured::MaterialData>()->specularColor; }
+    inline void setSpecularColor(const glm::vec3& s) { m_materialData->content<shader::textured::MaterialData>()->specularColor = s; }
 
-    inline float shininess() const { return m_materialData->content<GPUMaterialData>()->shininess; }
-    inline void setShininess(float s) { m_materialData->content<GPUMaterialData>()->shininess = s; }
+    inline float shininess() const { return m_materialData->content<shader::textured::MaterialData>()->shininess; }
+    inline void setShininess(float s) { m_materialData->content<shader::textured::MaterialData>()->shininess = s; }
+
+    inline glm::vec3 emissiveColor() const { return m_materialData->content<shader::textured::MaterialData>()->emissiveColor; }
+    inline void setEmissiveColor(const glm::vec3& e) { m_materialData->content<shader::textured::MaterialData>()->emissiveColor = e; }
+
+    inline const std::shared_ptr<gfx::Texture>& emissiveTexture() const { return m_emissiveTexture; }
+    inline void setEmissiveTexture(const std::shared_ptr<gfx::Texture>& t) { m_emissiveTexture = t; }
+
+    inline const std::shared_ptr<gfx::Texture>& normalTexture() const { return m_normalTexture; }
+    inline void setNormalTexture(const std::shared_ptr<gfx::Texture>& t) { m_normalTexture = t; }
 
     ~TexturedMaterial() override = default;
 
 private:
-    inline static std::shared_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+    inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
 
     std::shared_ptr<gfx::Sampler> m_sampler;
     std::shared_ptr<gfx::Texture> m_diffuseTexture;
+    std::shared_ptr<gfx::Texture> m_emissiveTexture;
+    std::shared_ptr<gfx::Texture> m_normalTexture;
     std::shared_ptr<gfx::Buffer> m_materialData;
 
 public:

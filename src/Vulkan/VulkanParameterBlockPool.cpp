@@ -13,20 +13,25 @@
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
 
+#include <algorithm>
+
 namespace gfx
 {
 
-VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device)
+VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device, const ParameterBlockPool::Descriptor& descriptor)
     : m_device(device)
 {
     std::array<vk::DescriptorPoolSize, 3> poolSizes = {
-        vk::DescriptorPoolSize{.type=vk::DescriptorType::eUniformBuffer, .descriptorCount=1000},
-        vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampledImage, .descriptorCount=10},
-        vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampler, .descriptorCount=10}
+        vk::DescriptorPoolSize{.type=vk::DescriptorType::eUniformBuffer, .descriptorCount=descriptor.maxUniformBuffers},
+        vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampledImage, .descriptorCount=descriptor.maxTextures},
+        vk::DescriptorPoolSize{.type=vk::DescriptorType::eSampler, .descriptorCount=descriptor.maxSamplers}
     };
 
+    uint32_t maxSets = std::max({descriptor.maxUniformBuffers, descriptor.maxTextures, descriptor.maxSamplers});
+    if (maxSets < 1) maxSets = 1;
+
     auto descriptorPoolCreateInfo = vk::DescriptorPoolCreateInfo{}
-        .setMaxSets(1000)
+        .setMaxSets(maxSets)
         .setPoolSizes(poolSizes);
 
     m_descriptorPool = std::shared_ptr<vk::DescriptorPool>(

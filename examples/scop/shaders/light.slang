@@ -1,35 +1,45 @@
 /*
  * ---------------------------------------------------
- * light.slang
+ * Light.slang
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
- * Date: 2025/10/05 14:59:11
+ * Date: 2025/11/01 17:01:32
  * ---------------------------------------------------
  */
 
-module light;
+#ifndef LIGHT_SLANG
+#define LIGHT_SLANG
 
-public struct DirectionalLight
+#include "shared_types.h"
+
+#ifdef __cplusplus
+namespace shader
 {
-    public float3 position;
-#ifdef __SPIRV__
-    float _padding0;
+#else
+
+module Light;
+
 #endif
-    public float3 color;
-#ifdef __SPIRV__
-    float _padding1;
-#endif
+
+SLAND_PUBLIC struct CPP_ALIGNAS(16) DirectionalLight
+{
+    SLAND_PUBLIC float3 position;
+    FLOAT3_PADDING(0);
+    SLAND_PUBLIC float3 color;
+    FLOAT3_PADDING(1);
 };
 
-public struct PointLight
+SLAND_PUBLIC struct CPP_ALIGNAS(16) PointLight
 {
-    public float3 position;
-#ifdef __SPIRV__
-    float _padding0;
-#endif
-    public float3 color;
-#ifdef __SPIRV__
-    float _padding1;
-#endif
-    public float attenuation;
+    SLAND_PUBLIC float3 position;
+    FLOAT3_PADDING(0);
+    SLAND_PUBLIC float3 color;
+    FLOAT3_PADDING(1);
+    SLAND_PUBLIC float attenuation;
 };
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

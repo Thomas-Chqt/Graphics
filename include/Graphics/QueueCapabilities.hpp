@@ -10,12 +10,7 @@
 #ifndef QUEUECAPABILITIES_HPP
 #define QUEUECAPABILITIES_HPP
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <vector>
-    namespace ext = std;
-#endif
+#include <vector>
 
 namespace gfx
 {

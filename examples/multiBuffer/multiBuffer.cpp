@@ -23,15 +23,10 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cassert>
-    #include <cstdint>
-    #include <array>
-    namespace ext = std;
-#endif
+#include <memory>
+#include <cassert>
+#include <cstdint>
+#include <array>
 
 #if __XCODE__
     #include <unistd.h>

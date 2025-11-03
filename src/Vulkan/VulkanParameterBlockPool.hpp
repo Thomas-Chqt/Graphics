@@ -27,7 +27,7 @@ public:
     VulkanParameterBlockPool(const VulkanParameterBlockPool&) = delete;
     VulkanParameterBlockPool(VulkanParameterBlockPool&&) = delete;
 
-    VulkanParameterBlockPool(const VulkanDevice*);
+    VulkanParameterBlockPool(const VulkanDevice*, const ParameterBlockPool::Descriptor&);
 
     std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
     void release(ParameterBlock*);

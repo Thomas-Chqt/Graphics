@@ -135,9 +135,9 @@ std::unique_ptr<CommandBufferPool> VulkanDevice::newCommandBufferPool() const
     return std::make_unique<VulkanCommandBufferPool>(this, m_queueFamily);
 }
 
-std::unique_ptr<ParameterBlockPool> VulkanDevice::newParameterBlockPool() const
+std::unique_ptr<ParameterBlockPool> VulkanDevice::newParameterBlockPool(const ParameterBlockPool::Descriptor& descriptor) const
 {
-    return std::make_unique<VulkanParameterBlockPool>(this);
+    return std::make_unique<VulkanParameterBlockPool>(this, descriptor);
 }
 
 std::unique_ptr<Sampler> VulkanDevice::newSampler(const Sampler::Descriptor& desc) const

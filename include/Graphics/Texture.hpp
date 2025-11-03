@@ -12,10 +12,7 @@
 
 #include "Graphics/Enums.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <cstdint>
-#endif
+#include <cstdint>
 
 namespace gfx
 {

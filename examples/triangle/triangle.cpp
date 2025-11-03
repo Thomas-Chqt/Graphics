@@ -24,16 +24,11 @@
 #include <algorithm>
 #include <glm/glm.hpp>
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cassert>
-    #include <cstdint>
-    #include <cstddef>
-    #include <utility>
-    namespace ext = std;
-#endif
+#include <memory>
+#include <cassert>
+#include <cstdint>
+#include <cstddef>
+#include <utility>
 
 #if __XCODE__
     #include <unistd.h>

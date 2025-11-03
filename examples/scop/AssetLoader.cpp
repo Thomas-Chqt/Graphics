@@ -9,8 +9,9 @@
 
 #include "AssetLoader.hpp"
 #include "Mesh.hpp"
-#include "Vertex.hpp"
 #include "Material.hpp"
+
+#include "shaders/Vertex.slang"
 
 #include <Graphics/Device.hpp>
 #include <Graphics/CommandBuffer.hpp>
@@ -258,37 +259,37 @@ struct std::formatter<aiMaterial*> {
 namespace scop
 {
 
-constexpr std::array<Vertex, 24> cube_vertices = {
+constexpr std::array<shader::Vertex, 24> cube_vertices = {
     // Front face (+Z)
-    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0,  1} },
-    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0,  1} },
-    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0,  1} },
-    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0,  1} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0,  1} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0,  1} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0,  1} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0,  1} },
     // Back face (-Z)
-    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0, -1} },
-    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0, -1} },
-    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0, -1} },
-    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0, -1} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0, -1} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0, -1} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0, -1} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0, -1} },
     // Left face (-X)
-    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={-1,  0,  0} },
-    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={-1,  0,  0} },
-    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={-1,  0,  0} },
-    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={-1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={-1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={-1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={-1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={-1,  0,  0} },
     // Right face (+X)
-    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 1,  0,  0} },
-    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 1,  0,  0} },
-    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 1,  0,  0} },
-    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 1,  0,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 1,  0,  0} },
     // Top face (+Y)
-    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  1,  0} },
-    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  1,  0} },
-    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  1,  0} },
-    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  1,  0} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  1,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  1,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  1,  0} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  1,  0} },
     // Bottom face (-Y)
-    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0, -1,  0} },
-    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0, -1,  0} },
-    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0, -1,  0} },
-    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0, -1,  0} }
+    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0, -1,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0, -1,  0} },
+    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0, -1,  0} },
+    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0, -1,  0} }
 };
 
 constexpr std::array<uint32_t, 36> cube_indices = {
@@ -306,14 +307,12 @@ constexpr std::array<uint32_t, 36> cube_indices = {
    20,21,22,20,22,23
 };
 
-constexpr unsigned int POST_PROCESSING_FLAGS = aiProcess_JoinIdenticalVertices |
-                                               aiProcess_MakeLeftHanded |
-                                               aiProcess_Triangulate |
-                                               aiProcess_GenSmoothNormals |
-                                               aiProcess_FixInfacingNormals |
-                                               aiProcess_FlipUVs |
-                                               aiProcess_FlipWindingOrder |
-                                               aiProcess_CalcTangentSpace;
+constexpr unsigned int POST_PROCESSING_FLAGS = aiProcess_CalcTangentSpace      |
+                                               aiProcess_JoinIdenticalVertices |
+                                               aiProcess_Triangulate           |
+                                               aiProcess_GenNormals            |
+                                               aiProcess_OptimizeMeshes        |
+                                               aiProcess_FlipUVs;
 
 namespace
 {
@@ -348,7 +347,7 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
                 .transform = glm::mat4x4(1),
                 .vertexBuffer = newVertexBuffer(cube_vertices, *commandBuffer),
                 .indexBuffer = newIndexBuffer(cube_indices, *commandBuffer),
-                .material = material,
+                .material = material ? material : std::make_shared<FlatColorMaterial>(*m_device),
             }
         }
     };
@@ -395,9 +394,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
 
         aiColor4D diffuseColor{};
         if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor) == AI_SUCCESS)
-            material->setDiffuseColor(glm::vec3(diffuseColor.r, diffuseColor.g, diffuseColor.b));
-        else
-            material->setDiffuseColor(glm::vec3(1.0f, 1.0f, 1.0f));
+            material->setDiffuseColor(glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, 1.0f));
 
         aiString diffuseTexturePath;
         if (aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE, 0, &diffuseTexturePath) == AI_SUCCESS)
@@ -408,14 +405,26 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
         aiColor4D specularColor{};
         if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_SPECULAR, &specularColor) == AI_SUCCESS)
             material->setSpecularColor(glm::vec3(specularColor.r, specularColor.g, specularColor.b));
-        else
-            material->setSpecularColor(glm::vec3(0.0f, 0.0f, 0.0f));
 
         float shininess{};
         if (aiGetMaterialFloat(aiMaterial, AI_MATKEY_SHININESS, &shininess) == AI_SUCCESS)
-            material->setShininess(shininess);
+            material->setShininess(std::clamp(shininess, 1.0f, 1024.0f));
+
+        aiColor4D emissiveColor{};
+        if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_EMISSIVE, &emissiveColor) == AI_SUCCESS)
+            material->setEmissiveColor(glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b));
+
+        aiString emissiveTexturePath;
+        if (aiGetMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, 0, &emissiveTexturePath) == AI_SUCCESS)
+            material->setEmissiveTexture(loadTextureFromPath(emissiveTexturePath));
         else
-            material->setShininess(32.0f);
+            material->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f)));
+
+        aiString normalTexturePath;
+        if (aiGetMaterialTexture(aiMaterial, aiTextureType_NORMALS, 0, &normalTexturePath) == AI_SUCCESS)
+            material->setNormalTexture(loadTextureFromPath(normalTexturePath));
+        else
+            material->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f))); // Neutral normal: (128, 128, 255) = (0, 0, 1) in tangent space
 
         return material;
     }) | std::ranges::to<std::vector>();
@@ -425,8 +434,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
         return SubMesh{
             .name = aiMesh->mName.C_Str(),
             .transform = glm::mat4x4(1.0f),
-            .vertexBuffer = newVertexBuffer(std::views::iota(0u, aiMesh->mNumVertices) | std::views::transform([aiMesh](uint32_t i) -> Vertex{
-                return Vertex{
+            .vertexBuffer = newVertexBuffer(std::views::iota(0u, aiMesh->mNumVertices) | std::views::transform([aiMesh](uint32_t i) -> shader::Vertex{
+                return shader::Vertex{
                     .pos = glm::vec3(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z),
                     .uv = aiMesh->mTextureCoords[0] != nullptr ? glm::vec2(aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y) : glm::vec2(0.0f),
                     .normal = aiMesh->mNormals != nullptr ? glm::vec3(aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z) : glm::vec3(0.0f),

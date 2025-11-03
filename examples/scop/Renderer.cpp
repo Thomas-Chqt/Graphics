@@ -8,20 +8,22 @@
  */
 
 #include "Renderer.hpp"
-#include "Light.hpp"
 #include "Mesh.hpp"
+#include "shaders/SceneData.slang"
+#include "shaders/Light.slang"
 
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-
 #include <cassert>
 #include <memory>
 #include <utility>
@@ -42,7 +44,11 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
         frameData.commandBufferPool = m_device->newCommandBufferPool();
         assert(frameData.commandBufferPool);
 
-        frameData.parameterBlockPool = m_device->newParameterBlockPool();
+        frameData.parameterBlockPool = m_device->newParameterBlockPool({
+            .maxUniformBuffers = 10000,
+            .maxTextures = 20,
+            .maxSamplers = 10
+        });
         assert(frameData.parameterBlockPool);
 
         frameData.vpMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{
@@ -52,7 +58,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
         assert(frameData.vpMatrix);
 
         frameData.sceneDataBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(SceneData),
+            .size = sizeof(shader::SceneData),
             .usages = gfx::BufferUsage::uniformBuffer,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
     }
@@ -76,7 +82,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
     m_device->imguiInit({gfx::PixelFormat::BGRA8Unorm}, gfx::PixelFormat::Depth32Float);
 }
 
-void Renderer::beginFrame(const Camera& camera)
+void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
 {
     if (m_swapchain == nullptr) {
         int width = 0, height = 0;
@@ -112,8 +118,8 @@ void Renderer::beginFrame(const Camera& camera)
     cfd.renderables.clear();
     cfd.availableModelMatrixBuffers.append_range(cfd.usedModelMatrixBuffers);
     cfd.usedModelMatrixBuffers.clear();
-    cfsd = SceneData{
-        .cameraPosition = -camera.viewMatrix()[3],
+    cfsd = shader::SceneData{
+        .cameraPosition = -viewMatrix[3],
         .ambientLightColor = glm::vec3(0),
         .directionalLightCount = 0,
         .directionalLights = {},
@@ -123,16 +129,15 @@ void Renderer::beginFrame(const Camera& camera)
 
     int width = 0, height = 0;
     ::glfwGetFramebufferSize(m_window, &width, &height);
-    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
-    *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * camera.viewMatrix();
-
+    glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
+    *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
 
     m_device->imguiNewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
-void Renderer::renderMesh(const Mesh& mesh, glm::mat4x4 worlTransform)
+void Renderer::addMesh(const Mesh& mesh, const glm::mat4x4& worlTransform)
 {
     std::function<void(const SubMesh&, glm::mat4x4)> addSubmesh = [&](const SubMesh& submesh, glm::mat4x4 transform) {
         std::shared_ptr<gfx::Buffer> modelMatrix;
@@ -161,26 +166,14 @@ void Renderer::renderMesh(const Mesh& mesh, glm::mat4x4 worlTransform)
         addSubmesh(submesh, worlTransform);
 }
 
-void Renderer::addLight(const Light& light, const glm::vec3& position)
+void Renderer::addPointLight(const glm::vec3& position, const glm::vec3& color)
 {
-    if (const auto* directionalLight = dynamic_cast<const DirectionalLight*>(&light))
-    {
-        if (static_cast<size_t>(cfsd.directionalLightCount) >= sizeof(cfsd.directionalLights) / sizeof(cfsd.directionalLights[0]))
-            return;
-        cfsd.directionalLights[cfsd.directionalLightCount++] = GPUDirectionalLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
-            .position = position,
-            .color = directionalLight->color()
-        };
-    }
-    else if (const auto* pointLight = dynamic_cast<const PointLight*>(&light))
-    {
-        if (static_cast<size_t>(cfsd.pointLightCount) >= sizeof(cfsd.pointLights) / sizeof(cfsd.pointLights[0]))
-            return;
-        cfsd.pointLights[cfsd.pointLightCount++] = GPUPointLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
-            .position = position,
-            .color = pointLight->color()
-        };
-    }
+    if (static_cast<size_t>(cfsd.pointLightCount) >= sizeof(cfsd.pointLights) / sizeof(cfsd.pointLights[0]))
+        return;
+    cfsd.pointLights[cfsd.pointLightCount++] = shader::PointLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+        .position = position,
+        .color = color
+    };
 }
 
 void Renderer::endFrame()

@@ -12,12 +12,7 @@
 
 #include "Graphics/Enums.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <set>
-    namespace ext = std;
-#endif
+#include <set>
 
 namespace gfx
 {

@@ -28,7 +28,7 @@ public:
     MetalParameterBlockPool(const MetalParameterBlockPool&) = delete;
     MetalParameterBlockPool(MetalParameterBlockPool&&) = delete;
 
-    MetalParameterBlockPool(const MetalDevice*);
+    MetalParameterBlockPool(const MetalDevice*, const ParameterBlockPool::Descriptor&);
 
     std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
     void release(ParameterBlock*);

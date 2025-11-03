@@ -8,8 +8,12 @@
  */
 
 #include "Material.hpp"
+#include "Graphics/Enums.hpp"
 #include "Renderer.hpp"
-#include "Vertex.hpp"
+
+#include "shaders/Vertex.slang"
+#include "shaders/flat_color.slang"
+#include "shaders/textured.slang"
 
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlock.hpp>
@@ -30,148 +34,119 @@ const gfx::ParameterBlock::Layout flatColorMaterialBpLayout = {
     }
 };
 
-FlatColorMaterial::FlatColorMaterial(const gfx::Device& device)
+FlatColorMaterial::FlatColorMaterial(gfx::Device& device)
 {
-    m_material = device.newBuffer(gfx::Buffer::Descriptor{
-        .size = sizeof(GPUMaterial),
+    auto pipeline = s_graphicsPipeline.lock();
+    if (!pipeline) {
+        std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/flat_color.slib");
+        assert(shaderLib);
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
+            .vertexLayout = gfx::VertexLayout{
+                .stride = sizeof(shader::Vertex),
+                .attributes = {
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float3,
+                        .offset = offsetof(shader::Vertex, pos)},
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float2,
+                        .offset = offsetof(shader::Vertex, uv)},
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float3,
+                        .offset = offsetof(shader::Vertex, normal)}
+                }
+            },
+            .vertexShader = &shaderLib->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib->getFunction("fragmentMain"),
+            .colorAttachmentPxFormats = {gfx::PixelFormat::BGRA8Unorm},
+            .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
+            .blendOperation = gfx::BlendOperation::blendingOff,
+            .cullMode = gfx::CullMode::back,
+            .parameterBlockLayouts = { vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, flatColorMaterialBpLayout }
+        };
+        pipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
+        assert(pipeline);
+        s_graphicsPipeline = pipeline;
+    }
+    m_graphicsPipeline = pipeline;
+    m_materialData = device.newBuffer(gfx::Buffer::Descriptor{
+        .size = sizeof(shader::flat_color::MaterialData),
         .usages = gfx::BufferUsage::uniformBuffer,
-        .storageMode = gfx::ResourceStorageMode::hostVisible}) ;
-    setColor(glm::vec3(1.0f, 1.0f, 1.0f));
-    setShininess(32.0f);
-    setSpecular(0.5f);
-}
-
-void FlatColorMaterial::createPipeline(gfx::Device& device)
-{
-    if (s_graphicsPipeline != nullptr)
-        return;
-    std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/flat_color.slib");
-    assert(shaderLib);
-
-    gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
-        .vertexLayout = gfx::VertexLayout{
-            .stride = sizeof(Vertex),
-            .attributes = {
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float3,
-                    .offset = offsetof(Vertex, pos)},
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float2,
-                    .offset = offsetof(Vertex, uv)},
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float3,
-                    .offset = offsetof(Vertex, normal)}
-            }},
-        .vertexShader = &shaderLib->getFunction("vertexMain"),
-        .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-        .colorAttachmentPxFormats = {gfx::PixelFormat::BGRA8Unorm},
-        .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
-        .parameterBlockLayouts = {vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, flatColorMaterialBpLayout}};
-
-    s_graphicsPipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
+        .storageMode = gfx::ResourceStorageMode::hostVisible});
+    setDiffuseColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    setSpecularColor(glm::vec3(0.0f, 0.0f, 0.0f));
+    setShininess(1.0f);
 }
 
 std::unique_ptr<gfx::ParameterBlock> FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
 {
     std::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(flatColorMaterialBpLayout);
-    parameterBlock->setBinding(0, m_material);
+    parameterBlock->setBinding(0, m_materialData);
     return parameterBlock;
 }
 
-const gfx::ParameterBlock::Layout texturedCubeMaterialBpLayout = {
-    .bindings = {
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampler, .usages = gfx::BindingUsage::fragmentRead }
-    }};
-
-TexturedCubeMaterial::TexturedCubeMaterial(const gfx::Device& device)
-{
-    setSampler(device.newSampler(gfx::Sampler::Descriptor{}));
-}
-
-void TexturedCubeMaterial::createPipeline(gfx::Device& device)
-{
-    if (s_graphicsPipeline != nullptr)
-        return;
-    std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/textured_cube.slib");
-    assert(shaderLib);
-
-    gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
-        .vertexLayout = gfx::VertexLayout{
-            .stride = sizeof(Vertex),
-            .attributes = {
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float3,
-                    .offset = offsetof(Vertex, pos)},
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float3,
-                    .offset = offsetof(Vertex, normal)}
-            }},
-        .vertexShader = &shaderLib->getFunction("vertexMain"),
-        .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-        .colorAttachmentPxFormats = {gfx::PixelFormat::BGRA8Unorm},
-        .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
-        .parameterBlockLayouts = {vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, texturedCubeMaterialBpLayout}};
-
-    s_graphicsPipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
-}
-
-std::unique_ptr<gfx::ParameterBlock> TexturedCubeMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
-{
-    std::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(texturedCubeMaterialBpLayout);
-    parameterBlock->setBinding(0, m_texture);
-    parameterBlock->setBinding(1, m_sampler);
-    return parameterBlock;
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const gfx::ParameterBlock::Layout texturedMaterialBpLayout = {
     .bindings = {
         gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampler, .usages = gfx::BindingUsage::fragmentRead },
         gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
+        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
+        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
         gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead }
-    }};
+    }
+};
 
-TexturedMaterial::TexturedMaterial(const gfx::Device& device)
+TexturedMaterial::TexturedMaterial(gfx::Device& device)
 {
-    m_sampler = device.newSampler(gfx::Sampler::Descriptor{});
+    auto pipeline = s_graphicsPipeline.lock();
+    if (!pipeline) {
+        std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/textured.slib");
+        assert(shaderLib);
+        gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
+            .vertexLayout = gfx::VertexLayout{
+                .stride = sizeof(shader::Vertex),
+                .attributes = {
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float3,
+                        .offset = offsetof(shader::Vertex, pos)},
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float2,
+                        .offset = offsetof(shader::Vertex, uv)},
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float3,
+                        .offset = offsetof(shader::Vertex, normal)},
+                    gfx::VertexAttribute{
+                        .format = gfx::VertexAttributeFormat::float3,
+                        .offset = offsetof(shader::Vertex, tangent)}
+                }},
+            .vertexShader = &shaderLib->getFunction("vertexMain"),
+            .fragmentShader = &shaderLib->getFunction("fragmentMain"),
+            .colorAttachmentPxFormats = {gfx::PixelFormat::BGRA8Unorm},
+            .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
+            .blendOperation = gfx::BlendOperation::blendingOff,
+            .cullMode = gfx::CullMode::back,
+            .parameterBlockLayouts = {vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, texturedMaterialBpLayout}
+        };
+        pipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
+        assert(pipeline);
+        s_graphicsPipeline = pipeline;
+    }
+    m_graphicsPipeline = pipeline;
+    setSampler(device.newSampler(gfx::Sampler::Descriptor{
+        .sAddressMode=gfx::SamplerAddressMode::Repeat,
+        .tAddressMode=gfx::SamplerAddressMode::Repeat,
+        .rAddressMode=gfx::SamplerAddressMode::Repeat,
+        .minFilter = gfx::SamplerMinMagFilter::Linear,
+        .magFilter = gfx::SamplerMinMagFilter::Linear
+    }));
     m_materialData = device.newBuffer(gfx::Buffer::Descriptor{
-        .size = sizeof(GPUMaterialData),
+        .size = sizeof(shader::textured::MaterialData),
         .usages = gfx::BufferUsage::uniformBuffer,
         .storageMode = gfx::ResourceStorageMode::hostVisible});
-    setSampler(device.newSampler(gfx::Sampler::Descriptor{}));
-    setDiffuseColor(glm::vec3(1.0f, 1.0f, 1.0f));
-    setSpecularColor(glm::vec3(1.0f, 1.0f, 1.0f));
-    setShininess(32.0f);
-}
-
-void TexturedMaterial::createPipeline(gfx::Device& device)
-{
-    if (s_graphicsPipeline != nullptr)
-        return;
-    std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/textured.slib");
-    assert(shaderLib);
-
-    gfx::GraphicsPipeline::Descriptor gfxPipelineDescriptor = {
-        .vertexLayout = gfx::VertexLayout{
-            .stride = sizeof(Vertex),
-            .attributes = {
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float3,
-                    .offset = offsetof(Vertex, pos)},
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float2,
-                    .offset = offsetof(Vertex, uv)},
-                gfx::VertexAttribute{
-                    .format = gfx::VertexAttributeFormat::float3,
-                    .offset = offsetof(Vertex, normal)}
-            }},
-        .vertexShader = &shaderLib->getFunction("vertexMain"),
-        .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-        .colorAttachmentPxFormats = {gfx::PixelFormat::BGRA8Unorm},
-        .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
-        .parameterBlockLayouts = {vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, texturedMaterialBpLayout}};
-
-    s_graphicsPipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
+    setDiffuseColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    setSpecularColor(glm::vec3(0.0f, 0.0f, 0.0f));
+    setShininess(1.0f);
+    setEmissiveColor(glm::vec3(0.0f, 0.0f, 0.0f));
 }
 
 std::unique_ptr<gfx::ParameterBlock> TexturedMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
@@ -179,7 +154,9 @@ std::unique_ptr<gfx::ParameterBlock> TexturedMaterial::makeParameterBlock(gfx::P
     std::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(texturedMaterialBpLayout);
     parameterBlock->setBinding(0, m_sampler);
     parameterBlock->setBinding(1, m_diffuseTexture);
-    parameterBlock->setBinding(2, m_materialData);
+    parameterBlock->setBinding(2, m_emissiveTexture);
+    parameterBlock->setBinding(3, m_normalTexture);
+    parameterBlock->setBinding(4, m_materialData);
     return parameterBlock;
 }
 

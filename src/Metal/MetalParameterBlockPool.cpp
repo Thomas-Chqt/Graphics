@@ -16,10 +16,13 @@
 namespace gfx
 {
 
-MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device)
+MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device, const ParameterBlockPool::Descriptor& descriptor)
     : m_device(device)
 {
-    Buffer::Descriptor buffDesc = { .size = 10240, .storageMode = ResourceStorageMode::hostVisible };
+    size_t totalBindings = descriptor.maxUniformBuffers + descriptor.maxTextures + descriptor.maxSamplers;
+    size_t bufferSize = totalBindings * sizeof(uint64_t);
+
+    Buffer::Descriptor buffDesc = { .size = bufferSize, .storageMode = ResourceStorageMode::hostVisible };
     m_argumentBuffer = std::dynamic_pointer_cast<MetalBuffer>((std::shared_ptr<Buffer>)m_device->newBuffer(buffDesc));
 }
 

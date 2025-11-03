@@ -12,10 +12,8 @@
 
 #include "Graphics/ParameterBlock.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <memory>
-#endif
+#include <cstdint>
+#include <memory>
 
 namespace gfx
 {
@@ -23,6 +21,13 @@ namespace gfx
 class ParameterBlockPool
 {
 public:
+    struct Descriptor
+    {
+        uint32_t maxUniformBuffers = 16;
+        uint32_t maxTextures = 4;
+        uint32_t maxSamplers = 4;
+    };
+
     ParameterBlockPool(const ParameterBlockPool&) = delete;
     ParameterBlockPool(ParameterBlockPool&&) = delete;
 

@@ -7,11 +7,12 @@
  * ---------------------------------------------------
  */
 
-#include "Entity.hpp"
 #include "Renderer.hpp"
 #include "AssetLoader.hpp"
-#include "Material.hpp"
-#include "Light.hpp"
+#include "Entity/Entity.hpp"
+#include "Entity/Camera.hpp"
+#include "Entity/Light.hpp"
+#include "Entity/RenderableEntity.hpp"
 
 #include <Graphics/Instance.hpp>
 #include <Graphics/Surface.hpp>
@@ -32,6 +33,8 @@
 #include <exception>
 #include <numbers>
 #include <bit>
+#include <set>
+#include <vector>
 
 #if __XCODE__
     #include <unistd.h>
@@ -77,6 +80,14 @@ int main()
         GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "scop", nullptr, nullptr);
         assert(window);
 
+        static std::set<int> pressedKeys;
+        glfwSetKeyCallback(window, [](GLFWwindow*, int key, int, int action, int) {
+            if (action == GLFW_PRESS)
+                pressedKeys.insert(key);
+            if (action == GLFW_RELEASE && pressedKeys.contains(key))
+                pressedKeys.erase(key);
+        });
+
         std::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
         assert(instance);
 
@@ -101,23 +112,41 @@ int main()
         scop::Renderer renderer(device.get(), window, surface.get());
         scop::AssetLoader assetLoader(device.get());
 
-        scop::FlatColorMaterial::createPipeline(*device);
-        scop::TexturedCubeMaterial::createPipeline(*device);
-        scop::TexturedMaterial::createPipeline(*device);
+        std::vector<std::shared_ptr<scop::Entity>> entities;
 
-        scop::FixCamera camera = scop::FixCamera();
+        auto camera = std::make_shared<scop::FlightCamera>();
+        camera->setName("Camera");
+        entities.push_back(camera);
 
-        scop::PointLight pointLight;
-        pointLight.setColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.8f);
-        glm::vec3 pointLightPos = {0, 0, 3};
+        auto light = std::make_shared<scop::PointLight>();
+        light->setName("Point Light");
+        light->setColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.8f);
+        entities.push_back(light);
 
-        scop::RenderableEntity afterTheRain = assetLoader.loadMesh(RESOURCE_DIR"/after_the_rain.glb");
+        //auto afterTheRain = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/after_the_rain.glb"));
+        //afterTheRain->setName("after_the_rain");
+        //afterTheRain->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        //entities.push_back(afterTheRain);
 
-        afterTheRain.setPosition({0.310f, 0.720f, 0.020f});
-        afterTheRain.setRotation({-1.200f, std::numbers::pi_v<float>, 0.0f});
-        afterTheRain.setScale(0.040f);
+        //auto neighbourhood_city = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/neighbourhood_city.glb"));
+        //neighbourhood_city->setName("neighbourhood_city");
+        //neighbourhood_city->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        //entities.push_back(neighbourhood_city);
+
+        //auto sponza = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/sponza.glb"));
+        //sponza->setName("sponza");
+        //sponza->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        //entities.push_back(sponza);
+
+        auto bistro = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/Bistro.glb"));
+        bistro->setName("bistro");
+        bistro->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        entities.push_back(bistro);
 
         glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f;
+        scop::Entity* selectedEntity = nullptr;
+
+        double lastFrameTime = glfwGetTime();
 
         while (true)
         {
@@ -125,53 +154,89 @@ int main()
             if (glfwWindowShouldClose(window))
                 break;
 
-            renderer.beginFrame(camera);
+            double currentFrameTime = glfwGetTime();
+            double deltaTime = currentFrameTime - lastFrameTime;
+            lastFrameTime = currentFrameTime;
 
-            ImGui::Begin("settings");
+            glm::vec3 rotationInput = glm::vec3{
+                (pressedKeys.contains(GLFW_KEY_UP)   ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_DOWN)  ? 1.0f : 0.0f),
+                (pressedKeys.contains(GLFW_KEY_LEFT) ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_RIGHT) ? 1.0f : 0.0f),
+                0
+            };
+            if (glm::length(rotationInput) > 0.0f)
+                camera->setRotation(camera->rotation() + glm::normalize(rotationInput) * (float)deltaTime * 2.0f);
+
+            auto rotationMat = glm::mat4x4(1.0f);
+            rotationMat = glm::rotate(rotationMat, camera->rotation().y, glm::vec3(0, 1, 0));
+            rotationMat = glm::rotate(rotationMat, camera->rotation().x, glm::vec3(1, 0, 0));
+
+            glm::vec3 movementInput = glm::vec3{
+                (pressedKeys.contains(GLFW_KEY_D) ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_A) ? 1.0f : 0.0f),
+                0,
+                (pressedKeys.contains(GLFW_KEY_S) ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_W) ? 1.0f : 0.0f)
+            };
+            if (glm::length(movementInput) > 0.0f)
+                camera->setPosition(camera->position() + glm::vec3(rotationMat * glm::vec4(glm::normalize(movementInput), 0)) * (float)deltaTime * 4.0f);
+
+            light->setPosition(camera->position());
+
+            renderer.beginFrame(camera->viewMatrix());
+
+            ImGui::Begin("entities");
             {
-                {
-                    glm::vec3 position = afterTheRain.position();
-                    ImGui::DragFloat3("afterTheRain position", std::bit_cast<float*>(&position), 0.01f, -5.0f, 5.0f);
-                    afterTheRain.setPosition(position);
-
-                    glm::vec3 rotation = afterTheRain.rotation();
-                    ImGui::DragFloat3("afterTheRain rotation", std::bit_cast<float*>(&rotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
-                    afterTheRain.setRotation(rotation);
-
-                    float scale = afterTheRain.scale();
-                    ImGui::DragFloat("afterTheRain scale", std::bit_cast<float*>(&scale), 0.01f, 0.01f, 10);
-                    afterTheRain.setScale(scale);
-                }
-
-                ImGui::Spacing();
-
-                {
-                    glm::vec3 lightColor = pointLight.color();
-                    ImGui::ColorEdit3("light color", std::bit_cast<float*>(&lightColor));
-                    pointLight.setColor(lightColor);
-
-                    ImGui::DragFloat3("light position", std::bit_cast<float*>(&pointLightPos), 0.01f, -5.0f, 5.0f);
-                }
-
-                ImGui::Spacing();
-
-                {
-                    ImGui::ColorEdit3("ambient light color", std::bit_cast<float*>(&ambientLightColor));
-                    renderer.setAmbientLightColor(ambientLightColor);
+                for (auto& entity : entities) {
+                    if (ImGui::Selectable(entity->name().c_str(), selectedEntity == entity.get()))
+                        selectedEntity = entity.get();
                 }
             }
             ImGui::End();
 
-            renderer.renderMesh(afterTheRain.mesh(), afterTheRain.modelMatrix());
+            ImGui::Begin("selected entity");
+            {
+                if (selectedEntity != nullptr)
+                {
+                    glm::vec3 position = selectedEntity->position();
+                    ImGui::DragFloat3("position", std::bit_cast<float*>(&position), 0.01f, -5000.0f, 5000.0f);
+                    selectedEntity->setPosition(position);
 
-            renderer.addLight(pointLight, pointLightPos);
+                    glm::vec3 rotation = selectedEntity->rotation();
+                    ImGui::DragFloat3("rotation", std::bit_cast<float*>(&rotation), 0.01f, -std::numbers::pi_v<float>, std::numbers::pi_v<float>);
+                    selectedEntity->setRotation(rotation);
+
+                    if (auto* renderableEntity = dynamic_cast<scop::RenderableEntity*>(selectedEntity))
+                    {
+                        float scale = renderableEntity->scale();
+                        ImGui::DragFloat("scale", std::bit_cast<float*>(&scale), 0.01f, 0.01f, 10);
+                        renderableEntity->setScale(scale);
+                    }
+
+                    if (auto* light = dynamic_cast<scop::Light*>(selectedEntity))
+                    {
+                        glm::vec3 lightColor = light->color();
+                        ImGui::ColorEdit3("light color", std::bit_cast<float*>(&lightColor));
+                        light->setColor(lightColor);
+                    }
+                }
+                else
+                {
+                    ImGui::Text("no entity selected"); // NOLINT(cppcoreguidelines-pro-type-vararg)
+                }
+            }
+            ImGui::End();
+
+            renderer.setAmbientLightColor(ambientLightColor);
+
+            for (auto& entity : entities)
+            {
+                if (auto* renderableEntity = dynamic_cast<scop::RenderableEntity*>(entity.get()))
+                    renderer.addMesh(renderableEntity->mesh(), renderableEntity->modelMatrix());
+
+                if (auto* pointLight = dynamic_cast<scop::PointLight*>(entity.get()))
+                    renderer.addPointLight(pointLight->position(), pointLight->color());
+            }
 
             renderer.endFrame();
         }
-
-        scop::TexturedMaterial::destroyPipeline();
-        scop::TexturedCubeMaterial::destroyPipeline();
-        scop::FlatColorMaterial::destroyPipeline();
 
         glfwDestroyWindow(window);
         glfwTerminate();

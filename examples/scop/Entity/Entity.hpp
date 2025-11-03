@@ -10,9 +10,8 @@
 #ifndef ENTITY_HPP
 #define ENTITY_HPP
 
-#include "Mesh.hpp"
-
 #include <glm/glm.hpp>
+#include <string>
 
 namespace scop
 {
@@ -24,6 +23,9 @@ public:
     Entity(const Entity&) = default;
     Entity(Entity&&) = default;
 
+    inline const std::string& name() const { return m_name; }
+    inline void setName(const std::string& n) { m_name = n; }
+
     inline const glm::vec3& position() const { return m_position; }
     inline void setPosition(const glm::vec3& p) { m_position = p; }
 
@@ -32,11 +34,11 @@ public:
 
     inline const float& scale() const { return m_scale; }
     inline void setScale(const float& s) { m_scale = s; }
-    
 
-    ~Entity() = default;
+    virtual ~Entity() = default;
 
 private:
+    std::string m_name;
     glm::vec3 m_position = glm::vec3(0.0f);
     glm::vec3 m_rotation = glm::vec3(0.0f);
     float m_scale = 1.0f;
@@ -44,30 +46,6 @@ private:
 public:
     Entity& operator=(const Entity&) = default;
     Entity& operator=(Entity&&) = default;
-};
-
-class RenderableEntity : public Entity
-{
-public:
-    RenderableEntity() = default;
-    RenderableEntity(const RenderableEntity&) = default;
-    RenderableEntity(RenderableEntity&&) = default;
-
-    RenderableEntity(const Mesh&);
-
-    inline const Mesh& mesh() const { return m_mesh; }
-    inline void setMesh(const Mesh& m) { m_mesh = m; }
-
-    glm::mat4x4 modelMatrix() const;
-
-    ~RenderableEntity() = default;
-
-private:
-    Mesh m_mesh;
-
-public:
-    RenderableEntity& operator=(const RenderableEntity&) = default;
-    RenderableEntity& operator=(RenderableEntity&&) = default;
 };
 
 } // namespace scop

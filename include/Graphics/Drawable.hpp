@@ -12,12 +12,7 @@
 
 #include "Graphics/Texture.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    namespace ext = std;
-#endif
+#include <memory>
 
 namespace gfx
 {

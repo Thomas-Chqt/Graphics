@@ -10,14 +10,10 @@
 #ifndef GFX_ENUMS_HPP
 #define GFX_ENUMS_HPP
 
-#if defined(GFX_USE_UTILSCPP)
-#else
-    #include <concepts>
-    #include <type_traits>
-    #include <cstdint>
-    #include <stdexcept>
-    namespace ext = std;
-#endif
+#include <concepts>
+#include <type_traits>
+#include <cstdint>
+#include <stdexcept>
 
 namespace gfx
 {
@@ -158,6 +154,7 @@ using Backends = Flags<Backend>;
 enum class BindingType : uint8_t
 {
     uniformBuffer,
+    uniformbuffer_dynamic,
     sampledTexture,
     sampler
 };
@@ -199,6 +196,13 @@ enum class SamplerMinMagFilter : uint8_t
 {
     Nearest,
     Linear
+};
+
+enum class CullMode : uint8_t
+{
+    none,
+    front,
+    back
 };
 
 constexpr inline size_t pixelFormatSize(PixelFormat format)

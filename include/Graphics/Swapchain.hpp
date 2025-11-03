@@ -14,13 +14,8 @@
 #include "Graphics/Enums.hpp"
 #include "Graphics/Drawable.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <cstdint>
-    #include <memory>
-    namespace ext = std;
-#endif
+#include <cstdint>
+#include <memory>
 
 namespace gfx
 {

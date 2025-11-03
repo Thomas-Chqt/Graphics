@@ -212,6 +212,21 @@ constexpr vk::Filter toVkFilter(SamplerMinMagFilter mode)
     }
 }
 
+constexpr vk::CullModeFlags toVkCullModeFlags(CullMode cullMode)
+{
+    switch (cullMode)
+    {
+    case CullMode::none:
+        return vk::CullModeFlagBits::eNone;
+    case CullMode::front:
+        return vk::CullModeFlagBits::eFront;
+    case CullMode::back:
+        return vk::CullModeFlagBits::eBack;
+    default:
+        throw std::runtime_error("not implemented");
+    }
+}
+
 }
 
 #endif // VULKANENUMS_HPP

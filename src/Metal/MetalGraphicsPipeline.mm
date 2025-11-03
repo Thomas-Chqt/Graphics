@@ -15,13 +15,16 @@
 #include "Metal/MetalShaderFunction.hpp"
 
 #import "Metal/MetalEnums.h"
+#include <__ostream/print.h>
+#include <print>
 
 namespace gfx
 {
 
 MetalGraphicsPipeline::MetalGraphicsPipeline(MetalGraphicsPipeline&& other) noexcept
     : m_renderPipelineState(std::exchange(other.m_renderPipelineState, nil)),
-      m_depthStencilState(std::exchange(other.m_depthStencilState, nil))
+      m_depthStencilState(std::exchange(other.m_depthStencilState, nil)),
+      m_cullMode(std::exchange(other.m_cullMode, CullMode::none))
 {
 }
 
@@ -108,6 +111,8 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
         if (m_renderPipelineState == nil)
             throw std::runtime_error("failed to create DepthStencilState");
     }
+
+    m_cullMode = desc.cullMode;
 }}
 
 MetalGraphicsPipeline::~MetalGraphicsPipeline() { @autoreleasepool
@@ -126,6 +131,7 @@ MetalGraphicsPipeline& MetalGraphicsPipeline::operator=(MetalGraphicsPipeline&& 
         [m_renderPipelineState release];
         m_renderPipelineState = std::exchange(other.m_renderPipelineState, nil);
         m_depthStencilState = std::exchange(other.m_depthStencilState, nil);
+        m_cullMode = std::exchange(other.m_cullMode, CullMode::none);
     }
     return *this;
 }

@@ -12,15 +12,10 @@
 
 #include "Graphics/ShaderFunction.hpp"
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <filesystem>
-    #include <cstddef>
-    #include <vector>
-    #include <string>
-    namespace ext = std;
-#endif
+#include <filesystem>
+#include <cstddef>
+#include <vector>
+#include <string>
 
 namespace gfx
 {

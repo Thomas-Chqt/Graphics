@@ -10,10 +10,10 @@
 #ifndef RENDERER_HPP
 #define RENDERER_HPP
 
-#include "Camera.hpp"
 #include "Material.hpp"
-#include "Light.hpp"
 #include "Mesh.hpp"
+
+#include "shaders/SceneData.slang"
 
 #include <Graphics/Surface.hpp>
 #include <Graphics/Device.hpp>
@@ -30,7 +30,7 @@
 #include <deque>
 
 #define cfd m_frameDatas.at(m_frameIdx)
-#define cfsd (*cfd.sceneDataBuffer->content<SceneData>())
+#define cfsd (*cfd.sceneDataBuffer->content<shader::SceneData>())
 
 namespace scop
 {
@@ -64,30 +64,18 @@ public:
 
     Renderer(gfx::Device*, GLFWwindow*, gfx::Surface*);
 
-    void beginFrame(const Camera&);
+    void beginFrame(const glm::mat4x4& viewMatrix);
 
     inline void setAmbientLightColor(glm::vec3 c) { cfsd.ambientLightColor = c; }
 
-    void renderMesh(const Mesh&, glm::mat4x4 transform);
-    void addLight(const Light&, const glm::vec3& position);
+    void addMesh(const Mesh&, const glm::mat4x4& transform);
+    void addPointLight(const glm::vec3& position, const glm::vec3& color);
 
     void endFrame();
 
     ~Renderer();
 
 private:
-    struct SceneData
-    {
-        glm::vec3 cameraPosition; float _padding0;
-        glm::vec3 ambientLightColor; float _padding1;
-
-        int directionalLightCount;
-        std::array<GPUDirectionalLight, 8> directionalLights;
-
-        int pointLightCount;
-        std::array<GPUPointLight, 8> pointLights;
-    };
-
     struct FrameData
     {
         std::unique_ptr<gfx::CommandBufferPool> commandBufferPool;

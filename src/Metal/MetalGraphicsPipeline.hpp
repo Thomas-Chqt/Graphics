@@ -28,12 +28,14 @@ public:
 
     inline const id<MTLRenderPipelineState>& renderPipelineState() const { return m_renderPipelineState; }
     inline const id<MTLDepthStencilState>& depthStencilState() const { return m_depthStencilState; }
+    inline CullMode cullMode() const { return m_cullMode; }
 
     ~MetalGraphicsPipeline() override;
 
 private:
     id<MTLRenderPipelineState> m_renderPipelineState = nil;
     id<MTLDepthStencilState> m_depthStencilState = nil;
+    CullMode m_cullMode = CullMode::none;
 
 public:
     MetalGraphicsPipeline& operator=(const MetalGraphicsPipeline&) = delete;

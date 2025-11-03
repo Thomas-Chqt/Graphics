@@ -15,6 +15,7 @@
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/ParameterBlock.hpp"
+#include "Graphics/ParameterBlockPool.hpp"
 #include "Graphics/ShaderLib.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
@@ -30,19 +31,14 @@
 #include <backends/imgui_impl_glfw.h>
 #include <stb_image/stb_image.h>
 
-#if defined(GFX_USE_UTILSCPP)
-    namespace ext = utl;
-#else
-    #include <memory>
-    #include <cassert>
-    #include <cstdint>
-    #include <cstddef>
-    #include <array>
-    #include <numbers>
-    #include <algorithm>
-    #include <bit>
-    namespace ext = std;
-#endif
+#include <memory>
+#include <cassert>
+#include <cstdint>
+#include <cstddef>
+#include <array>
+#include <numbers>
+#include <algorithm>
+#include <bit>
 
 #if __XCODE__
     #include <unistd.h>
@@ -211,7 +207,7 @@ public:
 
         for (uint8_t i = 0; i < maxFrameInFlight; i++) {
             m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
-            m_parameterBlockPools.at(i) = m_device->newParameterBlockPool();
+            m_parameterBlockPools.at(i) = m_device->newParameterBlockPool(gfx::ParameterBlockPool::Descriptor{});
         }
 
         {
