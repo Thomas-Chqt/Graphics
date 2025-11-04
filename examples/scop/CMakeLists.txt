@@ -61,6 +61,7 @@ FetchContent_Declare(imgui
 )
 set(IM_BUILD_GLFW ON)
 FetchContent_MakeAvailable(imgui)
+target_compile_definitions(imgui PRIVATE GLFW_INCLUDE_NONE)
 target_link_libraries(imgui PUBLIC glfw)
 if (imgui_SOURCE_DIR)
     set_target_properties(imgui PROPERTIES FOLDER "dependencies")

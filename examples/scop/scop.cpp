@@ -21,6 +21,7 @@
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <glm/glm.hpp>
@@ -138,7 +139,7 @@ int main()
         //sponza->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         //entities.push_back(sponza);
 
-        auto bistro = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/Bistro.glb"));
+        auto bistro = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb"));
         bistro->setName("bistro");
         bistro->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         entities.push_back(bistro);

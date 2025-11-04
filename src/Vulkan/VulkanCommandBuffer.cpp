@@ -279,7 +279,13 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
         }
     }
 
+#ifdef __cpp_lib_containers_ranges
     m_usedSamplers.insert_range(pBlock->usedSamplers() | std::views::transform([](auto& pair) { return pair.first; }));
+#else
+    auto rg = pBlock->usedSamplers() | std::views::transform([](auto& pair) { return pair.first; });
+    m_usedSamplers.insert(rg.cbegin(), rg.cend());
+#endif
+
 
     if (bufferMemoryBarriers.empty() == false)
     {

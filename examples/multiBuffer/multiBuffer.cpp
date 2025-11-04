@@ -19,6 +19,7 @@
 #include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <vector>

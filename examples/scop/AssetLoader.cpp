@@ -468,11 +468,19 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
              else {
                 std::vector<SubMesh> subDest;
                 addNode(subDest, node, glm::mat4x4(1.0F));
+#ifdef __cpp_lib_containers_ranges
                 subMeshes.front().subMeshes.append_range(subDest);
+#else
+                subMeshes.front().subMeshes.insert(subMeshes.front().subMeshes.end(), subDest.cbegin(), subDest.cend());
+#endif
             }
         }
 
+#ifdef __cpp_lib_containers_ranges
         dest.append_range(subMeshes);
+#else
+        dest.insert(dest.end(), subMeshes.cbegin(), subMeshes.cend());
+#endif
     };
 
     Mesh mesh = {

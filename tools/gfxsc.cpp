@@ -152,8 +152,15 @@ static SlangResult compileForTarget(
     }
 
     std::vector<slang::IComponentType*> components;
+#ifdef __cpp_lib_containers_ranges
     components.append_range(modules | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; }));
     components.append_range(entryPoints | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; }));
+#else
+    auto modulesRg = modules | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; });
+    components.insert(components.end(), modulesRg.cbegin(), modulesRg.cend());
+    auto entryPointsRg = entryPoints | std::views::transform([](auto& compPtr) -> slang::IComponentType* { return compPtr; });
+    components.insert(components.end(), entryPointsRg.cbegin(), entryPointsRg.cend());
+#endif
 
     Slang::ComPtr<slang::IComponentType> composedProgram;
     {

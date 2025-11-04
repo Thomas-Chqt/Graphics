@@ -46,7 +46,11 @@ void SemaphorePool::swapPools()
 
 void SemaphorePool::reset()
 {
+#ifdef __cpp_lib_containers_ranges
     m_backPool->free.append_range(m_backPool->inUse);
+#else
+    m_backPool->free.insert(m_backPool->free.end(), m_backPool->inUse.cbegin(), m_backPool->inUse.cend());
+#endif
     m_backPool->inUse.clear();
 }
 

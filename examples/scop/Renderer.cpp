@@ -15,6 +15,7 @@
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -116,7 +117,11 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
     }
 
     cfd.renderables.clear();
+#ifdef __cpp_lib_containers_ranges
     cfd.availableModelMatrixBuffers.append_range(cfd.usedModelMatrixBuffers);
+#else
+    cfd.availableModelMatrixBuffers.insert(cfd.availableModelMatrixBuffers.end(), cfd.usedModelMatrixBuffers.cbegin(), cfd.usedModelMatrixBuffers.cend());
+#endif
     cfd.usedModelMatrixBuffers.clear();
     cfsd = shader::SceneData{
         .cameraPosition = -viewMatrix[3],
