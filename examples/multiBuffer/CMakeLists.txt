@@ -91,6 +91,7 @@ if(MSVC)
     target_compile_options(multiBuffer PRIVATE /W4)
 else()
     target_compile_options(multiBuffer PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(multiBuffer PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")

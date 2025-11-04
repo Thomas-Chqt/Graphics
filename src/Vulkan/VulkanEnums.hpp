@@ -192,12 +192,14 @@ constexpr vk::SamplerAddressMode toVkSamplerAddressMode(SamplerAddressMode mode)
 {
     switch (mode)
     {
-        case SamplerAddressMode::ClampToEdge:
-            return vk::SamplerAddressMode::eClampToEdge;
-        case SamplerAddressMode::Repeat:
-            return vk::SamplerAddressMode::eRepeat;
-        case SamplerAddressMode::MirrorRepeat:
-            return vk::SamplerAddressMode::eMirroredRepeat;
+    case SamplerAddressMode::ClampToEdge:
+        return vk::SamplerAddressMode::eClampToEdge;
+    case SamplerAddressMode::Repeat:
+        return vk::SamplerAddressMode::eRepeat;
+    case SamplerAddressMode::MirrorRepeat:
+        return vk::SamplerAddressMode::eMirroredRepeat;
+    default:
+        throw std::runtime_error("not implemented");
     }
 }
 
@@ -209,6 +211,8 @@ constexpr vk::Filter toVkFilter(SamplerMinMagFilter mode)
         return vk::Filter::eNearest;
     case SamplerMinMagFilter::Linear:
         return vk::Filter::eLinear;
+    default:
+        throw std::runtime_error("not implemented");
     }
 }
 

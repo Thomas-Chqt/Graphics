@@ -172,7 +172,7 @@ void VulkanDevice::imguiInit(std::vector<PixelFormat> colorAttachmentPxFormats, 
     ImGui_ImplVulkan_InitInfo initInfo = {
         .ApiVersion = m_physicalDevice->getProperties().apiVersion,
         .Instance = m_instance->vkInstance(),
-        .PhysicalDevice = static_cast<const VkPhysicalDevice>(*m_physicalDevice),
+        .PhysicalDevice = *m_physicalDevice,
         .Device = m_vkDevice,
         .QueueFamily = m_queueFamily.index,
         .Queue = m_queue,

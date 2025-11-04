@@ -114,6 +114,7 @@ if(MSVC)
     target_compile_options(Graphics PRIVATE /W4)
 else()
     target_compile_options(Graphics PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(Graphics PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 
 file(GLOB_RECURSE GFX_INC "include/*.hpp")

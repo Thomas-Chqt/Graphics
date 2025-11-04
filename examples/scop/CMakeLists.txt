@@ -135,6 +135,7 @@ if(MSVC)
     target_compile_options(scop PRIVATE /W4)
 else()
     target_compile_options(scop PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(scop PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp" "Entity/*.cpp" "Entity/*.hpp")
