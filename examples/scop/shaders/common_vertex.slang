@@ -25,9 +25,16 @@ struct _VPMatrix { ConstantBuffer<float4x4> data; };
 ParameterBlock<_VPMatrix> vpMatrix;
 #define vpMatrix vpMatrix.data
 
-struct _ModelMatrix { ConstantBuffer<float4x4> data; };
-ParameterBlock<_ModelMatrix> modelMatrix;
-#define modelMatrix modelMatrix.data
+#ifdef __METAL__
+# define MTL_REGISTER(n) : register(b##n)
+#else
+# define MTL_REGISTER(n)
+#endif
+
+[[vk::push_constant]] cbuffer ModelMatrix MTL_REGISTER(6)
+{
+    float4x4 modelMatrix;
+}
 
 [shader("vertex")]
 VSOutput vertexMain(Vertex input)
@@ -41,6 +48,6 @@ VSOutput vertexMain(Vertex input)
     output.uv        = input.uv;
     output.tangent   = mul(input.tangent, (float3x3)modelMatrix);
     output.bitangent = mul(bitangent, (float3x3)modelMatrix);
-    output.normal    = mul(input.normal,  (float3x3)modelMatrix);
+    output.normal    = mul(input.normal, (float3x3)modelMatrix);
     return output;
 }

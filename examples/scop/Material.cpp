@@ -61,7 +61,7 @@ FlatColorMaterial::FlatColorMaterial(gfx::Device& device)
             .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
             .blendOperation = gfx::BlendOperation::blendingOff,
             .cullMode = gfx::CullMode::back,
-            .parameterBlockLayouts = { vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, flatColorMaterialBpLayout }
+            .parameterBlockLayouts = { vpMatrixBpLayout, sceneDataBpLayout, flatColorMaterialBpLayout }
         };
         pipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
         assert(pipeline);
@@ -77,11 +77,14 @@ FlatColorMaterial::FlatColorMaterial(gfx::Device& device)
     setShininess(1.0f);
 }
 
-std::unique_ptr<gfx::ParameterBlock> FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
+std::shared_ptr<gfx::ParameterBlock> FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
-    std::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(flatColorMaterialBpLayout);
-    parameterBlock->setBinding(0, m_materialData);
-    return parameterBlock;
+    if (m_parameterBlock == nullptr)
+    {
+        m_parameterBlock = pool.get(flatColorMaterialBpLayout);
+        m_parameterBlock->setBinding(0, m_materialData);
+    }
+    return m_parameterBlock;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -125,7 +128,7 @@ TexturedMaterial::TexturedMaterial(gfx::Device& device)
             .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
             .blendOperation = gfx::BlendOperation::blendingOff,
             .cullMode = gfx::CullMode::back,
-            .parameterBlockLayouts = {vpMatrixBpLayout, modelMatrixBpLayout, sceneDataBpLayout, texturedMaterialBpLayout}
+            .parameterBlockLayouts = {vpMatrixBpLayout, sceneDataBpLayout, texturedMaterialBpLayout}
         };
         pipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
         assert(pipeline);
@@ -149,15 +152,19 @@ TexturedMaterial::TexturedMaterial(gfx::Device& device)
     setEmissiveColor(glm::vec3(0.0f, 0.0f, 0.0f));
 }
 
-std::unique_ptr<gfx::ParameterBlock> TexturedMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool) const
+std::shared_ptr<gfx::ParameterBlock> TexturedMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
-    std::unique_ptr<gfx::ParameterBlock> parameterBlock = pool.get(texturedMaterialBpLayout);
-    parameterBlock->setBinding(0, m_sampler);
-    parameterBlock->setBinding(1, m_diffuseTexture);
-    parameterBlock->setBinding(2, m_emissiveTexture);
-    parameterBlock->setBinding(3, m_normalTexture);
-    parameterBlock->setBinding(4, m_materialData);
-    return parameterBlock;
+    if (m_parameterBlock == nullptr)
+    {
+        m_parameterBlock = pool.get(texturedMaterialBpLayout);
+        m_parameterBlock->setBinding(0, m_sampler);
+        m_parameterBlock->setBinding(1, m_diffuseTexture);
+        m_parameterBlock->setBinding(2, m_emissiveTexture);
+        m_parameterBlock->setBinding(3, m_normalTexture);
+        m_parameterBlock->setBinding(4, m_materialData);
+
+    }
+    return m_parameterBlock;
 }
 
 } // namespace scop

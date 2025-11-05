@@ -33,7 +33,7 @@ public:
     Material(const Material&) = delete;
 
     virtual const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const = 0;
-    virtual std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool&) const = 0;
+    virtual std::shared_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool&) = 0;
 
     virtual ~Material() = default;
 
@@ -58,7 +58,7 @@ public:
     FlatColorMaterial(gfx::Device& device); // need non const for gfx pipeline
 
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
-    std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
+    std::shared_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) override;
 
     inline glm::vec4 diffuseColor() const { return m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor; }
     inline void setDiffuseColor(const glm::vec4& d) { m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor = d; }
@@ -74,6 +74,7 @@ public:
 private:
     inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
     std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
 
     std::shared_ptr<gfx::Buffer> m_materialData;
 
@@ -92,7 +93,7 @@ public:
     TexturedMaterial(gfx::Device& device);
 
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
-    std::unique_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) const override;
+    std::shared_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) override;
 
     inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
     inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
@@ -123,6 +124,7 @@ public:
 private:
     inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
     std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+    std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
 
     std::shared_ptr<gfx::Sampler> m_sampler;
     std::shared_ptr<gfx::Texture> m_diffuseTexture;

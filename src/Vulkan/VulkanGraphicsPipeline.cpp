@@ -13,6 +13,7 @@
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanShaderFunction.hpp"
 #include "Vulkan/VulkanEnums.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace gfx
 {
@@ -146,8 +147,15 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
         for (const auto& pbl : desc.parameterBlockLayouts)
             descriptorSetLayouts.push_back(m_device->descriptorSetLayout(pbl));
     }
+
+    auto pushConstantRange = vk::PushConstantRange{}
+        .setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)
+        .setOffset(0)
+        .setSize(128);
+
     auto pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo{}
-        .setSetLayouts(descriptorSetLayouts);
+        .setSetLayouts(descriptorSetLayouts)
+        .setPushConstantRanges(pushConstantRange);
 
     m_pipelineLayout = m_device->vkDevice().createPipelineLayout(pipelineLayoutCreateInfo);
 

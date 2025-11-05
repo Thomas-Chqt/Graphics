@@ -28,7 +28,6 @@
 #include <map>
 #include <memory>
 #include <vector>
-#include <deque>
 
 #define cfd m_frameDatas.at(m_frameIdx)
 #define cfsd (*cfd.sceneDataBuffer->content<shader::SceneData>())
@@ -39,12 +38,6 @@ namespace scop
 constexpr uint8_t maxFrameInFlight = 3;
 
 const gfx::ParameterBlock::Layout vpMatrixBpLayout = {
-    .bindings = {
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::vertexRead }
-    }
-};
-
-const gfx::ParameterBlock::Layout modelMatrixBpLayout = {
     .bindings = {
         gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::vertexRead }
     }
@@ -86,9 +79,6 @@ private:
 
         std::shared_ptr<gfx::Texture> depthTexture;
 
-        std::deque<std::shared_ptr<gfx::Buffer>> availableModelMatrixBuffers;
-        std::deque<std::shared_ptr<gfx::Buffer>> usedModelMatrixBuffers;
-
         std::shared_ptr<gfx::Buffer> sceneDataBuffer;
 
         std::map<
@@ -97,7 +87,7 @@ private:
                 std::shared_ptr<Material>,
                 std::map<
                     std::pair<std::shared_ptr<gfx::Buffer>, std::shared_ptr<gfx::Buffer>>, // vertex buffer / index buffer
-                    std::vector<std::shared_ptr<gfx::Buffer>> // model matrix
+                    std::vector<glm::mat4x4> // model matrix
         >>> renderables;
 
         gfx::CommandBuffer* lastCommandBuffer = nullptr;

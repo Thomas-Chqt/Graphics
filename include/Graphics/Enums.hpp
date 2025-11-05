@@ -154,7 +154,6 @@ using Backends = Flags<Backend>;
 enum class BindingType : uint8_t
 {
     uniformBuffer,
-    uniformbuffer_dynamic,
     sampledTexture,
     sampler
 };

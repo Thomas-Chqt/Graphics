@@ -148,6 +148,16 @@ void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const Parameter
     m_usedPBlock.insert(pBlock);
 }}
 
+void MetalCommandBuffer::setPushConstants(const void* data, size_t size) { @autoreleasepool
+{
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
+    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+    // TODO : take stage from used
+    [renderCommandEncoder setVertexBytes:data length:size atIndex:6];
+    [renderCommandEncoder setFragmentBytes:data length:size atIndex:6];
+}}
+
 void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autoreleasepool
 {
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);

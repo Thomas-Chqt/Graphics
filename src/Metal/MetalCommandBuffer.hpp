@@ -17,7 +17,6 @@
 #include "Graphics/ParameterBlock.hpp"
 
 #include "Metal/MetalBuffer.hpp"
-#include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalTexture.hpp"
@@ -45,6 +44,7 @@ public:
     void useVertexBuffer(const std::shared_ptr<Buffer>&) override;
 
     void setParameterBlock(const std::shared_ptr<const ParameterBlock>&, uint32_t index) override;
+    void setPushConstants(const void* data, size_t size) override;
 
     void drawVertices(uint32_t start, uint32_t count) override;
     void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) override;

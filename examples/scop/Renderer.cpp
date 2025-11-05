@@ -117,12 +117,6 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
     }
 
     cfd.renderables.clear();
-#ifdef __cpp_lib_containers_ranges
-    cfd.availableModelMatrixBuffers.append_range(cfd.usedModelMatrixBuffers);
-#else
-    cfd.availableModelMatrixBuffers.insert(cfd.availableModelMatrixBuffers.end(), cfd.usedModelMatrixBuffers.cbegin(), cfd.usedModelMatrixBuffers.cend());
-#endif
-    cfd.usedModelMatrixBuffers.clear();
     cfsd = shader::SceneData{
         .cameraPosition = -viewMatrix[3],
         .ambientLightColor = glm::vec3(0),
@@ -144,25 +138,11 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
 
 void Renderer::addMesh(const Mesh& mesh, const glm::mat4x4& worlTransform)
 {
-    std::function<void(const SubMesh&, glm::mat4x4)> addSubmesh = [&](const SubMesh& submesh, glm::mat4x4 transform) {
-        std::shared_ptr<gfx::Buffer> modelMatrix;
-        if (cfd.availableModelMatrixBuffers.empty() == false)
-        {
-            modelMatrix = cfd.availableModelMatrixBuffers.front();
-            cfd.availableModelMatrixBuffers.pop_front();
-        }
-        else
-        {
-            modelMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{
-                .size = sizeof(glm::mat4x4),
-                .usages = gfx::BufferUsage::uniformBuffer,
-                .storageMode = gfx::ResourceStorageMode::hostVisible});
-        }
-        cfd.usedModelMatrixBuffers.push_back(modelMatrix);
-        *modelMatrix->content<glm::mat4x4>() = transform * submesh.transform;
+    std::function<void(const SubMesh&, glm::mat4x4)> addSubmesh = [&](const SubMesh& submesh, const glm::mat4x4& transform) {
+        glm::mat4x4 modelMatrix = transform * submesh.transform;
 
         for (auto& submesh : submesh.subMeshes)
-            addSubmesh(submesh, *modelMatrix->content<glm::mat4x4>());
+            addSubmesh(submesh, modelMatrix);
 
         cfd.renderables[submesh.material->graphicsPipleine()][submesh.material][std::make_pair(submesh.vertexBuffer, submesh.indexBuffer)].push_back(modelMatrix);
     };
@@ -224,21 +204,19 @@ void Renderer::endFrame()
         {
             commandBuffer->usePipeline(pipeline);
             commandBuffer->setParameterBlock(vpMatrixPBlock, 0);
-            commandBuffer->setParameterBlock(sceneDataPBlock, 2);
+            commandBuffer->setParameterBlock(sceneDataPBlock, 1);
 
             for (auto& [material, buffers] : renderables)
             {
                 std::shared_ptr<gfx::ParameterBlock> materialPBlock = material->makeParameterBlock(*cfd.parameterBlockPool);
-                commandBuffer->setParameterBlock(materialPBlock, 3);
+                commandBuffer->setParameterBlock(materialPBlock, 2);
                 for (auto& [vtxIdxBuffer, modelMatrices] : buffers)
                 {
                     auto& [vertexBuffer, indexBuffer] = vtxIdxBuffer;
                     commandBuffer->useVertexBuffer(vertexBuffer);
                     for (auto& modelMatrix : modelMatrices)
                     {
-                        std::shared_ptr<gfx::ParameterBlock> modelMatrixPBlock = cfd.parameterBlockPool->get(modelMatrixBpLayout);
-                        modelMatrixPBlock->setBinding(0, modelMatrix);
-                        commandBuffer->setParameterBlock(modelMatrixPBlock, 1);
+                        commandBuffer->setPushConstants(&modelMatrix);
                         commandBuffer->drawIndexedVertices(indexBuffer);
                     }
                 }

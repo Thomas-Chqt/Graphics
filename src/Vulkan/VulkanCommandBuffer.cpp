@@ -302,6 +302,12 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
     m_usedPBlock.insert(pBlock);
 }
 
+void VulkanCommandBuffer::setPushConstants(const void* data, size_t size)
+{
+    assert(m_boundPipeline != nullptr);
+    m_vkCommandBuffer.pushConstants(m_boundPipeline->pipelineLayout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, size, data);
+}
+
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
 {
     m_vkCommandBuffer.draw(count, 1, start, 0);

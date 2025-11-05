@@ -41,6 +41,8 @@ public:
     virtual void useVertexBuffer(const std::shared_ptr<Buffer>&) = 0;
 
     virtual void setParameterBlock(const std::shared_ptr<const ParameterBlock>&, uint32_t index) = 0;
+    virtual void setPushConstants(const void* data, size_t size) = 0;
+    void setPushConstants(const auto* data) { setPushConstants(data, sizeof(decltype(*data))); }
 
     virtual void drawVertices(uint32_t start, uint32_t count) = 0;
     virtual void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) = 0;
