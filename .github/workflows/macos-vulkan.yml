@@ -1,5 +1,5 @@
 name: Build macOS Vulkan
-run-name: ${{ github.event.pull_request && format('{0} -> {1} by {2} (PR {3})', github.head_ref, github.base_ref, github.actor, github.event.pull_request.number) || github.event_name == 'workflow_dispatch' && format('{0} by {1} [manual]', github.ref_name, github.actor) || format('{0} by {1}', github.ref_name, github.actor) }}
+run-name: Build macOS Vulkan | ${{ github.event.pull_request && format('{0} -> {1} by {2} (PR {3})', github.head_ref, github.base_ref, github.actor, github.event.pull_request.number) || github.event_name == 'workflow_dispatch' && format('{0} by {1} [manual]', github.ref_name, github.actor) || format('{0} by {1}', github.ref_name, github.actor) }}
 
 on:
   pull_request:
@@ -11,15 +11,15 @@ jobs:
       fail-fast: false
       matrix:
         build-type: [ Debug, Release ]
-        enable-glfw: [ GFX_ENABLE_GLFW=ON, GFX_ENABLE_GLFW=OFF ]
-        enable-imgui: [ GFX_ENABLE_IMGUI=ON, GFX_ENABLE_IMGUI=OFF ]
-        build-examples: [ GFX_BUILD_EXAMPLES=ON, GFX_BUILD_EXAMPLES=OFF ]
+        enable-glfw: [ GLFW=ON, GLFW=OFF ]
+        enable-imgui: [ IMGUI=ON, IMGUI=OFF ]
+        build-examples: [ EXAMPLES=ON, EXAMPLES=OFF ]
 
         exclude:
-          - build-examples: GFX_BUILD_EXAMPLES=ON
-            enable-imgui: GFX_ENABLE_IMGUI=OFF
-          - build-examples: GFX_BUILD_EXAMPLES=ON
-            enable-glfw: GFX_ENABLE_GLFW=OFF
+          - build-examples: EXAMPLES=ON
+            enable-imgui: IMGUI=OFF
+          - build-examples: EXAMPLES=ON
+            enable-glfw: GLFW=OFF
 
     runs-on: macos-latest
 
@@ -32,9 +32,9 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
           -DGFX_BUILD_METAL=OFF
           -DGFX_BUILD_VULKAN=ON
-          -D${{ matrix.enable-glfw }}
-          -D${{ matrix.enable-imgui }}
-          -D${{ matrix.build-examples }}
+          -DGFX_ENABLE_${{ matrix.enable-glfw }}
+          -DGFX_ENABLE_${{ matrix.enable-imgui }}
+          -DGFX_BUILD_${{ matrix.build-examples }}
 
       - name: Build
         run: cmake --build build --config Release
