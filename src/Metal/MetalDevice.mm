@@ -23,7 +23,9 @@
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
-#include "Metal/imgui_impl_metal.hpp"
+#if defined(GFX_IMGUI_ENABLED)
+# include "Metal/imgui_impl_metal.hpp"
+#endif
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
 

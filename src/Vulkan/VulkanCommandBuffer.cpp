@@ -20,7 +20,9 @@
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
-#include "Vulkan/imgui_impl_vulkan.h"
+#if defined(GFX_IMGUI_ENABLED)
+# include "Vulkan/imgui_impl_vulkan.h"
+#endif
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"

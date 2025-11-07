@@ -194,6 +194,7 @@ if (GFX_BUILD_METAL)
     file(GLOB GFX_SHADER_SRCS "shaders/*.slang")
     add_custom_command(
         OUTPUT ${GFX_SHADER_SLIB}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
         COMMAND $<TARGET_FILE:gfxsc> -t metal -o ${GFX_SHADER_SLIB} ${GFX_SHADER_SRCS}
         DEPENDS gfxsc ${GFX_SHADER_SRCS}
         COMMENT "Building gfx shaders"

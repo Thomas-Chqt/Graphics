@@ -18,7 +18,9 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
-#include "Metal/imgui_impl_metal.hpp"
+#if defined(GFX_IMGUI_ENABLED)
+# include "Metal/imgui_impl_metal.hpp"
+#endif
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalDrawable.hpp"

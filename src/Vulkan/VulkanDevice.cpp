@@ -27,7 +27,9 @@
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanTexture.hpp"
-#include "Vulkan/imgui_impl_vulkan.h"
+#if defined(GFX_IMGUI_ENABLED)
+# include "Vulkan/imgui_impl_vulkan.h"
+#endif
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include <algorithm>
