@@ -1,0 +1,45 @@
+name: Linux
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build-type: [ Debug, Release ]
+        enable-glfw: [ 'ON', 'OFF' ]
+        enable-imgui: [ 'ON', 'OFF' ]
+        build-examples: [ 'ON', 'OFF' ]
+
+        exclude:
+          - build-examples: 'ON'
+            enable-imgui: 'OFF'
+          - build-examples: 'ON'
+            enable-glfw: 'OFF'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-14 g++-14 xorg-dev
+
+      - name: Configure CMake
+        run: >
+          cmake -S ${{ github.workspace }} -B build
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+            -DCMAKE_C_COMPILER=gcc-14
+            -DCMAKE_CXX_COMPILER=g++-14
+            -DGFX_BUILD_VULKAN=ON
+            -DGFX_ENABLE_GLFW=${{ matrix.enable-glfw }}
+            -DGFX_ENABLE_IMGUI=${{ matrix.enable-imgui }}
+            -DGFX_BUILD_EXAMPLES=${{ matrix.build-examples }}
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build-type }}

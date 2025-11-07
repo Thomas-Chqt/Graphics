@@ -1,0 +1,39 @@
+name: macOS-Vulkan
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        build-type: [ Debug, Release ]
+        enable-glfw: [ 'ON', 'OFF' ]
+        enable-imgui: [ 'ON', 'OFF' ]
+        build-examples: [ 'ON', 'OFF' ]
+
+        exclude:
+          - build-examples: 'ON'
+            enable-imgui: 'OFF'
+          - build-examples: 'ON'
+            enable-glfw: 'OFF'
+
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: >
+          cmake -S ${{ github.workspace }} -B build
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+            -DGFX_BUILD_METAL=OFF
+            -DGFX_BUILD_VULKAN=ON
+            -DGFX_ENABLE_GLFW=${{ matrix.enable-glfw }}
+            -DGFX_ENABLE_IMGUI=${{ matrix.enable-imgui }}
+            -DGFX_BUILD_EXAMPLES=${{ matrix.build-examples }}
+
+      - name: Build
+        run: cmake --build build --config Release
