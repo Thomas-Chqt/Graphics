@@ -28,12 +28,12 @@ jobs:
       - name: Configure CMake
         run: >
           cmake -S ${{ github.workspace }} -B build
-            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
-            -DGFX_BUILD_METAL=ON
-            -DGFX_BUILD_VULKAN=ON
-            -DGFX_ENABLE_GLFW=${{ matrix.enable-glfw }}
-            -DGFX_ENABLE_IMGUI=${{ matrix.enable-imgui }}
-            -DGFX_BUILD_EXAMPLES=${{ matrix.build-examples }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
+          -DGFX_BUILD_METAL=ON
+          -DGFX_BUILD_VULKAN=ON
+          -DGFX_ENABLE_GLFW=${{ matrix.enable-glfw }}
+          -DGFX_ENABLE_IMGUI=${{ matrix.enable-imgui }}
+          -DGFX_BUILD_EXAMPLES=${{ matrix.build-examples }}
 
       - name: Build
         run: cmake --build build --config ${{ matrix.build-type }}
