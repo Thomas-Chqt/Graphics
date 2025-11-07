@@ -1,4 +1,5 @@
-name: Windows
+name: Build Windows
+run-name: ${{ github.event.pull_request && format('{0} -> {1} by {2} (PR {3})', github.head_ref, github.base_ref, github.actor, github.event.pull_request.number) || github.event_name == 'workflow_dispatch' && format('{0} by {1} [manual]', github.ref_name, github.actor) || format('{0} by {1}', github.ref_name, github.actor) }}
 
 on:
   pull_request:
@@ -10,15 +11,15 @@ jobs:
       fail-fast: false
       matrix:
         build-type: [ Debug, Release ]
-        enable-glfw: [ 'ON', 'OFF' ]
-        enable-imgui: [ 'ON', 'OFF' ]
-        build-examples: [ 'ON', 'OFF' ]
+        enable-glfw: [ GFX_ENABLE_GLFW=ON, GFX_ENABLE_GLFW=OFF ]
+        enable-imgui: [ GFX_ENABLE_IMGUI=ON, GFX_ENABLE_IMGUI=OFF ]
+        build-examples: [ GFX_BUILD_EXAMPLES=ON, GFX_BUILD_EXAMPLES=OFF ]
 
         exclude:
-          - build-examples: 'ON'
-            enable-imgui: 'OFF'
-          - build-examples: 'ON'
-            enable-glfw: 'OFF'
+          - build-examples: GFX_BUILD_EXAMPLES=ON
+            enable-imgui: GFX_ENABLE_IMGUI=OFF
+          - build-examples: GFX_BUILD_EXAMPLES=ON
+            enable-glfw: GFX_ENABLE_GLFW=OFF
 
     runs-on: windows-latest
 
@@ -30,9 +31,9 @@ jobs:
           cmake -S ${{ github.workspace }} -B build
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
           -DGFX_BUILD_VULKAN=ON
-          -DGFX_ENABLE_GLFW=${{ matrix.enable-glfw }}
-          -DGFX_ENABLE_IMGUI=${{ matrix.enable-imgui }}
-          -DGFX_BUILD_EXAMPLES=${{ matrix.build-examples }}
+          -D${{ matrix.enable-glfw }}
+          -D${{ matrix.enable-imgui }}
+          -D${{ matrix.build-examples }}
 
       - name: Build
         run: cmake --build build --config Release
