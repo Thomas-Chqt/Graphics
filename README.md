@@ -8,7 +8,7 @@ Platform Support
 
 | Platform | Metal | Vulkan |
 |----------|-------|--------|
-| macOS    | [![macOS-Metal](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos-metal.yml/badge.svg)](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos.yml) | [![macOS-Vulkan](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos-vulkan.yml/badge.svg)](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos-vulkan.yml) |
+| macOS    | [![macOS-Metal](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos-metal.yml/badge.svg)](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos-metal.yml) | [![macOS-Vulkan](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos-vulkan.yml/badge.svg)](https://github.com/Thomas-Chqt/Graphics/actions/workflows/macos-vulkan.yml) |
 | Windows  | N/A | [![Windows](https://github.com/Thomas-Chqt/Graphics/actions/workflows/windows.yml/badge.svg)](https://github.com/Thomas-Chqt/Graphics/actions/workflows/windows.yml) |
 | Linux    | N/A | [![Linux](https://github.com/Thomas-Chqt/Graphics/actions/workflows/linux.yml/badge.svg)](https://github.com/Thomas-Chqt/Graphics/actions/workflows/linux.yml) |
 
