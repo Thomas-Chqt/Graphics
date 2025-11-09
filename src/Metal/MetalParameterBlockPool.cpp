@@ -20,10 +20,10 @@ MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device, cons
     : m_device(device)
 {
     size_t totalBindings = descriptor.maxUniformBuffers + descriptor.maxTextures + descriptor.maxSamplers;
-    size_t bufferSize = totalBindings * sizeof(uint64_t);
+    size_t bufferSize = totalBindings * 32; // argument buffer must be 32 byte aligned, worst case of one descriptor per block
 
     Buffer::Descriptor buffDesc = { .size = bufferSize, .storageMode = ResourceStorageMode::hostVisible };
-    m_argumentBuffer = std::dynamic_pointer_cast<MetalBuffer>((std::shared_ptr<Buffer>)m_device->newBuffer(buffDesc));
+    m_argumentBuffer = std::dynamic_pointer_cast<MetalBuffer>(static_cast<std::shared_ptr<Buffer>>(m_device->newBuffer(buffDesc)));
 }
 
 std::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)

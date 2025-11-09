@@ -33,7 +33,8 @@ public:
     Material(const Material&) = delete;
 
     virtual const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const = 0;
-    virtual std::shared_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool&) = 0;
+    virtual void makeParameterBlock(gfx::ParameterBlockPool&) = 0;
+    virtual std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const = 0;
 
     virtual ~Material() = default;
 
@@ -58,7 +59,8 @@ public:
     FlatColorMaterial(gfx::Device& device); // need non const for gfx pipeline
 
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
-    std::shared_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) override;
+    void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
+    inline std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
 
     inline glm::vec4 diffuseColor() const { return m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor; }
     inline void setDiffuseColor(const glm::vec4& d) { m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor = d; }
@@ -93,7 +95,8 @@ public:
     TexturedMaterial(gfx::Device& device);
 
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
-    std::shared_ptr<gfx::ParameterBlock> makeParameterBlock(gfx::ParameterBlockPool& pool) override;
+    void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
+    std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
 
     inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
     inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
