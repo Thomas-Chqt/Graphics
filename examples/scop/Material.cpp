@@ -21,6 +21,7 @@
 #include <Graphics/Device.hpp>
 #include <Graphics/Sampler.hpp>
 
+#include <cassert>
 #include <memory>
 
 #include <glm/glm.hpp>
@@ -77,14 +78,11 @@ FlatColorMaterial::FlatColorMaterial(gfx::Device& device)
     setShininess(1.0f);
 }
 
-std::shared_ptr<gfx::ParameterBlock> FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
+void FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
-    if (m_parameterBlock == nullptr)
-    {
-        m_parameterBlock = pool.get(flatColorMaterialBpLayout);
-        m_parameterBlock->setBinding(0, m_materialData);
-    }
-    return m_parameterBlock;
+    assert(m_parameterBlock == nullptr);
+    m_parameterBlock = pool.get(flatColorMaterialBpLayout);
+    m_parameterBlock->setBinding(0, m_materialData);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,19 +150,15 @@ TexturedMaterial::TexturedMaterial(gfx::Device& device)
     setEmissiveColor(glm::vec3(0.0f, 0.0f, 0.0f));
 }
 
-std::shared_ptr<gfx::ParameterBlock> TexturedMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
+void TexturedMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
-    if (m_parameterBlock == nullptr)
-    {
-        m_parameterBlock = pool.get(texturedMaterialBpLayout);
-        m_parameterBlock->setBinding(0, m_sampler);
-        m_parameterBlock->setBinding(1, m_diffuseTexture);
-        m_parameterBlock->setBinding(2, m_emissiveTexture);
-        m_parameterBlock->setBinding(3, m_normalTexture);
-        m_parameterBlock->setBinding(4, m_materialData);
-
-    }
-    return m_parameterBlock;
+    assert(m_parameterBlock == nullptr);
+    m_parameterBlock = pool.get(texturedMaterialBpLayout);
+    m_parameterBlock->setBinding(0, m_sampler);
+    m_parameterBlock->setBinding(1, m_diffuseTexture);
+    m_parameterBlock->setBinding(2, m_emissiveTexture);
+    m_parameterBlock->setBinding(3, m_normalTexture);
+    m_parameterBlock->setBinding(4, m_materialData);
 }
 
 } // namespace scop

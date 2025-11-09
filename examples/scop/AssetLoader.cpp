@@ -366,6 +366,10 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     if (scene == nullptr)
         throw std::runtime_error("fail to load the model using assimp");
 
+    std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({
+        .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130
+    });
+
     std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPool->get();
     commandBuffer->beginBlitPass();
 
@@ -425,6 +429,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
             material->setNormalTexture(loadTextureFromPath(normalTexturePath));
         else
             material->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f))); // Neutral normal: (128, 128, 255) = (0, 0, 1) in tangent space
+
+        material->makeParameterBlock(*parameterBlockPool);
 
         return material;
     }) | std::ranges::to<std::vector>();

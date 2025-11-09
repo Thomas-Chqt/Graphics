@@ -46,9 +46,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
         assert(frameData.commandBufferPool);
 
         frameData.parameterBlockPool = m_device->newParameterBlockPool({
-            .maxUniformBuffers = 10000,
-            .maxTextures = 20,
-            .maxSamplers = 10
+            .maxUniformBuffers = 2, .maxTextures = 0, .maxSamplers = 0
         });
         assert(frameData.parameterBlockPool);
 
@@ -208,8 +206,7 @@ void Renderer::endFrame()
 
             for (auto& [material, buffers] : renderables)
             {
-                std::shared_ptr<gfx::ParameterBlock> materialPBlock = material->makeParameterBlock(*cfd.parameterBlockPool);
-                commandBuffer->setParameterBlock(materialPBlock, 2);
+                commandBuffer->setParameterBlock(material->getParameterBlock(), 2);
                 for (auto& [vtxIdxBuffer, modelMatrices] : buffers)
                 {
                     auto& [vertexBuffer, indexBuffer] = vtxIdxBuffer;
