@@ -239,10 +239,9 @@ void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffe
 
         for (auto& [image, syncReq] : commandBuffer->imageSyncRequests())
         {
-            // if the buffer use a swapchain image, add its imageAvailableSemaphore
-            // to the list of wait semaphores
+            // if the buffer use a swapchain image, add its imageAvailableSemaphore to the list of wait semaphores
             if (auto swapchainImg = dynamic_pointer_cast<SwapchainImage>(image)) {
-                // no ideal to do a linear seach but we need to keep the order for the association with the valueq
+                // no ideal to do a linear seach but we need to keep the order for the association with the value
                 if (std::ranges::find(waitSemaphores, swapchainImg->imageAvailableSemaphore()) == waitSemaphores.end()) {
                     waitSemaphores.push_back(swapchainImg->imageAvailableSemaphore());
                     waitSemaphoreValues.push_back(0); // not a timeline semaphore, value doesnt matter
@@ -395,7 +394,7 @@ void VulkanDevice::waitIdle()
     m_vkDevice.waitIdle();
     auto it = m_submittedCommandBuffers.end();
     for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
-        if ((*curr)->pool())
+        if ((*curr)->pool()) // if the pool has been destroyed, ptr is null. no need to do anything.
             (*curr)->pool()->release(std::move(*curr));
     }
     m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);

@@ -20,6 +20,7 @@
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
+#include <future>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -139,7 +140,7 @@ int main()
         //sponza->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         //entities.push_back(sponza);
 
-        auto bistro = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb"));
+        auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");}));
         bistro->setName("bistro");
         bistro->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         entities.push_back(bistro);
@@ -229,8 +230,10 @@ int main()
 
             for (auto& entity : entities)
             {
-                if (auto* renderableEntity = dynamic_cast<scop::RenderableEntity*>(entity.get()))
-                    renderer.addMesh(renderableEntity->mesh(), renderableEntity->modelMatrix());
+                if (auto* renderableEntity = dynamic_cast<scop::RenderableEntity*>(entity.get())) {
+                    if (renderableEntity->mesh().has_value())
+                        renderer.addMesh(*renderableEntity->mesh(), renderableEntity->modelMatrix());
+                }
 
                 if (auto* pointLight = dynamic_cast<scop::PointLight*>(entity.get()))
                     renderer.addPointLight(pointLight->position(), pointLight->color());

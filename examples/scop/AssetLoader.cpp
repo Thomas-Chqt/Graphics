@@ -24,6 +24,7 @@
 #include <assimp/scene.h>
 #include <assimp/types.h>
 #include <glm/ext/matrix_transform.hpp>
+#include <mutex>
 #include <stb_image/stb_image.h>
 
 #include <algorithm>
@@ -331,13 +332,14 @@ AssetLoader::AssetLoader(gfx::Device* device)
     : m_device(device)
 {
     assert(m_device);
-    m_commandBufferPool = m_device->newCommandBufferPool();
-    assert(m_commandBufferPool);
 }
 
 Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
 {
-    std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPool->get();
+    std::unique_ptr<gfx::CommandBufferPool> commandBufferPool = m_device->newCommandBufferPool();
+    assert(commandBufferPool);
+
+    std::unique_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
     commandBuffer->beginBlitPass();
     auto mesh = Mesh{
         .name = "cube_mesh",
@@ -366,11 +368,13 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     if (scene == nullptr)
         throw std::runtime_error("fail to load the model using assimp");
 
-    std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({
-        .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130
-    });
+    std::unique_ptr<gfx::CommandBufferPool> commandBufferPool = m_device->newCommandBufferPool();
+    assert(commandBufferPool);
 
-    std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPool->get();
+    std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130 });
+    assert(parameterBlockPool);
+
+    std::unique_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
     commandBuffer->beginBlitPass();
 
     std::map<std::string, std::shared_ptr<gfx::Texture>> textureCache;
@@ -385,10 +389,10 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
                 int texIndex = std::atoi(&texPath.data[1]);
                 assert(texIndex >= 0 && texIndex < static_cast<int>(scene->mNumTextures));
                 const aiTexture* aiTex = scene->mTextures[texIndex];
-                texture = loadEmbeddedTexture(aiTex, commandBuffer.get());
+                texture = loadEmbeddedTexture(aiTex, *commandBuffer);
             } else {
                 std::filesystem::path texFilePath = path.parent_path() / texPath.C_Str();
-                auto texture = loadTexture(texFilePath, commandBuffer.get());
+                auto texture = loadTexture(texFilePath, *commandBuffer);
             }
             textureCache[std::string(texPath.C_Str())] = texture;
             return texture;
@@ -404,7 +408,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
         if (aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE, 0, &diffuseTexturePath) == AI_SUCCESS)
             material->setDiffuseTexture(loadTextureFromPath(diffuseTexturePath));
         else
-            material->setDiffuseTexture(getSolidColorTexture(glm::vec4(1.0f)));
+            material->setDiffuseTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
 
         aiColor4D specularColor{};
         if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_SPECULAR, &specularColor) == AI_SUCCESS)
@@ -422,13 +426,13 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
         if (aiGetMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, 0, &emissiveTexturePath) == AI_SUCCESS)
             material->setEmissiveTexture(loadTextureFromPath(emissiveTexturePath));
         else
-            material->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f)));
+            material->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
 
         aiString normalTexturePath;
         if (aiGetMaterialTexture(aiMaterial, aiTextureType_NORMALS, 0, &normalTexturePath) == AI_SUCCESS)
             material->setNormalTexture(loadTextureFromPath(normalTexturePath));
         else
-            material->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f))); // Neutral normal: (128, 128, 255) = (0, 0, 1) in tangent space
+            material->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f), *commandBuffer)); // Neutral normal: (128, 128, 255) = (0, 0, 1) in tangent space
 
         material->makeParameterBlock(*parameterBlockPool);
 
@@ -506,14 +510,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
 
 using UniqueStbiUc = std::unique_ptr<stbi_uc, decltype(&stbi_image_free)>;
 
-std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* aiTex, gfx::CommandBuffer* commandBuffer)
+std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* aiTex, gfx::CommandBuffer& commandBuffer)
 {
-    std::unique_ptr<gfx::CommandBuffer> newCommandBuffer;
-    if (commandBuffer == nullptr) {
-        newCommandBuffer = m_commandBufferPool->get();
-        commandBuffer = newCommandBuffer.get();
-    }
-
     int width = 0;
     int height = 0;
     UniqueStbiUc bytes(nullptr, stbi_image_free);
@@ -555,26 +553,13 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
 
     std::memcpy(stagingBuffer->content<stbi_uc>(), bytes.get(), stagingBuffer->size());
 
-    if (newCommandBuffer != nullptr)
-        newCommandBuffer->beginBlitPass();
-
-    commandBuffer->copyBufferToTexture(stagingBuffer, texture);
-
-    if (newCommandBuffer != nullptr) {
-        newCommandBuffer->endBlitPass();
-        m_device->submitCommandBuffers(std::move(newCommandBuffer));
-    }
+    commandBuffer.copyBufferToTexture(stagingBuffer, texture);
 
     return texture;
 }
 
-std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::path& path, gfx::CommandBuffer* commandBuffer)
+std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::path& path, gfx::CommandBuffer& commandBuffer)
 {
-    std::unique_ptr<gfx::CommandBuffer> newCommandBuffer;
-    if (commandBuffer == nullptr) {
-        newCommandBuffer = m_commandBufferPool->get();
-        commandBuffer = newCommandBuffer.get();
-    }
     int width = 0;
     int height = 0;
     UniqueStbiUc bytes = UniqueStbiUc(stbi_load(path.string().c_str(), &width, &height, nullptr, STBI_rgb_alpha), stbi_image_free);
@@ -600,26 +585,13 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
 
     std::memcpy(stagingBuffer->content<stbi_uc>(), bytes.get(), stagingBuffer->size());
 
-    if (newCommandBuffer != nullptr)
-        newCommandBuffer->beginBlitPass();
-
-    commandBuffer->copyBufferToTexture(stagingBuffer, texture);
-
-    if (newCommandBuffer != nullptr) {
-        newCommandBuffer->endBlitPass();
-        m_device->submitCommandBuffers(std::move(newCommandBuffer));
-    }
+    commandBuffer.copyBufferToTexture(stagingBuffer, texture);
 
     return texture;
 }
 
-std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer* commandBuffer)
+std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer& commandBuffer)
 {
-    std::unique_ptr<gfx::CommandBuffer> newCommandBuffer;
-    if (commandBuffer == nullptr) {
-        newCommandBuffer = m_commandBufferPool->get();
-        commandBuffer = newCommandBuffer.get();
-    }
     int width = 0;
     int height = 0;
     std::map<std::filesystem::path, UniqueStbiUc> bytes;
@@ -667,31 +639,19 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
     std::memcpy(bufferData + 4 * faceSize, bytes.at(front).get(), faceSize);  // +Z (front)
     std::memcpy(bufferData + 5 * faceSize, bytes.at(back).get(), faceSize);   // -Z (back)
 
-    if (newCommandBuffer != nullptr)
-        newCommandBuffer->beginBlitPass();
-
     for (int face = 0; face < 6; ++face)
-        commandBuffer->copyBufferToTexture(stagingBuffer, face * faceSize, texture, face);
-
-    if (newCommandBuffer != nullptr) {
-        newCommandBuffer->endBlitPass();
-        m_device->submitCommandBuffers(std::move(newCommandBuffer));
-    }
+        commandBuffer.copyBufferToTexture(stagingBuffer, face * faceSize, texture, face);
 
     return texture;
 }
 
-std::shared_ptr<gfx::Texture> AssetLoader::getSolidColorTexture(const glm::vec4& color, gfx::CommandBuffer* commandBuffer)
+std::shared_ptr<gfx::Texture> AssetLoader::getSolidColorTexture(const glm::vec4& color, gfx::CommandBuffer& commandBuffer)
 {
+    std::scoped_lock lock(m_solidColorTextureCacheMtx);
+
     auto it =std::ranges::find_if(m_solidColorTextureCache, [&](const auto& e){ return e.first == color; });
     if (it != m_solidColorTextureCache.end())
         return it->second;
-
-    std::unique_ptr<gfx::CommandBuffer> newCommandBuffer;
-    if (commandBuffer == nullptr) {
-        newCommandBuffer = m_commandBufferPool->get();
-        commandBuffer = newCommandBuffer.get();
-    }
 
     std::shared_ptr<gfx::Texture> texture = m_device->newTexture(gfx::Texture::Descriptor{
         .type = gfx::TextureType::texture2d,
@@ -715,15 +675,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::getSolidColorTexture(const glm::vec4&
     pixelData[2] = static_cast<uint8_t>(color.b * 255.0f);
     pixelData[3] = static_cast<uint8_t>(color.a * 255.0f);
 
-    if (newCommandBuffer != nullptr)
-        newCommandBuffer->beginBlitPass();
-
-    commandBuffer->copyBufferToTexture(stagingBuffer, texture);
-
-    if (newCommandBuffer != nullptr) {
-        newCommandBuffer->endBlitPass();
-        m_device->submitCommandBuffers(std::move(newCommandBuffer));
-    }
+    commandBuffer.copyBufferToTexture(stagingBuffer, texture);
 
     m_solidColorTextureCache.emplace_back(color, texture);
 

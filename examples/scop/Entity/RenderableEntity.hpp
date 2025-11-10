@@ -13,8 +13,10 @@
 #include "Entity/Entity.hpp"
 #include "Mesh.hpp"
 
+#include <future>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <optional>
 
 namespace scop
 {
@@ -23,13 +25,19 @@ class RenderableEntity : public Entity
 {
 public:
     RenderableEntity() = default;
-    RenderableEntity(const RenderableEntity&) = default;
+    RenderableEntity(const RenderableEntity&) = delete;
     RenderableEntity(RenderableEntity&&) = default;
 
-    RenderableEntity(const Mesh& mesh) : m_mesh(mesh) {};
+    RenderableEntity(std::future<Mesh>&& meshFuture) : m_meshFuture(std::move(meshFuture)) {};
 
-    inline const Mesh& mesh() const { return m_mesh; }
-    inline void setMesh(const Mesh& m) { m_mesh = m; }
+    inline std::optional<Mesh> mesh()
+    {
+        if (m_mesh.has_value())
+            return m_mesh;
+        if (m_meshFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+            m_mesh = m_meshFuture.get();
+        return m_mesh;
+    }
 
     inline glm::mat4x4 modelMatrix() const
     {
@@ -45,10 +53,11 @@ public:
     ~RenderableEntity() override = default;
 
 private:
-    Mesh m_mesh;
+    std::future<Mesh> m_meshFuture;
+    std::optional<Mesh> m_mesh;
 
 public:
-    RenderableEntity& operator=(const RenderableEntity&) = default;
+    RenderableEntity& operator=(const RenderableEntity&) = delete;
     RenderableEntity& operator=(RenderableEntity&&) = default;
 };
 

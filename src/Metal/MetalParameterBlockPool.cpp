@@ -28,6 +28,8 @@ MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device, cons
 
 std::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
 {
+    std::scoped_lock lock(m_mutex);
+
     std::unique_ptr<MetalParameterBlock> pBlock = std::make_unique<MetalParameterBlock>(m_argumentBuffer, m_nextOffset, pbLayout, this);
     size_t usedSize = sizeof(uint64_t) * pbLayout.bindings.size();
     m_nextOffset += (usedSize + 31uz) & ~31uz;
@@ -37,6 +39,8 @@ std::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBloc
 
 void MetalParameterBlockPool::release(ParameterBlock* aPBlock)
 {
+    std::scoped_lock lock(m_mutex);
+
     auto* pBlock = dynamic_cast<MetalParameterBlock*>(aPBlock);
     assert(m_usedParameterBlocks.contains(pBlock));
     m_usedParameterBlocks.erase(pBlock);

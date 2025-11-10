@@ -23,6 +23,7 @@
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
+#include <mutex>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Metal/imgui_impl_metal.hpp"
 #endif
@@ -99,6 +100,8 @@ void MetalDevice::imguiShutdown()
 
 void MetalDevice::submitCommandBuffers(std::unique_ptr<CommandBuffer>&& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
+    std::scoped_lock lock(m_submitMtx);
+
     auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer.release());
     assert(commandBuffer);
 

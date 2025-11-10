@@ -66,6 +66,7 @@ private:
     id<MTLDevice> m_mtlDevice = nil;
     id<MTLCommandQueue> m_queue = nil;
     std::deque<std::unique_ptr<MetalCommandBuffer>> m_submittedCommandBuffers;
+    std::mutex m_submitMtx;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

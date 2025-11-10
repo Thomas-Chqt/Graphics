@@ -43,6 +43,8 @@ private:
 
     std::set<MetalParameterBlock*> m_usedParameterBlocks;
 
+    std::mutex m_mutex;
+
 public:
     MetalParameterBlockPool& operator=(const MetalParameterBlockPool&) = delete;
     MetalParameterBlockPool& operator=(MetalParameterBlockPool&&) = delete;
