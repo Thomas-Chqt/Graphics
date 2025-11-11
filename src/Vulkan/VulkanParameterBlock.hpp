@@ -32,11 +32,12 @@ public:
 
     VulkanParameterBlock(const VulkanDevice*, const std::shared_ptr<vk::DescriptorPool>&, const ParameterBlock::Layout&, VulkanParameterBlockPool*);
 
+    inline const std::shared_ptr<ParameterBlockLayout>& layout() const override { return m_layout; }
+
     void setBinding(uint32_t idx, const std::shared_ptr<Buffer>&) override;
     void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) override;
     void setBinding(uint32_t idx, const std::shared_ptr<Sampler>&) override;
 
-    inline const ParameterBlock::Layout& layout() const { return m_layout; }
     inline void clearSourcePool() { m_sourcePool = nullptr; }
 
     inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
@@ -50,7 +51,7 @@ public:
 private:
     const VulkanDevice* m_device;
     std::shared_ptr<vk::DescriptorPool> m_descriptorPool;
-    ParameterBlock::Layout m_layout;
+    std::shared_ptr<ParameterBlockLayout> m_layout;
     VulkanParameterBlockPool* m_sourcePool;
 
     vk::DescriptorSet m_descriptorSet;

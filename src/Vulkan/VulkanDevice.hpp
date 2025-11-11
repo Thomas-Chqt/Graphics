@@ -74,9 +74,6 @@ public:
 
     inline const VmaAllocator& allocator() const { return m_allocator; }
 
-    const vk::DescriptorSetLayout& descriptorSetLayout(const ParameterBlock::Layout&); // create one if not in cache
-    inline const vk::DescriptorSetLayout& descriptorSetLayout(const ParameterBlock::Layout& pbl) const { return m_descriptorSetLayoutCache.at(pbl); } // thow if not in cache
-
     ~VulkanDevice() override;
 
 private:
@@ -89,7 +86,6 @@ private:
     VmaAllocator m_allocator = VK_NULL_HANDLE;
     vk::Semaphore m_timelineSemaphore;
 
-    std::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayoutCache;
     std::deque<std::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
     uint64_t m_nextSignaledTimeValue = 1;
 

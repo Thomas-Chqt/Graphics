@@ -14,8 +14,8 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "Graphics/Sampler.hpp"
+#include "ParameterBlockLayout.hpp"
 
-#include <vector>
 #include <cstdint>
 #include <memory>
 
@@ -25,23 +25,9 @@ namespace gfx
 class ParameterBlock
 {
 public:
-    struct Binding
-    {
-        BindingType type = BindingType::uniformBuffer;
-        BindingUsages usages = BindingUsage::vertexRead | BindingUsage::fragmentRead;
-
-        bool operator<(const Binding& rhs) const noexcept { return type != rhs.type ? type < rhs.type : usages < rhs.usages; }
-    };
-
-    struct Layout
-    {
-        std::vector<ParameterBlock::Binding> bindings;
-
-        bool operator<(const Layout& rhs) const noexcept { return bindings < rhs.bindings; }
-    };
-
-public:
     ParameterBlock(const ParameterBlock&) = delete;
+
+    virtual const std::shared_ptr<ParameterBlockLayout>& layout() const = 0;
 
     virtual void setBinding(uint32_t idx, const std::shared_ptr<Buffer>&) = 0;
     virtual void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) = 0;
