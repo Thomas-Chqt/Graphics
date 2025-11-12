@@ -34,6 +34,8 @@ public:
 public:
     ParameterBlockLayout(const ParameterBlockLayout&) = delete;
     ParameterBlockLayout(ParameterBlockLayout&&) = delete;
+    
+    virtual const std::vector<ParameterBlockBinding>& bindings() const = 0;
 
     virtual ~ParameterBlockLayout() = default;
 

@@ -16,6 +16,7 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
+#include "MetalParameterBlockLayout.hpp"
 
 namespace gfx
 {
@@ -29,7 +30,9 @@ public:
     MetalParameterBlock(const MetalParameterBlock&) = delete;
     MetalParameterBlock(MetalParameterBlock&&) = delete;
 
-    MetalParameterBlock(const std::shared_ptr<MetalBuffer>&, size_t offset, const ParameterBlock::Layout&, MetalParameterBlockPool*);
+    MetalParameterBlock(const std::shared_ptr<MetalBuffer>&, size_t offset, const std::shared_ptr<MetalParameterBlockLayout>&, MetalParameterBlockPool*);
+
+    inline std::shared_ptr<ParameterBlockLayout> layout() const override { return m_layout; }
 
     void setBinding(uint32_t idx, const std::shared_ptr<Buffer>&) override;
     void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) override;
@@ -37,24 +40,23 @@ public:
 
     inline const MetalBuffer& argumentBuffer() const { return *m_argumentBuffer; }
     inline size_t offset() const { return m_offset; }
-    inline const ParameterBlock::Layout& layout() const { return m_layout; }
     inline void clearSourcePool() { m_sourcePool = nullptr; }
 
-    inline const std::map<std::shared_ptr<MetalBuffer>, ParameterBlock::Binding>& encodedBuffers() const { return m_encodedBuffers; }
-    inline const std::map<std::shared_ptr<MetalTexture>, ParameterBlock::Binding>& encodedTextures() const { return m_encodedTextures; };
-    inline const std::map<std::shared_ptr<MetalSampler>, ParameterBlock::Binding>& encodedSamplers() const { return m_encodedSamplers; };
+    inline const std::map<std::shared_ptr<MetalBuffer>, ParameterBlockBinding>& encodedBuffers() const { return m_encodedBuffers; }
+    inline const std::map<std::shared_ptr<MetalTexture>, ParameterBlockBinding>& encodedTextures() const { return m_encodedTextures; };
+    inline const std::map<std::shared_ptr<MetalSampler>, ParameterBlockBinding>& encodedSamplers() const { return m_encodedSamplers; };
 
     ~MetalParameterBlock() override;
 
 private:
     std::shared_ptr<MetalBuffer> m_argumentBuffer;
     size_t m_offset = 0;
-    ParameterBlock::Layout m_layout;
+    std::shared_ptr<MetalParameterBlockLayout> m_layout;
     MetalParameterBlockPool* m_sourcePool;
 
-    std::map<std::shared_ptr<MetalBuffer>, ParameterBlock::Binding> m_encodedBuffers;
-    std::map<std::shared_ptr<MetalTexture>, ParameterBlock::Binding> m_encodedTextures;
-    std::map<std::shared_ptr<MetalSampler>, ParameterBlock::Binding> m_encodedSamplers;
+    std::map<std::shared_ptr<MetalBuffer>, ParameterBlockBinding> m_encodedBuffers;
+    std::map<std::shared_ptr<MetalTexture>, ParameterBlockBinding> m_encodedTextures;
+    std::map<std::shared_ptr<MetalSampler>, ParameterBlockBinding> m_encodedSamplers;
 
 public:
     MetalParameterBlock& operator=(const MetalParameterBlock&) = delete;

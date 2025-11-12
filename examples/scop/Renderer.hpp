@@ -101,6 +101,9 @@ private:
 
     uint8_t m_frameIdx = 0;
     std::array<FrameData, maxFrameInFlight> m_frameDatas;
+    
+    std::shared_ptr<gfx::ParameterBlockLayout> m_vpMatrixBpLayout;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_sceneDataBpLayout;
 
 public:
     Renderer& operator=(const Renderer&) = delete;

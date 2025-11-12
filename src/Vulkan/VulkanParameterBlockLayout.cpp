@@ -15,7 +15,7 @@ namespace gfx
 {
 
 VulkanParameterBlockLayout::VulkanParameterBlockLayout(const VulkanDevice* device, const ParameterBlockLayout::Descriptor& desc)
-    : m_device(device)
+    : m_device(device), m_bindings(desc.bindings)
 {
     assert(m_device);
 

@@ -12,6 +12,7 @@
 #include "Vulkan/VulkanParameterBlockPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
+#include "VulkanParameterBlockLayout.hpp"
 
 namespace gfx
 {
@@ -38,8 +39,9 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device, c
     );
 }
 
-std::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
+std::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const std::shared_ptr<ParameterBlockLayout>& aPbLayout)
 {
+    auto pbLayout = std::dynamic_pointer_cast<VulkanParameterBlockLayout>(aPbLayout);
     auto pBlock = std::make_unique<VulkanParameterBlock>(m_device, m_descriptorPool, pbLayout, this);
     m_usedParameterBlocks.insert(pBlock.get());
     return pBlock;

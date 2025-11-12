@@ -27,7 +27,7 @@ class ParameterBlock
 public:
     ParameterBlock(const ParameterBlock&) = delete;
 
-    virtual const std::shared_ptr<ParameterBlockLayout>& layout() const = 0;
+    virtual std::shared_ptr<ParameterBlockLayout> layout() const = 0;
 
     virtual void setBinding(uint32_t idx, const std::shared_ptr<Buffer>&) = 0;
     virtual void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) = 0;

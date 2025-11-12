@@ -20,6 +20,7 @@
 #include "Graphics/ParameterBlockPool.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Enums.hpp"
+#include "ParameterBlockLayout.hpp"
 
 #include <memory>
 #include <filesystem>
@@ -45,7 +46,8 @@ public:
 
     virtual std::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
     virtual std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const = 0;
-    virtual std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) = 0;
+    virtual std::unique_ptr<ParameterBlockLayout> newParameterBlockLayout(const ParameterBlockLayout::Descriptor&) const = 0;
+    virtual std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const = 0;
     virtual std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
     virtual std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
     virtual std::unique_ptr<CommandBufferPool> newCommandBufferPool() const = 0;

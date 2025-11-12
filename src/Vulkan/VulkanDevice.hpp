@@ -50,7 +50,8 @@ public:
 
     std::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const override;
-    std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override; // need non cont to cache descriptorSetLayouts
+    std::unique_ptr<ParameterBlockLayout> newParameterBlockLayout(const ParameterBlockLayout::Descriptor&) const override;
+    std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const override;
     std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
     std::unique_ptr<CommandBufferPool> newCommandBufferPool() const override;

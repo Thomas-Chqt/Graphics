@@ -29,7 +29,7 @@ public:
 
     VulkanParameterBlockPool(const VulkanDevice*, const ParameterBlockPool::Descriptor&);
 
-    std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
+    std::unique_ptr<ParameterBlock> get(const std::shared_ptr<ParameterBlockLayout>&) override;
     void release(ParameterBlock*);
 
     ~VulkanParameterBlockPool() override;

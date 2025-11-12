@@ -23,6 +23,8 @@
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
+#include "MetalParameterBlockLayout.hpp"
+#include <memory>
 #include <mutex>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Metal/imgui_impl_metal.hpp"
@@ -51,7 +53,12 @@ std::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const std::filesystem::path
     return std::make_unique<MetalShaderLib>(*this, path);
 }
 
-std::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
+std::unique_ptr<ParameterBlockLayout> MetalDevice::newParameterBlockLayout(const ParameterBlockLayout::Descriptor& desc) const
+{
+    return std::make_unique<MetalParameterBlockLayout>(desc);
+}
+
+std::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
 {
     return std::make_unique<MetalGraphicsPipeline>(*this, desc);
 }

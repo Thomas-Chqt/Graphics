@@ -12,24 +12,28 @@
 
 #include "Graphics/ParameterBlockLayout.hpp"
 
-#include "Vulkan/VulkanDevice.hpp"
-
 namespace gfx
 {
+
+class VulkanDevice;
 
 class VulkanParameterBlockLayout : public ParameterBlockLayout
 {
 public:
-    VulkanParameterBlockLayout() = default;
+    VulkanParameterBlockLayout() = delete;
     VulkanParameterBlockLayout(const VulkanParameterBlockLayout&) = delete;
     VulkanParameterBlockLayout(VulkanParameterBlockLayout&&) = delete;
 
     VulkanParameterBlockLayout(const VulkanDevice*, const ParameterBlockLayout::Descriptor&);
 
+    inline const std::vector<ParameterBlockBinding>& bindings() const override { return m_bindings; };
+    inline const vk::DescriptorSetLayout& vkDescriptorSetLayout() const { return m_vkDescriptorSetLayout; }
+
     ~VulkanParameterBlockLayout() override;
 
 private:
     const VulkanDevice* m_device;
+    std::vector<ParameterBlockBinding> m_bindings;
     vk::DescriptorSetLayout m_vkDescriptorSetLayout;
 
 public:

@@ -27,6 +27,7 @@
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanTexture.hpp"
+#include "VulkanParameterBlockLayout.hpp"
 #if defined(GFX_IMGUI_ENABLED)
 # include "Vulkan/imgui_impl_vulkan.h"
 #endif
@@ -112,13 +113,16 @@ std::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descripto
 
 std::unique_ptr<ShaderLib> VulkanDevice::newShaderLib(const std::filesystem::path& path) const
 {
-    return std::make_unique<VulkanShaderLib>(*this, path);
+    return std::make_unique<VulkanShaderLib>(this, path);
 }
 
-std::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
+std::unique_ptr<ParameterBlockLayout> VulkanDevice::newParameterBlockLayout(const ParameterBlockLayout::Descriptor& desc) const
 {
-    for (auto& pbl : desc.parameterBlockLayouts)
-        (void)descriptorSetLayout(pbl); // add to cache, will create the layout if not present
+    return std::make_unique<VulkanParameterBlockLayout>(this, desc);
+}
+
+std::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
+{
     return std::make_unique<VulkanGraphicsPipeline>(this, desc);
 }
 
@@ -400,35 +404,9 @@ void VulkanDevice::waitIdle()
     m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
 }
 
-const vk::DescriptorSetLayout& VulkanDevice::descriptorSetLayout(const ParameterBlock::Layout& pbLayout)
-{
-    auto it = m_descriptorSetLayoutCache.find(pbLayout);
-    if (it == m_descriptorSetLayoutCache.end())
-    {
-        std::vector<vk::DescriptorSetLayoutBinding> vkBindings;
-        for (uint32_t i = 0; const auto& binding : pbLayout.bindings) {
-            vkBindings.push_back(vk::DescriptorSetLayoutBinding{}
-                .setBinding(i)
-                .setDescriptorType(toVkDescriptorType(binding.type))
-                .setDescriptorCount(1)
-                .setStageFlags(toVkShaderStageFlags(binding.usages)));
-            i++;
-        }
-        auto descriptorSetLayoutCreateInfo = vk::DescriptorSetLayoutCreateInfo{}
-            .setBindings(vkBindings);
-        vk::DescriptorSetLayout dsLayout = m_vkDevice.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
-        auto [newIt, res] = m_descriptorSetLayoutCache.insert(std::make_pair(pbLayout, dsLayout));
-        assert(res);
-        it = newIt;
-    }
-    return it->second;
-}
-
 VulkanDevice::~VulkanDevice()
 {
     waitIdle();
-    for (auto& [_, descriptorSetLayout] : m_descriptorSetLayoutCache)
-        m_vkDevice.destroyDescriptorSetLayout(descriptorSetLayout);
     m_vkDevice.destroySemaphore(m_timelineSemaphore);
     vmaDestroyAllocator(m_allocator);
     m_vkDevice.destroy();

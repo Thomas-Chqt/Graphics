@@ -12,6 +12,8 @@
 #include "Metal/MetalParameterBlockPool.hpp"
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalDevice.hpp"
+#include "MetalParameterBlockLayout.hpp"
+#include <memory>
 
 namespace gfx
 {
@@ -26,12 +28,14 @@ MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device, cons
     m_argumentBuffer = std::dynamic_pointer_cast<MetalBuffer>(static_cast<std::shared_ptr<Buffer>>(m_device->newBuffer(buffDesc)));
 }
 
-std::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
+std::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const std::shared_ptr<ParameterBlockLayout>& aPbLayout)
 {
     std::scoped_lock lock(m_mutex);
 
+    auto pbLayout = std::dynamic_pointer_cast<MetalParameterBlockLayout>(aPbLayout);
+
     std::unique_ptr<MetalParameterBlock> pBlock = std::make_unique<MetalParameterBlock>(m_argumentBuffer, m_nextOffset, pbLayout, this);
-    size_t usedSize = sizeof(uint64_t) * pbLayout.bindings.size();
+    size_t usedSize = sizeof(uint64_t) * pbLayout->bindings().size();
     m_nextOffset += (usedSize + 31uz) & ~31uz;
     m_usedParameterBlocks.insert(pBlock.get());
     return pBlock;
