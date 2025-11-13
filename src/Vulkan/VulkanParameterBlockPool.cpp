@@ -49,6 +49,8 @@ std::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const std::shared_
 
 void VulkanParameterBlockPool::release(ParameterBlock* aPBlock)
 {
+    std::scoped_lock lock(m_mutex);
+
     auto* pBlock = dynamic_cast<VulkanParameterBlock*>(aPBlock);
     assert(m_usedParameterBlocks.contains(pBlock));
     m_usedParameterBlocks.erase(pBlock);

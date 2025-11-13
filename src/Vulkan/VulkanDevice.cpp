@@ -221,6 +221,8 @@ void VulkanDevice::submitCommandBuffers(std::unique_ptr<CommandBuffer>&& aComman
 
 void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>> aCommandBuffers)
 {
+    std::scoped_lock lock(m_submitMtx);
+
     std::vector<vk::CommandBuffer> vkCommandBuffers;
 
     std::vector<vk::Semaphore> waitSemaphores;

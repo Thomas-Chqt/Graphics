@@ -41,6 +41,8 @@ private:
 
     std::set<VulkanParameterBlock*> m_usedParameterBlocks;
 
+    std::mutex m_mutex;
+
 public:
     VulkanParameterBlockPool& operator=(const VulkanParameterBlockPool&) = delete;
     VulkanParameterBlockPool& operator=(VulkanParameterBlockPool&&) = delete;

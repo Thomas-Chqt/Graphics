@@ -89,6 +89,7 @@ private:
 
     std::deque<std::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
     uint64_t m_nextSignaledTimeValue = 1;
+    std::mutex m_submitMtx;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

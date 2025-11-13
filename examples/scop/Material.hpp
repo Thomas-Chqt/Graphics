@@ -56,9 +56,10 @@ public:
     FlatColorMaterial(const FlatColorMaterial&) = delete;
     FlatColorMaterial(FlatColorMaterial&&) = delete;
 
-    FlatColorMaterial(gfx::Device& device); // need non const for gfx pipeline
+    FlatColorMaterial(const gfx::Device&);
 
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
+
     void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
     inline std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
 
@@ -74,8 +75,12 @@ public:
     ~FlatColorMaterial() override = default;
 
 private:
+    inline static std::weak_ptr<gfx::ParameterBlockLayout> s_parameterBlockLayout;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_parameterBlockLayout;
+
     inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
     std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+
     std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
 
     std::shared_ptr<gfx::Buffer> m_materialData;
@@ -92,9 +97,10 @@ public:
     TexturedMaterial(const TexturedMaterial&) = delete;
     TexturedMaterial(TexturedMaterial&&) = delete;
 
-    TexturedMaterial(gfx::Device& device);
+    TexturedMaterial(const gfx::Device&);
 
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
+
     void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
     std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
 
@@ -125,8 +131,12 @@ public:
     ~TexturedMaterial() override = default;
 
 private:
+    inline static std::weak_ptr<gfx::ParameterBlockLayout> s_parameterBlockLayout;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_parameterBlockLayout;
+
     inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
     std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+
     std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
 
     std::shared_ptr<gfx::Sampler> m_sampler;

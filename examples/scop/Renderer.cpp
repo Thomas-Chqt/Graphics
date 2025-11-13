@@ -62,6 +62,22 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
             .storageMode = gfx::ResourceStorageMode::hostVisible});
     }
 
+    m_vpMatrixBpLayout = m_device->newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
+        .bindings = {
+            gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::vertexRead }
+        }
+    });
+    assert(m_vpMatrixBpLayout);
+    s_vpMatrixBpLayout = m_vpMatrixBpLayout;
+
+    m_sceneDataBpLayout = m_device->newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
+        .bindings = {
+            gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead }
+        }
+    });
+    assert(m_sceneDataBpLayout);
+    s_sceneDataBpLayout = m_sceneDataBpLayout;
+
     ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
@@ -192,10 +208,10 @@ void Renderer::endFrame()
 
     commandBuffer->beginRenderPass(framebuffer);
     {
-        std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = cfd.parameterBlockPool->get(vpMatrixBpLayout);
+        std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = cfd.parameterBlockPool->get(vpMatrixBpLayout());
         vpMatrixPBlock->setBinding(0, cfd.vpMatrix);
 
-        std::shared_ptr<gfx::ParameterBlock> sceneDataPBlock = cfd.parameterBlockPool->get(sceneDataBpLayout);
+        std::shared_ptr<gfx::ParameterBlock> sceneDataPBlock = cfd.parameterBlockPool->get(sceneDataBpLayout());
         sceneDataPBlock->setBinding(0, cfd.sceneDataBuffer);
 
         for (auto& [pipeline, renderables] : cfd.renderables)
