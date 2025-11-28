@@ -41,6 +41,8 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device, c
 
 std::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const std::shared_ptr<ParameterBlockLayout>& aPbLayout)
 {
+    std::scoped_lock lock(m_usedParameterBlocksMtx);
+
     auto pbLayout = std::dynamic_pointer_cast<VulkanParameterBlockLayout>(aPbLayout);
     auto pBlock = std::make_unique<VulkanParameterBlock>(m_device, m_descriptorPool, pbLayout, this);
     m_usedParameterBlocks.insert(pBlock.get());
@@ -49,7 +51,7 @@ std::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const std::shared_
 
 void VulkanParameterBlockPool::release(ParameterBlock* aPBlock)
 {
-    std::scoped_lock lock(m_mutex);
+    std::scoped_lock lock(m_usedParameterBlocksMtx);
 
     auto* pBlock = dynamic_cast<VulkanParameterBlock*>(aPBlock);
     assert(m_usedParameterBlocks.contains(pBlock));

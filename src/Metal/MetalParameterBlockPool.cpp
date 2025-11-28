@@ -13,7 +13,6 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalDevice.hpp"
 #include "MetalParameterBlockLayout.hpp"
-#include <memory>
 
 namespace gfx
 {

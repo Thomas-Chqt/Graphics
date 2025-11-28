@@ -23,6 +23,7 @@
 
 #include "Vulkan/QueueFamily.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
+#include <memory>
 
 namespace gfx
 {
@@ -86,10 +87,11 @@ private:
     vk::Queue m_queue;
     VmaAllocator m_allocator = VK_NULL_HANDLE;
     vk::Semaphore m_timelineSemaphore;
+    std::unique_ptr<VulkanCommandBufferPool> m_barrierCmdBufferPool;
 
     std::deque<std::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
     uint64_t m_nextSignaledTimeValue = 1;
-    std::mutex m_submitMtx;
+    std::mutex m_submittedCommandBuffersMtx;
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

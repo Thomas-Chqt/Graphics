@@ -33,7 +33,6 @@
 #endif
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanCommandBufferPool.hpp"
-#include <algorithm>
 
 namespace gfx
 {
@@ -104,6 +103,8 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setPNext(vk::SemaphoreTypeCreateInfo{}
             .setSemaphoreType(vk::SemaphoreType::eTimeline)
             .setInitialValue(0)));
+    
+    m_barrierCmdBufferPool = std::make_unique<VulkanCommandBufferPool>(this, m_queueFamily);
 }
 
 std::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -221,7 +222,7 @@ void VulkanDevice::submitCommandBuffers(std::unique_ptr<CommandBuffer>&& aComman
 
 void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>> aCommandBuffers)
 {
-    std::scoped_lock lock(m_submitMtx);
+    std::scoped_lock lock(m_submittedCommandBuffersMtx);
 
     std::vector<vk::CommandBuffer> vkCommandBuffers;
 
@@ -321,10 +322,7 @@ void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffe
             if (bufferMemoryBarriers.empty() == false)
                 dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
 
-            // if a barrier is needed, we need to create a command buffer for it
-            // using the same pool a the submitted command buffer so they have the same lifetime
-            assert(commandBuffer->poolVulkan());
-            std::unique_ptr<VulkanCommandBuffer> barrierCmdBuffer = commandBuffer->poolVulkan()->getVulkan();
+            std::unique_ptr<VulkanCommandBuffer> barrierCmdBuffer = m_barrierCmdBufferPool->getVulkan();
             barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
             barrierCmdBuffer->end();
             // barrierCmdBuffer is added before the user command buffer
@@ -378,6 +376,8 @@ void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffe
 
 void VulkanDevice::waitCommandBuffer(const CommandBuffer* aCommandBuffer)
 {
+    std::scoped_lock lock(m_submittedCommandBuffersMtx);
+
     auto it = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
     if (it != m_submittedCommandBuffers.end())
     {
@@ -397,6 +397,8 @@ void VulkanDevice::waitCommandBuffer(const CommandBuffer* aCommandBuffer)
 
 void VulkanDevice::waitIdle()
 {
+    std::scoped_lock lock(m_submittedCommandBuffersMtx);
+
     m_vkDevice.waitIdle();
     auto it = m_submittedCommandBuffers.end();
     for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {

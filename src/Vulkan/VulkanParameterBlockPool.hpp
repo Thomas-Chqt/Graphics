@@ -40,8 +40,7 @@ private:
     std::shared_ptr<vk::DescriptorPool> m_descriptorPool; // blocks can outlive the pool, only the vk::DescriptorPool need to remain alive
 
     std::set<VulkanParameterBlock*> m_usedParameterBlocks;
-
-    std::mutex m_mutex;
+    std::mutex m_usedParameterBlocksMtx;
 
 public:
     VulkanParameterBlockPool& operator=(const VulkanParameterBlockPool&) = delete;

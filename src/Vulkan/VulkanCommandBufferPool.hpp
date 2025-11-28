@@ -44,8 +44,13 @@ private:
     std::shared_ptr<vk::CommandPool> m_vkCommandPool; // buffers can outlive the pool, so the vkCommandPool need to be kept alive
 
     std::deque<std::unique_ptr<VulkanCommandBuffer>> m_availableCommandBuffers;
+    std::mutex m_availableCommandBuffersMtx;
+
     std::deque<std::unique_ptr<VulkanCommandBuffer>> m_resetableCommandBuffers; // buffer are put here until the pool can be reset (when m_usedCommandBuffers is empty)
+    std::mutex m_resetableCommandBuffersMtx;
+
     std::set<VulkanCommandBuffer*> m_usedCommandBuffers;
+    std::mutex m_usedCommandBuffersMtx;
 
 public:
     VulkanCommandBufferPool& operator=(const VulkanCommandBufferPool&) = delete;
