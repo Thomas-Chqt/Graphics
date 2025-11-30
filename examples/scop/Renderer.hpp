@@ -82,7 +82,7 @@ private:
                     std::vector<glm::mat4x4> // model matrix
         >>> renderables;
 
-        gfx::CommandBuffer* lastCommandBuffer = nullptr;
+        std::shared_ptr<gfx::CommandBuffer> lastCommandBuffer = nullptr;
     };
 
     gfx::Device* m_device;

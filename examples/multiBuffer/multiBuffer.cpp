@@ -170,12 +170,12 @@ public:
             assert(m_vertexBuffers.at(i));
 
             std::ranges::copy(vertices.at(i), stagingBuffer->content<Vertex>());
-            gfx::CommandBuffer* commandBuffer = m_commandBufferPools.at(m_frameIdx)->get().release();
+            std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
             commandBuffer->beginBlitPass();
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffers.at(i), stagingBuffer->size());
             commandBuffer->endBlitPass();
-            m_device->submitCommandBuffers(std::unique_ptr<gfx::CommandBuffer>(commandBuffer));
-            m_device->waitCommandBuffer(commandBuffer);
+            m_device->submitCommandBuffers(commandBuffer);
+            m_device->waitCommandBuffer(*commandBuffer);
         }
     }
 
@@ -204,11 +204,12 @@ public:
             }
 
             if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
-                m_device->waitCommandBuffer(m_lastCommandBuffers.at(m_frameIdx));
-                m_lastCommandBuffers.at(m_frameIdx) = nullptr;
+                m_device->waitCommandBuffer(*m_lastCommandBuffers.at(m_frameIdx));
+                m_lastCommandBuffers.at(m_frameIdx).reset();
+                m_commandBufferPools.at(m_frameIdx)->reset();
             }
 
-            std::vector<std::unique_ptr<gfx::CommandBuffer>> commandBuffers(2);
+            std::vector<std::shared_ptr<gfx::CommandBuffer>> commandBuffers(2);
             commandBuffers.at(0) = m_commandBufferPools.at(m_frameIdx)->get();
             commandBuffers.at(1) = m_commandBufferPools.at(m_frameIdx)->get();
 
@@ -264,8 +265,8 @@ public:
 
             commandBuffers.at(1)->presentDrawable(drawable);
 
-            m_lastCommandBuffers.at(m_frameIdx) = commandBuffers.at(1).get();
-            m_device->submitCommandBuffers(std::move(commandBuffers));
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffers.at(1);
+            m_device->submitCommandBuffers(commandBuffers);
 
             m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
@@ -288,7 +289,7 @@ private:
 
     uint8_t m_frameIdx = 0;
     std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<std::shared_ptr<gfx::CommandBuffer>, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

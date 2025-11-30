@@ -144,8 +144,9 @@ public:
             }
 
             if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
-                m_device->waitCommandBuffer(m_lastCommandBuffers.at(m_frameIdx));
-                m_lastCommandBuffers.at(m_frameIdx) = nullptr;
+                m_device->waitCommandBuffer(*m_lastCommandBuffers.at(m_frameIdx));
+                m_lastCommandBuffers.at(m_frameIdx).reset();
+                m_commandBufferPools.at(m_frameIdx)->reset();
             }
 
             m_device->imguiNewFrame();
@@ -157,7 +158,7 @@ public:
             }
             ImGui::Render();
 
-            std::unique_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+            std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
 
             std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
             if (drawable == nullptr) {
@@ -182,8 +183,8 @@ public:
             commandBuffer->endRenderPass();
             commandBuffer->presentDrawable(drawable);
 
-            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
-            m_device->submitCommandBuffers(std::move(commandBuffer));
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer;
+            m_device->submitCommandBuffers(commandBuffer);
 
             if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
             {
@@ -214,7 +215,7 @@ private:
 
     uint8_t m_frameIdx = 0;
     std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<std::shared_ptr<gfx::CommandBuffer>, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

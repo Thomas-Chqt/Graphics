@@ -21,8 +21,6 @@
 namespace gfx
 {
 
-class MetalParameterBlockPool;
-
 class MetalParameterBlock : public ParameterBlock
 {
 public:
@@ -30,7 +28,7 @@ public:
     MetalParameterBlock(const MetalParameterBlock&) = delete;
     MetalParameterBlock(MetalParameterBlock&&) = delete;
 
-    MetalParameterBlock(const std::shared_ptr<MetalBuffer>&, size_t offset, const std::shared_ptr<MetalParameterBlockLayout>&, MetalParameterBlockPool*);
+    MetalParameterBlock(const std::shared_ptr<MetalParameterBlockLayout>&, const std::shared_ptr<MetalBuffer>&, size_t offset);
 
     inline std::shared_ptr<ParameterBlockLayout> layout() const override { return m_layout; }
 
@@ -40,23 +38,27 @@ public:
 
     inline const MetalBuffer& argumentBuffer() const { return *m_argumentBuffer; }
     inline size_t offset() const { return m_offset; }
-    inline void clearSourcePool() { m_sourcePool = nullptr; }
 
-    inline const std::map<std::shared_ptr<MetalBuffer>, ParameterBlockBinding>& encodedBuffers() const { return m_encodedBuffers; }
-    inline const std::map<std::shared_ptr<MetalTexture>, ParameterBlockBinding>& encodedTextures() const { return m_encodedTextures; };
-    inline const std::map<std::shared_ptr<MetalSampler>, ParameterBlockBinding>& encodedSamplers() const { return m_encodedSamplers; };
+    inline const std::map<std::shared_ptr<MetalBuffer>, ParameterBlockBinding>& encodedBuffers() const { return m_nonReusedRessources.encodedBuffers; }
+    inline const std::map<std::shared_ptr<MetalTexture>, ParameterBlockBinding>& encodedTextures() const { return m_nonReusedRessources.encodedTextures; };
+    inline const std::map<std::shared_ptr<MetalSampler>, ParameterBlockBinding>& encodedSamplers() const { return m_nonReusedRessources.encodedSamplers; };
 
-    ~MetalParameterBlock() override;
+    inline void reuse() { m_nonReusedRessources = NonReusedRessources(); }
+
+    ~MetalParameterBlock() override = default;
 
 private:
+    std::shared_ptr<MetalParameterBlockLayout> m_layout;
     std::shared_ptr<MetalBuffer> m_argumentBuffer;
     size_t m_offset = 0;
-    std::shared_ptr<MetalParameterBlockLayout> m_layout;
-    MetalParameterBlockPool* m_sourcePool;
 
-    std::map<std::shared_ptr<MetalBuffer>, ParameterBlockBinding> m_encodedBuffers;
-    std::map<std::shared_ptr<MetalTexture>, ParameterBlockBinding> m_encodedTextures;
-    std::map<std::shared_ptr<MetalSampler>, ParameterBlockBinding> m_encodedSamplers;
+    struct NonReusedRessources
+    {
+        std::map<std::shared_ptr<MetalBuffer>, ParameterBlockBinding> encodedBuffers;
+        std::map<std::shared_ptr<MetalTexture>, ParameterBlockBinding> encodedTextures;
+        std::map<std::shared_ptr<MetalSampler>, ParameterBlockBinding> encodedSamplers;
+    }
+    m_nonReusedRessources;
 
 public:
     MetalParameterBlock& operator=(const MetalParameterBlock&) = delete;

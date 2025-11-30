@@ -34,9 +34,7 @@ public:
     MetalCommandBuffer(const MetalCommandBuffer&) = delete;
     MetalCommandBuffer(MetalCommandBuffer&&) noexcept;
 
-    MetalCommandBuffer(const id<MTLCommandQueue>&, MetalCommandBufferPool*);
-
-    CommandBufferPool* pool() override;
+    MetalCommandBuffer(const id<MTLCommandQueue>&);
 
     void beginRenderPass(const Framebuffer&) override;
 
@@ -69,13 +67,10 @@ public:
 
     inline const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }
     inline const id<MTLCommandEncoder>& commandEncoder() const { return m_commandEncoder; }
-    inline void clearSourcePool() { m_sourcePool = nullptr; }
 
     ~MetalCommandBuffer() override;
 
 private:
-    MetalCommandBufferPool* m_sourcePool = nullptr;
-
     id<MTLCommandBuffer> m_mtlCommandBuffer = nil;
     id<MTLCommandEncoder> m_commandEncoder = nil;
 

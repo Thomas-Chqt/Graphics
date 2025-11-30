@@ -32,7 +32,8 @@ public:
     ParameterBlockPool(const ParameterBlockPool&) = delete;
     ParameterBlockPool(ParameterBlockPool&&) = delete;
 
-    virtual std::unique_ptr<ParameterBlock> get(const std::shared_ptr<ParameterBlockLayout>&) = 0;
+    virtual std::shared_ptr<ParameterBlock> get(const std::shared_ptr<ParameterBlockLayout>&) = 0;
+    virtual void reset() = 0;
 
     virtual ~ParameterBlockPool() = default;
 

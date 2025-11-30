@@ -30,10 +30,10 @@ public:
 
     MetalParameterBlockPool(const MetalDevice*, const ParameterBlockPool::Descriptor&);
 
-    std::unique_ptr<ParameterBlock> get(const std::shared_ptr<ParameterBlockLayout>&) override;
-    void release(ParameterBlock*);
+    std::shared_ptr<ParameterBlock> get(const std::shared_ptr<ParameterBlockLayout>&) override;
+    void reset() override;
 
-    ~MetalParameterBlockPool() override;
+    ~MetalParameterBlockPool() override = default;
 
 private:
     const MetalDevice* m_device = nullptr; // to allow creating more argument buffers in the future
@@ -41,9 +41,8 @@ private:
     std::shared_ptr<MetalBuffer> m_argumentBuffer; // blocks can outlive the pool, only the argument buffer need to remain alive
     size_t m_nextOffset = 0;
 
-    std::set<MetalParameterBlock*> m_usedParameterBlocks;
-
-    std::mutex m_mutex;
+    std::deque<std::shared_ptr<MetalParameterBlock>> m_availablePBlocks;
+    std::deque<std::shared_ptr<MetalParameterBlock>> m_usedPBlocks;
 
 public:
     MetalParameterBlockPool& operator=(const MetalParameterBlockPool&) = delete;

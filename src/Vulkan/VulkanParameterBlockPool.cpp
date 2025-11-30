@@ -39,33 +39,31 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device, c
     );
 }
 
-std::unique_ptr<ParameterBlock> VulkanParameterBlockPool::get(const std::shared_ptr<ParameterBlockLayout>& aPbLayout)
+std::shared_ptr<ParameterBlock> VulkanParameterBlockPool::get(const std::shared_ptr<ParameterBlockLayout>& aPbLayout)
 {
-    std::scoped_lock lock(m_usedParameterBlocksMtx);
-
     auto pbLayout = std::dynamic_pointer_cast<VulkanParameterBlockLayout>(aPbLayout);
-    auto pBlock = std::make_unique<VulkanParameterBlock>(m_device, m_descriptorPool, pbLayout, this);
-    m_usedParameterBlocks.insert(pBlock.get());
+    assert(pbLayout);
+    std::shared_ptr<VulkanParameterBlock> pBlock;
+    if (m_availablePBlocks.empty() == false) {
+        pBlock = std::move(m_availablePBlocks.front());
+        m_availablePBlocks.pop_front();
+        *pBlock = VulkanParameterBlock(m_device, pbLayout, m_descriptorPool);
+    }
+    else {
+        pBlock = std::make_shared<VulkanParameterBlock>(m_device, pbLayout, m_descriptorPool);
+    }
+    m_usedPBlocks.push_back(pBlock);
     return pBlock;
 }
 
-void VulkanParameterBlockPool::release(ParameterBlock* aPBlock)
+void VulkanParameterBlockPool::reset()
 {
-    std::scoped_lock lock(m_usedParameterBlocksMtx);
-
-    auto* pBlock = dynamic_cast<VulkanParameterBlock*>(aPBlock);
-    assert(m_usedParameterBlocks.contains(pBlock));
-    m_usedParameterBlocks.erase(pBlock);
-    if (m_usedParameterBlocks.empty())
-        m_device->vkDevice().resetDescriptorPool(*m_descriptorPool);
-}
-
-VulkanParameterBlockPool::~VulkanParameterBlockPool()
-{
-    for (auto* pBlock : m_usedParameterBlocks) {
-        // blocks can outlive the pool, this prevent releasing a block to a freed pool
-        pBlock->clearSourcePool();
+    m_device->vkDevice().resetDescriptorPool(*m_descriptorPool);
+    for (auto& pBlock : m_usedPBlocks) {
+        *pBlock = VulkanParameterBlock();
+        m_availablePBlocks.push_back(std::move(pBlock));
     }
+    m_usedPBlocks.clear();
 }
 
 }

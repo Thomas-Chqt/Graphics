@@ -33,7 +33,6 @@ namespace gfx
 
 MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
     : CommandBuffer(std::move(other)),
-      m_sourcePool(std::exchange(other.m_sourcePool, nullptr)),
       m_mtlCommandBuffer(std::exchange(other.m_mtlCommandBuffer, nil)),
       m_commandEncoder(std::exchange(other.m_commandEncoder, nil)),
       m_usedPipelines(std::move(other.m_usedPipelines)),
@@ -44,16 +43,10 @@ MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
 {
 }
 
-MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue, MetalCommandBufferPool* commandPool)
-    : m_sourcePool(commandPool) { @autoreleasepool
+MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue) { @autoreleasepool
 {
     m_mtlCommandBuffer = [[queue commandBuffer] retain];
 }}
-
-CommandBufferPool* MetalCommandBuffer::pool()
-{
-    return m_sourcePool;
-}
 
 void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @autoreleasepool
 {
@@ -275,8 +268,6 @@ void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawa
 
 MetalCommandBuffer::~MetalCommandBuffer() { @autoreleasepool
 {
-    if (m_sourcePool)
-        m_sourcePool->release(this);
     if (m_commandEncoder != nil)
         [m_commandEncoder release];
     if (m_mtlCommandBuffer != nil)
@@ -287,14 +278,11 @@ MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) 
 {
     if (this != &other)
     {
-        if (m_sourcePool)
-            m_sourcePool->release(this);
         if (m_commandEncoder != nil)
             [m_commandEncoder release];
         if (m_mtlCommandBuffer != nil)
             [m_mtlCommandBuffer release];
 
-        m_sourcePool = std::exchange(other.m_sourcePool, nullptr);
         m_mtlCommandBuffer = std::exchange(other.m_mtlCommandBuffer, nil);
         m_commandEncoder = std::exchange(other.m_commandEncoder, nil);
         m_usedPipelines = std::move(other.m_usedPipelines);

@@ -339,7 +339,7 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
     std::unique_ptr<gfx::CommandBufferPool> commandBufferPool = m_device->newCommandBufferPool();
     assert(commandBufferPool);
 
-    std::unique_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
+    std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
     commandBuffer->beginBlitPass();
     auto mesh = Mesh{
         .name = "cube_mesh",
@@ -354,7 +354,7 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
         }
     };
     commandBuffer->endBlitPass();
-    m_device->submitCommandBuffers(std::move(commandBuffer));
+    m_device->submitCommandBuffers(commandBuffer);
     return mesh;
 }
 
@@ -374,7 +374,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130 });
     assert(parameterBlockPool);
 
-    std::unique_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
+    std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
     commandBuffer->beginBlitPass();
 
     std::map<std::string, std::shared_ptr<gfx::Texture>> textureCache;
@@ -461,7 +461,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     }) | std::ranges::to<std::vector>();
 
     commandBuffer->endBlitPass();
-    m_device->submitCommandBuffers(std::move(commandBuffer));
+    m_device->submitCommandBuffers(commandBuffer);
 
     std::function<void(std::vector<SubMesh>&, aiNode*, glm::mat4x4)> addNode = [&](std::vector<SubMesh>& dest, aiNode* aiNode, glm::mat4x4 additionalTransform) {
         glm::mat4x4 transform = additionalTransform * toGlmMat4(aiNode->mTransformation);

@@ -60,10 +60,10 @@ public:
     virtual void imguiShutdown() = 0;
 #endif
 
-    virtual void submitCommandBuffers(std::unique_ptr<CommandBuffer>&&) = 0;
-    virtual void submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>>) = 0;
+    virtual void submitCommandBuffers(const std::shared_ptr<CommandBuffer>&) = 0;
+    virtual void submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>&) = 0;
 
-    virtual void waitCommandBuffer(const CommandBuffer*) = 0;
+    virtual void waitCommandBuffer(const CommandBuffer&) = 0;
     virtual void waitIdle() = 0;
 
     virtual ~Device() = default;

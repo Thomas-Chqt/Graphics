@@ -30,27 +30,18 @@ public:
 
     VulkanCommandBufferPool(const VulkanDevice*, const QueueFamily&);
 
-    std::unique_ptr<CommandBuffer> get() override;
-    void release(std::unique_ptr<CommandBuffer>&&) override;
-    void release(CommandBuffer*);
+    std::shared_ptr<CommandBuffer> get() override;
+    void reset() override;
 
-    std::unique_ptr<VulkanCommandBuffer> getVulkan();
-
-    ~VulkanCommandBufferPool() override;
+    ~VulkanCommandBufferPool() override = default;
 
 private:
     const VulkanDevice* m_device;
 
     std::shared_ptr<vk::CommandPool> m_vkCommandPool; // buffers can outlive the pool, so the vkCommandPool need to be kept alive
 
-    std::deque<std::unique_ptr<VulkanCommandBuffer>> m_availableCommandBuffers;
-    std::mutex m_availableCommandBuffersMtx;
-
-    std::deque<std::unique_ptr<VulkanCommandBuffer>> m_resetableCommandBuffers; // buffer are put here until the pool can be reset (when m_usedCommandBuffers is empty)
-    std::mutex m_resetableCommandBuffersMtx;
-
-    std::set<VulkanCommandBuffer*> m_usedCommandBuffers;
-    std::mutex m_usedCommandBuffersMtx;
+    std::deque<std::shared_ptr<VulkanCommandBuffer>> m_availableCommandBuffers;
+    std::deque<std::shared_ptr<VulkanCommandBuffer>> m_usedCommandBuffers;
 
 public:
     VulkanCommandBufferPool& operator=(const VulkanCommandBufferPool&) = delete;

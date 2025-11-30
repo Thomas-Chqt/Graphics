@@ -126,8 +126,10 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
     }
 
     if (cfd.lastCommandBuffer != nullptr) {
-        m_device->waitCommandBuffer(cfd.lastCommandBuffer);
-        cfd.lastCommandBuffer = nullptr;
+        m_device->waitCommandBuffer(*cfd.lastCommandBuffer);
+        cfd.lastCommandBuffer.reset();
+        cfd.commandBufferPool->reset();
+        cfd.parameterBlockPool->reset();
     }
 
     cfd.renderables.clear();
@@ -179,7 +181,7 @@ void Renderer::endFrame()
 {
     ImGui::Render();
 
-    std::unique_ptr<gfx::CommandBuffer> commandBuffer = cfd.commandBufferPool->get();
+    std::shared_ptr<gfx::CommandBuffer> commandBuffer = cfd.commandBufferPool->get();
 
     std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
     if (drawable == nullptr) {
@@ -241,8 +243,8 @@ void Renderer::endFrame()
     commandBuffer->endRenderPass();
     commandBuffer->presentDrawable(drawable);
 
-    cfd.lastCommandBuffer = commandBuffer.get();
-    m_device->submitCommandBuffers(std::move(commandBuffer));
+    cfd.lastCommandBuffer = commandBuffer;
+    m_device->submitCommandBuffers(commandBuffer);
 
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();

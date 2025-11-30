@@ -29,85 +29,29 @@ VulkanCommandBufferPool::VulkanCommandBufferPool(const VulkanDevice* device, con
     );
 }
 
-std::unique_ptr<CommandBuffer> VulkanCommandBufferPool::get()
+std::shared_ptr<CommandBuffer> VulkanCommandBufferPool::get()
 {
-    std::unique_ptr<VulkanCommandBuffer> commandBuffer;
-    {
-        std::scoped_lock lock(m_availableCommandBuffersMtx);
-        if (m_availableCommandBuffers.empty() == false) {
-            commandBuffer = std::move(m_availableCommandBuffers.front());
-            m_availableCommandBuffers.pop_front();
-        }
-        else {
-            commandBuffer = std::make_unique<VulkanCommandBuffer>(m_device, m_vkCommandPool, this);
-        }
-        assert(m_usedCommandBuffers.contains(commandBuffer.get()) == false);
+    std::shared_ptr<VulkanCommandBuffer> commandBuffer;
+    if (m_availableCommandBuffers.empty() == false) {
+        commandBuffer = std::move(m_availableCommandBuffers.front());
+        m_availableCommandBuffers.pop_front();
     }
-    {
-        std::scoped_lock lock(m_usedCommandBuffersMtx);
-        // in vulkan, command buffers can be reused so the buffers in m_availableCommandBuffers already have a vk command buffer
-        m_usedCommandBuffers.insert(commandBuffer.get());
-        commandBuffer->begin();
-        return commandBuffer;
+    else {
+        commandBuffer = std::make_shared<VulkanCommandBuffer>(m_device, m_vkCommandPool);
     }
+    m_usedCommandBuffers.push_back(commandBuffer);
+    commandBuffer->begin();
+    return commandBuffer;
 }
 
-void VulkanCommandBufferPool::release(std::unique_ptr<CommandBuffer>&& aCommandBuffer) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+void VulkanCommandBufferPool::reset()
 {
-    auto* commandBuffer = dynamic_cast<VulkanCommandBuffer*>(aCommandBuffer.release());
-    assert(commandBuffer);
-    commandBuffer->reuse();
-    {
-        std::scoped_lock lock(m_resetableCommandBuffersMtx);
-        // buffer cannot be reused directly, the pool need to be reset
-        m_resetableCommandBuffers.push_back(std::unique_ptr<VulkanCommandBuffer>(commandBuffer));
+    m_device->vkDevice().resetCommandPool(*m_vkCommandPool);
+    for (auto& commandBuffer : m_usedCommandBuffers) {
+        commandBuffer->reuse();
+        m_availableCommandBuffers.push_back(std::move(commandBuffer));
     }
-    release(commandBuffer); // because reuse() dont call release
-}
-
-void VulkanCommandBufferPool::release(CommandBuffer* aCommandBuffer)
-{
-    {
-        std::scoped_lock lock(m_usedCommandBuffersMtx);
-
-        auto* commandBuffer = dynamic_cast<VulkanCommandBuffer*>(aCommandBuffer);
-        assert(commandBuffer);
-        assert(m_usedCommandBuffers.contains(commandBuffer));
-        m_usedCommandBuffers.erase(commandBuffer);
-        if (m_usedCommandBuffers.empty() == false)
-            return;
-    }
-    {
-        std::scoped_lock lock(m_resetableCommandBuffersMtx);
-        // no more used command buffers, the pool can be reset
-        m_device->vkDevice().resetCommandPool(*m_vkCommandPool);
-        // the pool is reset, command buffers can be reused
-        for (auto& cmdBuffer : m_resetableCommandBuffers) {
-            std::scoped_lock lock(m_availableCommandBuffersMtx);
-            m_availableCommandBuffers.push_back(std::move(cmdBuffer));
-        }
-        m_resetableCommandBuffers.clear();
-    }
-}
-
-std::unique_ptr<VulkanCommandBuffer> VulkanCommandBufferPool::getVulkan()
-{
-    std::unique_ptr<CommandBuffer> cmdBuffer = get();
-    auto* vkCmdBuffer = dynamic_cast<VulkanCommandBuffer*>(cmdBuffer.release());
-    assert(vkCmdBuffer);
-    return std::unique_ptr<VulkanCommandBuffer>(vkCmdBuffer);
-}
-
-VulkanCommandBufferPool::~VulkanCommandBufferPool()
-{
-    // commandBuffers can outlive the pool, so clearing the pool
-    // prevent from trying to release a buffer to a freed pool
-    for (auto& cmdBuffer : m_usedCommandBuffers)
-        cmdBuffer->clearSourcePool();
-    for (auto& cmdBuffer : m_resetableCommandBuffers)
-        cmdBuffer->clearSourcePool();
-    for (auto& cmdBuffer : m_availableCommandBuffers)
-        cmdBuffer->clearSourcePool();
+    m_usedCommandBuffers.clear();
 }
 
 }

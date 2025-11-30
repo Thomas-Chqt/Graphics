@@ -22,16 +22,15 @@ namespace gfx
 {
 
 class VulkanDevice;
-class VulkanParameterBlockPool;
 
 class VulkanParameterBlock : public ParameterBlock
 {
 public:
-    VulkanParameterBlock() = delete;
+    VulkanParameterBlock() = default;
     VulkanParameterBlock(const VulkanParameterBlock&) = delete;
     VulkanParameterBlock(VulkanParameterBlock&&) = delete;
 
-    VulkanParameterBlock(const VulkanDevice*, const std::shared_ptr<vk::DescriptorPool>&, const std::shared_ptr<VulkanParameterBlockLayout>&, VulkanParameterBlockPool*);
+    VulkanParameterBlock(const VulkanDevice*, const std::shared_ptr<VulkanParameterBlockLayout>&, const std::shared_ptr<vk::DescriptorPool>&);
 
     inline std::shared_ptr<ParameterBlockLayout> layout() const override { return m_layout; }
 
@@ -39,21 +38,18 @@ public:
     void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) override;
     void setBinding(uint32_t idx, const std::shared_ptr<Sampler>&) override;
 
-    inline void clearSourcePool() { m_sourcePool = nullptr; }
-
     inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
 
     inline const std::map<std::shared_ptr<VulkanBuffer>, ParameterBlockBinding>& usedBuffers() const { return m_usedBuffers; }
     inline const std::map<std::shared_ptr<VulkanTexture>, ParameterBlockBinding>& usedTextures() const { return m_usedTextures; }
     inline const std::map<std::shared_ptr<VulkanSampler>, ParameterBlockBinding>& usedSamplers() const { return m_usedSampler; }
 
-    ~VulkanParameterBlock() override;
+    ~VulkanParameterBlock() override = default;
 
 private:
-    const VulkanDevice* m_device;
-    std::shared_ptr<vk::DescriptorPool> m_descriptorPool;
+    const VulkanDevice* m_device = nullptr;
     std::shared_ptr<VulkanParameterBlockLayout> m_layout;
-    VulkanParameterBlockPool* m_sourcePool;
+    std::shared_ptr<vk::DescriptorPool> m_descriptorPool;
 
     vk::DescriptorSet m_descriptorSet;
 
@@ -63,7 +59,7 @@ private:
 
 public:
     VulkanParameterBlock& operator=(const VulkanParameterBlock&) = delete;
-    VulkanParameterBlock& operator=(VulkanParameterBlock&&) = delete;
+    VulkanParameterBlock& operator=(VulkanParameterBlock&&) = default;
 };
 
 } // namespace gfx

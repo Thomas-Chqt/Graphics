@@ -18,13 +18,14 @@
 namespace gfx
 {
 
-VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const std::shared_ptr<vk::DescriptorPool>& descriptorPool, const std::shared_ptr<VulkanParameterBlockLayout>& layout, VulkanParameterBlockPool* sourcePool)
+VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const std::shared_ptr<VulkanParameterBlockLayout>& layout, const std::shared_ptr<vk::DescriptorPool>& descriptorPool)
     : m_device(device),
-      m_descriptorPool(descriptorPool),
       m_layout(layout),
-      m_sourcePool(sourcePool)
+      m_descriptorPool(descriptorPool)
 {
+    assert(m_device);
     assert(m_layout);
+    assert(m_descriptorPool);
 
     auto descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo{}
         .setDescriptorPool(*m_descriptorPool)
@@ -99,12 +100,6 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Sample
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
 
     m_usedSampler.insert(std::make_pair(sampler, m_layout->bindings().at(idx)));
-}
-
-VulkanParameterBlock::~VulkanParameterBlock()
-{
-    if (m_sourcePool != nullptr)
-        m_sourcePool->release(this);
 }
 
 }

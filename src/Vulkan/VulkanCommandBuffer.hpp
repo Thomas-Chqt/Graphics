@@ -27,7 +27,6 @@ namespace gfx
 {
 
 class VulkanDevice;
-class VulkanCommandBufferPool;
 
 class VulkanCommandBuffer : public CommandBuffer
 {
@@ -36,9 +35,8 @@ public:
     VulkanCommandBuffer(const VulkanCommandBuffer&) = delete;
     VulkanCommandBuffer(VulkanCommandBuffer&&) = delete;
 
-    VulkanCommandBuffer(const VulkanDevice*, const std::shared_ptr<vk::CommandPool>&, VulkanCommandBufferPool*);
-
-    CommandBufferPool* pool() override;
+    VulkanCommandBuffer(const VulkanDevice*, const std::shared_ptr<vk::CommandPool>&);
+    VulkanCommandBuffer(const VulkanDevice*, const vk::CommandPool&);
 
     void beginRenderPass(const Framebuffer&) override;
 
@@ -66,48 +64,50 @@ public:
 
     void presentDrawable(const std::shared_ptr<Drawable>&) override;
 
+
     const vk::CommandBuffer& vkCommandBuffer() const { return m_vkCommandBuffer; }
 
     inline void begin() { m_vkCommandBuffer.begin(vk::CommandBufferBeginInfo{.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit}); }
     inline void end() { m_vkCommandBuffer.end(); }
 
-    inline const std::map<std::shared_ptr<VulkanTexture>, ImageSyncRequest>& imageSyncRequests() const { return m_imageSyncRequests; }
-    inline const std::map<std::shared_ptr<VulkanTexture>, ImageSyncState>& imageFinalSyncStates() const { return m_imageFinalSyncStates; }
-    inline const std::map<std::shared_ptr<VulkanBuffer>, BufferSyncRequest>& bufferSyncRequests() const { return m_bufferSyncRequests; }
-    inline const std::map<std::shared_ptr<VulkanBuffer>, BufferSyncState>& bufferFinalSyncStates() const { return m_bufferFinalSyncStates; }
-    inline const std::set<std::shared_ptr<VulkanDrawable>> presentedDrawables() const { return m_presentedDrawables; }
+    inline const std::map<std::shared_ptr<VulkanTexture>, ImageSyncRequest>& imageSyncRequests() const { return m_nonReusedRessources.imageSyncRequests; }
+    inline const std::map<std::shared_ptr<VulkanTexture>, ImageSyncState>& imageFinalSyncStates() const { return m_nonReusedRessources.imageFinalSyncStates; }
+    inline const std::map<std::shared_ptr<VulkanBuffer>, BufferSyncRequest>& bufferSyncRequests() const { return m_nonReusedRessources.bufferSyncRequests; }
+    inline const std::map<std::shared_ptr<VulkanBuffer>, BufferSyncState>& bufferFinalSyncStates() const { return m_nonReusedRessources.bufferFinalSyncStates; }
 
-    inline void clearSourcePool() { m_sourcePool = nullptr; }
-    void reuse(); // used to clear ressource but keep m_vkCommandBuffer so the buffer can be reused
+    inline const std::set<std::shared_ptr<VulkanDrawable>> presentedDrawables() const { return m_nonReusedRessources.presentedDrawables; }
 
-    inline void setSignaledTimeValue(uint64_t v) { m_signaledTimeValue = v; }
-    inline const uint64_t& signaledTimeValue() const { return m_signaledTimeValue; }
+    inline void reuse() { m_nonReusedRessources = NonReusedRessources(); }
 
-    ~VulkanCommandBuffer() override;
+    inline void setSignaledTimeValue(uint64_t v) { m_nonReusedRessources.signaledTimeValue = v; }
+    inline const uint64_t& signaledTimeValue() const { return m_nonReusedRessources.signaledTimeValue; }
+
+    ~VulkanCommandBuffer() override = default;
 
 private:
     const VulkanDevice* m_device;
     std::shared_ptr<vk::CommandPool> m_vkCommandPool;
-    VulkanCommandBufferPool* m_sourcePool;
 
     vk::CommandBuffer m_vkCommandBuffer;
 
-    std::set<std::shared_ptr<const VulkanGraphicsPipeline>> m_usedPipelines;
-    const VulkanGraphicsPipeline* m_boundPipeline = nullptr;
+    struct NonReusedRessources
+    {
+        std::set<std::shared_ptr<const VulkanGraphicsPipeline>> usedPipelines;
+        const VulkanGraphicsPipeline* boundPipeline = nullptr;
 
-    std::map<std::shared_ptr<VulkanTexture>, ImageSyncRequest> m_imageSyncRequests;
-    std::map<std::shared_ptr<VulkanTexture>, ImageSyncState> m_imageFinalSyncStates;
+        std::set<std::shared_ptr<const VulkanParameterBlock>> usedPBlock;
 
-    std::map<std::shared_ptr<VulkanBuffer>, BufferSyncRequest> m_bufferSyncRequests;
-    std::map<std::shared_ptr<VulkanBuffer>, BufferSyncState> m_bufferFinalSyncStates;
+        std::map<std::shared_ptr<VulkanTexture>, ImageSyncRequest> imageSyncRequests;
+        std::map<std::shared_ptr<VulkanTexture>, ImageSyncState> imageFinalSyncStates;
 
-    std::set<std::shared_ptr<VulkanSampler>> m_usedSamplers;
+        std::map<std::shared_ptr<VulkanBuffer>, BufferSyncRequest> bufferSyncRequests;
+        std::map<std::shared_ptr<VulkanBuffer>, BufferSyncState> bufferFinalSyncStates;
 
-    std::set<std::shared_ptr<const VulkanParameterBlock>> m_usedPBlock;
+        std::set<std::shared_ptr<VulkanDrawable>> presentedDrawables;
 
-    std::set<std::shared_ptr<VulkanDrawable>> m_presentedDrawables;
-
-    uint64_t m_signaledTimeValue = 0;
+        uint64_t signaledTimeValue = 0;
+    }
+    m_nonReusedRessources;
 
 public:
     VulkanCommandBuffer& operator=(const VulkanCommandBuffer&) = delete;

@@ -103,8 +103,10 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setPNext(vk::SemaphoreTypeCreateInfo{}
             .setSemaphoreType(vk::SemaphoreType::eTimeline)
             .setInitialValue(0)));
-    
-    m_barrierCmdBufferPool = std::make_unique<VulkanCommandBufferPool>(this, m_queueFamily);
+
+    m_barrierCommandPool = m_vkDevice.createCommandPool(vk::CommandPoolCreateInfo{}
+        .setQueueFamilyIndex(m_queueFamily.index)
+        .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer));
 }
 
 std::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -213,16 +215,14 @@ void VulkanDevice::imguiShutdown()
 }
 #endif
 
-void VulkanDevice::submitCommandBuffers(std::unique_ptr<CommandBuffer>&& aCommandBuffer)
+void VulkanDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer)
 {
-    std::vector<std::unique_ptr<CommandBuffer>> vec(1);
-    vec.at(0) = std::move(aCommandBuffer);
-    submitCommandBuffers(std::move(vec));
+    submitCommandBuffers(std::vector<std::shared_ptr<CommandBuffer>>{aCommandBuffer});
 }
 
-void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>> aCommandBuffers)
+void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>& aCommandBuffers)
 {
-    std::scoped_lock lock(m_submittedCommandBuffersMtx);
+    std::scoped_lock lock(m_submitMtx);
 
     std::vector<vk::CommandBuffer> vkCommandBuffers;
 
@@ -237,7 +237,7 @@ void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffe
     std::vector<vk::SwapchainKHR> presentedSwapchains;
     std::vector<uint32_t> presentedImageIndices;
 
-    for (std::unique_ptr<VulkanCommandBuffer> commandBuffer : aCommandBuffers | std::views::transform([](auto& c) { return std::unique_ptr<VulkanCommandBuffer>(dynamic_cast<VulkanCommandBuffer*>(c.release())); }))
+    for (std::shared_ptr<VulkanCommandBuffer> commandBuffer : aCommandBuffers | std::views::transform([](auto& c) { return std::dynamic_pointer_cast<VulkanCommandBuffer>(c); }))
     {
         assert(commandBuffer);
 
@@ -322,13 +322,13 @@ void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffe
             if (bufferMemoryBarriers.empty() == false)
                 dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
 
-            std::unique_ptr<VulkanCommandBuffer> barrierCmdBuffer = m_barrierCmdBufferPool->getVulkan();
+            std::shared_ptr<VulkanCommandBuffer> barrierCmdBuffer = getBarrierCommandBuffer();
             barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
             barrierCmdBuffer->end();
             // barrierCmdBuffer is added before the user command buffer
             barrierCmdBuffer->setSignaledTimeValue(m_nextSignaledTimeValue);
             vkCommandBuffers.push_back(barrierCmdBuffer->vkCommandBuffer());
-            m_submittedCommandBuffers.push_back(std::move(barrierCmdBuffer));
+            m_submittedCommandBuffers.push_back(barrierCmdBuffer);
         }
 
         commandBuffer->end();
@@ -336,7 +336,7 @@ void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffe
         // wating on one command buffer will wait all the command buffer of the submit groupe
         commandBuffer->setSignaledTimeValue(m_nextSignaledTimeValue);
         vkCommandBuffers.push_back(commandBuffer->vkCommandBuffer());
-        m_submittedCommandBuffers.push_back(std::move(commandBuffer));
+        m_submittedCommandBuffers.push_back(commandBuffer);
     }
 
     // currently useless because it dont make sense to call this function with an empty vector
@@ -374,46 +374,66 @@ void VulkanDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffe
     }
 }
 
-void VulkanDevice::waitCommandBuffer(const CommandBuffer* aCommandBuffer)
+void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
 {
-    std::scoped_lock lock(m_submittedCommandBuffersMtx);
+    std::scoped_lock lock(m_submitMtx);
 
-    auto it = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
-    if (it != m_submittedCommandBuffers.end())
+    auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
+    if (waitedIt != m_submittedCommandBuffers.end())
     {
         auto semaphoreWaitInfo = vk::SemaphoreWaitInfo{}
             .setSemaphores(m_timelineSemaphore)
-            .setValues((*it)->signaledTimeValue());
+            .setValues((*waitedIt)->signaledTimeValue());
         if (m_vkDevice.waitSemaphores(semaphoreWaitInfo, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
             throw std::runtime_error("failed to wait timeline semaphore");
-        ++it;
-        for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
-            if ((*curr)->pool())
-                (*curr)->pool()->release(std::move(*curr));
+        for (auto it = m_submittedCommandBuffers.begin(); it != waitedIt; ++it) {
+            if (m_usedBarrierCmdBuffers.contains(*it)) {
+                auto node = m_usedBarrierCmdBuffers.extract(*it);
+                assert(node);
+                node.value()->reuse();
+                m_availableBarrierCmdBuffers.push_back(std::move(node.value()));
+            }
         }
-        m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
+        m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), std::next(waitedIt));
     }
 }
 
 void VulkanDevice::waitIdle()
 {
-    std::scoped_lock lock(m_submittedCommandBuffersMtx);
+    std::scoped_lock lock(m_submitMtx);
 
     m_vkDevice.waitIdle();
     auto it = m_submittedCommandBuffers.end();
-    for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
-        if ((*curr)->pool()) // if the pool has been destroyed, ptr is null. no need to do anything.
-            (*curr)->pool()->release(std::move(*curr));
-    }
     m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
+    for (auto& commandBuffer : m_usedBarrierCmdBuffers) {
+        commandBuffer->reuse();
+        m_availableBarrierCmdBuffers.push_back(commandBuffer);
+    }
+    m_availableBarrierCmdBuffers.clear();
 }
 
 VulkanDevice::~VulkanDevice()
 {
     waitIdle();
+    m_vkDevice.destroyCommandPool(m_barrierCommandPool);
     m_vkDevice.destroySemaphore(m_timelineSemaphore);
     vmaDestroyAllocator(m_allocator);
     m_vkDevice.destroy();
+}
+
+std::shared_ptr<VulkanCommandBuffer> VulkanDevice::getBarrierCommandBuffer()
+{
+    std::shared_ptr<VulkanCommandBuffer> commandBuffer;
+    if (m_availableBarrierCmdBuffers.empty() == false) {
+        commandBuffer = std::move(m_availableBarrierCmdBuffers.front());
+        m_availableBarrierCmdBuffers.pop_front();
+    }
+    else {
+        commandBuffer = std::make_shared<VulkanCommandBuffer>(this, m_barrierCommandPool);
+    }
+    m_usedBarrierCmdBuffers.insert(commandBuffer);
+    commandBuffer->begin();
+    return commandBuffer;
 }
 
 } // namespace gfx
