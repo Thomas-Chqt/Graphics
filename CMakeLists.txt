@@ -115,6 +115,7 @@ if (GFX_BUILD_TRACY)
         GIT_PROGRESS   TRUE
     )
     FetchContent_MakeAvailable(tracy)
+    set_target_properties(TracyClient PROPERTIES FOLDER "dependencies")
 endif()
 
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`

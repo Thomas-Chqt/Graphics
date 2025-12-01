@@ -371,7 +371,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     std::unique_ptr<gfx::CommandBufferPool> commandBufferPool = m_device->newCommandBufferPool();
     assert(commandBufferPool);
 
-    std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130 });
+    std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 230, .maxTextures = 480, .maxSamplers = 230 });
     assert(parameterBlockPool);
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
