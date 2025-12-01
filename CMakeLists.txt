@@ -26,6 +26,7 @@ option(GFX_BUILD_VULKAN   "Build the vulkan backend"             ON)
 option(GFX_ENABLE_IMGUI   "Build with imgui capabilities"       OFF)
 option(GFX_ENABLE_GLFW    "Build with glfw capabilities"        OFF)
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
+option(GFX_BUILD_TRACY    "Build the tracy client"              OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
 
 if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
@@ -106,6 +107,16 @@ if (GFX_BUILD_VULKAN)
     set_target_properties(VulkanMemoryAllocator PROPERTIES FOLDER "dependencies")
 endif()
 
+if (GFX_BUILD_TRACY)
+    FetchContent_Declare(tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG        v0.13.0
+        GIT_SHALLOW    1
+        GIT_PROGRESS   TRUE
+    )
+    FetchContent_MakeAvailable(tracy)
+endif()
+
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`
 
 target_compile_features(Graphics PUBLIC cxx_std_23)
@@ -176,15 +187,12 @@ if (GFX_BUILD_VULKAN)
     target_link_libraries(Graphics PRIVATE Vulkan::Headers VulkanMemoryAllocator)
 endif()
 
-if (GFX_USE_UTILSCPP)
-    target_link_libraries(Graphics PUBLIC UtilsCPP)
-    if (GFX_USE_MATH)
-        target_link_libraries(Graphics PUBLIC Math)
-    endif()
-endif()
-
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     target_link_libraries(Graphics PRIVATE dlLoad)
+endif()
+
+if (GFX_BUILD_TRACY)
+    target_link_libraries(Graphics PUBLIC TracyClient)
 endif()
 
 add_subdirectory("tools")

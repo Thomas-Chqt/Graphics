@@ -26,6 +26,7 @@
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <glm/glm.hpp>
+#include <tracy/Tracy.hpp>
 
 #include <cassert>
 #include <memory>
@@ -240,6 +241,7 @@ int main()
             }
 
             renderer.endFrame();
+            FrameMark;
         }
 
         glfwDestroyWindow(window);
