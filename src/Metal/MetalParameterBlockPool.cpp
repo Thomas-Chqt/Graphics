@@ -12,6 +12,7 @@
 #include "Metal/MetalParameterBlockPool.hpp"
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalDevice.hpp"
+#include "MetalParameterBlockLayout.hpp"
 
 namespace gfx
 {
@@ -26,30 +27,31 @@ MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device, cons
     m_argumentBuffer = std::dynamic_pointer_cast<MetalBuffer>(static_cast<std::shared_ptr<Buffer>>(m_device->newBuffer(buffDesc)));
 }
 
-std::unique_ptr<ParameterBlock> MetalParameterBlockPool::get(const ParameterBlock::Layout& pbLayout)
+std::shared_ptr<ParameterBlock> MetalParameterBlockPool::get(const std::shared_ptr<ParameterBlockLayout>& aPbLayout)
 {
-    std::unique_ptr<MetalParameterBlock> pBlock = std::make_unique<MetalParameterBlock>(m_argumentBuffer, m_nextOffset, pbLayout, this);
-    size_t usedSize = sizeof(uint64_t) * pbLayout.bindings.size();
-    m_nextOffset += (usedSize + 31uz) & ~31uz;
-    m_usedParameterBlocks.insert(pBlock.get());
+    auto pbLayout = std::dynamic_pointer_cast<MetalParameterBlockLayout>(aPbLayout);
+    assert(pbLayout);
+    std::shared_ptr<MetalParameterBlock> pBlock;
+    if (m_availablePBlocks.empty() == false) {
+        pBlock = std::move(m_availablePBlocks.front());
+        m_availablePBlocks.pop_front();
+    }
+    else {
+        pBlock = std::make_shared<MetalParameterBlock>(pbLayout, m_argumentBuffer, m_nextOffset);
+        size_t usedSize = sizeof(uint64_t) * pbLayout->bindings().size();
+        m_nextOffset += (usedSize + 31uz) & ~31uz;
+    }
+    m_usedPBlocks.push_back(pBlock);
     return pBlock;
 }
 
-void MetalParameterBlockPool::release(ParameterBlock* aPBlock)
+void MetalParameterBlockPool::reset()
 {
-    auto* pBlock = dynamic_cast<MetalParameterBlock*>(aPBlock);
-    assert(m_usedParameterBlocks.contains(pBlock));
-    m_usedParameterBlocks.erase(pBlock);
-    if (m_usedParameterBlocks.empty())
-        m_nextOffset = 0; // reset the pool
-}
-
-MetalParameterBlockPool::~MetalParameterBlockPool()
-{
-    for (auto* pBlock : m_usedParameterBlocks) {
-        // blocks can outlive the pool, this prevent releasing a block to a freed pool
-        pBlock->clearSourcePool();
+    for (auto& pBlock : m_usedPBlocks) {
+        pBlock->reuse();
+        m_availablePBlocks.push_back(std::move(pBlock));
     }
+    m_usedPBlocks.clear();
 }
 
 } // namespace gfx

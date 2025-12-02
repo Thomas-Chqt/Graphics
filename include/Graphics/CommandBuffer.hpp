@@ -33,8 +33,6 @@ class CommandBuffer
 public:
     CommandBuffer(const CommandBuffer&) = delete;
 
-    virtual CommandBufferPool* pool() = 0;
-
     virtual void beginRenderPass(const Framebuffer&) = 0;
 
     virtual void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) = 0;

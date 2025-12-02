@@ -14,15 +14,15 @@
 namespace gfx
 {
 
-VulkanShaderLib::VulkanShaderLib(const VulkanDevice& device, const std::filesystem::path& filepath)
-    : ShaderLib(filepath), m_device(&device)
+VulkanShaderLib::VulkanShaderLib(const VulkanDevice* device, const std::filesystem::path& filepath)
+    : ShaderLib(filepath), m_device(device)
 {
     if (m_spirvBytes.empty())
         throw std::runtime_error("No SPIR-V shader found in the package");
 
     auto shaderModuleCreateInfo = vk::ShaderModuleCreateInfo{}
         .setCodeSize(m_spirvBytes.size())
-        .setPCode(reinterpret_cast<const uint32_t*>(m_spirvBytes.data()));
+        .setPCode(std::bit_cast<const uint32_t*>(m_spirvBytes.data()));
 
     m_vkShaderModule = m_device->vkDevice().createShaderModule(shaderModuleCreateInfo);
 }
@@ -32,7 +32,7 @@ VulkanShaderFunction& VulkanShaderLib::getFunction(const std::string& name)
     auto it = m_shaderFunctions.find(name);
     if (it == m_shaderFunctions.end())
     {
-        auto [newIt, res] = m_shaderFunctions.emplace(std::make_pair(name, VulkanShaderFunction(&m_vkShaderModule, name)));
+        auto [newIt, res] = m_shaderFunctions.emplace(name, VulkanShaderFunction(&m_vkShaderModule, name));
         assert(res);
         it = newIt;
     }

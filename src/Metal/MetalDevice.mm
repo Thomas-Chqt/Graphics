@@ -23,6 +23,7 @@
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
+#include "MetalParameterBlockLayout.hpp"
 #if defined(GFX_IMGUI_ENABLED)
 # include "Metal/imgui_impl_metal.hpp"
 #endif
@@ -50,7 +51,12 @@ std::unique_ptr<ShaderLib> MetalDevice::newShaderLib(const std::filesystem::path
     return std::make_unique<MetalShaderLib>(*this, path);
 }
 
-std::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc)
+std::unique_ptr<ParameterBlockLayout> MetalDevice::newParameterBlockLayout(const ParameterBlockLayout::Descriptor& desc) const
+{
+    return std::make_unique<MetalParameterBlockLayout>(desc);
+}
+
+std::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const GraphicsPipeline::Descriptor& desc) const
 {
     return std::make_unique<MetalGraphicsPipeline>(*this, desc);
 }
@@ -97,40 +103,37 @@ void MetalDevice::imguiShutdown()
 }
 #endif
 
-void MetalDevice::submitCommandBuffers(std::unique_ptr<CommandBuffer>&& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+void MetalDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
-    auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer.release());
+    std::scoped_lock lock(m_submitMtx);
+
+    auto commandBuffer = std::dynamic_pointer_cast<MetalCommandBuffer>(aCommandBuffer);
     assert(commandBuffer);
 
     [commandBuffer->mtlCommandBuffer() commit];
-    m_submittedCommandBuffers.push_back(std::unique_ptr<MetalCommandBuffer>(commandBuffer));
+    m_submittedCommandBuffers.push_back(commandBuffer);
 }}
 
-void MetalDevice::submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>> commandBuffers)
+void MetalDevice::submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>& commandBuffers)
 {
     for (auto& commandBuffer : commandBuffers)
-        submitCommandBuffers(std::move(commandBuffer));
+        submitCommandBuffers(commandBuffer);
 }
 
-void MetalDevice::waitCommandBuffer(const CommandBuffer* aCommandBuffer) { @autoreleasepool
+void MetalDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer) { @autoreleasepool
 {
-    auto it = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == aCommandBuffer; });
-    if (it != m_submittedCommandBuffers.end())
+    auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
+    if (waitedIt != m_submittedCommandBuffers.end())
     {
-        [(*it)->mtlCommandBuffer() waitUntilCompleted];
-        ++it;
-        for(auto curr = m_submittedCommandBuffers.begin(); curr != it; ++curr) {
-            if ((*curr)->pool())
-                (*curr)->pool()->release(std::move(*curr));
-        }
-        m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), it);
+        [(*waitedIt)->mtlCommandBuffer() waitUntilCompleted];
+        m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), std::next(waitedIt));
     }
 }}
 
 void MetalDevice::waitIdle()
 {
     if (m_submittedCommandBuffers.empty() == false)
-        waitCommandBuffer(m_submittedCommandBuffers.back().get());
+        waitCommandBuffer(*m_submittedCommandBuffers.back());
 }
 
 MetalDevice::~MetalDevice() { @autoreleasepool

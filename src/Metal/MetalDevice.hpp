@@ -39,7 +39,8 @@ public:
 
     std::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const override;
-    std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override;
+    std::unique_ptr<ParameterBlockLayout> newParameterBlockLayout(const ParameterBlockLayout::Descriptor&) const override;
+    std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const override;
     std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
     std::unique_ptr<CommandBufferPool> newCommandBufferPool() const override;
@@ -52,10 +53,10 @@ public:
     void imguiShutdown() override;
 #endif
 
-    void submitCommandBuffers(std::unique_ptr<CommandBuffer>&&) override;
-    void submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>>) override;
+    void submitCommandBuffers(const std::shared_ptr<CommandBuffer>&) override;
+    void submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>&) override;
 
-    void waitCommandBuffer(const CommandBuffer*) override;
+    void waitCommandBuffer(const CommandBuffer&) override;
     void waitIdle() override;
 
     inline const id<MTLDevice>& mtlDevice() const { return m_mtlDevice; }
@@ -65,7 +66,9 @@ public:
 private:
     id<MTLDevice> m_mtlDevice = nil;
     id<MTLCommandQueue> m_queue = nil;
-    std::deque<std::unique_ptr<MetalCommandBuffer>> m_submittedCommandBuffers;
+    std::mutex m_submitMtx;
+
+    std::deque<std::shared_ptr<MetalCommandBuffer>> m_submittedCommandBuffers;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

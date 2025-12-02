@@ -50,7 +50,8 @@ public:
 
     std::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const override;
     std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const override;
-    std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) override; // need non cont to cache descriptorSetLayouts
+    std::unique_ptr<ParameterBlockLayout> newParameterBlockLayout(const ParameterBlockLayout::Descriptor&) const override;
+    std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const override;
     std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
     std::unique_ptr<CommandBufferPool> newCommandBufferPool() const override;
@@ -63,19 +64,16 @@ public:
     void imguiShutdown() override;
 #endif
 
-    void submitCommandBuffers(std::unique_ptr<CommandBuffer>&&) override;
-    void submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>>) override;
+    void submitCommandBuffers(const std::shared_ptr<CommandBuffer>&) override;
+    void submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>&) override;
 
-    void waitCommandBuffer(const CommandBuffer*) override;
+    void waitCommandBuffer(const CommandBuffer&) override;
     void waitIdle() override;
 
     inline const vk::Device& vkDevice() const { return m_vkDevice; }
     inline const VulkanPhysicalDevice& physicalDevice() const { return *m_physicalDevice; }
 
     inline const VmaAllocator& allocator() const { return m_allocator; }
-
-    const vk::DescriptorSetLayout& descriptorSetLayout(const ParameterBlock::Layout&); // create one if not in cache
-    inline const vk::DescriptorSetLayout& descriptorSetLayout(const ParameterBlock::Layout& pbl) const { return m_descriptorSetLayoutCache.at(pbl); } // thow if not in cache
 
     ~VulkanDevice() override;
 
@@ -88,10 +86,16 @@ private:
     vk::Queue m_queue;
     VmaAllocator m_allocator = VK_NULL_HANDLE;
     vk::Semaphore m_timelineSemaphore;
+    std::mutex m_submitMtx;
 
-    std::map<ParameterBlock::Layout, vk::DescriptorSetLayout> m_descriptorSetLayoutCache;
-    std::deque<std::unique_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
+    vk::CommandPool m_barrierCommandPool;
+    std::deque<std::shared_ptr<VulkanCommandBuffer>> m_availableBarrierCmdBuffers;
+    std::set<std::shared_ptr<VulkanCommandBuffer>> m_usedBarrierCmdBuffers;
+
+    std::deque<std::shared_ptr<VulkanCommandBuffer>> m_submittedCommandBuffers;
     uint64_t m_nextSignaledTimeValue = 1;
+
+    std::shared_ptr<VulkanCommandBuffer> getBarrierCommandBuffer();
 
 public:
     VulkanDevice& operator=(const VulkanDevice&) = delete;

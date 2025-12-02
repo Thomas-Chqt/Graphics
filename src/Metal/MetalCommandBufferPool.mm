@@ -20,46 +20,28 @@ MetalCommandBufferPool::MetalCommandBufferPool(const id<MTLCommandQueue>* queue)
 {
 }
 
-std::unique_ptr<CommandBuffer> MetalCommandBufferPool::get()
+std::shared_ptr<CommandBuffer> MetalCommandBufferPool::get()
 {
-    std::unique_ptr<MetalCommandBuffer> commandBuffer;
+    std::shared_ptr<MetalCommandBuffer> commandBuffer;
     if (m_availableCommandBuffers.empty() == false) {
         commandBuffer = std::move(m_availableCommandBuffers.front());
         m_availableCommandBuffers.pop_front();
+        *commandBuffer = MetalCommandBuffer(*m_queue); // in metal; the command buffer need to be destoyed and recreated every frame, so availabe command buffer are empty
     }
     else {
-        commandBuffer = std::make_unique<MetalCommandBuffer>();
+        commandBuffer = std::make_shared<MetalCommandBuffer>(*m_queue);
     }
-    assert(m_usedCommandBuffers.contains(commandBuffer.get()) == false);
-    *commandBuffer = MetalCommandBuffer(*m_queue, this); // in metal; the command buffer need to be destoyed and recreated every frame, so availabe command buffer are empty
-    m_usedCommandBuffers.insert(commandBuffer.get());
+    m_usedCommandBuffers.push_back(commandBuffer);
     return commandBuffer;
 }
 
-void MetalCommandBufferPool::release(std::unique_ptr<CommandBuffer>&& aCommandBuffer) // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
+void MetalCommandBufferPool::reset()
 {
-    auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer.release());
-    assert(commandBuffer);
-    *commandBuffer = MetalCommandBuffer(); // destructor will remove the buffer from m_usedCommandBuffers
-    assert(m_usedCommandBuffers.contains(commandBuffer) == false);
-    m_availableCommandBuffers.push_back(std::unique_ptr<MetalCommandBuffer>(commandBuffer));
-}
-
-void MetalCommandBufferPool::release(CommandBuffer* aCommandBuffer)
-{
-    auto* commandBuffer = dynamic_cast<MetalCommandBuffer*>(aCommandBuffer);
-    assert(commandBuffer);
-    assert(m_usedCommandBuffers.contains(commandBuffer));
-    m_usedCommandBuffers.erase(commandBuffer);
-}
-
-MetalCommandBufferPool::~MetalCommandBufferPool()
-{
-    for (auto& cmdBuffer : m_usedCommandBuffers) {
-        // commandBuffers can outlive the pool, so clearing the pool
-        // prevent from trying to release a buffer to a freed pool
-        cmdBuffer->clearSourcePool();
+    for (auto& commandBuffer : m_usedCommandBuffers) {
+        *commandBuffer = MetalCommandBuffer();
+        m_availableCommandBuffers.push_back(std::move(commandBuffer));
     }
+    m_usedCommandBuffers.clear();
 }
 
 }

@@ -27,12 +27,25 @@
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
+#define m_usedPipelines m_nonReusedRessources.usedPipelines
+#define m_boundPipeline m_nonReusedRessources.boundPipeline
+#define m_usedPBlock m_nonReusedRessources.usedPBlock
+#define m_imageSyncRequests m_nonReusedRessources.imageSyncRequests
+#define m_imageFinalSyncStates m_nonReusedRessources.imageFinalSyncStates
+#define m_bufferSyncRequests m_nonReusedRessources.bufferSyncRequests
+#define m_bufferFinalSyncStates m_nonReusedRessources.bufferFinalSyncStates
+#define m_presentedDrawables m_nonReusedRessources.presentedDrawables
+
 namespace gfx
 {
 
-VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const std::shared_ptr<vk::CommandPool>& commandPool, VulkanCommandBufferPool* sourcePool)
-    : m_device(device), m_vkCommandPool(commandPool), m_sourcePool(sourcePool)
+VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const std::shared_ptr<vk::CommandPool>& commandPool)
+    : m_device(device),
+      m_vkCommandPool(commandPool)
 {
+    assert(m_device);
+    assert(m_vkCommandPool);
+
     auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
         .setCommandPool(*m_vkCommandPool)
         .setLevel(vk::CommandBufferLevel::ePrimary)
@@ -40,14 +53,16 @@ VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const std::
     m_vkCommandBuffer = m_device->vkDevice().allocateCommandBuffers(commandBufferAllocateInfo).front();
 }
 
-CommandBufferPool* VulkanCommandBuffer::pool()
+VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const vk::CommandPool& commandPool)
+    : m_device(device)
 {
-    return m_sourcePool;
-}
+    assert(m_device);
 
-VulkanCommandBufferPool* VulkanCommandBuffer::poolVulkan()
-{
-    return m_sourcePool;
+    auto commandBufferAllocateInfo = vk::CommandBufferAllocateInfo{}
+        .setCommandPool(commandPool)
+        .setLevel(vk::CommandBufferLevel::ePrimary)
+        .setCommandBufferCount(1);
+    m_vkCommandBuffer = m_device->vkDevice().allocateCommandBuffers(commandBufferAllocateInfo).front();
 }
 
 void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
@@ -280,14 +295,6 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
             (void)res2;
         }
     }
-
-#ifdef __cpp_lib_containers_ranges
-    m_usedSamplers.insert_range(pBlock->usedSamplers() | std::views::transform([](auto& pair) { return pair.first; }));
-#else
-    auto rg = pBlock->usedSamplers() | std::views::transform([](auto& pair) { return pair.first; });
-    m_usedSamplers.insert(rg.cbegin(), rg.cend());
-#endif
-
 
     if (bufferMemoryBarriers.empty() == false)
     {
@@ -528,25 +535,6 @@ void VulkanCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDraw
 {
     auto drawable = std::dynamic_pointer_cast<VulkanDrawable>(aDrawable);
     m_presentedDrawables.insert(drawable);
-}
-
-void VulkanCommandBuffer::reuse()
-{
-    m_presentedDrawables.clear();
-    m_usedPBlock.clear();
-    m_bufferFinalSyncStates.clear();
-    m_bufferSyncRequests.clear();
-    m_imageFinalSyncStates.clear();
-    m_imageSyncRequests.clear();
-    m_boundPipeline = nullptr;
-    m_usedPipelines.clear();
-}
-
-VulkanCommandBuffer::~VulkanCommandBuffer()
-{
-    if (m_sourcePool)
-        m_sourcePool->release(this);
-    m_device->vkDevice().freeCommandBuffers(*m_vkCommandPool, m_vkCommandBuffer);
 }
 
 }

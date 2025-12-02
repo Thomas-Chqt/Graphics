@@ -27,17 +27,16 @@ public:
 
     MetalCommandBufferPool(const id<MTLCommandQueue>*);
 
-    std::unique_ptr<CommandBuffer> get() override;
-    void release(std::unique_ptr<CommandBuffer>&&) override;
-    void release(CommandBuffer*);
+    std::shared_ptr<CommandBuffer> get() override;
+    void reset() override;
 
-    ~MetalCommandBufferPool() override;
+    ~MetalCommandBufferPool() override = default;
 
 private:
     const id<MTLCommandQueue>* m_queue = nullptr;
 
-    std::deque<std::unique_ptr<MetalCommandBuffer>> m_availableCommandBuffers;
-    std::set<MetalCommandBuffer*> m_usedCommandBuffers;
+    std::deque<std::shared_ptr<MetalCommandBuffer>> m_availableCommandBuffers;
+    std::deque<std::shared_ptr<MetalCommandBuffer>> m_usedCommandBuffers;
 
 public:
     MetalCommandBufferPool& operator = (const MetalCommandBufferPool&) = delete;

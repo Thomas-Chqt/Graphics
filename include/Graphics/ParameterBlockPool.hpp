@@ -11,6 +11,7 @@
 #define PARAMETERBLOCKPOOL_HPP
 
 #include "Graphics/ParameterBlock.hpp"
+#include "Graphics/ParameterBlockLayout.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -31,7 +32,8 @@ public:
     ParameterBlockPool(const ParameterBlockPool&) = delete;
     ParameterBlockPool(ParameterBlockPool&&) = delete;
 
-    virtual std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) = 0;
+    virtual std::shared_ptr<ParameterBlock> get(const std::shared_ptr<ParameterBlockLayout>&) = 0;
+    virtual void reset() = 0;
 
     virtual ~ParameterBlockPool() = default;
 

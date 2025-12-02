@@ -26,11 +26,11 @@ public:
     VulkanShaderLib(const VulkanShaderLib&) = delete;
     VulkanShaderLib(VulkanShaderLib&&) = delete;
 
-    VulkanShaderLib(const VulkanDevice&, const std::filesystem::path&);
+    VulkanShaderLib(const VulkanDevice*, const std::filesystem::path&);
 
     VulkanShaderFunction& getFunction(const std::string&) override;
 
-    ~VulkanShaderLib();
+    ~VulkanShaderLib() override;
 
 private:
     const VulkanDevice* m_device;

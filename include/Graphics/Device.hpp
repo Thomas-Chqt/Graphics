@@ -20,6 +20,7 @@
 #include "Graphics/ParameterBlockPool.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Enums.hpp"
+#include "ParameterBlockLayout.hpp"
 
 #include <memory>
 #include <filesystem>
@@ -45,7 +46,8 @@ public:
 
     virtual std::unique_ptr<Swapchain> newSwapchain(const Swapchain::Descriptor&) const = 0;
     virtual std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const = 0;
-    virtual std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) = 0;
+    virtual std::unique_ptr<ParameterBlockLayout> newParameterBlockLayout(const ParameterBlockLayout::Descriptor&) const = 0;
+    virtual std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const = 0;
     virtual std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
     virtual std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
     virtual std::unique_ptr<CommandBufferPool> newCommandBufferPool() const = 0;
@@ -58,10 +60,10 @@ public:
     virtual void imguiShutdown() = 0;
 #endif
 
-    virtual void submitCommandBuffers(std::unique_ptr<CommandBuffer>&&) = 0;
-    virtual void submitCommandBuffers(std::vector<std::unique_ptr<CommandBuffer>>) = 0;
+    virtual void submitCommandBuffers(const std::shared_ptr<CommandBuffer>&) = 0;
+    virtual void submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>&) = 0;
 
-    virtual void waitCommandBuffer(const CommandBuffer*) = 0;
+    virtual void waitCommandBuffer(const CommandBuffer&) = 0;
     virtual void waitIdle() = 0;
 
     virtual ~Device() = default;

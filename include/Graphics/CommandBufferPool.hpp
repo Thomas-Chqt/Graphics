@@ -23,8 +23,11 @@ public:
     CommandBufferPool(const CommandBufferPool&) = delete;
     CommandBufferPool(CommandBufferPool&&) = delete;
 
-    virtual std::unique_ptr<CommandBuffer> get() = 0;
-    virtual void release(std::unique_ptr<CommandBuffer>&&) = 0;
+    // do not call get() and reset() concurently.
+    // should have one pool per thead so no problem
+
+    virtual std::shared_ptr<CommandBuffer> get() = 0;
+    virtual void reset() = 0;
 
     virtual ~CommandBufferPool() = default;
 

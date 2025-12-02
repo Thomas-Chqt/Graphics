@@ -18,6 +18,7 @@
 #include <Graphics/Surface.hpp>
 #include <Graphics/Device.hpp>
 #include <Graphics/GraphicsPipeline.hpp>
+#include <Graphics/ParameterBlockLayout.hpp>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -37,18 +38,6 @@ namespace scop
 
 constexpr uint8_t maxFrameInFlight = 3;
 
-const gfx::ParameterBlock::Layout vpMatrixBpLayout = {
-    .bindings = {
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::vertexRead }
-    }
-};
-
-const gfx::ParameterBlock::Layout sceneDataBpLayout = {
-    .bindings = {
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead }
-    }
-};
-
 class Renderer
 {
 public:
@@ -57,6 +46,9 @@ public:
     Renderer(Renderer&&) = delete;
 
     Renderer(gfx::Device*, GLFWwindow*, gfx::Surface*);
+
+    static inline std::shared_ptr<gfx::ParameterBlockLayout> vpMatrixBpLayout() { return s_vpMatrixBpLayout.lock(); }
+    static inline std::shared_ptr<gfx::ParameterBlockLayout> sceneDataBpLayout() { return s_sceneDataBpLayout.lock(); }
 
     void beginFrame(const glm::mat4x4& viewMatrix);
 
@@ -90,7 +82,7 @@ private:
                     std::vector<glm::mat4x4> // model matrix
         >>> renderables;
 
-        gfx::CommandBuffer* lastCommandBuffer = nullptr;
+        std::shared_ptr<gfx::CommandBuffer> lastCommandBuffer = nullptr;
     };
 
     gfx::Device* m_device;
@@ -101,6 +93,12 @@ private:
 
     uint8_t m_frameIdx = 0;
     std::array<FrameData, maxFrameInFlight> m_frameDatas;
+    
+    inline static std::weak_ptr<gfx::ParameterBlockLayout> s_vpMatrixBpLayout;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_vpMatrixBpLayout;
+
+    inline static std::weak_ptr<gfx::ParameterBlockLayout> s_sceneDataBpLayout;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_sceneDataBpLayout;
 
 public:
     Renderer& operator=(const Renderer&) = delete;

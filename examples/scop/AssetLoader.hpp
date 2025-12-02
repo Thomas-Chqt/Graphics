@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <ranges>
 #include <vector>
 
@@ -45,14 +46,14 @@ public:
     Mesh builtinCube(const std::shared_ptr<Material>&);
     Mesh loadMesh(const std::filesystem::path&);
 
-    std::shared_ptr<gfx::Texture> loadTexture(const std::filesystem::path&, gfx::CommandBuffer* = nullptr);
-    std::shared_ptr<gfx::Texture> loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer* = nullptr);
-    std::shared_ptr<gfx::Texture> getSolidColorTexture(const glm::vec4&, gfx::CommandBuffer* = nullptr);
+    std::shared_ptr<gfx::Texture> loadTexture(const std::filesystem::path&, gfx::CommandBuffer&);
+    std::shared_ptr<gfx::Texture> loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer&);
+    std::shared_ptr<gfx::Texture> getSolidColorTexture(const glm::vec4&, gfx::CommandBuffer&);
 
     ~AssetLoader() = default;
 
 private:
-    std::shared_ptr<gfx::Texture> loadEmbeddedTexture(const aiTexture*, gfx::CommandBuffer* = nullptr);
+    std::shared_ptr<gfx::Texture> loadEmbeddedTexture(const aiTexture*, gfx::CommandBuffer&);
 
     std::shared_ptr<gfx::Buffer> newVertexBuffer(const std::ranges::range auto& vertices, gfx::CommandBuffer& commandBuffer)
         requires std::same_as<std::ranges::range_value_t<decltype(vertices)>, shader::Vertex>
@@ -99,8 +100,8 @@ private:
     }
 
     gfx::Device* m_device;
-    std::unique_ptr<gfx::CommandBufferPool> m_commandBufferPool;
     std::vector<std::pair<glm::vec4, std::shared_ptr<gfx::Texture>>> m_solidColorTextureCache;
+    std::mutex m_solidColorTextureCacheMtx;
 
 public:
     AssetLoader& operator=(const AssetLoader&) = delete;

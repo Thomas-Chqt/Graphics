@@ -23,23 +23,24 @@ class VulkanDevice;
 class VulkanParameterBlockPool : public ParameterBlockPool
 {
 public:
-    VulkanParameterBlockPool() = default;
+    VulkanParameterBlockPool() = delete;
     VulkanParameterBlockPool(const VulkanParameterBlockPool&) = delete;
     VulkanParameterBlockPool(VulkanParameterBlockPool&&) = delete;
 
     VulkanParameterBlockPool(const VulkanDevice*, const ParameterBlockPool::Descriptor&);
 
-    std::unique_ptr<ParameterBlock> get(const ParameterBlock::Layout&) override;
-    void release(ParameterBlock*);
+    std::shared_ptr<ParameterBlock> get(const std::shared_ptr<ParameterBlockLayout>&) override;
+    void reset() override;
 
-    ~VulkanParameterBlockPool() override;
+    ~VulkanParameterBlockPool() override = default;
 
 private:
-    const VulkanDevice* m_device = nullptr;
+    const VulkanDevice* m_device;
 
     std::shared_ptr<vk::DescriptorPool> m_descriptorPool; // blocks can outlive the pool, only the vk::DescriptorPool need to remain alive
 
-    std::set<VulkanParameterBlock*> m_usedParameterBlocks;
+    std::deque<std::shared_ptr<VulkanParameterBlock>> m_availablePBlocks;
+    std::deque<std::shared_ptr<VulkanParameterBlock>> m_usedPBlocks;
 
 public:
     VulkanParameterBlockPool& operator=(const VulkanParameterBlockPool&) = delete;

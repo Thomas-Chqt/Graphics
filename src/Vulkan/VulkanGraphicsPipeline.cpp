@@ -13,7 +13,10 @@
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanShaderFunction.hpp"
 #include "Vulkan/VulkanEnums.hpp"
+#include "VulkanParameterBlockLayout.hpp"
 #include "vulkan/vulkan.hpp"
+#include <cassert>
+#include <ranges>
 
 namespace gfx
 {
@@ -144,8 +147,10 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
     if (desc.parameterBlockLayouts.empty() == false)
     {
         descriptorSetLayouts.reserve(desc.parameterBlockLayouts.size());
-        for (const auto& pbl : desc.parameterBlockLayouts)
-            descriptorSetLayouts.push_back(m_device->descriptorSetLayout(pbl));
+        for (const auto& pbl : desc.parameterBlockLayouts | std::views::transform([](const auto& aPbl) { return std::dynamic_pointer_cast<VulkanParameterBlockLayout>(aPbl); })) {
+            assert(pbl);
+            descriptorSetLayouts.push_back(pbl->vkDescriptorSetLayout());
+        }
     }
 
     auto pushConstantRange = vk::PushConstantRange{}

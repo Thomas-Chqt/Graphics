@@ -8,7 +8,6 @@
  */
 
 #include "Material.hpp"
-#include "Graphics/Enums.hpp"
 #include "Renderer.hpp"
 
 #include "shaders/Vertex.slang"
@@ -20,6 +19,7 @@
 #include <Graphics/ParameterBlockPool.hpp>
 #include <Graphics/Device.hpp>
 #include <Graphics/Sampler.hpp>
+#include <Graphics/Enums.hpp>
 
 #include <cassert>
 #include <memory>
@@ -29,14 +29,20 @@
 namespace scop
 {
 
-const gfx::ParameterBlock::Layout flatColorMaterialBpLayout = {
-    .bindings = {
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead },
-    }
-};
-
-FlatColorMaterial::FlatColorMaterial(gfx::Device& device)
+FlatColorMaterial::FlatColorMaterial(const gfx::Device& device)
 {
+    auto pbLayout = s_parameterBlockLayout.lock();
+    if (!pbLayout) {
+        pbLayout = device.newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
+            .bindings = {
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead },
+            }
+        });
+        assert(pbLayout);
+        s_parameterBlockLayout = pbLayout;
+    }
+    m_parameterBlockLayout = pbLayout;
+
     auto pipeline = s_graphicsPipeline.lock();
     if (!pipeline) {
         std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/flat_color.slib");
@@ -62,13 +68,14 @@ FlatColorMaterial::FlatColorMaterial(gfx::Device& device)
             .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
             .blendOperation = gfx::BlendOperation::blendingOff,
             .cullMode = gfx::CullMode::back,
-            .parameterBlockLayouts = { vpMatrixBpLayout, sceneDataBpLayout, flatColorMaterialBpLayout }
+            .parameterBlockLayouts = { Renderer::vpMatrixBpLayout(), Renderer::sceneDataBpLayout(), m_parameterBlockLayout }
         };
         pipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
         assert(pipeline);
         s_graphicsPipeline = pipeline;
     }
     m_graphicsPipeline = pipeline;
+
     m_materialData = device.newBuffer(gfx::Buffer::Descriptor{
         .size = sizeof(shader::flat_color::MaterialData),
         .usages = gfx::BufferUsage::uniformBuffer,
@@ -81,24 +88,30 @@ FlatColorMaterial::FlatColorMaterial(gfx::Device& device)
 void FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
     assert(m_parameterBlock == nullptr);
-    m_parameterBlock = pool.get(flatColorMaterialBpLayout);
+    m_parameterBlock = pool.get(m_parameterBlockLayout);
     m_parameterBlock->setBinding(0, m_materialData);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-const gfx::ParameterBlock::Layout texturedMaterialBpLayout = {
-    .bindings = {
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampler, .usages = gfx::BindingUsage::fragmentRead },
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
-        gfx::ParameterBlock::Binding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead }
-    }
-};
-
-TexturedMaterial::TexturedMaterial(gfx::Device& device)
+TexturedMaterial::TexturedMaterial(const gfx::Device& device)
 {
+    auto pbLayout = s_parameterBlockLayout.lock();
+    if (!pbLayout) {
+        pbLayout = device.newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
+            .bindings = {
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampler,        .usages = gfx::BindingUsage::fragmentRead },
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer,  .usages = gfx::BindingUsage::fragmentRead }
+            }
+        });
+        assert(pbLayout);
+        s_parameterBlockLayout = pbLayout;
+    }
+    m_parameterBlockLayout = pbLayout;
+
     auto pipeline = s_graphicsPipeline.lock();
     if (!pipeline) {
         std::unique_ptr<gfx::ShaderLib> shaderLib = device.newShaderLib(SHADER_DIR "/textured.slib");
@@ -126,13 +139,14 @@ TexturedMaterial::TexturedMaterial(gfx::Device& device)
             .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
             .blendOperation = gfx::BlendOperation::blendingOff,
             .cullMode = gfx::CullMode::back,
-            .parameterBlockLayouts = {vpMatrixBpLayout, sceneDataBpLayout, texturedMaterialBpLayout}
+            .parameterBlockLayouts = { Renderer::vpMatrixBpLayout(), Renderer::sceneDataBpLayout(), m_parameterBlockLayout }
         };
         pipeline = device.newGraphicsPipeline(gfxPipelineDescriptor);
         assert(pipeline);
         s_graphicsPipeline = pipeline;
     }
     m_graphicsPipeline = pipeline;
+
     setSampler(device.newSampler(gfx::Sampler::Descriptor{
         .sAddressMode=gfx::SamplerAddressMode::Repeat,
         .tAddressMode=gfx::SamplerAddressMode::Repeat,
@@ -153,7 +167,7 @@ TexturedMaterial::TexturedMaterial(gfx::Device& device)
 void TexturedMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
     assert(m_parameterBlock == nullptr);
-    m_parameterBlock = pool.get(texturedMaterialBpLayout);
+    m_parameterBlock = pool.get(m_parameterBlockLayout);
     m_parameterBlock->setBinding(0, m_sampler);
     m_parameterBlock->setBinding(1, m_diffuseTexture);
     m_parameterBlock->setBinding(2, m_emissiveTexture);

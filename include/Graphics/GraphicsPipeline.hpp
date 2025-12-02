@@ -14,9 +14,11 @@
 #include "Graphics/ShaderFunction.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/VertexLayout.hpp"
+#include "Graphics/ParameterBlockLayout.hpp"
 
 #include <vector>
 #include <optional>
+#include <memory>
 
 namespace gfx
 {
@@ -37,7 +39,7 @@ public:
         BlendOperation blendOperation = BlendOperation::blendingOff;
         CullMode cullMode = CullMode::none;
 
-        std::vector<ParameterBlock::Layout> parameterBlockLayouts;
+        std::vector<std::shared_ptr<ParameterBlockLayout>> parameterBlockLayouts;
     };
 
 public:
