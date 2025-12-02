@@ -135,7 +135,8 @@ struct GLFWwindow;
 #undef IM_NEW
 #define IM_NEW(_TYPE) new(ImNewWrapper(), MemAlloc(sizeof(_TYPE))) _TYPE
 
-#define IM_DELETE(ptr) delete ptr
+template<typename T> void GFX_IM_DELETE(T* p) { if (p) { p->~T(); MemFree(p); } }
+#define IM_DELETE GFX_IM_DELETE
 // NOLINTEND
 
 #endif // GFX_IMGUI_ENABLED
