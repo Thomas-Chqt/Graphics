@@ -115,6 +115,9 @@ if (GFX_BUILD_TRACY)
         GIT_PROGRESS   TRUE
     )
     FetchContent_MakeAvailable(tracy)
+    if(NOT MSVC)
+        target_compile_options(TracyClient PRIVATE -Wno-deprecated-declarations)
+    endif()
     set_target_properties(TracyClient PROPERTIES FOLDER "dependencies")
 endif()
 

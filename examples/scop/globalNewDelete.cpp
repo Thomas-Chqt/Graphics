@@ -17,7 +17,7 @@ void* operator new(std::size_t size)
     void* ptr = std::malloc(size); // NOLINT(cppcoreguidelines-owning-memory, cppcoreguidelines-no-malloc)
     if (!ptr)
         throw std::bad_alloc();
-    TracyAlloc(ptr, size);
+    TracySecureAlloc(ptr, size);
     return ptr;
 }
 
@@ -26,19 +26,19 @@ void* operator new[](std::size_t size)
     void* ptr = std::malloc(size); // NOLINT(cppcoreguidelines-owning-memory, cppcoreguidelines-no-malloc)
     if (!ptr)
         throw std::bad_alloc();
-    TracyAlloc(ptr, size);
+    TracySecureAlloc(ptr, size);
     return ptr;
 }
 
 void operator delete(void* ptr) noexcept
 {
-    TracyFree(ptr);
+    TracySecureFree(ptr);
     std::free(ptr); // NOLINT(cppcoreguidelines-owning-memory, cppcoreguidelines-no-malloc)
 }
 
 void operator delete[](void* ptr) noexcept
 {
-    TracyFree(ptr);
+    TracySecureFree(ptr);
     std::free(ptr); // NOLINT(cppcoreguidelines-owning-memory, cppcoreguidelines-no-malloc)
 }
 
