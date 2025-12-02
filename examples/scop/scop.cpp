@@ -27,6 +27,7 @@
 #include <imgui.h>
 #include <glm/glm.hpp>
 #include <tracy/Tracy.hpp>
+#include <tracy/TracyC.h>
 
 #include <cassert>
 #include <memory>
@@ -153,7 +154,9 @@ int main()
 
         while (true)
         {
+            TracyCZoneN(glfwPollEventsCtx, "glfwPollEvents()", true);
             glfwPollEvents();
+            TracyCZoneEnd(glfwPollEventsCtx);
             if (glfwWindowShouldClose(window))
                 break;
 
@@ -187,6 +190,7 @@ int main()
 
             ImGui::Begin("entities");
             {
+                ZoneScopedN("ImGui::Begin(\"entities\")");
                 for (auto& entity : entities) {
                     if (ImGui::Selectable(entity->name().c_str(), selectedEntity == entity.get()))
                         selectedEntity = entity.get();
@@ -196,6 +200,7 @@ int main()
 
             ImGui::Begin("selected entity");
             {
+                ZoneScopedN("ImGui::Begin(\"selected entity\")");
                 if (selectedEntity != nullptr)
                 {
                     glm::vec3 position = selectedEntity->position();
@@ -231,6 +236,7 @@ int main()
 
             for (auto& entity : entities)
             {
+                ZoneScopedN("for (auto& entity : entities)");
                 if (auto* renderableEntity = dynamic_cast<scop::RenderableEntity*>(entity.get())) {
                     if (renderableEntity->mesh().has_value())
                         renderer.addMesh(*renderableEntity->mesh(), renderableEntity->modelMatrix());
