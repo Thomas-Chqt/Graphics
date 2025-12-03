@@ -88,9 +88,8 @@ FlatColorMaterial::FlatColorMaterial(const gfx::Device& device)
 void FlatColorMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
     assert(m_parameterBlock == nullptr);
-    std::shared_ptr<gfx::ParameterBlock> parameterBlock = pool.get(m_parameterBlockLayout);
-    parameterBlock->setBinding(0, m_materialData);
-    m_parameterBlock = parameterBlock;
+    m_parameterBlock = pool.get(m_parameterBlockLayout);
+    m_parameterBlock->setBinding(0, m_materialData);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,13 +167,12 @@ TexturedMaterial::TexturedMaterial(const gfx::Device& device)
 void TexturedMaterial::makeParameterBlock(gfx::ParameterBlockPool& pool)
 {
     assert(m_parameterBlock == nullptr);
-    std::shared_ptr<gfx::ParameterBlock> parameterBlock = pool.get(m_parameterBlockLayout);
-    parameterBlock->setBinding(0, m_sampler);
-    parameterBlock->setBinding(1, m_diffuseTexture);
-    parameterBlock->setBinding(2, m_emissiveTexture);
-    parameterBlock->setBinding(3, m_normalTexture);
-    parameterBlock->setBinding(4, m_materialData);
-    m_parameterBlock = parameterBlock;
+    m_parameterBlock = pool.get(m_parameterBlockLayout);
+    m_parameterBlock->setBinding(0, m_sampler);
+    m_parameterBlock->setBinding(1, m_diffuseTexture);
+    m_parameterBlock->setBinding(2, m_emissiveTexture);
+    m_parameterBlock->setBinding(3, m_normalTexture);
+    m_parameterBlock->setBinding(4, m_materialData);
 }
 
 } // namespace scop
