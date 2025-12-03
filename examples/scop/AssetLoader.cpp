@@ -26,6 +26,8 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <mutex>
 #include <stb_image/stb_image.h>
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyC.h>
 
 #include <algorithm>
 #include <bit>
@@ -360,11 +362,14 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
 
 Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
 {
+    ZoneScoped;
     assert(std::filesystem::is_regular_file(path));
 
     Assimp::Importer importer;
 
+    TracyCZoneN(assimpReadFileCtx, "assimpReadFile", true);
     const aiScene* scene = importer.ReadFile(path.string(), POST_PROCESSING_FLAGS);
+    TracyCZoneEnd(assimpReadFileCtx);
     if (scene == nullptr)
         throw std::runtime_error("fail to load the model using assimp");
 
@@ -380,7 +385,10 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     std::map<std::string, std::shared_ptr<gfx::Texture>> textureCache;
 
     auto materials = std::span(scene->mMaterials, scene->mNumMaterials) | std::views::transform([&](aiMaterial* aiMaterial) -> std::shared_ptr<Material> {
+        ZoneScopedN("makeMaterial");
+
         auto loadTextureFromPath = [&](const aiString& texPath) -> std::shared_ptr<gfx::Texture> {
+            ZoneScopedN("loadTextureFromPath");
             auto it = textureCache.find(std::string(texPath.C_Str()));
             if (it != textureCache.end())
                 return it->second;
@@ -441,6 +449,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
 
 
     auto flatSubMeshes = std::span(scene->mMeshes, scene->mNumMeshes) | std::views::transform([&](aiMesh* aiMesh) -> SubMesh{
+        ZoneScopedN("makeFlatSubMesh");
         return SubMesh{
             .name = aiMesh->mName.C_Str(),
             .transform = glm::mat4x4(1.0f),
@@ -463,6 +472,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     commandBuffer->endBlitPass();
     m_device->submitCommandBuffers(commandBuffer);
 
+
+    TracyCZoneN(makeFinalMeshCtx, "makeFinalMesh", true);
     std::function<void(std::vector<SubMesh>&, aiNode*, glm::mat4x4)> addNode = [&](std::vector<SubMesh>& dest, aiNode* aiNode, glm::mat4x4 additionalTransform) {
         glm::mat4x4 transform = additionalTransform * toGlmMat4(aiNode->mTransformation);
 
@@ -504,6 +515,7 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
 
     for (auto* node : std::span(scene->mRootNode->mChildren, scene->mRootNode->mNumChildren))
         addNode(mesh.subMeshes, node, glm::mat4x4(1.0F));
+    TracyCZoneEnd(makeFinalMeshCtx);
 
     return mesh;
 }
@@ -512,6 +524,8 @@ using UniqueStbiUc = std::unique_ptr<stbi_uc, decltype(&stbi_image_free)>;
 
 std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* aiTex, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     int width = 0;
     int height = 0;
     UniqueStbiUc bytes(nullptr, stbi_image_free);
@@ -560,6 +574,8 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
 
 std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::path& path, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     int width = 0;
     int height = 0;
     UniqueStbiUc bytes = UniqueStbiUc(stbi_load(path.string().c_str(), &width, &height, nullptr, STBI_rgb_alpha), stbi_image_free);
@@ -592,6 +608,8 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
 
 std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     int width = 0;
     int height = 0;
     std::map<std::filesystem::path, UniqueStbiUc> bytes;
@@ -647,6 +665,8 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
 
 std::shared_ptr<gfx::Texture> AssetLoader::getSolidColorTexture(const glm::vec4& color, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     std::scoped_lock lock(m_solidColorTextureCacheMtx);
 
     auto it =std::ranges::find_if(m_solidColorTextureCache, [&](const auto& e){ return e.first == color; });

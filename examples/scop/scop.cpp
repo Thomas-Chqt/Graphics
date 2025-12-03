@@ -142,7 +142,10 @@ int main()
         //sponza->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         //entities.push_back(sponza);
 
-        auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");}));
+        auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){
+            tracy::SetThreadNameWithHint("bistroLoading", 1);
+            return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");
+        }));
         bistro->setName("bistro");
         bistro->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         entities.push_back(bistro);
@@ -157,6 +160,7 @@ int main()
             TracyCZoneN(glfwPollEventsCtx, "glfwPollEvents()", true);
             glfwPollEvents();
             TracyCZoneEnd(glfwPollEventsCtx);
+            TracyCZoneN(logicCtx, "logic", true);
             if (glfwWindowShouldClose(window))
                 break;
 
@@ -185,7 +189,9 @@ int main()
                 camera->setPosition(camera->position() + glm::vec3(rotationMat * glm::vec4(glm::normalize(movementInput), 0)) * (float)deltaTime * 4.0f);
 
             light->setPosition(camera->position());
+            TracyCZoneEnd(logicCtx);
 
+            TracyCZoneN(renderCtx, "rendering", true);
             renderer.beginFrame(camera->viewMatrix());
 
             ImGui::Begin("entities");
@@ -234,9 +240,9 @@ int main()
 
             renderer.setAmbientLightColor(ambientLightColor);
 
+            TracyCZoneN(forAutoEntityEntitiesCtx, "for (auto& entity : entities)", true);
             for (auto& entity : entities)
             {
-                ZoneScopedN("for (auto& entity : entities)");
                 if (auto* renderableEntity = dynamic_cast<scop::RenderableEntity*>(entity.get())) {
                     if (renderableEntity->mesh().has_value())
                         renderer.addMesh(*renderableEntity->mesh(), renderableEntity->modelMatrix());
@@ -245,8 +251,10 @@ int main()
                 if (auto* pointLight = dynamic_cast<scop::PointLight*>(entity.get()))
                     renderer.addPointLight(pointLight->position(), pointLight->color());
             }
+            TracyCZoneEnd(forAutoEntityEntitiesCtx);
 
             renderer.endFrame();
+            TracyCZoneEnd(renderCtx);
             FrameMark;
         }
 

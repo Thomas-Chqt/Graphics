@@ -13,9 +13,11 @@
 #include "Entity/Entity.hpp"
 #include "Mesh.hpp"
 
-#include <future>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <tracy/Tracy.hpp>
+
+#include <future>
 #include <optional>
 
 namespace scop
@@ -30,8 +32,9 @@ public:
 
     RenderableEntity(std::future<Mesh>&& meshFuture) : m_meshFuture(std::move(meshFuture)) {};
 
-    inline std::optional<Mesh> mesh()
+    inline const std::optional<Mesh>& mesh()
     {
+        ZoneScoped;
         if (m_mesh.has_value())
             return m_mesh;
         if (m_meshFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
@@ -41,6 +44,7 @@ public:
 
     inline glm::mat4x4 modelMatrix() const
     {
+        ZoneScoped;
         auto matrix = glm::mat4x4(1.0f);
         matrix = glm::translate(matrix, position());
         matrix = glm::rotate(matrix, rotation().x, glm::vec3(1, 0, 0));
