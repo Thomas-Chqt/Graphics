@@ -99,6 +99,7 @@ void MetalCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipelin
 
 void MetalCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer) { @autoreleasepool
 {
+    ZoneScoped;
     auto buffer = std::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
 
@@ -112,6 +113,7 @@ void MetalCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer)
 
 void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const ParameterBlock>& aPBlock, uint32_t index) { @autoreleasepool
 {
+    ZoneScoped;
     const auto& pBlock = std::dynamic_pointer_cast<const MetalParameterBlock>(aPBlock);
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
@@ -145,6 +147,7 @@ void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const Parameter
 
 void MetalCommandBuffer::setPushConstants(const void* data, size_t size) { @autoreleasepool
 {
+    ZoneScoped;
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
 
@@ -155,6 +158,7 @@ void MetalCommandBuffer::setPushConstants(const void* data, size_t size) { @auto
 
 void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autoreleasepool
 {
+    ZoneScoped;
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
 
@@ -163,6 +167,7 @@ void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autorel
 
 void MetalCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& buffer) { @autoreleasepool
 {
+    ZoneScoped;
     auto idxBuffer = std::dynamic_pointer_cast<MetalBuffer>(buffer);
     assert(idxBuffer);
 
@@ -181,6 +186,7 @@ void MetalCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& buff
 #if defined(GFX_IMGUI_ENABLED)
 void MetalCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const { @autoreleasepool
 {
+    ZoneScoped;
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
     ImGui_ImplMetal_RenderDrawData(drawData, m_mtlCommandBuffer, renderCommandEncoder);

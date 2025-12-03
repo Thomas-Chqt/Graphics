@@ -26,8 +26,16 @@
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <glm/glm.hpp>
-#include <tracy/Tracy.hpp>
-#include <tracy/TracyC.h>
+#if defined (GFX_BUILD_TRACY)
+# include <tracy/Tracy.hpp>
+# include <tracy/TracyC.h>
+#else
+# define ZoneScoped
+# define ZoneScopedN(x)
+# define TracyCZoneN(c,x,y)
+# define TracyCZoneEnd(c)
+# define FrameMark
+#endif // GFX_BUILD_TRACY
 
 #include <cassert>
 #include <memory>
@@ -143,7 +151,9 @@ int main()
         //entities.push_back(sponza);
 
         auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){
+            #if defined (GFX_BUILD_TRACY)
             tracy::SetThreadNameWithHint("bistroLoading", 1);
+            #endif
             return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");
         }));
         bistro->setName("bistro");

@@ -26,8 +26,15 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <mutex>
 #include <stb_image/stb_image.h>
-#include <tracy/Tracy.hpp>
-#include <tracy/TracyC.h>
+#if defined (GFX_BUILD_TRACY)
+# include <tracy/Tracy.hpp>
+# include <tracy/TracyC.h>
+#else
+# define ZoneScoped
+# define ZoneScopedN(x)
+# define TracyCZoneN(c,x,y)
+# define TracyCZoneEnd(c)
+#endif // GFX_BUILD_TRACY
 
 #include <algorithm>
 #include <bit>

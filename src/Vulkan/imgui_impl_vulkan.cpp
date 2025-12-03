@@ -97,6 +97,32 @@
 #define IMGUI_IMPL_VULKAN_CPP
 #include "imgui_impl_vulkan.h"
 
+// NOLINTBEGIN
+#define GetCurrentContext() (reinterpret_cast<ImGuiContext*(*)()>(getSym(DL_DEFAULT, "GetCurrentContext"))())
+#define GetIO() (*reinterpret_cast<ImGuiIO*(*)()>(getSym(DL_DEFAULT, "GetIO"))())
+#define GetPlatformIO() (*reinterpret_cast<ImGuiPlatformIO*(*)()>(getSym(DL_DEFAULT, "GetPlatformIO"))())
+#define GetMainViewport() (reinterpret_cast<ImGuiViewport*(*)()>(getSym(DL_DEFAULT, "GetMainViewport"))())
+#define DebugCheckVersionAndDataLayout(...) (reinterpret_cast<bool(*)(const char*, size_t, size_t, size_t, size_t, size_t, size_t)>(getSym(DL_DEFAULT, "DebugCheckVersionAndDataLayout"))(__VA_ARGS__))
+#define MemAlloc(...) (reinterpret_cast<void*(*)(size_t)>(getSym(DL_DEFAULT, "MemAlloc"))(__VA_ARGS__))
+#define MemFree(...) (reinterpret_cast<void(*)(void*)>(getSym(DL_DEFAULT, "MemFree"))(__VA_ARGS__))
+#define DestroyPlatformWindows() (reinterpret_cast<void(*)()>(getSym(DL_DEFAULT, "DestroyPlatformWindows"))())
+
+#undef IMGUI_CHECKVERSION
+#define IMGUI_CHECKVERSION() DebugCheckVersionAndDataLayout(IMGUI_VERSION, sizeof(ImGuiIO), sizeof(ImGuiStyle), sizeof(ImVec2), sizeof(ImVec4), sizeof(ImDrawVert), sizeof(ImDrawIdx))
+
+#undef IM_ALLOC
+#define IM_ALLOC(_SIZE) MemAlloc(_SIZE)
+
+#undef IM_FREE
+#define IM_FREE(_PTR) MemFree(_PTR)
+
+#undef IM_NEW
+#define IM_NEW(_TYPE) new(ImNewWrapper(), MemAlloc(sizeof(_TYPE))) _TYPE
+
+template<typename T> void GFX_IM_DELETE(T* p) { if (p) { p->~T(); MemFree(p); } }
+#define IM_DELETE GFX_IM_DELETE
+// NOLINTEND
+
 #ifndef IM_MAX
 #define IM_MAX(A, B)    (((A) >= (B)) ? (A) : (B))
 #endif

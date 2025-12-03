@@ -94,6 +94,7 @@ void MetalDevice::imguiInit(std::vector<PixelFormat> colorPixelFomats, std::opti
 
 void MetalDevice::imguiNewFrame() const
 {
+    ZoneScoped;
     ImGui_ImplMetal_NewFrame();
 }
 
@@ -105,6 +106,7 @@ void MetalDevice::imguiShutdown()
 
 void MetalDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
+    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     auto commandBuffer = std::dynamic_pointer_cast<MetalCommandBuffer>(aCommandBuffer);
@@ -116,12 +118,14 @@ void MetalDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCo
 
 void MetalDevice::submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>& commandBuffers)
 {
+    ZoneScoped;
     for (auto& commandBuffer : commandBuffers)
         submitCommandBuffers(commandBuffer);
 }
 
 void MetalDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer) { @autoreleasepool
 {
+    ZoneScoped;
     auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
     if (waitedIt != m_submittedCommandBuffers.end())
     {

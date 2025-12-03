@@ -23,6 +23,15 @@
 #include <memory>
 
 #include <glm/glm.hpp>
+#if defined (GFX_BUILD_TRACY)
+# include <tracy/Tracy.hpp>
+# include <tracy/TracyC.h>
+#else
+# define ZoneScoped
+# define ZoneScopedN(x)
+# define TracyCZoneN(c,x,y)
+# define TracyCZoneEnd(c)
+#endif // GFX_BUILD_TRACY
 
 namespace scop
 {
@@ -34,7 +43,7 @@ public:
 
     virtual const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const = 0;
     virtual void makeParameterBlock(gfx::ParameterBlockPool&) = 0;
-    virtual std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const = 0;
+    virtual const std::shared_ptr<const gfx::ParameterBlock>& getParameterBlock() const = 0;
 
     virtual ~Material() = default;
 
@@ -61,7 +70,7 @@ public:
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
 
     void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
-    inline std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
+    inline const std::shared_ptr<const gfx::ParameterBlock>& getParameterBlock() const override { ZoneScoped; return m_parameterBlock; }
 
     inline glm::vec4 diffuseColor() const { return m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor; }
     inline void setDiffuseColor(const glm::vec4& d) { m_materialData->content<shader::flat_color::MaterialData>()->diffuseColor = d; }
@@ -81,7 +90,7 @@ private:
     inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
     std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
 
-    std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
+    std::shared_ptr<const gfx::ParameterBlock> m_parameterBlock;
 
     std::shared_ptr<gfx::Buffer> m_materialData;
 
@@ -102,7 +111,7 @@ public:
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
 
     void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
-    std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
+    inline const std::shared_ptr<const gfx::ParameterBlock>& getParameterBlock() const override { ZoneScoped; return m_parameterBlock; }
 
     inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
     inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
@@ -137,7 +146,7 @@ private:
     inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
     std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
 
-    std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
+    std::shared_ptr<const gfx::ParameterBlock> m_parameterBlock;
 
     std::shared_ptr<gfx::Sampler> m_sampler;
     std::shared_ptr<gfx::Texture> m_diffuseTexture;

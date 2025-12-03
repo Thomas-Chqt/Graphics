@@ -185,6 +185,7 @@ void VulkanCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipeli
 
 void VulkanCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer)
 {
+    ZoneScoped;
     auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
 
     BufferSyncRequest syncReq{};
@@ -216,6 +217,7 @@ void VulkanCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer
 
 void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const ParameterBlock>& aPblock, uint32_t index)
 {
+    ZoneScoped;
     const auto& pBlock = std::dynamic_pointer_cast<const VulkanParameterBlock>(aPblock);
     std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
     std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
@@ -313,17 +315,20 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
 
 void VulkanCommandBuffer::setPushConstants(const void* data, size_t size)
 {
+    ZoneScoped;
     assert(m_boundPipeline != nullptr);
     m_vkCommandBuffer.pushConstants(m_boundPipeline->pipelineLayout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, size, data);
 }
 
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
 {
+    ZoneScoped;
     m_vkCommandBuffer.draw(count, 1, start, 0);
 }
 
 void VulkanCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& aBuffer)
 {
+    ZoneScoped;
     auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
 
     BufferSyncRequest syncReq{};
@@ -357,6 +362,7 @@ void VulkanCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& aBu
 #if defined(GFX_IMGUI_ENABLED)
 void VulkanCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const
 {
+    ZoneScoped;
     ImGui_ImplVulkan_RenderDrawData(drawData, m_vkCommandBuffer);
 }
 #endif

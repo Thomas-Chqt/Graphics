@@ -34,6 +34,7 @@ MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descr
 
 std::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
 {
+    ZoneScoped;
     return std::make_shared<MetalDrawable>([m_mtlLayer nextDrawable]);
 }}
 

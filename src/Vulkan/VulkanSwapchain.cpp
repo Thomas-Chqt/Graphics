@@ -94,6 +94,8 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
 
 std::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
 {
+    ZoneScoped;
+
     std::shared_ptr<VulkanDrawable> drawable = m_drawables.at(m_nextDrawableIndex);
 
     uint64_t timeout = std::numeric_limits<uint64_t>::max();

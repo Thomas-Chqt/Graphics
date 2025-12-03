@@ -205,6 +205,7 @@ void VulkanDevice::imguiInit(std::vector<PixelFormat> colorAttachmentPxFormats, 
 
 void VulkanDevice::imguiNewFrame() const
 {
+    ZoneScoped;
     ImGui_ImplVulkan_NewFrame();
 }
 
@@ -217,11 +218,13 @@ void VulkanDevice::imguiShutdown()
 
 void VulkanDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer)
 {
+    ZoneScoped;
     submitCommandBuffers(std::vector<std::shared_ptr<CommandBuffer>>{aCommandBuffer});
 }
 
 void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<CommandBuffer>>& aCommandBuffers)
 {
+    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     std::vector<vk::CommandBuffer> vkCommandBuffers;
@@ -357,7 +360,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
             .setWaitDstStageMask(waitDstStageMasks)
             .setCommandBuffers(vkCommandBuffers)
             .setSignalSemaphores(signalSemaphores);
-
+        ZoneScopedN("vkSubmit");
         m_queue.submit(submitInfo);
     }
 
@@ -369,6 +372,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
             .setSwapchains(presentedSwapchains)
             .setImageIndices(presentedImageIndices);
 
+        ZoneScopedN("vkPresent");
         if (m_queue.presentKHR(&presentInfo) != vk::Result::eSuccess)
             throw std::runtime_error("failed to present swap chain image!");
     }
@@ -376,6 +380,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
 
 void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
 {
+    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
@@ -400,6 +405,7 @@ void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
 
 void VulkanDevice::waitIdle()
 {
+    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     m_vkDevice.waitIdle();

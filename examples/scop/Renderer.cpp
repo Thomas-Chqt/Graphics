@@ -20,8 +20,15 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <glm/gtc/matrix_transform.hpp>
-#include <tracy/Tracy.hpp>
-#include <tracy/TracyC.h>
+#if defined (GFX_BUILD_TRACY)
+# include <tracy/Tracy.hpp>
+# include <tracy/TracyC.h>
+#else
+# define ZoneScoped
+# define ZoneScopedN(x)
+# define TracyCZoneN(c,x,y)
+# define TracyCZoneEnd(c)
+#endif // GFX_BUILD_TRACY
 
 #include <array>
 #include <cstddef>
@@ -151,8 +158,14 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
     *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
 
     m_device->imguiNewFrame();
+
+    TracyCZoneN(ImGuiImplGlfwNewFrameCtx, "ImGui_ImplGlfw_NewFrame", true);
     ImGui_ImplGlfw_NewFrame();
+    TracyCZoneEnd(ImGuiImplGlfwNewFrameCtx);
+
+    TracyCZoneN(ImGuiNewFrameCtx, "ImGui::NewFrame", true);
     ImGui::NewFrame();
+    TracyCZoneEnd(ImGuiNewFrameCtx);
 }
 
 void Renderer::addMesh(const Mesh& mesh, const glm::mat4x4& worlTransform)
@@ -189,9 +202,7 @@ void Renderer::endFrame()
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = cfd.commandBufferPool->get();
 
-    TracyCZoneN(nextDrawableCtx, "nextDrawable", true);
     std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
-    TracyCZoneEnd(nextDrawableCtx);
     if (drawable == nullptr) {
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
@@ -257,9 +268,7 @@ void Renderer::endFrame()
     commandBuffer->presentDrawable(drawable);
 
     cfd.lastCommandBuffer = commandBuffer;
-    TracyCZoneN(submitCommandBuffersCtx, "submitCommandBuffers", true);
     m_device->submitCommandBuffers(commandBuffer);
-    TracyCZoneEnd(submitCommandBuffersCtx);
 
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();

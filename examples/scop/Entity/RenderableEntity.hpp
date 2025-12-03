@@ -15,7 +15,15 @@
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#include <tracy/Tracy.hpp>
+#if defined (GFX_BUILD_TRACY)
+# include <tracy/Tracy.hpp>
+# include <tracy/TracyC.h>
+#else
+# define ZoneScoped
+# define ZoneScopedN(x)
+# define TracyCZoneN(c,x,y)
+# define TracyCZoneEnd(c)
+#endif // GFX_BUILD_TRACY
 
 #include <future>
 #include <optional>

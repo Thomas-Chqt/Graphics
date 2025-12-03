@@ -183,6 +183,10 @@ if (GFX_ENABLE_GLFW)
     target_compile_definitions(Graphics PUBLIC "GFX_GLFW_ENABLED")
 endif()
 
+if (GFX_BUILD_TRACY)
+    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_TRACY")
+endif()
+
 if (GFX_BUILD_METAL)
     target_link_libraries(Graphics PRIVATE ${METAL_FRAMEWORK} ${QUARTZ_CORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK})
 endif()
