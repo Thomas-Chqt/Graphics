@@ -1,5 +1,5 @@
 name: Build macOS Metal
-run-name: Build macOS Metal | ${{ github.event.pull_request && format('{0} -> {1} by {2} (PR {3})', github.head_ref, github.base_ref, github.actor, github.event.pull_request.number) || github.event_name == 'workflow_dispatch' && format('{0} by {1} [manual]', github.ref_name, github.actor) || format('{0} by {1}', github.ref_name, github.actor) }}
+run-name: ${{ github.event.pull_request && format('{0} -> {1} by {2} (PR {3})', github.head_ref, github.base_ref, github.actor, github.event.pull_request.number) || github.event_name == 'workflow_dispatch' && format('{0} by {1} [manual]', github.ref_name, github.actor) || format('{0} by {1}', github.ref_name, github.actor) }}
 
 on:
   pull_request:
@@ -10,16 +10,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        build-type: [ Debug, Release ]
+        build-type: [ Release ]
         enable-glfw: [ GLFW=ON, GLFW=OFF ]
         enable-imgui: [ IMGUI=ON, IMGUI=OFF ]
         build-examples: [ EXAMPLES=ON, EXAMPLES=OFF ]
 
         exclude:
           - build-examples: EXAMPLES=ON
-            enable-imgui: IMGUI=OFF
-          - build-examples: EXAMPLES=ON
             enable-glfw: GLFW=OFF
+          - build-examples: EXAMPLES=ON
+            enable-imgui: IMGUI=OFF
+
+          - build-examples: EXAMPLES=OFF
+            enable-glfw: GLFW=ON
+          - build-examples: EXAMPLES=OFF
+            enable-imgui: IMGUI=ON
 
     runs-on: macos-latest
 

@@ -102,7 +102,7 @@ public:
     inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
 
     void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
-    std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
+    inline std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
 
     inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
     inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }

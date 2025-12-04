@@ -140,7 +140,9 @@ int main()
         //sponza->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         //entities.push_back(sponza);
 
-        auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");}));
+        auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){
+            return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");
+        }));
         bistro->setName("bistro");
         bistro->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         entities.push_back(bistro);

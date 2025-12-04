@@ -13,9 +13,9 @@
 #include "Entity/Entity.hpp"
 #include "Mesh.hpp"
 
-#include <future>
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <future>
 #include <optional>
 
 namespace scop
@@ -30,7 +30,7 @@ public:
 
     RenderableEntity(std::future<Mesh>&& meshFuture) : m_meshFuture(std::move(meshFuture)) {};
 
-    inline std::optional<Mesh> mesh()
+    inline const std::optional<Mesh>& mesh()
     {
         if (m_mesh.has_value())
             return m_mesh;

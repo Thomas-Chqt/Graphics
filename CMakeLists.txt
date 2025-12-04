@@ -176,13 +176,6 @@ if (GFX_BUILD_VULKAN)
     target_link_libraries(Graphics PRIVATE Vulkan::Headers VulkanMemoryAllocator)
 endif()
 
-if (GFX_USE_UTILSCPP)
-    target_link_libraries(Graphics PUBLIC UtilsCPP)
-    if (GFX_USE_MATH)
-        target_link_libraries(Graphics PUBLIC Math)
-    endif()
-endif()
-
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     target_link_libraries(Graphics PRIVATE dlLoad)
 endif()
