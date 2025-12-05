@@ -106,6 +106,7 @@ target_compile_definitions(multiBuffer PRIVATE "SHADER_SLIB=\"${SHADER_SLIB}\"")
 if(CMAKE_GENERATOR STREQUAL "Xcode")
     target_compile_definitions(multiBuffer PRIVATE "__XCODE__")
 endif()
+target_compile_definitions(multiBuffer PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(multiBuffer PRIVATE Graphics glfw glm::glm)
 add_dependencies(multiBuffer multiBuffer_shader)

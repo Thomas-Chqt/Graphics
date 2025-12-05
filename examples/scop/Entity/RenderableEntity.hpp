@@ -13,8 +13,11 @@
 #include "Entity/Entity.hpp"
 #include "Mesh.hpp"
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#endif
+
 #include <future>
 #include <optional>
 

@@ -15,11 +15,12 @@
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#if !defined (SCOP_MANDATORY)
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <glm/gtc/matrix_transform.hpp>
+#endif
 
 #include <array>
 #include <cstddef>
@@ -78,6 +79,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
     assert(m_sceneDataBpLayout);
     s_sceneDataBpLayout = m_sceneDataBpLayout;
 
+#if !defined (SCOP_MANDATORY)
     ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
@@ -95,6 +97,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
     }
 
     m_device->imguiInit({gfx::PixelFormat::BGRA8Unorm}, gfx::PixelFormat::Depth32Float);
+#endif
 }
 
 void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
@@ -147,9 +150,11 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix)
     glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 1000.0f);
     *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
 
+#if !defined (SCOP_MANDATORY)
     m_device->imguiNewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+#endif
 }
 
 void Renderer::addMesh(const Mesh& mesh, const glm::mat4x4& worlTransform)
@@ -179,14 +184,18 @@ void Renderer::addPointLight(const glm::vec3& position, const glm::vec3& color)
 
 void Renderer::endFrame()
 {
+#if !defined (SCOP_MANDATORY)
     ImGui::Render();
+#endif
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = cfd.commandBufferPool->get();
 
     std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
     if (drawable == nullptr) {
+#if !defined (SCOP_MANDATORY)
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
+#endif
         m_swapchain = nullptr;
         return;
     }
@@ -238,7 +247,9 @@ void Renderer::endFrame()
             }
         }
 
+#if !defined (SCOP_MANDATORY)
         commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
+#endif
     }
     commandBuffer->endRenderPass();
     commandBuffer->presentDrawable(drawable);
@@ -246,17 +257,21 @@ void Renderer::endFrame()
     cfd.lastCommandBuffer = commandBuffer;
     m_device->submitCommandBuffers(commandBuffer);
 
+#if !defined (SCOP_MANDATORY)
     ImGui::UpdatePlatformWindows();
     ImGui::RenderPlatformWindowsDefault();
+#endif
 
     m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
 }
 
 Renderer::~Renderer()
 {
+#if !defined (SCOP_MANDATORY)
     m_device->imguiShutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+#endif
 }
 
 } // namespace scop

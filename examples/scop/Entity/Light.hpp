@@ -12,7 +12,9 @@
 
 #include "Entity/Entity.hpp"
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#endif
 
 namespace scop
 {

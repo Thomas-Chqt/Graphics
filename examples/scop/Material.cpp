@@ -21,10 +21,12 @@
 #include <Graphics/Sampler.hpp>
 #include <Graphics/Enums.hpp>
 
+#if !defined (SCOP_MANDATORY)
+#include <glm/glm.hpp>
+#endif
+
 #include <cassert>
 #include <memory>
-
-#include <glm/glm.hpp>
 
 namespace scop
 {

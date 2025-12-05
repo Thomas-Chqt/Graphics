@@ -12,8 +12,10 @@
 
 #include "Entity/Entity.hpp"
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#endif
 
 namespace scop
 {

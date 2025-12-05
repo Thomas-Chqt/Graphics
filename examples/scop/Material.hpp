@@ -20,9 +20,11 @@
 #include <Graphics/ParameterBlockPool.hpp>
 #include <Graphics/Device.hpp>
 
-#include <memory>
-
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#endif
+
+#include <memory>
 
 namespace scop
 {

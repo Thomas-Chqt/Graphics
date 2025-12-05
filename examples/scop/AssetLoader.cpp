@@ -18,13 +18,14 @@
 #include <Graphics/Texture.hpp>
 #include <Graphics/Buffer.hpp>
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <assimp/types.h>
 #include <glm/ext/matrix_transform.hpp>
-#include <mutex>
+#endif
 #include <stb_image/stb_image.h>
 
 #include <algorithm>
@@ -45,6 +46,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <mutex>
 
 template<>
 struct std::formatter<aiMaterial*> {

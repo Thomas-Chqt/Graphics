@@ -20,7 +20,9 @@
 #include <Graphics/Texture.hpp>
 #include <Graphics/Buffer.hpp>
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#endif
 
 #include <cstdint>
 #include <filesystem>

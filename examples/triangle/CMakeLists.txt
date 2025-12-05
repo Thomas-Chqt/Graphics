@@ -106,6 +106,7 @@ target_compile_definitions(triangle PRIVATE "SHADER_SLIB=\"${SHADER_SLIB}\"")
 if(CMAKE_GENERATOR STREQUAL "Xcode")
     target_compile_definitions(triangle PRIVATE "__XCODE__")
 endif()
+target_compile_definitions(triangle PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(triangle PRIVATE Graphics glfw glm::glm)
 add_dependencies(triangle triangle_shader)

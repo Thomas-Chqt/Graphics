@@ -20,15 +20,16 @@
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlockLayout.hpp>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <cstddef>
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#endif
 
 #include <array>
 #include <map>
 #include <memory>
 #include <vector>
+#include <cstddef>
 
 #define cfd m_frameDatas.at(m_frameIdx)
 #define cfsd (*cfd.sceneDataBuffer->content<shader::SceneData>())

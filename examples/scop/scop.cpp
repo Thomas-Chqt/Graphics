@@ -20,12 +20,12 @@
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
-#include <future>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <imgui.h>
-#include <glm/glm.hpp>
+#if !defined(SCOP_MANDATORY)
+    #include <imgui.h>
+    #include <glm/glm.hpp>
+#endif
 
 #include <cassert>
 #include <memory>
@@ -37,11 +37,13 @@
 #include <bit>
 #include <set>
 #include <vector>
+#include <future>
 
 #if __XCODE__
     #include <unistd.h>
 #endif
 
+#if !defined (SCOP_MANDATORY)
 #if (defined(__GNUC__) || defined(__clang__))
     #define SCOP_EXPORT __attribute__((visibility("default")))
 #elif defined(_MSC_VER)
@@ -61,6 +63,7 @@ extern "C"
     SCOP_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
     SCOP_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
 }
+#endif
 
 constexpr uint32_t WINDOW_WIDTH = 800;
 constexpr uint32_t WINDOW_HEIGHT = 600;
@@ -125,30 +128,11 @@ int main()
         light->setColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.8f);
         entities.push_back(light);
 
-        //auto afterTheRain = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/after_the_rain.glb"));
-        //afterTheRain->setName("after_the_rain");
-        //afterTheRain->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        //entities.push_back(afterTheRain);
-
-        //auto neighbourhood_city = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/neighbourhood_city.glb"));
-        //neighbourhood_city->setName("neighbourhood_city");
-        //neighbourhood_city->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        //entities.push_back(neighbourhood_city);
-
-        //auto sponza = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/sponza.glb"));
-        //sponza->setName("sponza");
-        //sponza->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        //entities.push_back(sponza);
-
-        auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){
-            return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");
-        }));
-        bistro->setName("bistro");
-        bistro->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        entities.push_back(bistro);
-
         glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f;
+
+#if !defined (SCOP_MANDATORY)
         scop::Entity* selectedEntity = nullptr;
+#endif
 
         double lastFrameTime = glfwGetTime();
 
@@ -186,6 +170,7 @@ int main()
 
             renderer.beginFrame(camera->viewMatrix());
 
+#if !defined (SCOP_MANDATORY)
             ImGui::Begin("entities");
             {
                 for (auto& entity : entities) {
@@ -227,6 +212,7 @@ int main()
                 }
             }
             ImGui::End();
+#endif
 
             renderer.setAmbientLightColor(ambientLightColor);
 

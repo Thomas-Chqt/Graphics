@@ -10,8 +10,11 @@
 #ifndef ENTITY_HPP
 #define ENTITY_HPP
 
-#include <glm/glm.hpp>
 #include <string>
+
+#if !defined (SCOP_MANDATORY)
+#include <glm/glm.hpp>
+#endif
 
 namespace scop
 {

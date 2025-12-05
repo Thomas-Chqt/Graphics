@@ -14,7 +14,9 @@
 
 #include <Graphics/Buffer.hpp>
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#endif
 
 #include <string>
 #include <memory>
