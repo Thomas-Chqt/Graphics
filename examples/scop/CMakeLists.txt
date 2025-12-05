@@ -7,6 +7,8 @@
 
 include(FetchContent)
 
+option(SCOP_MANDATORY "respect 42 subject requirements" ON)
+
 ## GLFW ##########################################################
 
 FetchContent_Declare(glfw3
