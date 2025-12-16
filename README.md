@@ -29,7 +29,7 @@ Alternatively, the library can be built separately using CMake.
 
 Here is an example to build the library as well as all the examples in release mode for best performance:
 ```sh
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGFX_ENABLE_GLFW=ON -DGFX_BUILD_EXAMPLES=ON
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGFX_ENABLE_GLFW=ON -DGFX_BUILD_IMGUI=ON -DGFX_BUILD_EXAMPLES=ON 
 cmake --build build
 ```
 
