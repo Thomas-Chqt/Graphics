@@ -24,8 +24,6 @@
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
-#include <stdexcept>
-#include <string>
 #if !defined(SCOP_MANDATORY)
     #include <imgui.h>
     #include <glm/glm.hpp>
@@ -50,8 +48,10 @@
 #include <set>
 #include <vector>
 #include <future> // IWYU pragma: keep
-#include <optional>
 #include <string_view>
+#include <stdexcept>
+#include <string>
+#include <functional>
 
 #if __XCODE__
     #include <unistd.h>

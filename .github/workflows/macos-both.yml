@@ -42,4 +42,4 @@ jobs:
           -DGFX_BUILD_${{ matrix.build-examples }}
 
       - name: Build
-        run: cmake --build build --config ${{ matrix.build-type }}
+        run: cmake --build build --config ${{ matrix.build-type }} --parallel
