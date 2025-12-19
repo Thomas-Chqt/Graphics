@@ -1,14 +1,14 @@
 /*
  * ---------------------------------------------------
- * textured.slang
+ * scop.slang
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
- * Date: 2025/10/30 08:54:54
+ * Date: 2025/12/15 21:52:13
  * ---------------------------------------------------
  */
 
-#ifndef TEXTURED_SLANG
-#define TEXTURED_SLANG
+#ifndef SCOP_SLANG
+#define SCOP_SLANG
 
 #include "shared_types.h"
 
@@ -33,34 +33,42 @@ ParameterBlock<_VPMatrix> vpMatrix;
 struct Vertex
 {
     float3 pos;
-    float2 uv;
     float3 normal;
-    float3 tangent;
 };
 
 struct VSOutput
 {
     float3 pos;
     float4 clipPos : SV_Position;
-    float2 uv;
-    float3 tangent;
-    float3 bitangent;
     float3 normal;
+    float2 uvX;
+    float2 uvY;
+    float2 uvZ;
+    float3 triW;
 };
 
 [shader("vertex")]
 VSOutput vertexMain(Vertex input)
 {
     float4 worldPos  = mul(float4(input.pos, 1.0), modelMatrix);
-    float3 bitangent = cross(input.normal, input.tangent);
+
+    float3 an = abs(normalize(input.normal));
+    float sum = an.x + an.y + an.z + 1e-6f;
+    float3 w = an / sum;
+
+    float2 uvX = input.pos.yz;
+    float2 uvY = input.pos.xz;
+    float2 uvZ = input.pos.xy;
 
     VSOutput output;
-    output.pos       = worldPos.xyz;
-    output.clipPos   = mul(worldPos, vpMatrix);
-    output.uv        = input.uv;
-    output.tangent   = mul(input.tangent, (float3x3)modelMatrix);
-    output.bitangent = mul(bitangent, (float3x3)modelMatrix);
-    output.normal    = mul(input.normal, (float3x3)modelMatrix);
+    output.pos     = worldPos.xyz;
+    output.clipPos = mul(worldPos, vpMatrix);
+    output.normal  = normalize(mul(input.normal, (float3x3)modelMatrix));
+    output.uvX     = uvX;
+    output.uvY     = uvY;
+    output.uvZ     = uvZ;
+    output.triW    = w;
+
     return output;
 }
 
@@ -71,54 +79,52 @@ ParameterBlock<_SceneData> sceneData;
 #define sceneData sceneData.data
 
 #else
-namespace shader::textured
+namespace shader::scop
 {
 #endif
 
 struct MaterialData
 {
-    float4 diffuseColor;
-    float3 specularColor;
-    FLOAT3_PADDING(0);
-    float3 emissiveColor;
-    FLOAT3_PADDING(1);
-    float shininess;
+    float4 colorPalette[6];
+    float textureStrength;
 };
 
 #ifdef __cplusplus
-}
+} // namespace shader::scop
 #else
 
 struct Material
 {
     SamplerState sampler;
     Texture2D<float4> diffuseTexture;
-    Texture2D<float3> emissiveTexture;
-    Texture2D<float3> normalTexture;
     ConstantBuffer<MaterialData> data;
 }
 ParameterBlock<Material> material;
 
 [shader("fragment")]
-float4 fragmentMain(VSOutput input) : SV_TARGET
+float4 fragmentMain(VSOutput input, uint primID : SV_PrimitiveID) : SV_TARGET
 {
-    float4 texColor = material.data.diffuseColor * material.diffuseTexture.Sample(material.sampler, input.uv);
+    float4 texX = material.diffuseTexture.Sample(material.sampler, input.uvX);
+    float4 texY = material.diffuseTexture.Sample(material.sampler, input.uvY);
+    float4 texZ = material.diffuseTexture.Sample(material.sampler, input.uvZ);
+    float4 triTex = texX * input.triW.x + texY * input.triW.y + texZ * input.triW.z;
 
-    if (texColor.a < 0.5)
+    float4 fragDiffuse = lerp(
+        material.data.colorPalette[primID % 6],
+        triTex,
+        material.data.textureStrength
+    );
+
+    if (fragDiffuse.a < 0.5)
         discard;
-
-    float3 normalMap = material.normalTexture.Sample(material.sampler, input.uv) * 2.0 - 1.0;
-    float3 T = normalize(input.tangent);
-    float3 B = normalize(input.bitangent);
-    float3 N = normalize(input.normal);
 
     phong::FragmentContext fragCtx;
     fragCtx.position      = input.pos;
-    fragCtx.normal        = normalize(mul(normalMap, float3x3(T, B, N)));
+    fragCtx.normal        = normalize(input.normal);
     fragCtx.cameraDir     = normalize(sceneData.cameraPosition - input.pos);
-    fragCtx.diffuseColor  = texColor.rgb;
-    fragCtx.specularColor = material.data.specularColor;
-    fragCtx.shininess     = material.data.shininess;
+    fragCtx.diffuseColor  = fragDiffuse.rgb;
+    fragCtx.specularColor = float3(0.0f, 0.0f, 0.0f);
+    fragCtx.shininess     = 1.0f;
 
     float3 finalColor = sceneData.ambientLightColor * fragCtx.diffuseColor;
     for (int i = 0; i < sceneData.directionalLightCount; ++i)
@@ -126,9 +132,7 @@ float4 fragmentMain(VSOutput input) : SV_TARGET
     for (int i = 0; i < sceneData.pointLightCount; ++i)
         finalColor += phong::evalPointLight(fragCtx, sceneData.pointLights[i]);
 
-    finalColor += material.data.emissiveColor * material.emissiveTexture.Sample(material.sampler, input.uv);
-
-    return float4(saturate(finalColor), texColor.a);
+    return float4(saturate(finalColor), fragDiffuse.a);
 }
 
 #endif

@@ -13,8 +13,17 @@
 #include "Entity/Entity.hpp"
 #include "Mesh.hpp"
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#else
+#include "math/math.hpp"
+#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+#define SCOP_MATH_GLM_ALIAS_DEFINED
+namespace glm = scop::math;
+#endif
+#endif
+
 #include <future>
 #include <optional>
 
@@ -38,6 +47,8 @@ public:
             m_mesh = m_meshFuture.get();
         return m_mesh;
     }
+
+    inline const std::optional<Mesh>& mesh() const { return m_mesh; }
 
     inline glm::mat4x4 modelMatrix() const
     {

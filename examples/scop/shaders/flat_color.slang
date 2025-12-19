@@ -15,8 +15,47 @@
 #ifndef __cplusplus
 
 import SceneData;
-import common_vertex;
 import phong_shading;
+
+struct _VPMatrix { ConstantBuffer<float4x4> data; };
+ParameterBlock<_VPMatrix> vpMatrix;
+#define vpMatrix vpMatrix.data
+
+#ifdef __METAL__
+[[vk::push_constant]] cbuffer ModelMatrix : register(b6)
+#else
+[[vk::push_constant]] cbuffer ModelMatrix
+#endif
+{
+    float4x4 modelMatrix;
+}
+
+struct Vertex
+{
+    float3 pos;
+    float3 normal;
+};
+
+struct VSOutput
+{
+    float3 pos;
+    float4 clipPos : SV_Position;
+    float3 normal;
+};
+
+[shader("vertex")]
+VSOutput vertexMain(Vertex input)
+{
+    float4 worldPos  = mul(float4(input.pos, 1.0), modelMatrix);
+
+    VSOutput output;
+    output.pos     = worldPos.xyz;
+    output.clipPos = mul(worldPos, vpMatrix);
+    output.normal  = mul(input.normal, (float3x3)modelMatrix);
+    return output;
+}
+
+/* -------------------------Vertex Shader------------------------------- */
 
 struct _SceneData { ConstantBuffer<SceneData> data; };
 ParameterBlock<_SceneData> sceneData;

@@ -13,19 +13,27 @@
 #include "Mesh.hpp"
 #include "Material.hpp"
 
-#include "shaders/Vertex.slang"
-
 #include <Graphics/Device.hpp>
 #include <Graphics/CommandBuffer.hpp>
 #include <Graphics/Texture.hpp>
 #include <Graphics/Buffer.hpp>
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#else
+#include "math/math.hpp"
+#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+#define SCOP_MATH_GLM_ALIAS_DEFINED
+namespace glm = scop::math;
+#endif
+#endif
 
 #include <cstdint>
+#include <cassert>
 #include <filesystem>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <ranges>
 #include <vector>
 
@@ -44,7 +52,7 @@ public:
     AssetLoader(gfx::Device*);
 
     Mesh builtinCube(const std::shared_ptr<Material>&);
-    Mesh loadMesh(const std::filesystem::path&);
+    Mesh loadMesh(const std::filesystem::path&, std::optional<std::shared_ptr<Material>> overrideMaterial = std::nullopt);
 
     std::shared_ptr<gfx::Texture> loadTexture(const std::filesystem::path&, gfx::CommandBuffer&);
     std::shared_ptr<gfx::Texture> loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer&);
@@ -56,10 +64,10 @@ private:
     std::shared_ptr<gfx::Texture> loadEmbeddedTexture(const aiTexture*, gfx::CommandBuffer&);
 
     std::shared_ptr<gfx::Buffer> newVertexBuffer(const std::ranges::range auto& vertices, gfx::CommandBuffer& commandBuffer)
-        requires std::same_as<std::ranges::range_value_t<decltype(vertices)>, shader::Vertex>
+        requires std::same_as<std::ranges::range_value_t<decltype(vertices)>, Vertex>
     {
         std::shared_ptr<gfx::Buffer> vertexBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = sizeof(shader::Vertex) * vertices.size(),
+            .size = sizeof(Vertex) * vertices.size(),
             .usages = gfx::BufferUsage::vertexBuffer | gfx::BufferUsage::copyDestination,
             .storageMode = gfx::ResourceStorageMode::deviceLocal});
         assert(vertexBuffer);
@@ -70,7 +78,7 @@ private:
             .storageMode = gfx::ResourceStorageMode::hostVisible});
         assert(stagingBuffer);
 
-        std::ranges::copy(vertices, stagingBuffer->content<shader::Vertex>());
+        std::ranges::copy(vertices, stagingBuffer->content<Vertex>());
 
         commandBuffer.copyBufferToBuffer(stagingBuffer, vertexBuffer, vertexBuffer->size());
 

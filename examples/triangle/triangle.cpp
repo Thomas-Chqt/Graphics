@@ -20,7 +20,6 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/VertexLayout.hpp"
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <glm/glm.hpp>

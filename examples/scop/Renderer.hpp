@@ -20,15 +20,22 @@
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlockLayout.hpp>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <cstddef>
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#else
+#include "math/math.hpp"
+#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+#define SCOP_MATH_GLM_ALIAS_DEFINED
+namespace glm = scop::math;
+#endif
+#endif
 
 #include <array>
 #include <map>
 #include <memory>
 #include <vector>
+#include <cstddef>
 
 #define cfd m_frameDatas.at(m_frameIdx)
 #define cfsd (*cfd.sceneDataBuffer->content<shader::SceneData>())
@@ -50,7 +57,7 @@ public:
     static inline std::shared_ptr<gfx::ParameterBlockLayout> vpMatrixBpLayout() { return s_vpMatrixBpLayout.lock(); }
     static inline std::shared_ptr<gfx::ParameterBlockLayout> sceneDataBpLayout() { return s_sceneDataBpLayout.lock(); }
 
-    void beginFrame(const glm::mat4x4& viewMatrix);
+    void beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, float far);
 
     inline void setAmbientLightColor(glm::vec3 c) { cfsd.ambientLightColor = c; }
 
@@ -93,7 +100,7 @@ private:
 
     uint8_t m_frameIdx = 0;
     std::array<FrameData, maxFrameInFlight> m_frameDatas;
-    
+
     inline static std::weak_ptr<gfx::ParameterBlockLayout> s_vpMatrixBpLayout;
     std::shared_ptr<gfx::ParameterBlockLayout> m_vpMatrixBpLayout;
 

@@ -7,6 +7,8 @@
 
 include(FetchContent)
 
+option(SCOP_MANDATORY "respect 42 subject requirements" OFF)
+
 ## GLFW ##########################################################
 
 FetchContent_Declare(glfw3
@@ -38,33 +40,37 @@ endif()
 
 ## GLM ###############################################################
 
-FetchContent_Declare(gml
-    GIT_REPOSITORY    https://github.com/g-truc/glm.git
-    GIT_TAG           1.0.1
-    GIT_SHALLOW       1
-    GIT_PROGRESS      TRUE
-    FIND_PACKAGE_ARGS NAMES glm
-)
-FetchContent_MakeAvailable(gml)
-if (gml_SOURCE_DIR)
-    set_target_properties(glm PROPERTIES FOLDER "dependencies")
+if (NOT SCOP_MANDATORY)
+    FetchContent_Declare(gml
+        GIT_REPOSITORY    https://github.com/g-truc/glm.git
+        GIT_TAG           1.0.1
+        GIT_SHALLOW       1
+        GIT_PROGRESS      TRUE
+        FIND_PACKAGE_ARGS NAMES glm
+    )
+    FetchContent_MakeAvailable(gml)
+    if (gml_SOURCE_DIR)
+        set_target_properties(glm PROPERTIES FOLDER "dependencies")
+    endif()
 endif()
 
 ## IMGUI ###############################################################
 
-FetchContent_Declare(imgui
-    GIT_REPOSITORY    https://github.com/Thomas-Chqt/imgui.git
-    GIT_TAG           4d8f55183c2e974916daf6336ee2c4b9c8e72891
-    GIT_SHALLOW       1
-    GIT_PROGRESS      TRUE
-    FIND_PACKAGE_ARGS
-)
-set(IM_BUILD_GLFW ON)
-FetchContent_MakeAvailable(imgui)
-target_compile_definitions(imgui PRIVATE GLFW_INCLUDE_NONE)
-target_link_libraries(imgui PUBLIC glfw)
-if (imgui_SOURCE_DIR)
-    set_target_properties(imgui PROPERTIES FOLDER "dependencies")
+if (NOT SCOP_MANDATORY)
+    FetchContent_Declare(imgui
+        GIT_REPOSITORY    https://github.com/Thomas-Chqt/imgui.git
+        GIT_TAG           4d8f55183c2e974916daf6336ee2c4b9c8e72891
+        GIT_SHALLOW       1
+        GIT_PROGRESS      TRUE
+        FIND_PACKAGE_ARGS
+    )
+    set(IM_BUILD_GLFW ON)
+    FetchContent_MakeAvailable(imgui)
+    target_compile_definitions(imgui PRIVATE "GLFW_INCLUDE_NONE")
+    target_link_libraries(imgui PUBLIC glfw)
+    if (imgui_SOURCE_DIR)
+        set_target_properties(imgui PROPERTIES FOLDER "dependencies")
+    endif()
 endif()
 
 ## STB_IMAGE ###############################################################
@@ -83,34 +89,36 @@ endif()
 
 ## ASSIMP ###################################################################
 
-FetchContent_Declare(assimp
-    GIT_REPOSITORY    https://github.com/assimp/assimp.git
-    GIT_TAG           v5.4.1
-    GIT_SHALLOW       1
-    GIT_PROGRESS      TRUE
-    FIND_PACKAGE_ARGS
-)
-set(ASSIMP_BUILD_TESTS                    OFF)
-set(ASSIMP_INSTALL                        OFF)
-set(ASSIMP_NO_EXPORT                      ON)
-set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF)
-set(ASSIMP_BUILD_OBJ_IMPORTER             ON)
-set(ASSIMP_BUILD_FBX_IMPORTER             ON)
-set(ASSIMP_BUILD_GLTF_IMPORTER            ON)
-set(CMAKE_POLICY_DEFAULT_CMP0175 OLD)
-FetchContent_MakeAvailable(assimp)
-unset(CMAKE_POLICY_DEFAULT_CMP0175)
-if (assimp_SOURCE_DIR)
-    if(TARGET zlibstatic OR TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
-        set_target_properties(assimp PROPERTIES FOLDER "dependencies/assimp")
-        if(TARGET zlibstatic)
-            set_target_properties(zlibstatic PROPERTIES FOLDER "dependencies/assimp")
+if (NOT SCOP_MANDATORY)
+    FetchContent_Declare(assimp
+        GIT_REPOSITORY    https://github.com/assimp/assimp.git
+        GIT_TAG           v5.4.1
+        GIT_SHALLOW       1
+        GIT_PROGRESS      TRUE
+        FIND_PACKAGE_ARGS
+    )
+    set(ASSIMP_BUILD_TESTS                    OFF)
+    set(ASSIMP_INSTALL                        OFF)
+    set(ASSIMP_NO_EXPORT                      ON)
+    set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF)
+    set(ASSIMP_BUILD_OBJ_IMPORTER             ON)
+    set(ASSIMP_BUILD_FBX_IMPORTER             ON)
+    set(ASSIMP_BUILD_GLTF_IMPORTER            ON)
+    set(CMAKE_POLICY_DEFAULT_CMP0175 OLD)
+    FetchContent_MakeAvailable(assimp)
+    unset(CMAKE_POLICY_DEFAULT_CMP0175)
+    if (assimp_SOURCE_DIR)
+        if(TARGET zlibstatic OR TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
+            set_target_properties(assimp PROPERTIES FOLDER "dependencies/assimp")
+            if(TARGET zlibstatic)
+                set_target_properties(zlibstatic PROPERTIES FOLDER "dependencies/assimp")
+            endif()
+            if(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
+                set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "dependencies/assimp")
+            endif()
+        else()
+            set_target_properties(assimp PROPERTIES FOLDER "dependencies")
         endif()
-        if(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs)
-            set_target_properties(UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTIES FOLDER "dependencies/assimp")
-        endif()
-    else()
-        set_target_properties(assimp PROPERTIES FOLDER "dependencies")
     endif()
 endif()
 
@@ -143,6 +151,10 @@ target_sources(scop PRIVATE ${EXE_SRCS})
 if (WIN32)
     target_sources(scop PRIVATE scop.def)
 endif()
+if (SCOP_MANDATORY)
+    file(GLOB EXE_SRCS "math/*.cpp" "math/*.hpp" "ObjParser/*.cpp" "ObjParser/*.hpp")
+    target_sources(scop PRIVATE ${EXE_SRCS})
+endif()
 
 target_include_directories(scop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -151,6 +163,14 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
     target_compile_definitions(scop PRIVATE "__XCODE__")
 endif()
 target_compile_definitions(scop PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
+if(SCOP_MANDATORY)
+    target_compile_definitions(scop PRIVATE "SCOP_MANDATORY")
+endif()
+target_compile_definitions(scop PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(scop PRIVATE Graphics glm::glm imgui stb_image assimp::assimp)
-add_dependencies(scop flat_color_shader textured_shader)
+if (SCOP_MANDATORY)
+    target_link_libraries(scop PRIVATE Graphics glfw stb_image)
+else()
+    target_link_libraries(scop PRIVATE Graphics glm::glm imgui stb_image assimp::assimp)
+endif()
+add_dependencies(scop flat_color_shader textured_shader scop_shader)

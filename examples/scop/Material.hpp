@@ -12,6 +12,7 @@
 
 #include "shaders/flat_color.slang"
 #include "shaders/textured.slang"
+#include "shaders/scop.slang"
 
 #include <Graphics/Sampler.hpp>
 #include <Graphics/Texture.hpp>
@@ -20,9 +21,17 @@
 #include <Graphics/ParameterBlockPool.hpp>
 #include <Graphics/Device.hpp>
 
-#include <memory>
-
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
+#else
+#include "math/math.hpp"
+#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+#define SCOP_MATH_GLM_ALIAS_DEFINED
+namespace glm = scop::math;
+#endif
+#endif
+
+#include <memory>
 
 namespace scop
 {
@@ -148,6 +157,52 @@ private:
 public:
     TexturedMaterial& operator=(const TexturedMaterial&) = delete;
     TexturedMaterial& operator=(TexturedMaterial&&) = delete;
+};
+
+class ScopMaterial : public Material
+{
+public:
+    ScopMaterial() = delete;
+    ScopMaterial(const ScopMaterial&) = delete;
+    ScopMaterial(ScopMaterial&&) = delete;
+
+    ScopMaterial(const gfx::Device&);
+
+    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
+
+    void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
+    inline std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
+
+    inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
+    inline void setSampler(const std::shared_ptr<gfx::Sampler>& s) { m_sampler = s; }
+
+    inline const std::shared_ptr<gfx::Texture>& diffuseTexture() const { return m_diffuseTexture; }
+    inline void setDiffuseTexture(const std::shared_ptr<gfx::Texture>& t) { m_diffuseTexture = t; }
+
+    inline float textureStrength() const { return m_materialData->content<shader::scop::MaterialData>()->textureStrength; }
+    inline void setTextureStrength(float s) { m_materialData->content<shader::scop::MaterialData>()->textureStrength = s; }
+
+    glm::vec4 paletteColor(int i) const;
+    void setPaletteColor(int i, const glm::vec4& c);
+
+    ~ScopMaterial() override = default;
+
+private:
+    inline static std::weak_ptr<gfx::ParameterBlockLayout> s_parameterBlockLayout;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_parameterBlockLayout;
+
+    inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+
+    std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
+
+    std::shared_ptr<gfx::Sampler> m_sampler;
+    std::shared_ptr<gfx::Texture> m_diffuseTexture;
+    std::shared_ptr<gfx::Buffer> m_materialData;
+
+public:
+    ScopMaterial& operator=(const ScopMaterial&) = delete;
+    ScopMaterial& operator=(ScopMaterial&&) = delete;
 };
 
 } // namespace scop

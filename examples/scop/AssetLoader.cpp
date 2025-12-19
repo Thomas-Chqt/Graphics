@@ -11,32 +11,38 @@
 #include "Mesh.hpp"
 #include "Material.hpp"
 
-#include "shaders/Vertex.slang"
-
 #include <Graphics/Device.hpp>
 #include <Graphics/CommandBuffer.hpp>
 #include <Graphics/Texture.hpp>
 #include <Graphics/Buffer.hpp>
 
+#if !defined (SCOP_MANDATORY)
 #include <glm/glm.hpp>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <assimp/types.h>
 #include <glm/ext/matrix_transform.hpp>
-#include <mutex>
+#else
+#include "math/math.hpp"
+#include "ObjParser/ObjParser.hpp"
+#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+#define SCOP_MATH_GLM_ALIAS_DEFINED
+namespace glm = scop::math;
+#endif
+#endif
 #include <stb_image/stb_image.h>
 
 #include <algorithm>
-#include <bit>
+#include <bit> // IWYU pragma: keep
 #include <print>
-#include <format>
-#include <functional>
-#include <span>
+#include <format> // IWYU pragma: keep
+#include <functional> // IWYU pragma: keep
+#include <span> // IWYU pragma: keep
 #include <array>
 #include <cstdint>
 #include <map>
-#include <ranges>
+#include <ranges> // IWYU pragma: keep
 #include <cstring>
 #include <filesystem>
 #include <cassert>
@@ -45,7 +51,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <mutex>
 
+#if !defined (SCOP_MANDATORY)
 template<>
 struct std::formatter<aiMaterial*> {
     constexpr auto parse(std::format_parse_context& ctx) {
@@ -256,41 +264,42 @@ struct std::formatter<aiMaterial*> {
         return std::format_to(ctx.out(), "{}", result);
     }
 };
+#endif
 
 namespace scop
 {
 
-constexpr std::array<shader::Vertex, 24> cube_vertices = {
+constexpr std::array<Vertex, 24> cube_vertices = {
     // Front face (+Z)
-    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0,  1} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0,  1} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0,  1} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0,  1} },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0,  1} },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0,  1} },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0,  1} },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0,  1} },
     // Back face (-Z)
-    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0, -1} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0, -1} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0, -1} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0, -1} },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  0, -1} },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  0, -1} },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  0, -1} },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  0, -1} },
     // Left face (-X)
-    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={-1,  0,  0} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={-1,  0,  0} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={-1,  0,  0} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={-1,  0,  0} },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={-1,  0,  0} },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={-1,  0,  0} },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={-1,  0,  0} },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={-1,  0,  0} },
     // Right face (+X)
-    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 1,  0,  0} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 1,  0,  0} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 1,  0,  0} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 1,  0,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 1,  0,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 1,  0,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 1,  0,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 1,  0,  0} },
     // Top face (+Y)
-    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  1,  0} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  1,  0} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  1,  0} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  1,  0} },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f,  0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0,  1,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f,  0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0,  1,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f,  0.5f, -0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0,  1,  0} },
+    Vertex{ .pos=glm::vec3(-0.5f,  0.5f, -0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0,  1,  0} },
     // Bottom face (-Y)
-    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0, -1,  0} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0, -1,  0} },
-    shader::Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0, -1,  0} },
-    shader::Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0, -1,  0} }
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f, -0.5f), .uv=glm::vec2(0.0f, 1.0f), .normal={ 0, -1,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f, -0.5f), .uv=glm::vec2(1.0f, 1.0f), .normal={ 0, -1,  0} },
+    Vertex{ .pos=glm::vec3( 0.5f, -0.5f,  0.5f), .uv=glm::vec2(1.0f, 0.0f), .normal={ 0, -1,  0} },
+    Vertex{ .pos=glm::vec3(-0.5f, -0.5f,  0.5f), .uv=glm::vec2(0.0f, 0.0f), .normal={ 0, -1,  0} }
 };
 
 constexpr std::array<uint32_t, 36> cube_indices = {
@@ -308,6 +317,7 @@ constexpr std::array<uint32_t, 36> cube_indices = {
    20,21,22,20,22,23
 };
 
+#if !defined (SCOP_MANDATORY)
 constexpr unsigned int POST_PROCESSING_FLAGS = aiProcess_CalcTangentSpace      |
                                                aiProcess_JoinIdenticalVertices |
                                                aiProcess_Triangulate           |
@@ -327,6 +337,7 @@ namespace
         return to;
     }
 }
+#endif
 
 AssetLoader::AssetLoader(gfx::Device* device)
     : m_device(device)
@@ -343,6 +354,8 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
     commandBuffer->beginBlitPass();
     auto mesh = Mesh{
         .name = "cube_mesh",
+        .bBoxMin = {-0.5, -0.5, -0.5},
+        .bBoxMax = { 0.5,  0.5,  0.5},
         .subMeshes = {
             SubMesh{
                 .name = "cube_submesh",
@@ -358,7 +371,8 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
     return mesh;
 }
 
-Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
+#if !defined (SCOP_MANDATORY)
+Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std::shared_ptr<Material>> overrideMaterial)
 {
     assert(std::filesystem::is_regular_file(path));
 
@@ -371,15 +385,18 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
     std::unique_ptr<gfx::CommandBufferPool> commandBufferPool = m_device->newCommandBufferPool();
     assert(commandBufferPool);
 
-    std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130 });
-    assert(parameterBlockPool);
-
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
     commandBuffer->beginBlitPass();
 
-    std::map<std::string, std::shared_ptr<gfx::Texture>> textureCache;
+    std::vector<std::shared_ptr<Material>> materials;
+    if (overrideMaterial.has_value()) {
+        materials.assign(scene->mNumMaterials, *overrideMaterial);
+    } else {
+        std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130 });
+        assert(parameterBlockPool);
 
-    auto materials = std::span(scene->mMaterials, scene->mNumMaterials) | std::views::transform([&](aiMaterial* aiMaterial) -> std::shared_ptr<Material> {
+        std::map<std::string, std::shared_ptr<gfx::Texture>> textureCache;
+
         auto loadTextureFromPath = [&](const aiString& texPath) -> std::shared_ptr<gfx::Texture> {
             auto it = textureCache.find(std::string(texPath.C_Str()));
             if (it != textureCache.end())
@@ -392,60 +409,61 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
                 texture = loadEmbeddedTexture(aiTex, *commandBuffer);
             } else {
                 std::filesystem::path texFilePath = path.parent_path() / texPath.C_Str();
-                auto texture = loadTexture(texFilePath, *commandBuffer);
+                texture = loadTexture(texFilePath, *commandBuffer);
             }
             textureCache[std::string(texPath.C_Str())] = texture;
             return texture;
         };
 
-        auto material = std::make_shared<scop::TexturedMaterial>(*m_device);
+        materials = std::span(scene->mMaterials, scene->mNumMaterials) | std::views::transform([&](aiMaterial* aiMaterial) -> std::shared_ptr<Material> {
+            auto material = std::make_shared<scop::TexturedMaterial>(*m_device);
 
-        aiColor4D diffuseColor{};
-        if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor) == AI_SUCCESS)
-            material->setDiffuseColor(glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, 1.0f));
+            aiColor4D diffuseColor{};
+            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor) == AI_SUCCESS)
+                material->setDiffuseColor(glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, 1.0f));
 
-        aiString diffuseTexturePath;
-        if (aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE, 0, &diffuseTexturePath) == AI_SUCCESS)
-            material->setDiffuseTexture(loadTextureFromPath(diffuseTexturePath));
-        else
-            material->setDiffuseTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+            aiString diffuseTexturePath;
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE, 0, &diffuseTexturePath) == AI_SUCCESS)
+                material->setDiffuseTexture(loadTextureFromPath(diffuseTexturePath));
+            else
+                material->setDiffuseTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
 
-        aiColor4D specularColor{};
-        if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_SPECULAR, &specularColor) == AI_SUCCESS)
-            material->setSpecularColor(glm::vec3(specularColor.r, specularColor.g, specularColor.b));
+            aiColor4D specularColor{};
+            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_SPECULAR, &specularColor) == AI_SUCCESS)
+                material->setSpecularColor(glm::vec3(specularColor.r, specularColor.g, specularColor.b));
 
-        float shininess{};
-        if (aiGetMaterialFloat(aiMaterial, AI_MATKEY_SHININESS, &shininess) == AI_SUCCESS)
-            material->setShininess(std::clamp(shininess, 1.0f, 1024.0f));
+            float shininess{};
+            if (aiGetMaterialFloat(aiMaterial, AI_MATKEY_SHININESS, &shininess) == AI_SUCCESS)
+                material->setShininess(std::clamp(shininess, 1.0f, 1024.0f));
 
-        aiColor4D emissiveColor{};
-        if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_EMISSIVE, &emissiveColor) == AI_SUCCESS)
-            material->setEmissiveColor(glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b));
+            aiColor4D emissiveColor{};
+            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_EMISSIVE, &emissiveColor) == AI_SUCCESS)
+                material->setEmissiveColor(glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b));
 
-        aiString emissiveTexturePath;
-        if (aiGetMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, 0, &emissiveTexturePath) == AI_SUCCESS)
-            material->setEmissiveTexture(loadTextureFromPath(emissiveTexturePath));
-        else
-            material->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+            aiString emissiveTexturePath;
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, 0, &emissiveTexturePath) == AI_SUCCESS)
+                material->setEmissiveTexture(loadTextureFromPath(emissiveTexturePath));
+            else
+                material->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
 
-        aiString normalTexturePath;
-        if (aiGetMaterialTexture(aiMaterial, aiTextureType_NORMALS, 0, &normalTexturePath) == AI_SUCCESS)
-            material->setNormalTexture(loadTextureFromPath(normalTexturePath));
-        else
-            material->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f), *commandBuffer)); // Neutral normal: (128, 128, 255) = (0, 0, 1) in tangent space
+            aiString normalTexturePath;
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType_NORMALS, 0, &normalTexturePath) == AI_SUCCESS)
+                material->setNormalTexture(loadTextureFromPath(normalTexturePath));
+            else
+                material->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f), *commandBuffer)); // Neutral normal: (128, 128, 255) = (0, 0, 1) in tangent space
 
-        material->makeParameterBlock(*parameterBlockPool);
+            material->makeParameterBlock(*parameterBlockPool);
 
-        return material;
-    }) | std::ranges::to<std::vector>();
-
+            return material;
+        }) | std::ranges::to<std::vector>();
+    }
 
     auto flatSubMeshes = std::span(scene->mMeshes, scene->mNumMeshes) | std::views::transform([&](aiMesh* aiMesh) -> SubMesh{
         return SubMesh{
             .name = aiMesh->mName.C_Str(),
             .transform = glm::mat4x4(1.0f),
-            .vertexBuffer = newVertexBuffer(std::views::iota(0u, aiMesh->mNumVertices) | std::views::transform([aiMesh](uint32_t i) -> shader::Vertex{
-                return shader::Vertex{
+            .vertexBuffer = newVertexBuffer(std::views::iota(0u, aiMesh->mNumVertices) | std::views::transform([aiMesh](uint32_t i) -> Vertex{
+                return Vertex{
                     .pos = glm::vec3(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z),
                     .uv = aiMesh->mTextureCoords[0] != nullptr ? glm::vec2(aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y) : glm::vec2(0.0f),
                     .normal = aiMesh->mNormals != nullptr ? glm::vec3(aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z) : glm::vec3(0.0f),
@@ -507,9 +525,91 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path)
 
     return mesh;
 }
+#else
+Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std::shared_ptr<Material>> overrideMaterial)
+{
+    assert(std::filesystem::is_regular_file(path));
+
+    ObjMesh meshData;
+    try
+    {
+        meshData = parseObjFile(path);
+    }
+    catch (...)
+    {
+        throw std::runtime_error("unable to parse the model file");
+    }
+    auto& positions = meshData.positions;
+    const auto& indices = meshData.indices;
+    const auto& normals = meshData.normals;
+
+    if (positions.size() == 0)
+        throw std::runtime_error("unable to parse the model file");
+    if (normals && normals->size() != positions.size())
+        throw std::runtime_error("unable to parse the model file");
+
+    auto [minXIt, maxXIt] = std::ranges::minmax_element(positions, {}, &glm::vec3::x);
+    auto [minYIt, maxYIt] = std::ranges::minmax_element(positions, {}, &glm::vec3::y);
+    auto [minZIt, maxZIt] = std::ranges::minmax_element(positions, {}, &glm::vec3::z);
+
+    glm::vec3 bBoxMin{ minXIt->x, minYIt->y, minZIt->z };
+    glm::vec3 bBoxMax{ maxXIt->x, maxYIt->y, maxZIt->z };
+
+    const glm::vec3 center = (bBoxMin + bBoxMax) * 0.5f;
+    bBoxMin -= center;
+    bBoxMax -= center;
+
+    for (auto& pos : positions)
+        pos -= center;
+
+    std::unique_ptr<gfx::CommandBufferPool> commandBufferPool = m_device->newCommandBufferPool();
+    assert(commandBufferPool);
+
+    std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
+    commandBuffer->beginBlitPass();
+
+    std::shared_ptr<Material> material;
+    if (overrideMaterial.has_value()) {
+        material = *overrideMaterial;
+    } else {
+        std::shared_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 1, .maxTextures = 0, .maxSamplers = 0 });
+        assert(parameterBlockPool);
+        material = std::make_shared<FlatColorMaterial>(*m_device);
+        material->makeParameterBlock(*parameterBlockPool);
+    }
+
+    Mesh mesh = {
+        .name = path.stem().string(),
+        .bBoxMin = bBoxMin,
+        .bBoxMax = bBoxMax,
+        .subMeshes = {
+            SubMesh{
+                .name = path.stem().string(),
+                .transform = glm::mat4x4(1.0f),
+                .vertexBuffer = newVertexBuffer(std::views::iota(0u, positions.size())
+                    | std::views::transform([&](uint32_t i) -> Vertex {
+                        return Vertex{
+                            .pos = positions[i],
+                            .normal = normals ? (*normals)[i] : glm::vec3(0.0f)
+                        };
+                    })
+                    | std::ranges::to<std::vector>(), *commandBuffer),
+                .indexBuffer = newIndexBuffer(indices, *commandBuffer),
+                .material = material,
+            }
+        }
+    };
+
+    commandBuffer->endBlitPass();
+    m_device->submitCommandBuffers(commandBuffer);
+
+    return mesh;
+}
+#endif
 
 using UniqueStbiUc = std::unique_ptr<stbi_uc, decltype(&stbi_image_free)>;
 
+#if !defined (SCOP_MANDATORY)
 std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* aiTex, gfx::CommandBuffer& commandBuffer)
 {
     int width = 0;
@@ -557,6 +657,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
 
     return texture;
 }
+#endif
 
 std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::path& path, gfx::CommandBuffer& commandBuffer)
 {
@@ -670,10 +771,10 @@ std::shared_ptr<gfx::Texture> AssetLoader::getSolidColorTexture(const glm::vec4&
     assert(stagingBuffer);
 
     auto* pixelData = stagingBuffer->content<uint8_t>();
-    pixelData[0] = static_cast<uint8_t>(color.r * 255.0f);
-    pixelData[1] = static_cast<uint8_t>(color.g * 255.0f);
-    pixelData[2] = static_cast<uint8_t>(color.b * 255.0f);
-    pixelData[3] = static_cast<uint8_t>(color.a * 255.0f);
+    pixelData[0] = static_cast<uint8_t>(color.x * 255.0f);
+    pixelData[1] = static_cast<uint8_t>(color.y * 255.0f);
+    pixelData[2] = static_cast<uint8_t>(color.z * 255.0f);
+    pixelData[3] = static_cast<uint8_t>(color.w * 255.0f);
 
     commandBuffer.copyBufferToTexture(stagingBuffer, texture);
 

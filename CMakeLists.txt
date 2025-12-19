@@ -28,6 +28,10 @@ option(GFX_ENABLE_GLFW    "Build with glfw capabilities"        OFF)
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
 
+if(GFX_BUILD_EXAMPLES)
+    set(GFX_EXAMPLES_TO_BUILD "triangle;multiBuffer;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
+endif()
+
 if (GFX_USE_UTILSCPP OR GFX_USE_MATH)
     message(FATAL_ERROR "Not yet implemented")
 endif()

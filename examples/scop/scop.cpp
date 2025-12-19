@@ -7,6 +7,8 @@
  * ---------------------------------------------------
  */
 
+#include "Material.hpp"
+#include "Mesh.hpp"
 #include "Renderer.hpp"
 #include "AssetLoader.hpp"
 #include "Entity/Entity.hpp"
@@ -20,28 +22,42 @@
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
-#include <future>
 
-#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <imgui.h>
-#include <glm/glm.hpp>
+#include <stdexcept>
+#include <string>
+#if !defined(SCOP_MANDATORY)
+    #include <imgui.h>
+    #include <glm/glm.hpp>
+#else
+    #include "math/math.hpp"
+    #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+    #define SCOP_MATH_GLM_ALIAS_DEFINED
+    namespace glm = scop::math;
+    #endif
+#endif
 
 #include <cassert>
+#include <algorithm> // IWYU pragma: keep
+#include <filesystem>
 #include <memory>
-#include <numbers>
+#include <numbers> // IWYU pragma: keep
 #include <print>
 #include <cstdio>
 #include <exception>
 #include <numbers>
-#include <bit>
+#include <bit> // IWYU pragma: keep
 #include <set>
 #include <vector>
+#include <future> // IWYU pragma: keep
+#include <optional>
+#include <string_view>
 
 #if __XCODE__
     #include <unistd.h>
 #endif
 
+#if !defined (SCOP_MANDATORY)
 #if (defined(__GNUC__) || defined(__clang__))
     #define SCOP_EXPORT __attribute__((visibility("default")))
 #elif defined(_MSC_VER)
@@ -61,11 +77,18 @@ extern "C"
     SCOP_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
     SCOP_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
 }
+#endif
 
 constexpr uint32_t WINDOW_WIDTH = 800;
 constexpr uint32_t WINDOW_HEIGHT = 600;
 
-int main()
+#if defined (SCOP_MANDATORY)
+constexpr double TEXTURE_TRANSITION_DURATION = 0.5;
+#endif
+
+namespace fs = std::filesystem;
+
+int main(int argc, char** argv)
 {
     try
     {
@@ -114,43 +137,67 @@ int main()
         scop::Renderer renderer(device.get(), window, surface.get());
         scop::AssetLoader assetLoader(device.get());
 
-        std::vector<std::shared_ptr<scop::Entity>> entities;
+#if defined (SCOP_MANDATORY)
+        std::shared_ptr<scop::Camera> camera = std::make_shared<scop::FixedCamera>();
+#else
+        std::shared_ptr<scop::Camera> camera = std::make_shared<scop::FlightCamera>();
+#endif
 
-        auto camera = std::make_shared<scop::FlightCamera>();
-        camera->setName("Camera");
-        entities.push_back(camera);
+#if defined (SCOP_MANDATORY)
+        auto parameterBlockPool = device->newParameterBlockPool(gfx::ParameterBlockPool::Descriptor{ .maxUniformBuffers=1, .maxTextures=0, .maxSamplers=0 });
+        auto commandBufferPool = device->newCommandBufferPool();
+        auto scopMaterial = std::make_shared<scop::ScopMaterial>(*device);
+        auto commandBuffer = commandBufferPool->get();
+        commandBuffer->beginBlitPass();
+        scopMaterial->setDiffuseTexture(assetLoader.loadTexture(RESOURCE_DIR"/kittens.png", *commandBuffer));
+        commandBuffer->endBlitPass();
+        device->submitCommandBuffers(commandBuffer);
+        scopMaterial->makeParameterBlock(*parameterBlockPool);
+#endif
+
+        std::vector<std::shared_ptr<scop::Entity>> entities;
 
         auto light = std::make_shared<scop::PointLight>();
         light->setName("Point Light");
         light->setColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.8f);
         entities.push_back(light);
 
-        //auto afterTheRain = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/after_the_rain.glb"));
-        //afterTheRain->setName("after_the_rain");
-        //afterTheRain->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        //entities.push_back(afterTheRain);
+        fs::path meshPath;
+        if (argc >= 2 && argv[1] != nullptr && std::string_view(argv[1]).empty() == false)
+        {
+            if (fs::exists(argv[1]))
+                meshPath = argv[1];
+            else if (fs::exists(fs::path(RESOURCE_DIR) / argv[1]))
+                meshPath = fs::path(RESOURCE_DIR) / argv[1];
+        }
+        else {
+#if defined (SCOP_MANDATORY)
+            throw std::invalid_argument("please provide a 3D file (ex: 42.obj)");
+#else
+            throw std::invalid_argument("please provide a 3D file (ex: bistro.glb)");
+#endif
+        }
 
-        //auto neighbourhood_city = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/neighbourhood_city.glb"));
-        //neighbourhood_city->setName("neighbourhood_city");
-        //neighbourhood_city->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        //entities.push_back(neighbourhood_city);
-
-        //auto sponza = std::make_shared<scop::RenderableEntity>(assetLoader.loadMesh(RESOURCE_DIR"/sponza.glb"));
-        //sponza->setName("sponza");
-        //sponza->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        //entities.push_back(sponza);
-
-        auto bistro = std::make_shared<scop::RenderableEntity>(std::async([&assetLoader](){
-            return assetLoader.loadMesh(RESOURCE_DIR"/bistro.glb");
+#if defined (SCOP_MANDATORY)
+        auto object = std::make_shared<scop::RenderableEntity>(std::async(std::launch::async, [&assetLoader, scopMaterial, meshPath]() {
+            return assetLoader.loadMesh(meshPath, scopMaterial);
         }));
-        bistro->setName("bistro");
-        bistro->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        entities.push_back(bistro);
-
-        glm::vec3 ambientLightColor = glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f;
-        scop::Entity* selectedEntity = nullptr;
-
-        double lastFrameTime = glfwGetTime();
+#else
+        auto object = std::make_shared<scop::RenderableEntity>(std::async(std::launch::async, [&assetLoader, meshPath]() {
+            return assetLoader.loadMesh(meshPath);
+        }));
+#endif
+        object->setName("mesh");
+        object->setPosition(glm::vec3{0, 0, -3});
+        if (meshPath.filename() == "bistro.glb")
+            object->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        if (meshPath.filename() == "after_the_rain.glb")
+            object->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        if (meshPath.filename() == "neighbourhood_city.glb")
+            object->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        if (meshPath.filename() == "sponza.glb")
+            object->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
+        entities.push_back(object);
 
         while (true)
         {
@@ -158,34 +205,66 @@ int main()
             if (glfwWindowShouldClose(window))
                 break;
 
+            static double lastFrameTime = glfwGetTime();
             double currentFrameTime = glfwGetTime();
             double deltaTime = currentFrameTime - lastFrameTime;
             lastFrameTime = currentFrameTime;
 
-            glm::vec3 rotationInput = glm::vec3{
-                (pressedKeys.contains(GLFW_KEY_UP)   ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_DOWN)  ? 1.0f : 0.0f),
-                (pressedKeys.contains(GLFW_KEY_LEFT) ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_RIGHT) ? 1.0f : 0.0f),
-                0
-            };
-            if (glm::length(rotationInput) > 0.0f)
-                camera->setRotation(camera->rotation() + glm::normalize(rotationInput) * (float)deltaTime * 2.0f);
+            camera->update(pressedKeys, deltaTime);
 
-            auto rotationMat = glm::mat4x4(1.0f);
-            rotationMat = glm::rotate(rotationMat, camera->rotation().y, glm::vec3(0, 1, 0));
-            rotationMat = glm::rotate(rotationMat, camera->rotation().x, glm::vec3(1, 0, 0));
+#if defined (SCOP_MANDATORY)
+            static bool objectScaled = false;
+            if (object->mesh().has_value() && objectScaled == false)
+            {
+                const scop::Mesh& mesh = *object->mesh();
+                const glm::vec3 size = mesh.bBoxMax - mesh.bBoxMin;
+                const float longestSide = std::max({size.x, size.y, size.z});
+                if (longestSide > std::numeric_limits<float>::epsilon())
+                    object->setScale((1.0f / longestSide) * 2.0f);
+                objectScaled = true;
+            }
 
-            glm::vec3 movementInput = glm::vec3{
-                (pressedKeys.contains(GLFW_KEY_D) ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_A) ? 1.0f : 0.0f),
-                0,
-                (pressedKeys.contains(GLFW_KEY_S) ? 1.0f : 0.0f) - (pressedKeys.contains(GLFW_KEY_W) ? 1.0f : 0.0f)
-            };
-            if (glm::length(movementInput) > 0.0f)
-                camera->setPosition(camera->position() + glm::vec3(rotationMat * glm::vec4(glm::normalize(movementInput), 0)) * (float)deltaTime * 4.0f);
+            object->setRotation(object->rotation() + glm::vec3(0.0f, 1.0f, 0.0f) * float(deltaTime) * 0.75f);
 
-            light->setPosition(camera->position());
+            static float textureStrengthStart = scopMaterial->textureStrength();
+            static float textureStrengthTarget = scopMaterial->textureStrength();
+            static double textureTransitionElapsed = TEXTURE_TRANSITION_DURATION;
 
-            renderer.beginFrame(camera->viewMatrix());
+            static bool spacePressed = false;
+            if (pressedKeys.contains(GLFW_KEY_SPACE)) {
+                if (spacePressed == false) {
+                    static bool textureEnabled = scopMaterial->textureStrength() >= 0.5f;
+                    textureEnabled = !textureEnabled;
+                    textureStrengthStart = scopMaterial->textureStrength();
+                    textureStrengthTarget = textureEnabled ? 1.0f : 0.0f;
+                    textureTransitionElapsed = 0.0;
+                }
+                spacePressed = true;
+            }
+            else {
+                spacePressed = false;
+            }
 
+            if (textureTransitionElapsed < TEXTURE_TRANSITION_DURATION)
+            {
+                textureTransitionElapsed += deltaTime;
+                const float t = static_cast<float>(std::clamp(textureTransitionElapsed / TEXTURE_TRANSITION_DURATION, 0.0, 1.0));
+                scopMaterial->setTextureStrength(textureStrengthStart + (textureStrengthTarget - textureStrengthStart) * t);
+            }
+            else if (scopMaterial->textureStrength() != textureStrengthTarget)
+            {
+                scopMaterial->setTextureStrength(textureStrengthTarget);
+            }
+#else
+            static scop::Light* lightAttachedToCamera = nullptr;
+            if (lightAttachedToCamera != nullptr)
+                lightAttachedToCamera->setPosition(camera->position());
+#endif
+
+            renderer.beginFrame(camera->viewMatrix(), camera->fov(), camera->nearPlane(), camera->farPlane());
+
+#if !defined (SCOP_MANDATORY)
+            static scop::Entity* selectedEntity = nullptr;
             ImGui::Begin("entities");
             {
                 for (auto& entity : entities) {
@@ -212,6 +291,31 @@ int main()
                         float scale = renderableEntity->scale();
                         ImGui::DragFloat("scale", std::bit_cast<float*>(&scale), 0.01f, 0.01f, 10);
                         renderableEntity->setScale(scale);
+                        if (renderableEntity->mesh().has_value())
+                        {
+                            std::function<void(const scop::SubMesh& mesh)> bfs = [&](const scop::SubMesh& mesh){
+                                if (std::shared_ptr<scop::ScopMaterial> scopMaterial = std::dynamic_pointer_cast<scop::ScopMaterial>(mesh.material)) {
+                                    ImGui::PushID(&mesh);
+                                    for (int i = 0; i < 6; i++) {
+                                        ImGui::PushID(i);
+                                        glm::vec4 color = scopMaterial->paletteColor(i);
+                                        ImGui::ColorEdit4("##colorPalette", std::bit_cast<float*>(&color), ImGuiColorEditFlags_NoInputs);
+                                        if (i != 5)
+                                            ImGui::SameLine();
+                                        scopMaterial->setPaletteColor(i, color);
+                                        ImGui::PopID();
+                                    }
+                                    float textureStrength = scopMaterial->textureStrength();
+                                    ImGui::SliderFloat("texture strength", &textureStrength, 0, 1);
+                                    scopMaterial->setTextureStrength(textureStrength);
+                                    ImGui::PopID();
+                                }
+                                for (const auto& subMesh : mesh.subMeshes)
+                                    bfs(subMesh);
+                            };
+                            for (const auto& subMesh : renderableEntity->mesh()->subMeshes)
+                                bfs(subMesh);
+                        }
                     }
 
                     if (auto* light = dynamic_cast<scop::Light*>(selectedEntity))
@@ -219,6 +323,12 @@ int main()
                         glm::vec3 lightColor = light->color();
                         ImGui::ColorEdit3("light color", std::bit_cast<float*>(&lightColor));
                         light->setColor(lightColor);
+                        bool attachedToCamera = lightAttachedToCamera == light;
+                        ImGui::Checkbox("attach to camera", &attachedToCamera);
+                        if(attachedToCamera)
+                            lightAttachedToCamera = light;
+                        else
+                            lightAttachedToCamera = nullptr;
                     }
                 }
                 else
@@ -227,8 +337,9 @@ int main()
                 }
             }
             ImGui::End();
+#endif
 
-            renderer.setAmbientLightColor(ambientLightColor);
+            renderer.setAmbientLightColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f);
 
             for (auto& entity : entities)
             {
