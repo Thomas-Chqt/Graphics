@@ -7,8 +7,6 @@
 
 cmake_minimum_required(VERSION 3.22)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 include(FetchContent)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
@@ -67,14 +65,21 @@ if (APPLE AND GFX_BUILD_METAL)
 endif()
 
 if (GFX_BUILD_VULKAN)
+    set(VULKAN_FIND_PACKAGE_ARGS 1.4.321.0)
+    if(APPLE)
+        list(APPEND VULKAN_FIND_PACKAGE_ARGS COMPONENTS MoltenVK)
+    endif()
     FetchContent_Declare(Vulkan
         GIT_REPOSITORY    https://github.com/KhronosGroup/Vulkan-Headers.git
         GIT_TAG           vulkan-sdk-1.4.321.0
         GIT_SHALLOW       1
         GIT_PROGRESS      TRUE
-        FIND_PACKAGE_ARGS
+        FIND_PACKAGE_ARGS ${VULKAN_FIND_PACKAGE_ARGS}
     )
     FetchContent_MakeAvailable(Vulkan)
+    if (NOT Vulkan_FOUND)
+        message(WARNING "Vulkan was not found. Only the build dependencies were fetched; the program may fail at runtime.")
+    endif()
 endif()
 
 if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
