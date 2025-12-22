@@ -51,7 +51,7 @@
 #include <string_view>
 #include <stdexcept>
 #include <string>
-#include <functional>
+#include <functional> // IWYU pragma: keep
 
 #if __XCODE__
     #include <unistd.h>
