@@ -15,8 +15,6 @@
 #include "Metal/MetalShaderFunction.hpp"
 
 #import "Metal/MetalEnums.h"
-#include <__ostream/print.h>
-#include <print>
 
 namespace gfx
 {
@@ -33,7 +31,7 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
     assert(desc.vertexShader != nullptr);
     assert(desc.fragmentShader != nullptr);
 
-    MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[[MTLRenderPipelineDescriptor alloc] init] autorelease];
+    MTLRenderPipelineDescriptor* renderPipelineDescriptor = [[MTLRenderPipelineDescriptor alloc] init];
     MTLDepthStencilDescriptor* depthStencilDescriptor = nil;
 
     if (auto& vertexLayout = desc.vertexLayout)
@@ -95,7 +93,7 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
     if (auto& depthPxFmt = desc.depthAttachmentPxFormat)
     {
         renderPipelineDescriptor.depthAttachmentPixelFormat = (MTLPixelFormat)toMTLPixelFormat(*depthPxFmt);
-        depthStencilDescriptor = [[[MTLDepthStencilDescriptor alloc] init] autorelease];
+        depthStencilDescriptor = [[MTLDepthStencilDescriptor alloc] init];
         depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;
         depthStencilDescriptor.depthWriteEnabled = YES;
     }
@@ -111,24 +109,17 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
         if (m_renderPipelineState == nil)
             throw std::runtime_error("failed to create DepthStencilState");
     }
-
-    m_cullMode = desc.cullMode;
 }}
 
-MetalGraphicsPipeline::~MetalGraphicsPipeline() { @autoreleasepool
+MetalGraphicsPipeline::~MetalGraphicsPipeline() // NOLINT(modernize-use-equals-default)
 {
-    if (m_depthStencilState)
-        [m_depthStencilState release];
-    [m_renderPipelineState release];
-}}
+    // force objective c destructor
+}
 
 MetalGraphicsPipeline& MetalGraphicsPipeline::operator=(MetalGraphicsPipeline&& other) noexcept
 {
     if (this != &other)
     {
-        if (m_depthStencilState)
-            [m_depthStencilState release];
-        [m_renderPipelineState release];
         m_renderPipelineState = std::exchange(other.m_renderPipelineState, nil);
         m_depthStencilState = std::exchange(other.m_depthStencilState, nil);
         m_cullMode = std::exchange(other.m_cullMode, CullMode::none);

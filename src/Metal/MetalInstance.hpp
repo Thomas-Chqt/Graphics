@@ -32,11 +32,7 @@ public:
 
     std::unique_ptr<Device> newDevice(const Device::Descriptor&) override;
 
-    ~MetalInstance() override;
-
-private:
-    NSAutoreleasePool* m_autoReleasePool;
-    std::vector<id<MTLDevice>> m_devices;
+    ~MetalInstance() override = default;
 
 public:
     MetalInstance& operator=(const MetalInstance&) = delete;

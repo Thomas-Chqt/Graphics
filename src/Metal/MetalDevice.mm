@@ -24,8 +24,10 @@
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
 #include "MetalParameterBlockLayout.hpp"
+#include <Metal/Metal.h>
+#include <objc/NSObjCRuntime.h>
 #if defined(GFX_IMGUI_ENABLED)
-# include "Metal/imgui_impl_metal.hpp"
+# include "Metal/imgui_impl_metal.h"
 #endif
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
@@ -35,10 +37,10 @@
 namespace gfx
 {
 
-MetalDevice::MetalDevice(id<MTLDevice>& device, const Device::Descriptor&) { @autoreleasepool
+MetalDevice::MetalDevice(id<MTLDevice> device, const Device::Descriptor&)
+    : m_mtlDevice(device) { @autoreleasepool
 {
-    m_mtlDevice = [device retain];
-    m_queue = [device newCommandQueue];
+    m_queue = [m_mtlDevice newCommandQueue];
 }}
 
 std::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -87,20 +89,26 @@ std::unique_ptr<Sampler> MetalDevice::newSampler(const Sampler::Descriptor& desc
 }
 
 #if defined (GFX_IMGUI_ENABLED)
-void MetalDevice::imguiInit(std::vector<PixelFormat> colorPixelFomats, std::optional<PixelFormat> depthPixelFormat) const
+void MetalDevice::imguiInit(std::vector<PixelFormat> colorPixelFomats, std::optional<PixelFormat> depthPixelFormat) const { @autoreleasepool
 {
-    ImGui_ImplMetal_Init(this, colorPixelFomats, depthPixelFormat);
-}
+    ImGui_ImplMetal_Init(
+        m_mtlDevice,
+        1,
+        toMTLPixelFormat(colorPixelFomats.front()),
+        depthPixelFormat.has_value() ? toMTLPixelFormat(*depthPixelFormat) : MTLPixelFormatInvalid,
+        MTLPixelFormatInvalid
+    );
+}}
 
-void MetalDevice::imguiNewFrame() const
+void MetalDevice::imguiNewFrame() const { @autoreleasepool
 {
     ImGui_ImplMetal_NewFrame();
-}
+}}
 
-void MetalDevice::imguiShutdown()
+void MetalDevice::imguiShutdown() { @autoreleasepool
 {
     ImGui_ImplMetal_Shutdown();
-}
+}}
 #endif
 
 void MetalDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
@@ -136,11 +144,9 @@ void MetalDevice::waitIdle()
         waitCommandBuffer(*m_submittedCommandBuffers.back());
 }
 
-MetalDevice::~MetalDevice() { @autoreleasepool
+MetalDevice::~MetalDevice()
 {
     waitIdle();
-    [m_queue release];
-    [m_mtlDevice release];
-}}
+}
 
 }

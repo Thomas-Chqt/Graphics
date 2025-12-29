@@ -49,11 +49,10 @@ void MetalBuffer::setContent(const void* data, size_t size) { @autoreleasepool
         [m_mtlBuffer didModifyRange:NSMakeRange(0, size)];
 }}
 
-MetalBuffer::~MetalBuffer() { @autoreleasepool
+MetalBuffer::~MetalBuffer() // NOLINT(modernize-use-equals-default)
 {
-    if (m_mtlBuffer != nil)
-        [m_mtlBuffer release];
-}}
+    // force objective c destructor
+}
 
 void* MetalBuffer::contentVoid() { @autoreleasepool
 {
@@ -61,19 +60,17 @@ void* MetalBuffer::contentVoid() { @autoreleasepool
     return mtlBuffer().contents;
 }}
 
-MetalBuffer& MetalBuffer::operator = (MetalBuffer&& other) noexcept { @autoreleasepool
+MetalBuffer& MetalBuffer::operator = (MetalBuffer&& other) noexcept
 {
     Buffer::operator=(std::move(other));
     if (this != &other)
     {
-        if (m_mtlBuffer != nil)
-            [m_mtlBuffer release];
         m_usages = std::exchange(other.m_usages, BufferUsage::uniformBuffer);
         m_storageMode = std::exchange(other.m_storageMode, ResourceStorageMode::hostVisible);
         m_mtlBuffer = std::exchange(other.m_mtlBuffer, nil);
     }
     return *this;
-}}
+}
 
 MetalBuffer::operator bool () const
 {

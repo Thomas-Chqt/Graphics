@@ -160,6 +160,7 @@ endif()
 
 if (GFX_BUILD_METAL)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_METAL")
+    target_compile_options(Graphics PRIVATE "-fobjc-arc")
 endif()
 
 if (GFX_BUILD_VULKAN)

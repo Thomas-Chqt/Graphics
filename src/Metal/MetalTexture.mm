@@ -19,15 +19,16 @@ namespace gfx
 {
 
 MetalTexture::MetalTexture(const id<MTLTexture>& mtltexture, const Texture::Descriptor& desc)
-    : m_usages(desc.usages), m_storageMode(desc.storageMode) { @autoreleasepool
+    : m_usages(desc.usages)
+    , m_storageMode(desc.storageMode)
+    , m_mtlTexture(mtltexture)
 {
-    m_mtlTexture = [mtltexture retain];
-}}
+}
 
 MetalTexture::MetalTexture(const MetalDevice& device, const Texture::Descriptor& desc)
     : m_usages(desc.usages), m_storageMode(desc.storageMode) { @autoreleasepool
 {
-    MTLTextureDescriptor* mtlTextureDescriptor = [[[MTLTextureDescriptor alloc] init] autorelease];
+    MTLTextureDescriptor* mtlTextureDescriptor = [[MTLTextureDescriptor alloc] init];
     mtlTextureDescriptor.textureType = toMTLTextureType(desc.type);
     mtlTextureDescriptor.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
     mtlTextureDescriptor.width = desc.width;
@@ -61,9 +62,9 @@ PixelFormat MetalTexture::pixelFormat() const { @autoreleasepool
     return toPixelFormat([mtltexture() pixelFormat]);
 }}
 
-MetalTexture::~MetalTexture() { @autoreleasepool
+MetalTexture::~MetalTexture() // NOLINT(modernize-use-equals-default)
 {
-    [m_mtlTexture release];
-}}
+    // force objective c destructor
+}
 
 }

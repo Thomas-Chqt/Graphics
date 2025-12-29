@@ -33,7 +33,7 @@ public:
     MetalDevice(const MetalDevice&) = delete;
     MetalDevice(MetalDevice&&) = delete;
 
-    MetalDevice(id<MTLDevice>&, const Device::Descriptor&);
+    MetalDevice(id<MTLDevice>, const Device::Descriptor&);
 
     inline Backend backend() const override { return Backend::metal; }
 
@@ -59,7 +59,7 @@ public:
     void waitCommandBuffer(const CommandBuffer&) override;
     void waitIdle() override;
 
-    inline const id<MTLDevice>& mtlDevice() const { return m_mtlDevice; }
+    inline id<MTLDevice> mtlDevice() const { return m_mtlDevice; }
 
     ~MetalDevice() override;
 

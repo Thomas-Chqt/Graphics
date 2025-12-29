@@ -65,8 +65,8 @@ public:
     void presentDrawable(const std::shared_ptr<Drawable>&) override;
 
 
-    inline const id<MTLCommandBuffer>& mtlCommandBuffer() const { return m_mtlCommandBuffer; }
-    inline const id<MTLCommandEncoder>& commandEncoder() const { return m_commandEncoder; }
+    inline id<MTLCommandBuffer> mtlCommandBuffer() const { return m_mtlCommandBuffer; }
+    inline id<MTLCommandEncoder> commandEncoder() const { return m_commandEncoder; }
 
     ~MetalCommandBuffer() override;
 

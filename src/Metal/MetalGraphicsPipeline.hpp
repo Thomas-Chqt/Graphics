@@ -26,8 +26,8 @@ public:
 
     MetalGraphicsPipeline(const MetalDevice&, const GraphicsPipeline::Descriptor&);
 
-    inline const id<MTLRenderPipelineState>& renderPipelineState() const { return m_renderPipelineState; }
-    inline const id<MTLDepthStencilState>& depthStencilState() const { return m_depthStencilState; }
+    inline id<MTLRenderPipelineState> renderPipelineState() const { return m_renderPipelineState; }
+    inline id<MTLDepthStencilState> depthStencilState() const { return m_depthStencilState; }
     inline CullMode cullMode() const { return m_cullMode; }
 
     ~MetalGraphicsPipeline() override;

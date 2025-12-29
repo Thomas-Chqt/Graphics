@@ -26,7 +26,7 @@ public:
 
     MetalSampler(const MetalDevice&, const Sampler::Descriptor&);
 
-    inline const id<MTLSamplerState>& mtlSamplerState() const { return m_mtlSamplerState; }
+    inline id<MTLSamplerState> mtlSamplerState() const { return m_mtlSamplerState; }
 
     ~MetalSampler() override;
 

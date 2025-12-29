@@ -37,7 +37,7 @@ public:
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
-    inline const id<MTLTexture>& mtltexture() const { return m_mtlTexture; }
+    inline id<MTLTexture> mtltexture() const { return m_mtlTexture; }
 
     ~MetalTexture() override;
 

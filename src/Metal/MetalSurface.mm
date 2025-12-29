@@ -17,7 +17,7 @@ namespace gfx
 #if defined(GFX_GLFW_ENABLED)
 MetalSurface::MetalSurface(GLFWwindow* glfwWindow) { @autoreleasepool
 {
-    m_mtlLayer = [[CAMetalLayer layer] retain];
+    m_mtlLayer = [CAMetalLayer layer];
 
     NSWindow* nswindow = glfwGetCocoaWindow(glfwWindow); // NOLINT
     nswindow.contentView.layer = m_mtlLayer;
@@ -40,9 +40,9 @@ const std::set<PresentMode> MetalSurface::supportedPresentModes(const Device&) c
     };
 }
 
-MetalSurface::~MetalSurface() { @autoreleasepool
+MetalSurface::~MetalSurface() // NOLINT(modernize-use-equals-default)
 {
-    [m_mtlLayer release];
-}}
+    // force objective c destructor
+}
 
 }

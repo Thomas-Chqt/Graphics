@@ -24,7 +24,7 @@ MetalSampler::MetalSampler(MetalSampler&& other) noexcept
 
 MetalSampler::MetalSampler(const MetalDevice& device, const Sampler::Descriptor& descriptor) { @autoreleasepool
 {
-    MTLSamplerDescriptor* mtlSamplerDescriptor = [[[MTLSamplerDescriptor alloc] init] autorelease];
+    MTLSamplerDescriptor* mtlSamplerDescriptor = [[MTLSamplerDescriptor alloc] init];
 
     mtlSamplerDescriptor.sAddressMode = toMTLSamplerAddressMode(descriptor.sAddressMode);
     mtlSamplerDescriptor.tAddressMode = toMTLSamplerAddressMode(descriptor.tAddressMode);
@@ -38,18 +38,15 @@ MetalSampler::MetalSampler(const MetalDevice& device, const Sampler::Descriptor&
         throw std::runtime_error("sampler state creation failed");
 }}
 
-MetalSampler::~MetalSampler()
+MetalSampler::~MetalSampler() // NOLINT(modernize-use-equals-default)
 {
-    if(m_mtlSamplerState != nil)
-        [m_mtlSamplerState release];
+    // force objective c destructor
 }
 
 MetalSampler& MetalSampler::operator=(MetalSampler&& other) noexcept
 {
     if (this != &other)
     {
-        if(m_mtlSamplerState != nil)
-            [m_mtlSamplerState release];
         m_mtlSamplerState = std::exchange(other.m_mtlSamplerState, nil);
     }
     return *this;

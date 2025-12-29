@@ -17,10 +17,10 @@
 namespace gfx
 {
 
-MetalDrawable::MetalDrawable(id<CAMetalDrawable> mtlDrawable) { @autoreleasepool
+MetalDrawable::MetalDrawable(id<CAMetalDrawable> mtlDrawable)
+    : m_mtlDrawable(mtlDrawable)
 {
-    m_mtlDrawable = [mtlDrawable retain];
-}}
+}
 
 std::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
 {
@@ -36,9 +36,9 @@ std::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
     return std::make_shared<MetalTexture>(m_mtlDrawable.texture, desc);
 }}
 
-MetalDrawable::~MetalDrawable()
+MetalDrawable::~MetalDrawable() // NOLINT(modernize-use-equals-default)
 {
-    [m_mtlDrawable release];
+    // force objective c destructor
 }
 
 }

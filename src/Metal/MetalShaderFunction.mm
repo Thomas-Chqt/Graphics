@@ -13,30 +13,30 @@
 namespace gfx
 {
 
-MetalShaderFunction::MetalShaderFunction(MetalShaderFunction&& other) noexcept { @autoreleasepool
+MetalShaderFunction::MetalShaderFunction(MetalShaderFunction&& other) noexcept
+    : m_mtlFunction(other.m_mtlFunction)
 {
-    m_mtlFunction = [other.m_mtlFunction retain];
-}}
+}
 
 MetalShaderFunction::MetalShaderFunction(const id<MTLLibrary>& mtlLibrary, const std::string& name) { @autoreleasepool
 {
-    NSString* functionNameNSString = [[[NSString alloc] initWithCString:name.c_str() encoding:NSUTF8StringEncoding] autorelease];
+    NSString* functionNameNSString = [[NSString alloc] initWithCString:name.c_str() encoding:NSUTF8StringEncoding];
     m_mtlFunction = [mtlLibrary newFunctionWithName:functionNameNSString];
     if (m_mtlFunction == nil)
         throw std::runtime_error("failed to create the MTLFunction");
 }}
 
-MetalShaderFunction::~MetalShaderFunction() { @autoreleasepool
+MetalShaderFunction::~MetalShaderFunction() // NOLINT(modernize-use-equals-default)
 {
-    [m_mtlFunction release];
-}}
+    // force objective c destructor
+}
 
 MetalShaderFunction& MetalShaderFunction::operator=(MetalShaderFunction&& other) noexcept { @autoreleasepool
 {
     if (&other != this)
     {
         ShaderFunction::operator=(std::move(other));
-        m_mtlFunction = [other.m_mtlFunction retain];
+        m_mtlFunction = other.m_mtlFunction;
     }
     return *this;
 }}

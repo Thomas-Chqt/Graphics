@@ -26,7 +26,7 @@ MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descr
     auto* mtlSurface = dynamic_cast<MetalSurface*>(desc.surface);
     assert(mtlSurface);
 
-    m_mtlLayer = [mtlSurface->mtlLayer() retain];
+    m_mtlLayer = mtlSurface->mtlLayer();
     m_mtlLayer.device = device.mtlDevice();
     m_mtlLayer.drawableSize = CGSize{CGFloat(desc.width), CGFloat(desc.height)};
     m_mtlLayer.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
@@ -37,9 +37,9 @@ std::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
     return std::make_shared<MetalDrawable>([m_mtlLayer nextDrawable]);
 }}
 
-MetalSwapchain::~MetalSwapchain() { @autoreleasepool
+MetalSwapchain::~MetalSwapchain() // NOLINT(modernize-use-equals-default)
 {
-    [m_mtlLayer release];
-}}
+    // force objective c destructor
+}
 
 }

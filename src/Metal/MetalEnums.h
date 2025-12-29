@@ -7,7 +7,6 @@
  * ---------------------------------------------------
  */
 
-#include <Metal/Metal.h>
 #ifndef __OBJC__
 #error "this file can only by used in objective c"
 #endif

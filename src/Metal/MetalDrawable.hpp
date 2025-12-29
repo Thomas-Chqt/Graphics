@@ -28,7 +28,7 @@ public:
 
     std::shared_ptr<Texture> texture() const override;
 
-    const id<CAMetalDrawable>& mtlDrawable() const { return m_mtlDrawable; }
+    id<CAMetalDrawable> mtlDrawable() const { return m_mtlDrawable; }
 
     ~MetalDrawable() override;
 

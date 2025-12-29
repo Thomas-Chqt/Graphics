@@ -33,7 +33,7 @@ public:
 
     void setContent(const void* data, size_t size) override;
 
-    const id<MTLBuffer>& mtlBuffer() const { return m_mtlBuffer; }
+    inline id<MTLBuffer> mtlBuffer() const { return m_mtlBuffer; }
 
     ~MetalBuffer() override;
 
