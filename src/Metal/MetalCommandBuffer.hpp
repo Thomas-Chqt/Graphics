@@ -22,6 +22,10 @@
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -68,7 +72,7 @@ public:
     inline id<MTLCommandBuffer> mtlCommandBuffer() const { return m_mtlCommandBuffer; }
     inline id<MTLCommandEncoder> commandEncoder() const { return m_commandEncoder; }
 
-    ~MetalCommandBuffer() override;
+    ~MetalCommandBuffer() override = default;
 
 private:
     id<MTLCommandBuffer> m_mtlCommandBuffer = nil;

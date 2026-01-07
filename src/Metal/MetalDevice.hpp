@@ -23,6 +23,10 @@
 
 #include "Metal/MetalCommandBuffer.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 

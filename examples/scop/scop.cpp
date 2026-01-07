@@ -256,7 +256,7 @@ int main(int argc, char** argv)
                 scopMaterial->setTextureStrength(textureStrengthTarget);
             }
 #else
-            static scop::Light* lightAttachedToCamera = nullptr;
+            static scop::Light* lightAttachedToCamera = light.get();
             if (lightAttachedToCamera != nullptr)
                 lightAttachedToCamera->setPosition(camera->position());
 #endif

@@ -14,7 +14,7 @@
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalShaderFunction.hpp"
 
-#import "Metal/MetalEnums.h"
+#import "Metal/MetalEnums.hpp"
 
 namespace gfx
 {
@@ -110,11 +110,6 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
             throw std::runtime_error("failed to create DepthStencilState");
     }
 }}
-
-MetalGraphicsPipeline::~MetalGraphicsPipeline() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
 
 MetalGraphicsPipeline& MetalGraphicsPipeline::operator=(MetalGraphicsPipeline&& other) noexcept
 {

@@ -12,6 +12,10 @@
 
 #include "Graphics/ShaderFunction.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -26,7 +30,7 @@ public:
 
     inline id<MTLFunction> mtlFunction() { return m_mtlFunction; }
 
-    ~MetalShaderFunction() override;
+    ~MetalShaderFunction() override = default;
 
 private:
     id<MTLFunction> m_mtlFunction;

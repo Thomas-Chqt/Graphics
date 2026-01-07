@@ -41,9 +41,4 @@ MetalShaderFunction& MetalShaderLib::getFunction(const std::string& name) { @aut
     return it->second;
 }}
 
-MetalShaderLib::~MetalShaderLib()
-{
-    m_shaderFunctions.clear();
-}
-
 } // namespace gfx

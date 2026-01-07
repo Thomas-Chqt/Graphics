@@ -15,7 +15,7 @@
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalSurface.hpp"
 
-#import "Metal/MetalEnums.h"
+#import "Metal/MetalEnums.hpp"
 
 namespace gfx
 {
@@ -36,10 +36,5 @@ std::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
 {
     return std::make_shared<MetalDrawable>([m_mtlLayer nextDrawable]);
 }}
-
-MetalSwapchain::~MetalSwapchain() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
 
 }

@@ -41,25 +41,6 @@
 #import <Metal/Metal.h>
 #import <AppKit/NSWindow.h>
 
-#else // __OBJC__
-
-template<typename T> using id = T*;
-#define nil nullptr
-class MTLBuffer;
-class MTLCommandQueue;
-class MTLCommandBuffer;
-class MTLCommandEncoder;
-class MTLDevice;
-class CAMetalDrawable;
-class MTLRenderPipelineState;
-class MTLDepthStencilState;
-class NSAutoreleasePool;
-class MTLLibrary;
-class MTLFunction;
-class CAMetalLayer;
-class MTLTexture;
-class MTLSamplerState;
-
 #endif // __OBJC__
 #endif // GFX_BUILD_METAL
 

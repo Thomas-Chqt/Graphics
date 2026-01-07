@@ -49,11 +49,6 @@ void MetalBuffer::setContent(const void* data, size_t size) { @autoreleasepool
         [m_mtlBuffer didModifyRange:NSMakeRange(0, size)];
 }}
 
-MetalBuffer::~MetalBuffer() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
-
 void* MetalBuffer::contentVoid() { @autoreleasepool
 {
     assert(mtlBuffer().storageMode == MTLStorageModeShared);

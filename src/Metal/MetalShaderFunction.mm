@@ -26,11 +26,6 @@ MetalShaderFunction::MetalShaderFunction(const id<MTLLibrary>& mtlLibrary, const
         throw std::runtime_error("failed to create the MTLFunction");
 }}
 
-MetalShaderFunction::~MetalShaderFunction() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
-
 MetalShaderFunction& MetalShaderFunction::operator=(MetalShaderFunction&& other) noexcept { @autoreleasepool
 {
     if (&other != this)

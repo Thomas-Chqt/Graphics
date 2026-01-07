@@ -12,6 +12,10 @@
 
 #include "Graphics/Sampler.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -28,7 +32,7 @@ public:
 
     inline id<MTLSamplerState> mtlSamplerState() const { return m_mtlSamplerState; }
 
-    ~MetalSampler() override;
+    ~MetalSampler() override = default;
 
 private:
     id<MTLSamplerState> m_mtlSamplerState = nil;

@@ -40,9 +40,4 @@ const std::set<PresentMode> MetalSurface::supportedPresentModes(const Device&) c
     };
 }
 
-MetalSurface::~MetalSurface() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
-
 }

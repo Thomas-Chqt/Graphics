@@ -11,7 +11,7 @@
 #include "Graphics/Texture.hpp"
 
 #include "Metal/MetalDrawable.hpp"
-#include "Metal/MetalEnums.h"
+#include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
 
 namespace gfx
@@ -35,10 +35,5 @@ std::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
     };
     return std::make_shared<MetalTexture>(m_mtlDrawable.texture, desc);
 }}
-
-MetalDrawable::~MetalDrawable() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
 
 }

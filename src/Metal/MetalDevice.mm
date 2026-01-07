@@ -32,7 +32,7 @@
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
 
-#import "Metal/MetalEnums.h"
+#import "Metal/MetalEnums.hpp"
 
 namespace gfx
 {

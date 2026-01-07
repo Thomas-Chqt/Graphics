@@ -12,6 +12,10 @@
 
 #include "Graphics/GraphicsPipeline.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -30,7 +34,7 @@ public:
     inline id<MTLDepthStencilState> depthStencilState() const { return m_depthStencilState; }
     inline CullMode cullMode() const { return m_cullMode; }
 
-    ~MetalGraphicsPipeline() override;
+    ~MetalGraphicsPipeline() override = default;
 
 private:
     id<MTLRenderPipelineState> m_renderPipelineState = nil;

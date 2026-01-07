@@ -16,3 +16,4 @@ build_xcode.nosync/
 .github/copilot-instructions.md
 scop
 !examples/scop
+debug.entitlements

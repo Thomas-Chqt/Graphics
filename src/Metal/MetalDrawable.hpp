@@ -12,6 +12,10 @@
 
 #include "Graphics/Drawable.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -30,7 +34,7 @@ public:
 
     id<CAMetalDrawable> mtlDrawable() const { return m_mtlDrawable; }
 
-    ~MetalDrawable() override;
+    ~MetalDrawable() override = default;
 
 private:
     id<CAMetalDrawable> m_mtlDrawable;

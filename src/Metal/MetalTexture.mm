@@ -13,7 +13,7 @@
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalTexture.hpp"
 
-#import "Metal/MetalEnums.h"
+#import "Metal/MetalEnums.hpp"
 
 namespace gfx
 {
@@ -61,10 +61,5 @@ PixelFormat MetalTexture::pixelFormat() const { @autoreleasepool
 {
     return toPixelFormat([mtltexture() pixelFormat]);
 }}
-
-MetalTexture::~MetalTexture() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
 
 }

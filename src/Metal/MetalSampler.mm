@@ -12,7 +12,7 @@
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalDevice.hpp"
 
-#import "Metal/MetalEnums.h"
+#import "Metal/MetalEnums.hpp"
 
 namespace gfx
 {
@@ -37,11 +37,6 @@ MetalSampler::MetalSampler(const MetalDevice& device, const Sampler::Descriptor&
     if (m_mtlSamplerState == nil)
         throw std::runtime_error("sampler state creation failed");
 }}
-
-MetalSampler::~MetalSampler() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
 
 MetalSampler& MetalSampler::operator=(MetalSampler&& other) noexcept
 {

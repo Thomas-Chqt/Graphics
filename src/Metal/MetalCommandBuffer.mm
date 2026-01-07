@@ -26,7 +26,7 @@
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalCommandBufferPool.hpp"
 
-#import "Metal/MetalEnums.h"
+#import "Metal/MetalEnums.hpp"
 
 namespace gfx
 {
@@ -263,11 +263,6 @@ void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawa
 
     [m_mtlCommandBuffer presentDrawable:drawable->mtlDrawable()];
 }}
-
-MetalCommandBuffer::~MetalCommandBuffer() // NOLINT(modernize-use-equals-default)
-{
-    // force objective c destructor
-}
 
 MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) noexcept { @autoreleasepool
 {

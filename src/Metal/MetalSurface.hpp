@@ -13,6 +13,10 @@
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -32,7 +36,7 @@ public:
 
     CAMetalLayer* mtlLayer() const { return m_mtlLayer; }
 
-    ~MetalSurface() override;
+    ~MetalSurface() override = default;
 
 private:
     CAMetalLayer* m_mtlLayer;
