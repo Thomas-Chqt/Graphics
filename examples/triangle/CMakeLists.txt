@@ -110,3 +110,11 @@ target_compile_definitions(triangle PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(triangle PRIVATE Graphics glfw glm::glm)
 add_dependencies(triangle triangle_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    add_custom_command(TARGET triangle POST_BUILD
+        COMMAND codesign --force --sign - "$<TARGET_FILE:triangle>"
+        COMMENT "Ad-hoc codesigning triangle"
+        VERBATIM
+    )
+endif()

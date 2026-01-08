@@ -110,3 +110,11 @@ target_compile_definitions(multiBuffer PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(multiBuffer PRIVATE Graphics glfw glm::glm)
 add_dependencies(multiBuffer multiBuffer_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    add_custom_command(TARGET multiBuffer POST_BUILD
+        COMMAND codesign --force --sign - "$<TARGET_FILE:multiBuffer>"
+        COMMENT "Ad-hoc codesigning multiBuffer"
+        VERBATIM
+    )
+endif()

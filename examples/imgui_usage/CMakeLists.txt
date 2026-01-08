@@ -89,3 +89,11 @@ endif()
 target_compile_definitions(imgui_usage PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(imgui_usage PRIVATE Graphics imgui)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    add_custom_command(TARGET imgui_usage POST_BUILD
+        COMMAND codesign --force --sign - "$<TARGET_FILE:imgui_usage>"
+        COMMENT "Ad-hoc codesigning imgui_usage"
+        VERBATIM
+    )
+endif()

@@ -142,3 +142,11 @@ target_compile_definitions(mc_cube PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(mc_cube PRIVATE Graphics glm::glm imgui stb_image)
 add_dependencies(mc_cube mc_cube_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    add_custom_command(TARGET mc_cube POST_BUILD
+        COMMAND codesign --force --sign - "$<TARGET_FILE:mc_cube>"
+        COMMENT "Ad-hoc codesigning mc_cube"
+        VERBATIM
+    )
+endif()

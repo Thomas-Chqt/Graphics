@@ -174,3 +174,11 @@ else()
     target_link_libraries(scop PRIVATE Graphics glm::glm imgui stb_image assimp::assimp)
 endif()
 add_dependencies(scop flat_color_shader textured_shader scop_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    add_custom_command(TARGET scop POST_BUILD
+        COMMAND codesign --force --sign - "$<TARGET_FILE:scop>"
+        COMMENT "Ad-hoc codesigning scop"
+        VERBATIM
+    )
+endif()
