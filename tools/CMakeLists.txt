@@ -73,14 +73,8 @@ endif()
 
 target_link_libraries(gfxsc PRIVATE slang::slang argparse::argparse)
 
-# if (WIN32)
-#     add_custom_command(TARGET gfxsc POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:gfxsc> $<TARGET_FILE_DIR:gfxsc>
-#     )
-#     get_target_property(SLANG_GLSLANG_DLL slang::slang SLANG_GLSLANG_DLL_PATH)
-#     if(SLANG_GLSLANG_DLL)
-#         add_custom_command(TARGET gfxsc POST_BUILD
-#             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SLANG_GLSLANG_DLL} $<TARGET_FILE_DIR:gfxsc>
-#         )
-#     endif()
-# endif()
+if (WIN32)
+    add_custom_command(TARGET gfxsc POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:gfxsc> $<TARGET_FILE_DIR:gfxsc>
+    )
+endif()
