@@ -176,9 +176,22 @@ endif()
 add_dependencies(scop flat_color_shader textured_shader scop_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    add_custom_command(TARGET scop POST_BUILD
-        COMMAND codesign --force --sign - "$<TARGET_FILE:scop>"
-        COMMENT "Ad-hoc codesigning scop"
-        VERBATIM
-    )
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
+
+    set(SCOP_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/scop.entitlements")
+    set(SCOP_CODESIGN_STAMP "${CMAKE_CURRENT_BINARY_DIR}/scop.codesign.stamp")
+
+    if(EXISTS "${SCOP_ENTITLEMENTS_FILE}")
+        add_custom_command(TARGET scop POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${SCOP_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:scop>\" >/dev/null 2>&1"
+            COMMENT "Codesigning scop (with entitlements) [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    else()
+        add_custom_command(TARGET scop POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force \"$<TARGET_FILE:scop>\" >/dev/null 2>&1"
+            COMMENT "Codesigning scop [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    endif()
 endif()

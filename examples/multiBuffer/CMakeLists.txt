@@ -112,9 +112,22 @@ target_link_libraries(multiBuffer PRIVATE Graphics glfw glm::glm)
 add_dependencies(multiBuffer multiBuffer_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    add_custom_command(TARGET multiBuffer POST_BUILD
-        COMMAND codesign --force --sign - "$<TARGET_FILE:multiBuffer>"
-        COMMENT "Ad-hoc codesigning multiBuffer"
-        VERBATIM
-    )
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for multiBuffer")
+
+    set(multiBuffer_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/multiBuffer.entitlements")
+    set(multiBuffer_CODESIGN_STAMP "${CMAKE_CURRENT_BINARY_DIR}/multiBuffer.codesign.stamp")
+
+    if(EXISTS "${MULTIBUFFER_ENTITLEMENTS_FILE}")
+        add_custom_command(TARGET multiBuffer POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${MULTIBUFFER_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:multiBuffer>\" >/dev/null 2>&1"
+            COMMENT "Codesigning multiBuffer (with entitlements) [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    else()
+        add_custom_command(TARGET multiBuffer POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force \"$<TARGET_FILE:multiBuffer>\" >/dev/null 2>&1"
+            COMMENT "Codesigning multiBuffer [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    endif()
 endif()

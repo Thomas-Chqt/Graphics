@@ -91,9 +91,25 @@ target_compile_definitions(imgui_usage PRIVATE "GLFW_INCLUDE_NONE")
 target_link_libraries(imgui_usage PRIVATE Graphics imgui)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    add_custom_command(TARGET imgui_usage POST_BUILD
-        COMMAND codesign --force --sign - "$<TARGET_FILE:imgui_usage>"
-        COMMENT "Ad-hoc codesigning imgui_usage"
-        VERBATIM
-    )
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for imgui_usage")
+
+    set(IMGUI_USAGE_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/imgui_usage.entitlements")
+    set(IMGUI_USAGE_CODESIGN_STAMP "${CMAKE_CURRENT_BINARY_DIR}/imgui_usage.codesign.stamp")
+
+    if(EXISTS "${IMGUI_USAGE_ENTITLEMENTS_FILE}")
+        add_custom_command(TARGET imgui_usage POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${IMGUI_USAGE_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:imgui_usage>\" >/dev/null 2>&1"
+            COMMENT "Codesigning imgui_usage (with entitlements) [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    else()
+        add_custom_command(TARGET imgui_usage POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force \"$<TARGET_FILE:imgui_usage>\" >/dev/null 2>&1"
+            COMMENT "Codesigning imgui_usage [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    endif()
+
+    add_custom_target(imgui_usage_codesign ALL DEPENDS "${IMGUI_USAGE_CODESIGN_STAMP}")
+    add_dependencies(imgui_usage_codesign imgui_usage)
 endif()
