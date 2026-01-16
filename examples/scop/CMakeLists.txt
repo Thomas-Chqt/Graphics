@@ -179,8 +179,6 @@ if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
 
     set(SCOP_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/scop.entitlements")
-    set(SCOP_CODESIGN_STAMP "${CMAKE_CURRENT_BINARY_DIR}/scop.codesign.stamp")
-
     if(EXISTS "${SCOP_ENTITLEMENTS_FILE}")
         add_custom_command(TARGET scop POST_BUILD
             COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${SCOP_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:scop>\" >/dev/null 2>&1"

@@ -115,8 +115,6 @@ if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for triangle")
 
     set(triangle_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/triangle.entitlements")
-    set(triangle_CODESIGN_STAMP "${CMAKE_CURRENT_BINARY_DIR}/triangle.codesign.stamp")
-
     if(EXISTS "${TRIANGLE_ENTITLEMENTS_FILE}")
         add_custom_command(TARGET triangle POST_BUILD
             COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${TRIANGLE_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:triangle>\" >/dev/null 2>&1"

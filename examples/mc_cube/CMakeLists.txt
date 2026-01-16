@@ -147,8 +147,6 @@ if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for mc_cube")
 
     set(MC_CUBE_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/mc_cube.entitlements")
-    set(MC_CUBE_CODESIGN_STAMP "${CMAKE_CURRENT_BINARY_DIR}/mc_cube.codesign.stamp")
-
     if(EXISTS "${MC_CUBE_ENTITLEMENTS_FILE}")
         add_custom_command(TARGET mc_cube POST_BUILD
             COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${MC_CUBE_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:mc_cube>\" >/dev/null 2>&1"
@@ -162,7 +160,4 @@ if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
             VERBATIM
         )
     endif()
-
-    add_custom_target(mc_cube_codesign ALL DEPENDS "${MC_CUBE_CODESIGN_STAMP}")
-    add_dependencies(mc_cube_codesign mc_cube)
 endif()

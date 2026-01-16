@@ -115,8 +115,6 @@ if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for multiBuffer")
 
     set(multiBuffer_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/multiBuffer.entitlements")
-    set(multiBuffer_CODESIGN_STAMP "${CMAKE_CURRENT_BINARY_DIR}/multiBuffer.codesign.stamp")
-
     if(EXISTS "${MULTIBUFFER_ENTITLEMENTS_FILE}")
         add_custom_command(TARGET multiBuffer POST_BUILD
             COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${MULTIBUFFER_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:multiBuffer>\" >/dev/null 2>&1"

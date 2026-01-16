@@ -75,6 +75,6 @@ target_link_libraries(gfxsc PRIVATE slang::slang argparse::argparse)
 
 if (WIN32)
     add_custom_command(TARGET gfxsc POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:gfxsc> $<TARGET_FILE_DIR:gfxsc>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${slang_SOURCE_DIR}/bin/slang-glslang" "$<TARGET_FILE_DIR:gfxsc>/slang-glslang"
     )
 endif()
