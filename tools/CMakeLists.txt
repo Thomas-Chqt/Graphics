@@ -74,7 +74,14 @@ endif()
 target_link_libraries(gfxsc PRIVATE slang::slang argparse::argparse)
 
 if (WIN32)
+    if (WIN32)
+        find_file(SLANG_DLL NAMES slang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
+        find_file(SLANG_GLSLANG_DLL NAMES slang-glslang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
+    endif()
     add_custom_command(TARGET gfxsc POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${slang_SOURCE_DIR}/bin/slang-glslang.dll" "$<TARGET_FILE_DIR:gfxsc>/slang-glslang.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SLANG_DLL}" $<TARGET_FILE_DIR:gfxsc>
+    )
+    add_custom_command(TARGET gfxsc POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SLANG_GLSLANG_DLL}" $<TARGET_FILE_DIR:gfxsc>
     )
 endif()
