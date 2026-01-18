@@ -30,6 +30,12 @@ if(NOT slang_FOUND)
     string(APPEND SLANG_URL ".zip")
     FetchContent_Declare(slang URL "${SLANG_URL}" DOWNLOAD_EXTRACT_TIMESTAMP ON)
     FetchContent_MakeAvailable(slang)
+    if(WIN32)
+        find_file(SLANG_DLL NAMES slang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
+        find_file(SLANG_GLSLANG_DLL NAMES slang-glslang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
+        find_file(SLANG_COMPILER_DLL NAMES slang-compiler.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
+        set(REQUIRED_COPY_DLL "${SLANG_DLL}" "${SLANG_GLSLANG_DLL}" "${SLANG_COMPILER_DLL}")
+    endif()
     find_package(slang REQUIRED PATHS "${slang_SOURCE_DIR}")
 endif()
 
@@ -73,13 +79,8 @@ endif()
 
 target_link_libraries(gfxsc PRIVATE slang::slang argparse::argparse)
 
-if (WIN32)
-    find_file(SLANG_DLL NAMES slang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
-    find_file(SLANG_GLSLANG_DLL NAMES slang-glslang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
+if (REQUIRED_COPY_DLL)
     add_custom_command(TARGET gfxsc POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SLANG_DLL}" $<TARGET_FILE_DIR:gfxsc>
-    )
-    add_custom_command(TARGET gfxsc POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${SLANG_GLSLANG_DLL}" $<TARGET_FILE_DIR:gfxsc>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${REQUIRED_COPY_DLL} $<TARGET_FILE_DIR:gfxsc>
     )
 endif()
