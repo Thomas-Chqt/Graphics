@@ -17,7 +17,6 @@ namespace gfx
 {
 
 MetalInstance::MetalInstance(const Instance::Descriptor&)
-    : m_autoReleasePool([[NSAutoreleasePool alloc] init])
 {
 }
 
@@ -28,31 +27,15 @@ std::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow)
 }
 #endif
 
-std::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc)
+std::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc) { @autoreleasepool
 {
-    @autoreleasepool
-    {
-        for (auto& device : m_devices)
-            [device release]; // refresh the list when newDevice is called
-
 #if defined(TARGET_OS_OSX)
-        NSArray<id<MTLDevice>>* mtlDevices = [MTLCopyAllDevices() autorelease];
+    NSArray<id<MTLDevice>>* mtlDevices = MTLCopyAllDevices();
 #else
-        NSArray<id<MTLDevice>>* mtlDevices = @[ MTLCreateSystemDefaultDevice() ];
+    NSArray<id<MTLDevice>>* mtlDevices = @[ MTLCreateSystemDefaultDevice() ];
 #endif
 
-        for (NSUInteger i = 0; i < mtlDevices.count; i++)
-            m_devices.push_back([[mtlDevices objectAtIndex:i] retain]);
-
-        return std::make_unique<MetalDevice>(m_devices.front(), desc);
-    }
-}
-
-MetalInstance::~MetalInstance()
-{
-    for (auto& device : m_devices)
-        [device release];
-    [m_autoReleasePool drain];
-}
+    return std::make_unique<MetalDevice>(mtlDevices.firstObject, desc);
+}}
 
 } // namespace gfx

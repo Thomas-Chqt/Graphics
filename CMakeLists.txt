@@ -7,8 +7,6 @@
 
 cmake_minimum_required(VERSION 3.22)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
 include(FetchContent)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
@@ -67,14 +65,21 @@ if (APPLE AND GFX_BUILD_METAL)
 endif()
 
 if (GFX_BUILD_VULKAN)
+    set(VULKAN_FIND_PACKAGE_ARGS 1.4.321.0)
+    if(APPLE)
+        list(APPEND VULKAN_FIND_PACKAGE_ARGS COMPONENTS MoltenVK)
+    endif()
     FetchContent_Declare(Vulkan
         GIT_REPOSITORY    https://github.com/KhronosGroup/Vulkan-Headers.git
         GIT_TAG           vulkan-sdk-1.4.321.0
         GIT_SHALLOW       1
         GIT_PROGRESS      TRUE
-        FIND_PACKAGE_ARGS
+        FIND_PACKAGE_ARGS ${VULKAN_FIND_PACKAGE_ARGS}
     )
     FetchContent_MakeAvailable(Vulkan)
+    if (NOT Vulkan_FOUND)
+        message(WARNING "Vulkan was not found. Only the build dependencies were fetched; the program may fail at runtime.")
+    endif()
 endif()
 
 if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
@@ -155,6 +160,7 @@ endif()
 
 if (GFX_BUILD_METAL)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_METAL")
+    target_compile_options(Graphics PRIVATE "-fobjc-arc")
 endif()
 
 if (GFX_BUILD_VULKAN)
@@ -185,23 +191,6 @@ if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
 endif()
 
 add_subdirectory("tools")
-
-if (GFX_BUILD_METAL)
-    set(GFX_SHADER_SLIB "${CMAKE_CURRENT_BINARY_DIR}/shaders/gfx.slib")
-    file(GLOB GFX_SHADER_SRCS "shaders/*.slang")
-    add_custom_command(
-        OUTPUT ${GFX_SHADER_SLIB}
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/shaders"
-        COMMAND $<TARGET_FILE:gfxsc> -t metal -o ${GFX_SHADER_SLIB} ${GFX_SHADER_SRCS}
-        DEPENDS gfxsc ${GFX_SHADER_SRCS}
-        COMMENT "Building gfx shaders"
-        VERBATIM
-    )
-    add_custom_target(gfx_shaders ALL DEPENDS ${GFX_SHADER_SLIB})
-    set_target_properties(gfx_shaders PROPERTIES FOLDER "shaders")
-    target_compile_definitions(Graphics PRIVATE "GFX_SHADER_SLIB=\"${GFX_SHADER_SLIB}\"")
-    add_dependencies(Graphics gfx_shaders)
-endif()
 
 if(GFX_BUILD_EXAMPLES)
     add_subdirectory("examples")

@@ -110,3 +110,22 @@ target_compile_definitions(multiBuffer PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(multiBuffer PRIVATE Graphics glfw glm::glm)
 add_dependencies(multiBuffer multiBuffer_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for multiBuffer")
+
+    set(multiBuffer_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/multiBuffer.entitlements")
+    if(EXISTS "${MULTIBUFFER_ENTITLEMENTS_FILE}")
+        add_custom_command(TARGET multiBuffer POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${MULTIBUFFER_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:multiBuffer>\" >/dev/null 2>&1"
+            COMMENT "Codesigning multiBuffer (with entitlements) [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    else()
+        add_custom_command(TARGET multiBuffer POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force \"$<TARGET_FILE:multiBuffer>\" >/dev/null 2>&1"
+            COMMENT "Codesigning multiBuffer [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    endif()
+endif()

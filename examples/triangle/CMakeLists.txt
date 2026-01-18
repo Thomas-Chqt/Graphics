@@ -110,3 +110,22 @@ target_compile_definitions(triangle PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(triangle PRIVATE Graphics glfw glm::glm)
 add_dependencies(triangle triangle_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for triangle")
+
+    set(triangle_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/triangle.entitlements")
+    if(EXISTS "${TRIANGLE_ENTITLEMENTS_FILE}")
+        add_custom_command(TARGET triangle POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${TRIANGLE_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:triangle>\" >/dev/null 2>&1"
+            COMMENT "Codesigning triangle (with entitlements) [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    else()
+        add_custom_command(TARGET triangle POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force \"$<TARGET_FILE:triangle>\" >/dev/null 2>&1"
+            COMMENT "Codesigning triangle [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    endif()
+endif()

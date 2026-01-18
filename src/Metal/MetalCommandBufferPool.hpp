@@ -15,6 +15,10 @@
 
 #include "Metal/MetalCommandBuffer.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -33,7 +37,7 @@ public:
     ~MetalCommandBufferPool() override = default;
 
 private:
-    const id<MTLCommandQueue>* m_queue = nullptr;
+    __weak id<MTLCommandQueue> m_queue = nullptr;
 
     std::deque<std::shared_ptr<MetalCommandBuffer>> m_availableCommandBuffers;
     std::deque<std::shared_ptr<MetalCommandBuffer>> m_usedCommandBuffers;

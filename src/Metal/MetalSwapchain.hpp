@@ -13,6 +13,10 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Drawable.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -28,7 +32,7 @@ public:
 
     std::shared_ptr<Drawable> nextDrawable() override;
 
-    ~MetalSwapchain() override;
+    ~MetalSwapchain() override = default;
 
 private:
     CAMetalLayer* m_mtlLayer;

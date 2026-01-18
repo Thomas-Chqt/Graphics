@@ -174,3 +174,22 @@ else()
     target_link_libraries(scop PRIVATE Graphics glm::glm imgui stb_image assimp::assimp)
 endif()
 add_dependencies(scop flat_color_shader textured_shader scop_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
+
+    set(SCOP_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/scop.entitlements")
+    if(EXISTS "${SCOP_ENTITLEMENTS_FILE}")
+        add_custom_command(TARGET scop POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${SCOP_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:scop>\" >/dev/null 2>&1"
+            COMMENT "Codesigning scop (with entitlements) [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    else()
+        add_custom_command(TARGET scop POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force \"$<TARGET_FILE:scop>\" >/dev/null 2>&1"
+            COMMENT "Codesigning scop [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    endif()
+endif()

@@ -142,3 +142,22 @@ target_compile_definitions(mc_cube PRIVATE "GLFW_INCLUDE_NONE")
 
 target_link_libraries(mc_cube PRIVATE Graphics glm::glm imgui stb_image)
 add_dependencies(mc_cube mc_cube_shader)
+
+if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for mc_cube")
+
+    set(MC_CUBE_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/mc_cube.entitlements")
+    if(EXISTS "${MC_CUBE_ENTITLEMENTS_FILE}")
+        add_custom_command(TARGET mc_cube POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force --entitlements \"${MC_CUBE_ENTITLEMENTS_FILE}\" \"$<TARGET_FILE:mc_cube>\" >/dev/null 2>&1"
+            COMMENT "Codesigning mc_cube (with entitlements) [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    else()
+            add_custom_command(TARGET mc_cube POST_BUILD
+            COMMAND /bin/sh -c "codesign --sign \"${CODESIGN_IDENTITY}\" --force \"$<TARGET_FILE:mc_cube>\" >/dev/null 2>&1"
+            COMMENT "Codesigning mc_cube [identity: ${CODESIGN_IDENTITY}]"
+            VERBATIM
+        )
+    endif()
+endif()

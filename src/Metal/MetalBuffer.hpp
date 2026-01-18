@@ -13,6 +13,10 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Enums.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -33,9 +37,9 @@ public:
 
     void setContent(const void* data, size_t size) override;
 
-    const id<MTLBuffer>& mtlBuffer() const { return m_mtlBuffer; }
+    inline id<MTLBuffer> mtlBuffer() const { return m_mtlBuffer; }
 
-    ~MetalBuffer() override;
+    ~MetalBuffer() override = default;
 
 protected:
     void* contentVoid() override;

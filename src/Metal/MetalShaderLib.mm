@@ -41,10 +41,4 @@ MetalShaderFunction& MetalShaderLib::getFunction(const std::string& name) { @aut
     return it->second;
 }}
 
-MetalShaderLib::~MetalShaderLib() { @autoreleasepool
-{
-    m_shaderFunctions.clear();
-    [m_mtlLibrary release];
-}}
-
 } // namespace gfx

@@ -14,6 +14,10 @@
 
 #include "Metal/MetalShaderFunction.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -30,7 +34,7 @@ public:
 
     MetalShaderFunction& getFunction(const std::string&) override;
 
-    ~MetalShaderLib() override;
+    ~MetalShaderLib() override = default;
 
 private:
     id<MTLLibrary> m_mtlLibrary;

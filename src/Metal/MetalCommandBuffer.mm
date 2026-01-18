@@ -19,14 +19,14 @@
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
 #if defined(GFX_IMGUI_ENABLED)
-# include "Metal/imgui_impl_metal.hpp"
+# include "Metal/imgui_impl_metal.h"
 #endif
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalCommandBufferPool.hpp"
 
-#import "Metal/MetalEnums.h"
+#import "Metal/MetalEnums.hpp"
 
 namespace gfx
 {
@@ -45,14 +45,14 @@ MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
 
 MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue) { @autoreleasepool
 {
-    m_mtlCommandBuffer = [[queue commandBuffer] retain];
+    m_mtlCommandBuffer = [queue commandBuffer];
 }}
 
 void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @autoreleasepool
 {
     assert(m_commandEncoder == nil);
 
-    MTLRenderPassDescriptor* renderPassDescriptor = [[[MTLRenderPassDescriptor alloc] init] autorelease];
+    MTLRenderPassDescriptor* renderPassDescriptor = [[MTLRenderPassDescriptor alloc] init];
 
     for (int i = 0; auto& colorAttachment : framebuffer.colorAttachments)
     {
@@ -77,7 +77,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         m_usedTextures.insert(texture);
     }
 
-    m_commandEncoder = [[m_mtlCommandBuffer renderCommandEncoderWithDescriptor: renderPassDescriptor] retain];
+    m_commandEncoder = [m_mtlCommandBuffer renderCommandEncoderWithDescriptor: renderPassDescriptor];
 }}
 
 void MetalCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
@@ -191,14 +191,13 @@ void MetalCommandBuffer::endRenderPass() { @autoreleasepool
 {
     assert(m_commandEncoder);
     [m_commandEncoder endEncoding];
-    [m_commandEncoder release];
     m_commandEncoder = nil;
 }}
 
 void MetalCommandBuffer::beginBlitPass() { @autoreleasepool
 {
     assert(m_commandEncoder == nil);
-    m_commandEncoder = [[m_mtlCommandBuffer blitCommandEncoder] retain];
+    m_commandEncoder = [m_mtlCommandBuffer blitCommandEncoder];
 }}
 
 void MetalCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc, const std::shared_ptr<Buffer>& aDst, size_t size) { @autoreleasepool
@@ -254,7 +253,6 @@ void MetalCommandBuffer::endBlitPass() { @autoreleasepool
 {
     assert(m_commandEncoder);
     [m_commandEncoder endEncoding];
-    [m_commandEncoder release];
     m_commandEncoder = nil;
 }}
 
@@ -266,23 +264,10 @@ void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawa
     [m_mtlCommandBuffer presentDrawable:drawable->mtlDrawable()];
 }}
 
-MetalCommandBuffer::~MetalCommandBuffer() { @autoreleasepool
-{
-    if (m_commandEncoder != nil)
-        [m_commandEncoder release];
-    if (m_mtlCommandBuffer != nil)
-        [m_mtlCommandBuffer release];
-}}
-
 MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) noexcept { @autoreleasepool
 {
     if (this != &other)
     {
-        if (m_commandEncoder != nil)
-            [m_commandEncoder release];
-        if (m_mtlCommandBuffer != nil)
-            [m_mtlCommandBuffer release];
-
         m_mtlCommandBuffer = std::exchange(other.m_mtlCommandBuffer, nil);
         m_commandEncoder = std::exchange(other.m_commandEncoder, nil);
         m_usedPipelines = std::move(other.m_usedPipelines);

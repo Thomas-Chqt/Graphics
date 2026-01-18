@@ -1,15 +1,17 @@
 /*
  * ---------------------------------------------------
- * MetalEnums.h
+ * MetalEnums.hpp
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
  * Date: 2025/06/02 07:17:50
  * ---------------------------------------------------
  */
 
-#include <Metal/Metal.h>
-#ifndef __OBJC__
-#error "this file can only by used in objective c"
+#ifndef METALENUMS_HPP
+#define METALENUMS_HPP
+
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
 #endif
 
 #include "Graphics/Enums.hpp"
@@ -195,3 +197,5 @@ constexpr MTLCullMode toMTLCullMode(CullMode cullMode)
 }
 
 }
+
+#endif

@@ -15,6 +15,10 @@
 
 #include "Metal/MetalBuffer.hpp"
 
+#if !defined(__OBJC__)
+#error this file can only by used in objective c
+#endif
+
 namespace gfx
 {
 
@@ -37,9 +41,9 @@ public:
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
-    inline const id<MTLTexture>& mtltexture() const { return m_mtlTexture; }
+    inline id<MTLTexture> mtltexture() const { return m_mtlTexture; }
 
-    ~MetalTexture() override;
+    ~MetalTexture() override = default;
 
 private:
     TextureUsages m_usages;

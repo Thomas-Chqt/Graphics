@@ -168,7 +168,6 @@ public:
 
             if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
                 m_device->waitCommandBuffer(*m_lastCommandBuffers.at(m_frameIdx));
-                m_lastCommandBuffers.at(m_frameIdx).reset();
                 m_commandBufferPools.at(m_frameIdx)->reset();
             }
 
@@ -199,7 +198,7 @@ public:
             commandBuffer->endRenderPass();
             commandBuffer->presentDrawable(drawable);
 
-            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer;
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
             m_device->submitCommandBuffers(commandBuffer);
 
             m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
@@ -222,7 +221,7 @@ private:
     std::shared_ptr<gfx::Buffer> m_vertexBuffer;
     uint8_t m_frameIdx = 0;
     std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    std::array<std::shared_ptr<gfx::CommandBuffer>, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()
