@@ -73,6 +73,8 @@ private:
     std::mutex m_submitMtx;
 
     std::deque<std::shared_ptr<MetalCommandBuffer>> m_submittedCommandBuffers;
+    id<MTLSharedEvent> m_sharedEvent = nil;
+    uint64_t m_nextSharedEventValue = 1;
 
 public:
     MetalDevice& operator=(const MetalDevice&) = delete;

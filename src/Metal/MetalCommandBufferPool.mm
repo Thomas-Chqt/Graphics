@@ -40,7 +40,7 @@ std::shared_ptr<CommandBuffer> MetalCommandBufferPool::get()
 void MetalCommandBufferPool::reset()
 {
     for (auto& commandBuffer : m_usedCommandBuffers) {
-        *commandBuffer = MetalCommandBuffer();
+        *commandBuffer = MetalCommandBuffer(); // this clear the command buffer
         m_availableCommandBuffers.push_back(std::move(commandBuffer));
     }
     m_usedCommandBuffers.clear();
