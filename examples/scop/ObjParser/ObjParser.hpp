@@ -19,7 +19,6 @@
 #include <vector>
 #include <filesystem>
 #include <cstdint>
-#include <utility>
 #include <optional>
 
 namespace scop
