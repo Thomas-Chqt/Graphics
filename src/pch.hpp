@@ -101,11 +101,21 @@ struct GLFWwindow;
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyC.h>
 
-#if defined(__OBJC__)
+#if defined(__OBJC__) && (defined(__aarch64__) || defined(__arm64__))
 
 #include <tracy/TracyMetal.hmm>
 
-#endif // __OBJC__
+#else
+
+#define TracyMetalCollect(ctx)
+#define TracyMetalDestroy(ctx)
+#define TracyMetalZone(ctx, encoderDesc, name)
+
+namespace tracy {
+    class MetalCtx;
+}
+
+#endif
 
 #else
 

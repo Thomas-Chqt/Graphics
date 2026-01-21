@@ -225,14 +225,6 @@ int main(int argc, char** argv)
 
             camera->update(pressedKeys, deltaTime);
 
-            {
-                ZoneScopedN("dummy load");
-                volatile uint64_t dummy = 0;
-                for (uint64_t i = 0; i < 25000000; i++) {
-                    dummy += 1;
-                }
-            }
-
 #if defined (SCOP_MANDATORY)
             static bool objectScaled = false;
             if (object->mesh().has_value() && objectScaled == false)
