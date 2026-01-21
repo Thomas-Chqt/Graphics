@@ -13,13 +13,13 @@
 #include "Entity/Entity.hpp"
 
 #if !defined (SCOP_MANDATORY)
-#include <glm/glm.hpp>
+    #include <glm/glm.hpp>
 #else
-#include "math/math.hpp"
-#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
-#define SCOP_MATH_GLM_ALIAS_DEFINED
-namespace glm = scop::math;
-#endif
+    #include "math/math.hpp"
+    #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+        #define SCOP_MATH_GLM_ALIAS_DEFINED
+        namespace glm = scop::math;
+    #endif
 #endif
 
 namespace scop

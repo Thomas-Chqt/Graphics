@@ -14,14 +14,14 @@
 
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+    #include <glm/glm.hpp>
+    #include <glm/gtc/matrix_transform.hpp>
 #else
-#include "math/math.hpp"
-#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
-#define SCOP_MATH_GLM_ALIAS_DEFINED
-namespace glm = scop::math;
-#endif
+    #include "math/math.hpp"
+    #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+        #define SCOP_MATH_GLM_ALIAS_DEFINED
+        namespace glm = scop::math;
+    #endif
 #endif
 
 #include <set>

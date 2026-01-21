@@ -17,31 +17,27 @@
 #include <Graphics/Buffer.hpp>
 
 #if !defined (SCOP_MANDATORY)
-#include <glm/glm.hpp>
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-#include <assimp/types.h>
-#include <glm/ext/matrix_transform.hpp>
+    #include <glm/glm.hpp>
+    #include <assimp/Importer.hpp>
+    #include <assimp/postprocess.h>
+    #include <assimp/scene.h>
+    #include <assimp/types.h>
+    #include <glm/ext/matrix_transform.hpp>
 #else
-#include "math/math.hpp"
-#include "ObjParser/ObjParser.hpp"
-#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
-#define SCOP_MATH_GLM_ALIAS_DEFINED
-namespace glm = scop::math;
-#endif
+    #include "math/math.hpp"
+    #include "ObjParser/ObjParser.hpp"
+    #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+        #define SCOP_MATH_GLM_ALIAS_DEFINED
+        namespace glm = scop::math;
+    #endif
 #endif
 #include <stb_image/stb_image.h>
 #if defined (GFX_BUILD_TRACY)
     #include <tracy/Tracy.hpp>
-    #include <tracy/TracyC.h>
 #else
     #define ZoneScoped
     #define ZoneScopedN(x)
-    #define TracyCZoneN(c,x,y)
-    #define TracyCZoneEnd(c)
-    #define FrameMark
-#endif // GFX_BUILD_TRACY
+#endif
 
 #include <algorithm>
 #include <bit> // IWYU pragma: keep

@@ -43,7 +43,7 @@
     #define TracyCZoneN(c,x,y)
     #define TracyCZoneEnd(c)
     #define FrameMark
-#endif // GFX_BUILD_TRACY
+#endif
 
 #include <cassert>
 #include <algorithm> // IWYU pragma: keep

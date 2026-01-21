@@ -16,19 +16,24 @@
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
-#include <tracy/Tracy.hpp>
 #if !defined (SCOP_MANDATORY)
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+    #include <imgui.h>
+    #include <backends/imgui_impl_glfw.h>
+    #include <glm/glm.hpp>
+    #include <glm/gtc/matrix_transform.hpp>
 #else
-#include "math/math.hpp"
-#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
-#define SCOP_MATH_GLM_ALIAS_DEFINED
-namespace glm = scop::math;
+    #include "math/math.hpp"
+    #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+        #define SCOP_MATH_GLM_ALIAS_DEFINED
+        namespace glm = scop::math;
+    #endif
 #endif
-#endif
+#if defined (GFX_BUILD_TRACY)
+    #include <tracy/Tracy.hpp>
+#else
+    #define ZoneScoped
+    #define ZoneScopedN(x)
+#endif // GFX_BUILD_TRACY
 
 #include <array>
 #include <cstddef>
