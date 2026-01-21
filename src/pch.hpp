@@ -111,7 +111,6 @@ struct GLFWwindow;
 
 #define ZoneScoped
 #define ZoneScopedN(x)
-#define TracyMetalContext(device)
 #define TracyMetalCollect(ctx)
 #define TracyMetalDestroy(ctx)
 #define TracyMetalZone(ctx, encoderDesc, name)
