@@ -77,6 +77,9 @@ private:
     uint64_t m_nextSharedEventValue = 1;
 
 public:
+    inline static tracy::MetalCtx* s_tracyMtlContext = nullptr;
+
+public:
     MetalDevice& operator=(const MetalDevice&) = delete;
     MetalDevice& operator=(MetalDevice&&) = delete;
 };

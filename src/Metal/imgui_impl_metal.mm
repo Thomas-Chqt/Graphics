@@ -577,6 +577,8 @@ static void ImGui_ImplMetal_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
 {
     ImGuiViewportDataMetal* data = (ImGuiViewportDataMetal*)viewport->RendererUserData;
+    ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
+    MetalContext* ctx = bd->SharedMetalContext;
 
 #if TARGET_OS_OSX
     void* handle = viewport->PlatformHandleRaw ? viewport->PlatformHandleRaw : viewport->PlatformHandle;
@@ -595,8 +597,8 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
     if (data->MetalLayer.contentsScale != fb_scale)
     {
         data->MetalLayer.contentsScale = fb_scale;
-        data->MetalLayer.drawableSize = MakeScaledSize(window.frame.size, fb_scale);
     }
+    data->MetalLayer.drawableSize = MakeScaledSize(window.frame.size, (float)window.backingScaleFactor);
 #endif
 
     id <CAMetalDrawable> drawable = [data->MetalLayer nextDrawable];
@@ -611,7 +613,10 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
 
     id <MTLCommandBuffer> commandBuffer = [data->CommandQueue commandBuffer];
     id <MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
+    FramebufferDescriptor* fbdesc = [ctx.framebufferDescriptor copy];
+    ctx.framebufferDescriptor.depthPixelFormat = MTLPixelFormatInvalid;
     ImGui_ImplMetal_RenderDrawData(viewport->DrawData, commandBuffer, renderEncoder);
+    ctx.framebufferDescriptor = fbdesc;
     [renderEncoder endEncoding];
 
     [commandBuffer presentDrawable:drawable];

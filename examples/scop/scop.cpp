@@ -34,6 +34,16 @@
     namespace glm = scop::math;
     #endif
 #endif
+#if defined (GFX_BUILD_TRACY)
+    #include <tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
+#else
+    #define ZoneScoped
+    #define ZoneScopedN(x)
+    #define TracyCZoneN(c,x,y)
+    #define TracyCZoneEnd(c)
+    #define FrameMark
+#endif // GFX_BUILD_TRACY
 
 #include <cassert>
 #include <algorithm> // IWYU pragma: keep
@@ -59,7 +69,7 @@
 
 #if !defined (SCOP_MANDATORY)
 #if (defined(__GNUC__) || defined(__clang__))
-    #define SCOP_EXPORT __attribute__((visibility("default")))
+    #define SCOP_EXPORT __attribute__((used, visibility("default")))
 #elif defined(_MSC_VER)
     #define SCOP_EXPORT __declspec(dllexport)
 #else
@@ -201,7 +211,10 @@ int main(int argc, char** argv)
 
         while (true)
         {
+            TracyCZoneN(glfwPollEventsCtx, "glfwPollEvents()", true);
             glfwPollEvents();
+            TracyCZoneEnd(glfwPollEventsCtx);
+            TracyCZoneN(logicCtx, "logic", true);
             if (glfwWindowShouldClose(window))
                 break;
 
@@ -211,6 +224,14 @@ int main(int argc, char** argv)
             lastFrameTime = currentFrameTime;
 
             camera->update(pressedKeys, deltaTime);
+
+            {
+                ZoneScopedN("dummy load");
+                volatile uint64_t dummy = 0;
+                for (uint64_t i = 0; i < 25000000; i++) {
+                    dummy += 1;
+                }
+            }
 
 #if defined (SCOP_MANDATORY)
             static bool objectScaled = false;
@@ -260,7 +281,9 @@ int main(int argc, char** argv)
             if (lightAttachedToCamera != nullptr)
                 lightAttachedToCamera->setPosition(camera->position());
 #endif
+            TracyCZoneEnd(logicCtx);
 
+            TracyCZoneN(renderCtx, "rendering", true);
             renderer.beginFrame(camera->viewMatrix(), camera->fov(), camera->nearPlane(), camera->farPlane());
 
 #if !defined (SCOP_MANDATORY)
@@ -353,6 +376,8 @@ int main(int argc, char** argv)
             }
 
             renderer.endFrame();
+            TracyCZoneEnd(renderCtx);
+            FrameMark;
         }
 
         glfwDestroyWindow(window);

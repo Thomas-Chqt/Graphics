@@ -96,4 +96,31 @@ struct GLFWwindow;
 
 #endif // GFX_IMGUI_ENABLED
 
+#if defined (GFX_BUILD_TRACY)
+
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyC.h>
+
+#if defined(__OBJC__)
+
+#include <tracy/TracyMetal.hmm>
+
+#endif // __OBJC__
+
+#else
+
+#define ZoneScoped
+#define ZoneScopedN(x)
+#define TracyCZoneN(c,x,y)
+#define TracyCZoneEnd(c)
+#define TracyMetalContext(device)
+#define TracyMetalDestroy(ctx)
+#define TracyMetalZone(ctx, encoderDesc, name)
+
+namespace tracy {
+    class MetalCtx;
+}
+
+#endif // GFX_BUILD_TRACY
+
 #endif // GRAPHICS_PCH_HPP

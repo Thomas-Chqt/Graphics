@@ -16,6 +16,7 @@
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
+#include <tracy/Tracy.hpp>
 #if !defined (SCOP_MANDATORY)
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -109,6 +110,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
 
 void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, float far)
 {
+    ZoneScoped;
     if (m_swapchain == nullptr) {
         int width = 0, height = 0;
         ::glfwGetFramebufferSize(m_window, &width, &height);
@@ -137,7 +139,7 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, 
 
     if (cfd.lastCommandBuffer != nullptr) {
         m_device->waitCommandBuffer(*cfd.lastCommandBuffer);
-        cfd.lastCommandBuffer.reset();
+        cfd.lastCommandBuffer = nullptr;
         cfd.commandBufferPool->reset();
         cfd.parameterBlockPool->reset();
     }
@@ -159,14 +161,18 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, 
     *cfd.vpMatrix->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
 
 #if !defined (SCOP_MANDATORY)
-    m_device->imguiNewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+    {
+        ZoneScopedN("imguiNewFrame");
+        m_device->imguiNewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
 #endif
 }
 
 void Renderer::addMesh(const Mesh& mesh, const glm::mat4x4& worlTransform)
 {
+    ZoneScoped;
     std::function<void(const SubMesh&, glm::mat4x4)> addSubmesh = [&](const SubMesh& submesh, const glm::mat4x4& transform) {
         glm::mat4x4 modelMatrix = transform * submesh.transform;
 
@@ -182,6 +188,7 @@ void Renderer::addMesh(const Mesh& mesh, const glm::mat4x4& worlTransform)
 
 void Renderer::addPointLight(const glm::vec3& position, const glm::vec3& color)
 {
+    ZoneScoped;
     if (static_cast<size_t>(cfsd.pointLightCount) >= sizeof(cfsd.pointLights) / sizeof(cfsd.pointLights[0]))
         return;
     cfsd.pointLights[cfsd.pointLightCount++] = shader::PointLight{ // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
@@ -192,6 +199,7 @@ void Renderer::addPointLight(const glm::vec3& position, const glm::vec3& color)
 
 void Renderer::endFrame()
 {
+    ZoneScoped;
 #if !defined (SCOP_MANDATORY)
     ImGui::Render();
 #endif
@@ -227,6 +235,7 @@ void Renderer::endFrame()
 
     commandBuffer->beginRenderPass(framebuffer);
     {
+        ZoneScopedN("renderPass");
         std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = cfd.parameterBlockPool->get(vpMatrixBpLayout());
         vpMatrixPBlock->setBinding(0, cfd.vpMatrix);
 
@@ -262,7 +271,7 @@ void Renderer::endFrame()
     commandBuffer->endRenderPass();
     commandBuffer->presentDrawable(drawable);
 
-    cfd.lastCommandBuffer = commandBuffer;
+    cfd.lastCommandBuffer = commandBuffer.get();
     m_device->submitCommandBuffers(commandBuffer);
 
 #if !defined (SCOP_MANDATORY)

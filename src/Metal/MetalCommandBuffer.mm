@@ -14,6 +14,7 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
 
+#include "Metal/MetalDevice.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalSampler.hpp"
@@ -76,7 +77,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         renderPassDescriptor.depthAttachment.texture = texture->mtltexture();
         m_usedTextures.insert(texture);
     }
-
+    TracyMetalZone(MetalDevice::s_tracyMtlContext, renderPassDescriptor, "renderPass");
     m_commandEncoder = [m_mtlCommandBuffer renderCommandEncoderWithDescriptor: renderPassDescriptor];
 }}
 
@@ -197,7 +198,9 @@ void MetalCommandBuffer::endRenderPass() { @autoreleasepool
 void MetalCommandBuffer::beginBlitPass() { @autoreleasepool
 {
     assert(m_commandEncoder == nil);
-    m_commandEncoder = [m_mtlCommandBuffer blitCommandEncoder];
+    MTLBlitPassDescriptor* blitPassDescriptor = [[MTLBlitPassDescriptor alloc] init];
+    TracyMetalZone(MetalDevice::s_tracyMtlContext, blitPassDescriptor, "blitPass");
+    m_commandEncoder = [m_mtlCommandBuffer blitCommandEncoderWithDescriptor:blitPassDescriptor];
 }}
 
 void MetalCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc, const std::shared_ptr<Buffer>& aDst, size_t size) { @autoreleasepool

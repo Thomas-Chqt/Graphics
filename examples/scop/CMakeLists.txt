@@ -155,6 +155,9 @@ if (SCOP_MANDATORY)
     file(GLOB EXE_SRCS "math/*.cpp" "math/*.hpp" "ObjParser/*.cpp" "ObjParser/*.hpp")
     target_sources(scop PRIVATE ${EXE_SRCS})
 endif()
+if(GFX_BUILD_TRACY)
+    target_sources(scop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tracy_allocations.cpp")
+endif()
 
 target_include_directories(scop PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 

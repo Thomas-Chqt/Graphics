@@ -37,7 +37,7 @@ public:
     RenderableEntity(const RenderableEntity&) = delete;
     RenderableEntity(RenderableEntity&&) = default;
 
-    RenderableEntity(std::future<Mesh>&& meshFuture) : m_meshFuture(std::move(meshFuture)) {};
+    RenderableEntity(std::shared_future<Mesh> meshFuture) : m_meshFuture(std::move(meshFuture)) {};
 
     inline const std::optional<Mesh>& mesh()
     {
@@ -64,7 +64,7 @@ public:
     ~RenderableEntity() override = default;
 
 private:
-    std::future<Mesh> m_meshFuture;
+    std::shared_future<Mesh> m_meshFuture;
     std::optional<Mesh> m_mesh;
 
 public:

@@ -376,6 +376,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
 
 void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
 {
+    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });

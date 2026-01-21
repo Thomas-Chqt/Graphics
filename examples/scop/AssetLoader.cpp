@@ -32,6 +32,16 @@ namespace glm = scop::math;
 #endif
 #endif
 #include <stb_image/stb_image.h>
+#if defined (GFX_BUILD_TRACY)
+    #include <tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
+#else
+    #define ZoneScoped
+    #define ZoneScopedN(x)
+    #define TracyCZoneN(c,x,y)
+    #define TracyCZoneEnd(c)
+    #define FrameMark
+#endif // GFX_BUILD_TRACY
 
 #include <algorithm>
 #include <bit> // IWYU pragma: keep
@@ -374,6 +384,7 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
 #if !defined (SCOP_MANDATORY)
 Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std::shared_ptr<Material>> overrideMaterial)
 {
+    ZoneScoped;
     assert(std::filesystem::is_regular_file(path));
 
     Assimp::Importer importer;
@@ -416,6 +427,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
         };
 
         materials = std::span(scene->mMaterials, scene->mNumMaterials) | std::views::transform([&](aiMaterial* aiMaterial) -> std::shared_ptr<Material> {
+            ZoneScopedN("makeMaterial");
+
             auto material = std::make_shared<scop::TexturedMaterial>(*m_device);
 
             aiColor4D diffuseColor{};
@@ -612,6 +625,8 @@ using UniqueStbiUc = std::unique_ptr<stbi_uc, decltype(&stbi_image_free)>;
 #if !defined (SCOP_MANDATORY)
 std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* aiTex, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     int width = 0;
     int height = 0;
     UniqueStbiUc bytes(nullptr, stbi_image_free);
@@ -661,6 +676,8 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
 
 std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::path& path, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     int width = 0;
     int height = 0;
     UniqueStbiUc bytes = UniqueStbiUc(stbi_load(path.string().c_str(), &width, &height, nullptr, STBI_rgb_alpha), stbi_image_free);
@@ -693,6 +710,8 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
 
 std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem::path& right, const std::filesystem::path& left, const std::filesystem::path& top, const std::filesystem::path& bottom, const std::filesystem::path& front, const std::filesystem::path& back, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     int width = 0;
     int height = 0;
     std::map<std::filesystem::path, UniqueStbiUc> bytes;
@@ -748,6 +767,8 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
 
 std::shared_ptr<gfx::Texture> AssetLoader::getSolidColorTexture(const glm::vec4& color, gfx::CommandBuffer& commandBuffer)
 {
+    ZoneScoped;
+
     std::scoped_lock lock(m_solidColorTextureCacheMtx);
 
     auto it =std::ranges::find_if(m_solidColorTextureCache, [&](const auto& e){ return e.first == color; });
