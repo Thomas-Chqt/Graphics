@@ -109,6 +109,10 @@ private:
     }
     m_nonReusedRessources;
 
+#if defined(TRACY_ENABLE)
+    std::shared_ptr<tracy::VkCtxScope> m_tracyVkCtxScope = nullptr;
+#endif
+
 public:
     VulkanCommandBuffer& operator=(const VulkanCommandBuffer&) = delete;
     VulkanCommandBuffer& operator=(VulkanCommandBuffer&&) = delete;

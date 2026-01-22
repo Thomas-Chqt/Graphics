@@ -32,11 +32,12 @@ VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const std
         .setDescriptorSetCount(1)
         .setSetLayouts(m_layout->vkDescriptorSetLayout());
 
-    std::vector<vk::DescriptorSet> descriptorSets = m_device->vkDevice().allocateDescriptorSets(descriptorSetAllocateInfo);
-    if (descriptorSets.empty())
+    try {
+        std::vector<vk::DescriptorSet> descriptorSets = m_device->vkDevice().allocateDescriptorSets(descriptorSetAllocateInfo);
+        m_descriptorSet = std::move(descriptorSets.front());
+    } catch (...){
         throw std::runtime_error("failed to allocate descriptorSet");
-
-    m_descriptorSet = std::move(descriptorSets.front());
+    }
 }
 
 void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Buffer>& aBuffer)

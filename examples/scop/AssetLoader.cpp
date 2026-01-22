@@ -399,7 +399,11 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
     if (overrideMaterial.has_value()) {
         materials.assign(scene->mNumMaterials, *overrideMaterial);
     } else {
-        std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 130, .maxTextures = 380, .maxSamplers = 130 });
+        std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({
+            .maxUniformBuffers = 500,
+            .maxTextures = 500,
+            .maxSamplers = 500
+        });
         assert(parameterBlockPool);
 
         std::map<std::string, std::shared_ptr<gfx::Texture>> textureCache;

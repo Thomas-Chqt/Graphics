@@ -44,7 +44,7 @@
 #endif // __OBJC__
 #endif // GFX_BUILD_METAL
 
-#if defined (GFX_BUILD_VULKAN)
+#if defined(GFX_BUILD_VULKAN)
 
 #include <vulkan/vulkan.hpp>
 
@@ -90,45 +90,35 @@ struct GLFWwindow;
 
 #endif // GFX_GLFW_ENABLED
 
-#if defined (GFX_IMGUI_ENABLED)
+#if defined(GFX_IMGUI_ENABLED)
 
 #include "imgui.h" // IWYU pragma: keep
 
 #endif // GFX_IMGUI_ENABLED
 
-#if defined (GFX_BUILD_TRACY)
-
-#include <tracy/Tracy.hpp>
-#include <tracy/TracyC.h>
-
-#if defined(__OBJC__) && (defined(__aarch64__) || defined(__arm64__))
-
-#include <tracy/TracyMetal.hmm>
-
+#if defined(GFX_BUILD_TRACY)
+    #include <tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
+    #if defined(GFX_BUILD_METAL) && defined(__OBJC__) && (defined(__aarch64__) || defined(__arm64__))
+        #include <tracy/TracyMetal.hmm>
+    #endif
+    #if defined(GFX_BUILD_VULKAN)
+        #define TRACY_VK_USE_SYMBOL_TABLE
+        #include <tracy/TracyVulkan.hpp>
+    #endif
 #else
-
-#define TracyMetalCollect(ctx)
-#define TracyMetalDestroy(ctx)
-#define TracyMetalZone(ctx, encoderDesc, name)
-
-namespace tracy {
-    class MetalCtx;
-}
-
+    #define ZoneScoped
+    #define ZoneScopedN(x)
+    #if defined(GFX_BUILD_METAL)
+        #define TracyMetalContext(device) nullptr
+        #define TracyMetalDestroy(ctx)
+        #define TracyMetalZone(ctx, encoderDesc, name)
+        #define TracyMetalCollect(ctx)
+        namespace tracy { class MetalCtx; }
+    #endif
+    #if defined(GFX_BUILD_VULKAN)
+        #define TracyVkDestroy(x)
+    #endif
 #endif
-
-#else
-
-#define ZoneScoped
-#define ZoneScopedN(x)
-#define TracyMetalCollect(ctx)
-#define TracyMetalDestroy(ctx)
-#define TracyMetalZone(ctx, encoderDesc, name)
-
-namespace tracy {
-    class MetalCtx;
-}
-
-#endif // GFX_BUILD_TRACY
 
 #endif // GRAPHICS_PCH_HPP
