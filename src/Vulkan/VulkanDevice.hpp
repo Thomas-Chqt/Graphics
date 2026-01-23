@@ -77,10 +77,8 @@ public:
 
     ~VulkanDevice() override;
 
-#if defined(TRACY_ENABLE)
 public:
     inline static tracy::VkCtx* s_tracyVkContext = nullptr;
-#endif
 
 private:
     const VulkanInstance* const m_instance = nullptr;

@@ -36,14 +36,6 @@
 #define m_bufferFinalSyncStates m_nonReusedRessources.bufferFinalSyncStates
 #define m_presentedDrawables m_nonReusedRessources.presentedDrawables
 
-#if defined(TRACY_ENABLE)
-#define TracyVkZone_begin( ctx, cmdbuf, name, active ) \
-    static constexpr tracy::SourceLocationData TracyConcat(__tracy_gpu_source_location,TracyLine) \
-    { name, TracyFunction,  TracyFile, (uint32_t)TracyLine, 0 }; \
-    m_tracyVkCtxScope = std::make_shared<tracy::VkCtxScope>(ctx, &TracyConcat(__tracy_gpu_source_location,TracyLine), cmdbuf, active);
-#define TracyVkZone_end m_tracyVkCtxScope.reset()
-#endif
-
 namespace gfx
 {
 
@@ -75,7 +67,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const vk::C
 
 void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 {
-    TracyVkZone_begin(VulkanDevice::s_tracyVkContext, m_vkCommandBuffer, "renderPass", true);
+    TracyVkZone_begin(VulkanDevice::s_tracyVkContext, m_vkCommandBuffer, "renderPass", m_tracyVkCtxScope, true);
     std::vector<vk::RenderingAttachmentInfo> colorAttachmentInfos(framebuffer.colorAttachments.size());
     std::optional<vk::RenderingAttachmentInfo> depthAttachmentInfo;
     std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
@@ -373,7 +365,7 @@ void VulkanCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const
 void VulkanCommandBuffer::endRenderPass()
 {
     m_vkCommandBuffer.endRendering();
-    TracyVkZone_end;
+    TracyVkZone_end(m_tracyVkCtxScope);
 }
 
 void VulkanCommandBuffer::beginBlitPass()

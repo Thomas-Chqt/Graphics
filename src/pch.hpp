@@ -96,29 +96,42 @@ struct GLFWwindow;
 
 #endif // GFX_IMGUI_ENABLED
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #if defined(GFX_BUILD_TRACY)
     #include <tracy/Tracy.hpp>
     #include <tracy/TracyC.h>
-    #if defined(GFX_BUILD_METAL) && defined(__OBJC__) && (defined(__aarch64__) || defined(__arm64__))
-        #include <tracy/TracyMetal.hmm>
-    #endif
-    #if defined(GFX_BUILD_VULKAN)
-        #define TRACY_VK_USE_SYMBOL_TABLE
-        #include <tracy/TracyVulkan.hpp>
-    #endif
 #else
     #define ZoneScoped
     #define ZoneScopedN(x)
-    #if defined(GFX_BUILD_METAL)
-        #define TracyMetalContext(device) nullptr
-        #define TracyMetalDestroy(ctx)
-        #define TracyMetalZone(ctx, encoderDesc, name)
-        #define TracyMetalCollect(ctx)
-        namespace tracy { class MetalCtx; }
-    #endif
-    #if defined(GFX_BUILD_VULKAN)
-        #define TracyVkDestroy(x)
-    #endif
 #endif
+
+#if defined(GFX_BUILD_TRACY) && defined(GFX_BUILD_METAL) && defined(__OBJC__) && (defined(__aarch64__) || defined(__arm64__))
+    #include <tracy/TracyMetal.hmm>
+#else
+    #define TracyMetalContext(device) nullptr
+    #define TracyMetalDestroy(ctx)
+    #define TracyMetalZone(ctx, encoderDesc, name)
+    #define TracyMetalCollect(ctx)
+    namespace tracy { class MetalCtx; }
+#endif
+#if defined(GFX_BUILD_TRACY) && defined(GFX_BUILD_VULKAN)
+    #define TRACY_VK_USE_SYMBOL_TABLE
+    #include <tracy/TracyVulkan.hpp>
+    #define TracyVkZone_begin(ctx, cmdbuf, name, variable, active)                                                                   \
+        static constexpr tracy::SourceLocationData TracyConcat(__tracy_gpu_source_location, TracyLine){                              \
+            name, TracyFunction, TracyFile, (uint32_t)TracyLine, 0                                                                   \
+        };                                                                                                                           \
+        (variable) = std::make_shared<tracy::VkCtxScope>(ctx, &TracyConcat(__tracy_gpu_source_location, TracyLine), cmdbuf, active);
+    #define TracyVkZone_end(variable) variable.reset()
+#else
+    #define TracyVkContextHostCalibrated(instance, physdev, device, instanceProcAddr, deviceProcAddr) nullptr
+    #define TracyVkZone(ctx, cmdbuf, name)
+    #define TracyVkCollectHost(ctx)
+    #define TracyVkDestroy(ctx)
+    namespace tracy { class VkCtx; }
+    #define TracyVkZone_begin(ctx, cmdbuf, name, variable, active)
+    #define TracyVkZone_end(variable)
+#endif
+// NOLINTEND(cppcoreguidelines-macro-usage)
 
 #endif // GRAPHICS_PCH_HPP

@@ -40,9 +40,7 @@ MetalDevice::MetalDevice(id<MTLDevice> device, const Device::Descriptor&)
 {
     m_queue = [m_mtlDevice newCommandQueue];
     m_sharedEvent = [m_mtlDevice newSharedEvent];
-#if defined (GFX_BUILD_TRACY) && (defined(__aarch64__) || defined(__arm64__))
     s_tracyMtlContext = TracyMetalContext(device);
-#endif
 }}
 
 std::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
