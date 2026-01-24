@@ -72,6 +72,9 @@ public:
     inline id<MTLCommandBuffer> mtlCommandBuffer() const { return m_mtlCommandBuffer; }
     inline id<MTLCommandEncoder> commandEncoder() const { return m_commandEncoder; }
 
+    inline void setSignaledSharedEventValue(uint64_t v) { m_signaledSharedEventValue = v; }
+    inline uint64_t signaledSharedEventValue() const { return m_signaledSharedEventValue; }
+
     ~MetalCommandBuffer() override = default;
 
 private:
@@ -85,6 +88,8 @@ private:
     std::set<std::shared_ptr<MetalSampler>> m_usedSamplers;
 
     std::set<std::shared_ptr<const MetalParameterBlock>> m_usedPBlock;
+
+    uint64_t m_signaledSharedEventValue = 0;
 
 public:
     MetalCommandBuffer& operator = (const MetalCommandBuffer&) = delete;

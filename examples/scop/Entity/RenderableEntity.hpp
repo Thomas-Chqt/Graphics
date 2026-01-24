@@ -14,14 +14,14 @@
 #include "Mesh.hpp"
 
 #if !defined (SCOP_MANDATORY)
-#include <glm/glm.hpp>
-#include <glm/ext/matrix_transform.hpp>
+    #include <glm/glm.hpp>
+    #include <glm/ext/matrix_transform.hpp>
 #else
-#include "math/math.hpp"
-#ifndef SCOP_MATH_GLM_ALIAS_DEFINED
-#define SCOP_MATH_GLM_ALIAS_DEFINED
-namespace glm = scop::math;
-#endif
+    #include "math/math.hpp"
+    #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
+        #define SCOP_MATH_GLM_ALIAS_DEFINED
+        namespace glm = scop::math;
+    #endif
 #endif
 
 #include <future>
@@ -37,7 +37,7 @@ public:
     RenderableEntity(const RenderableEntity&) = delete;
     RenderableEntity(RenderableEntity&&) = default;
 
-    RenderableEntity(std::future<Mesh>&& meshFuture) : m_meshFuture(std::move(meshFuture)) {};
+    RenderableEntity(std::shared_future<Mesh> meshFuture) : m_meshFuture(std::move(meshFuture)) {};
 
     inline const std::optional<Mesh>& mesh()
     {
@@ -64,7 +64,7 @@ public:
     ~RenderableEntity() override = default;
 
 private:
-    std::future<Mesh> m_meshFuture;
+    std::shared_future<Mesh> m_meshFuture;
     std::optional<Mesh> m_mesh;
 
 public:

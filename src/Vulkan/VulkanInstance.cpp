@@ -183,6 +183,7 @@ std::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc
         .deviceExtensions = {
             VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
             vk::KHRSynchronization2ExtensionName,
+            vk::EXTCalibratedTimestampsExtensionName
         }
     };
 

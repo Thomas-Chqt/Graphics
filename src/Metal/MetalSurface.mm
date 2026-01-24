@@ -18,6 +18,7 @@ namespace gfx
 MetalSurface::MetalSurface(GLFWwindow* glfwWindow) { @autoreleasepool
 {
     m_mtlLayer = [CAMetalLayer layer];
+    m_mtlLayer.displaySyncEnabled = YES;
 
     NSWindow* nswindow = glfwGetCocoaWindow(glfwWindow); // NOLINT
     nswindow.contentView.layer = m_mtlLayer;

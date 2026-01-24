@@ -44,8 +44,8 @@
     #include <unistd.h>
 #endif
 
-#if (defined(__GNUC__) || defined(__clang__))
-    #define GFX_EXPORT __attribute__((visibility("default")))
+#if defined(__GNUC__)
+    #define GFX_EXPORT __attribute__((used, visibility("default")))
 #elif defined(_MSC_VER)
     #define GFX_EXPORT __declspec(dllexport)
 #else

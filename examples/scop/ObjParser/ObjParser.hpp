@@ -12,14 +12,13 @@
 
 #include "math/math.hpp"
 #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
-#define SCOP_MATH_GLM_ALIAS_DEFINED
-namespace glm = scop::math;
+    #define SCOP_MATH_GLM_ALIAS_DEFINED
+    namespace glm = scop::math;
 #endif
 
 #include <vector>
 #include <filesystem>
 #include <cstdint>
-#include <utility>
 #include <optional>
 
 namespace scop

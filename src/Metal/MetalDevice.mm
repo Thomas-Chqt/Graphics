@@ -24,8 +24,6 @@
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
 #include "MetalParameterBlockLayout.hpp"
-#include <Metal/Metal.h>
-#include <objc/NSObjCRuntime.h>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Metal/imgui_impl_metal.h"
 #endif
@@ -41,6 +39,8 @@ MetalDevice::MetalDevice(id<MTLDevice> device, const Device::Descriptor&)
     : m_mtlDevice(device) { @autoreleasepool
 {
     m_queue = [m_mtlDevice newCommandQueue];
+    m_sharedEvent = [m_mtlDevice newSharedEvent];
+    s_tracyMtlContext = TracyMetalContext(device);
 }}
 
 std::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -118,6 +118,9 @@ void MetalDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCo
     auto commandBuffer = std::dynamic_pointer_cast<MetalCommandBuffer>(aCommandBuffer);
     assert(commandBuffer);
 
+    [commandBuffer->mtlCommandBuffer() encodeSignalEvent:m_sharedEvent value:m_nextSharedEventValue];
+    commandBuffer->setSignaledSharedEventValue(m_nextSharedEventValue);
+    m_nextSharedEventValue++;
     [commandBuffer->mtlCommandBuffer() commit];
     m_submittedCommandBuffers.push_back(commandBuffer);
 }}
@@ -130,10 +133,14 @@ void MetalDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Command
 
 void MetalDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer) { @autoreleasepool
 {
+    ZoneScoped;
+    std::scoped_lock lock(m_submitMtx);
+
     auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
     if (waitedIt != m_submittedCommandBuffers.end())
     {
-        [(*waitedIt)->mtlCommandBuffer() waitUntilCompleted];
+        [m_sharedEvent waitUntilSignaledValue:(*waitedIt)->signaledSharedEventValue() timeoutMS:UINT64_MAX];
+        TracyMetalCollect(s_tracyMtlContext);
         m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), std::next(waitedIt));
     }
 }}
@@ -147,6 +154,7 @@ void MetalDevice::waitIdle()
 MetalDevice::~MetalDevice()
 {
     waitIdle();
+    TracyMetalDestroy(s_tracyMtlContext);
 }
 
 }

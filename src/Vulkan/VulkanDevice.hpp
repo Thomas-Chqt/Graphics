@@ -77,6 +77,9 @@ public:
 
     ~VulkanDevice() override;
 
+public:
+    inline static tracy::VkCtx* s_tracyVkContext = nullptr;
+
 private:
     const VulkanInstance* const m_instance = nullptr;
     const VulkanPhysicalDevice* const m_physicalDevice = nullptr;
