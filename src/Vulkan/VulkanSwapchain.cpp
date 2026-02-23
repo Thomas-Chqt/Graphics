@@ -39,13 +39,12 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
     std::vector<vk::PresentModeKHR> surfacePresentModes = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
     assert(std::ranges::any_of(surfacePresentModes, [&desc](auto& m){return m == toVkPresentModeKHR(desc.presentMode);}));
 
-    vk::Extent2D extent;
     if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-        extent = surfaceCapabilities.currentExtent;
+        m_extent = surfaceCapabilities.currentExtent;
     else
     {
-        extent.width = std::clamp(desc.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
-        extent.height = std::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
+        m_extent.width = std::clamp(desc.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
+        m_extent.height = std::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
     }
 
 
@@ -54,7 +53,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         .setMinImageCount(desc.imageCount)
         .setImageFormat(toVkFormat(desc.pixelFormat))
         .setImageColorSpace(toVkColorSpaceKHR(desc.pixelFormat))
-        .setImageExtent(extent)
+        .setImageExtent(m_extent)
         .setImageArrayLayers(1)
         .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
         .setPreTransform(surfaceCapabilities.currentTransform)
@@ -77,7 +76,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
     s_oldSwapchains[&vkSurface] = *m_vkSwapchain;
 
     Texture::Descriptor swapchainImageTexDesc = {
-        .width = extent.width, .height = extent.height,
+        .width = m_extent.width, .height = m_extent.height,
         .pixelFormat = desc.pixelFormat,
         .usages = TextureUsage::colorAttachment,
         .storageMode = ResourceStorageMode::deviceLocal

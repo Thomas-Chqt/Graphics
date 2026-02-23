@@ -37,6 +37,9 @@ public:
     Swapchain(const Swapchain&) = delete;
     Swapchain(Swapchain&&) = delete;
 
+    virtual uint32_t width() const = 0;
+    virtual uint32_t height() const = 0;
+
     virtual std::shared_ptr<Drawable> nextDrawable() = 0;
 
     virtual ~Swapchain() = default;

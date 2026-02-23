@@ -30,11 +30,16 @@ public:
 
     MetalSwapchain(const MetalDevice&, const Swapchain::Descriptor&);
 
+    inline uint32_t width() const override { return m_width; }
+    inline uint32_t height() const override { return m_height; }
+
     std::shared_ptr<Drawable> nextDrawable() override;
 
     ~MetalSwapchain() override = default;
 
 private:
+    uint32_t m_width;
+    uint32_t m_height;
     CAMetalLayer* m_mtlLayer;
 
 public:

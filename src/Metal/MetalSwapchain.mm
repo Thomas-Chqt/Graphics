@@ -20,7 +20,9 @@
 namespace gfx
 {
 
-MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descriptor& desc) { @autoreleasepool
+MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descriptor& desc)
+    : m_width(desc.width)
+    , m_height(desc.height) { @autoreleasepool
 {
     assert(desc.surface);
     auto* mtlSurface = dynamic_cast<MetalSurface*>(desc.surface);
