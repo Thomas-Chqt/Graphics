@@ -25,6 +25,7 @@ option(GFX_ENABLE_IMGUI   "Build with imgui capabilities"       OFF)
 option(GFX_ENABLE_GLFW    "Build with glfw capabilities"        OFF)
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_BUILD_TRACY    "Build the tracy client"              OFF)
+option(GFX_BUILD_TESTS    "Build the tests"                     OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
 
 if(GFX_BUILD_EXAMPLES)
@@ -214,6 +215,11 @@ add_subdirectory("tools")
 
 if(GFX_BUILD_EXAMPLES)
     add_subdirectory("examples")
+endif()
+
+if (GFX_BUILD_TESTS)
+    enable_testing() # need to be in the top level cmakelists
+    add_subdirectory("tests")
 endif()
 
 if(GFX_INSTALL)

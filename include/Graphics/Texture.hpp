@@ -27,6 +27,7 @@ public:
         PixelFormat pixelFormat = PixelFormat::RGBA8Unorm;
         TextureUsages usages = TextureUsage::shaderRead;
         ResourceStorageMode storageMode = ResourceStorageMode::deviceLocal;
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:

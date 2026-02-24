@@ -21,6 +21,7 @@ struct ParameterBlockBinding
 {
     BindingType type = BindingType::uniformBuffer;
     BindingUsages usages = BindingUsage::vertexRead | BindingUsage::fragmentRead;
+    auto operator<=>(const ParameterBlockBinding&) const = default;
 };
 
 class ParameterBlockLayout
@@ -29,12 +30,13 @@ public:
     struct Descriptor
     {
         std::vector<ParameterBlockBinding> bindings;
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:
     ParameterBlockLayout(const ParameterBlockLayout&) = delete;
     ParameterBlockLayout(ParameterBlockLayout&&) = delete;
-    
+
     virtual const std::vector<ParameterBlockBinding>& bindings() const = 0;
 
     virtual ~ParameterBlockLayout() = default;

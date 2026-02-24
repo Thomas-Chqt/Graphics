@@ -25,6 +25,7 @@ public:
         SamplerAddressMode rAddressMode = SamplerAddressMode::ClampToEdge;
         SamplerMinMagFilter minFilter = SamplerMinMagFilter::Nearest;
         SamplerMinMagFilter magFilter = SamplerMinMagFilter::Nearest;
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:

@@ -36,6 +36,7 @@ public:
     struct Descriptor
     {
         QueueCapabilities queueCaps;
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:

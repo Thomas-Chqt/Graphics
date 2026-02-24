@@ -40,6 +40,10 @@ jobs:
           -DGFX_ENABLE_${{ matrix.enable-glfw }}
           -DGFX_ENABLE_${{ matrix.enable-imgui }}
           -DGFX_BUILD_${{ matrix.build-examples }}
+          -DGFX_BUILD_TESTS=ON
 
       - name: Build
         run: cmake --build build --config ${{ matrix.build-type }} --parallel
+
+      - name: Test
+        run: ctest --test-dir build

@@ -14,6 +14,7 @@
 #include <type_traits>
 #include <cstdint>
 #include <stdexcept>
+#include <compare> // IWYU pragma: keep
 
 namespace gfx
 {
@@ -29,9 +30,7 @@ public:
 
     [[nodiscard]] constexpr inline T value() const { return m_value; }
 
-    [[nodiscard]] constexpr inline bool operator==(const Flags& rhs) const { return m_value == rhs.m_value; }
-    [[nodiscard]] constexpr inline bool operator!=(const Flags& rhs) const { return m_value != rhs.m_value; }
-    [[nodiscard]] constexpr inline bool operator<(const Flags& rhs) const { return m_value < rhs.m_value; }
+    [[nodiscard]] constexpr inline auto operator<=>(const Flags& rhs) const = default;
 
     [[nodiscard]] constexpr inline Flags operator|(const Flags& rhs) const { return Flags(m_value | rhs.m_value); }
     [[nodiscard]] constexpr inline Flags operator&(const Flags& rhs) const { return Flags(m_value & rhs.m_value); }

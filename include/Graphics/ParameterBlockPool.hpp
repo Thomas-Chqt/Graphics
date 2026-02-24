@@ -27,6 +27,7 @@ public:
         uint32_t maxUniformBuffers = 16;
         uint32_t maxTextures = 4;
         uint32_t maxSamplers = 4;
+        auto operator<=>(const Descriptor&) const = default;
     };
 
     ParameterBlockPool(const ParameterBlockPool&) = delete;

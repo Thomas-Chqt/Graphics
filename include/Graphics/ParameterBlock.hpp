@@ -10,7 +10,6 @@
 #ifndef PARAMETERBLOCK_HPP
 #define PARAMETERBLOCK_HPP
 
-#include "Graphics/Enums.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "Graphics/Sampler.hpp"
