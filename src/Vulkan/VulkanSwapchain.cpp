@@ -23,6 +23,7 @@ namespace gfx
 
 VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& desc)
     : m_device(device)
+    , m_pixelFormat(desc.pixelFormat)
 {
     assert(desc.surface);
     const vk::SurfaceKHR& vkSurface = dynamic_cast<const VulkanSurface&>(*desc.surface).vkSurface();
