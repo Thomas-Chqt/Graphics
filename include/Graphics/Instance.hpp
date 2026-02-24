@@ -33,6 +33,8 @@ public:
         std::array<int, 3> appVersion;
         std::string engineName;
         std::array<int, 3> engineVersion;
+
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:

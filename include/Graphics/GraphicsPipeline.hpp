@@ -10,7 +10,6 @@
 #ifndef GRAPHICSPIPELINE_HPP
 #define GRAPHICSPIPELINE_HPP
 
-#include "Graphics/ParameterBlock.hpp"
 #include "Graphics/ShaderFunction.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/VertexLayout.hpp"
@@ -40,6 +39,8 @@ public:
         CullMode cullMode = CullMode::none;
 
         std::vector<std::shared_ptr<ParameterBlockLayout>> parameterBlockLayouts;
+
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:

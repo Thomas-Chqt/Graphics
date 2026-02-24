@@ -23,6 +23,8 @@ struct QueueCapabilities
     bool compute;
     bool transfer;
     std::vector<Surface*> present;
+
+    auto operator<=>(const QueueCapabilities&) const = default;
 };
 
 }

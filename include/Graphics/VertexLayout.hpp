@@ -23,6 +23,7 @@ struct VertexAttribute
     VertexAttributeFormat format;
     size_t offset;
     // bufferIndex
+    auto operator<=>(const VertexAttribute&) const = default;
 };
 
 struct VertexLayout
@@ -31,6 +32,8 @@ struct VertexLayout
     // stepFunction
     // stepRate
     std::vector<VertexAttribute> attributes;
+
+    auto operator<=>(const VertexLayout&) const = default;
 };
 
 }

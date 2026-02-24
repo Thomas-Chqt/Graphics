@@ -25,6 +25,8 @@ public:
         size_t size = 0;
         BufferUsages usages = BufferUsage::uniformBuffer;
         ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
+
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:

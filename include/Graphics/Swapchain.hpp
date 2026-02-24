@@ -31,6 +31,7 @@ public:
         uint32_t drawableCount = 3;
         PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
         PresentMode presentMode = PresentMode::fifo;
+        auto operator<=>(const Descriptor&) const = default;
     };
 
 public:
