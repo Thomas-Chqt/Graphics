@@ -32,6 +32,7 @@ public:
 
     inline uint32_t width() const override { return m_width; }
     inline uint32_t height() const override { return m_height; }
+    inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
 
     std::shared_ptr<Drawable> nextDrawable() override;
 
@@ -41,6 +42,7 @@ private:
     uint32_t m_width;
     uint32_t m_height;
     CAMetalLayer* m_mtlLayer;
+    PixelFormat m_pixelFormat;
 
 public:
     MetalSwapchain& operator=(const MetalSwapchain&) = delete;
