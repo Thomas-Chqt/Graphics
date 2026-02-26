@@ -31,7 +31,7 @@ public:
     MetalTexture(const MetalTexture&) = delete;
     MetalTexture(MetalTexture&&)      = delete;
 
-    MetalTexture(const id<MTLTexture>&, const Texture::Descriptor&);
+    MetalTexture(const Texture::Descriptor&);
     MetalTexture(const MetalDevice&, const Texture::Descriptor&);
 
     TextureType type() const override;
@@ -42,6 +42,7 @@ public:
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
     inline id<MTLTexture> mtltexture() const { return m_mtlTexture; }
+    inline void setMtlTexture(const id<MTLTexture>& t) { m_mtlTexture = t; }
 
     ~MetalTexture() override = default;
 
