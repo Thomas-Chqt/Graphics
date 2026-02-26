@@ -17,13 +17,12 @@
 #include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
+#include "vulkan/vulkan.hpp"
 
 namespace gfx
 {
 
-VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& desc)
-    : m_device(device)
-    , m_pixelFormat(desc.pixelFormat)
+VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& desc) : m_device(device)
 {
     assert(desc.surface);
     const vk::SurfaceKHR& vkSurface = dynamic_cast<const VulkanSurface&>(*desc.surface).vkSurface();
@@ -40,12 +39,13 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
     std::vector<vk::PresentModeKHR> surfacePresentModes = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
     assert(std::ranges::any_of(surfacePresentModes, [&desc](auto& m){return m == toVkPresentModeKHR(desc.presentMode);}));
 
+    vk::Extent2D extent;
     if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-        m_extent = surfaceCapabilities.currentExtent;
+        extent = surfaceCapabilities.currentExtent;
     else
     {
-        m_extent.width = std::clamp(desc.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
-        m_extent.height = std::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
+        extent.width = std::clamp(desc.width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width);
+        extent.height = std::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
     }
 
 
@@ -54,7 +54,7 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         .setMinImageCount(desc.imageCount)
         .setImageFormat(toVkFormat(desc.pixelFormat))
         .setImageColorSpace(toVkColorSpaceKHR(desc.pixelFormat))
-        .setImageExtent(m_extent)
+        .setImageExtent(extent)
         .setImageArrayLayers(1)
         .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
         .setPreTransform(surfaceCapabilities.currentTransform)
@@ -76,15 +76,15 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
     m_vkSwapchain = vkSwapchainPtr.get();
     s_oldSwapchains[&vkSurface] = *m_vkSwapchain;
 
-    Texture::Descriptor swapchainImageTexDesc = {
-        .width = m_extent.width, .height = m_extent.height,
+    m_swapchainImagesDescriptor = {
+        .width = extent.width, .height = extent.height,
         .pixelFormat = desc.pixelFormat,
         .usages = TextureUsage::colorAttachment,
         .storageMode = ResourceStorageMode::deviceLocal
     };
 
     m_swapchainImages = m_device->vkDevice().getSwapchainImagesKHR(*vkSwapchainPtr)
-        | std::views::transform([&](vk::Image& vkImage) { return std::make_shared<SwapchainImage>(m_device, std::move(vkImage), vkSwapchainPtr, swapchainImageTexDesc); })
+        | std::views::transform([&](vk::Image& vkImage) { return std::make_shared<SwapchainImage>(m_device, std::move(vkImage), vkSwapchainPtr, m_swapchainImagesDescriptor); })
         | std::ranges::to<std::vector>();
 
     m_drawables.resize(desc.drawableCount);

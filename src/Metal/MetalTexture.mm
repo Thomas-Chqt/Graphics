@@ -15,13 +15,14 @@
 
 #import "Metal/MetalEnums.hpp"
 
+#include <cassert>
+
 namespace gfx
 {
 
-MetalTexture::MetalTexture(const id<MTLTexture>& mtltexture, const Texture::Descriptor& desc)
+MetalTexture::MetalTexture(const Texture::Descriptor& desc)
     : m_usages(desc.usages)
     , m_storageMode(desc.storageMode)
-    , m_mtlTexture(mtltexture)
 {
 }
 
@@ -44,22 +45,26 @@ MetalTexture::MetalTexture(const MetalDevice& device, const Texture::Descriptor&
 
 TextureType MetalTexture::type() const { @autoreleasepool
 {
-    return toTextureType([mtltexture() textureType]);
+    assert(m_mtlTexture);
+    return toTextureType([m_mtlTexture textureType]);
 }}
 
 uint32_t MetalTexture::width() const { @autoreleasepool
 {
-    return static_cast<uint32_t>(mtltexture().width);
+    assert(m_mtlTexture);
+    return static_cast<uint32_t>(m_mtlTexture.width);
 }}
 
 uint32_t MetalTexture::height() const { @autoreleasepool
 {
-    return static_cast<uint32_t>(mtltexture().height);
+    assert(m_mtlTexture);
+    return static_cast<uint32_t>(m_mtlTexture.height);
 }}
 
 PixelFormat MetalTexture::pixelFormat() const { @autoreleasepool
 {
-    return toPixelFormat([mtltexture() pixelFormat]);
+    assert(m_mtlTexture);
+    return toPixelFormat([m_mtlTexture pixelFormat]);
 }}
 
 }

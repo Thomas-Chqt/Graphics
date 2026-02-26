@@ -16,29 +16,45 @@
 #include "Metal/MetalSurface.hpp"
 
 #import "Metal/MetalEnums.hpp"
+#include <memory>
 
 namespace gfx
 {
 
 MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descriptor& desc)
-    : m_width(desc.width)
-    , m_height(desc.height)
-    , m_pixelFormat(desc.pixelFormat) { @autoreleasepool
+    : m_swapchainImagesDescriptor{
+        .type = TextureType::texture2d,
+        .width = desc.width,
+        .height = desc.height,
+        .pixelFormat = desc.pixelFormat,
+        .usages = TextureUsage::colorAttachment,
+        .storageMode = ResourceStorageMode::deviceLocal
+    }
 {
-    assert(desc.surface);
-    auto* mtlSurface = dynamic_cast<MetalSurface*>(desc.surface);
-    assert(mtlSurface);
+    @autoreleasepool {
+        assert(desc.surface);
+        auto* mtlSurface = dynamic_cast<MetalSurface*>(desc.surface);
+        assert(mtlSurface);
 
-    m_mtlLayer = mtlSurface->mtlLayer();
-    m_mtlLayer.device = device.mtlDevice();
-    m_mtlLayer.drawableSize = CGSize{CGFloat(desc.width), CGFloat(desc.height)};
-    m_mtlLayer.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
-}}
+        m_mtlLayer = mtlSurface->mtlLayer();
+        m_mtlLayer.device = device.mtlDevice();
+        m_mtlLayer.drawableSize = CGSize{CGFloat(desc.width), CGFloat(desc.height)};
+        m_mtlLayer.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
+
+        m_drawables.resize(desc.drawableCount);
+        for (auto& drawable : m_drawables)
+            drawable = std::make_shared<MetalDrawable>(m_swapchainImagesDescriptor);
+
+    }
+}
 
 std::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
 {
     ZoneScoped;
-    return std::make_shared<MetalDrawable>([m_mtlLayer nextDrawable]);
+    std::shared_ptr<MetalDrawable> nextDrawable = m_drawables.at(m_nextDrawableIndex);
+    m_nextDrawableIndex = (m_nextDrawableIndex + 1) % m_drawables.size();
+    nextDrawable->setMtlDrawable([m_mtlLayer nextDrawable]);
+    return nextDrawable;
 }}
 
 }

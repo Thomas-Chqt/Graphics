@@ -12,6 +12,8 @@
 
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Drawable.hpp"
+#include "Metal/MetalDrawable.hpp"
+#include "Metal/MetalTexture.hpp"
 
 #if !defined(__OBJC__)
 #error this file can only by used in objective c
@@ -30,19 +32,18 @@ public:
 
     MetalSwapchain(const MetalDevice&, const Swapchain::Descriptor&);
 
-    inline uint32_t width() const override { return m_width; }
-    inline uint32_t height() const override { return m_height; }
-    inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
+    inline const Texture::Descriptor& drawablesTextureDescriptor() const override { return m_swapchainImagesDescriptor; }
 
     std::shared_ptr<Drawable> nextDrawable() override;
 
     ~MetalSwapchain() override = default;
 
 private:
-    uint32_t m_width;
-    uint32_t m_height;
+    Texture::Descriptor m_swapchainImagesDescriptor;
+
     CAMetalLayer* m_mtlLayer;
-    PixelFormat m_pixelFormat;
+    std::vector<std::shared_ptr<MetalDrawable>> m_drawables;
+    uint32_t m_nextDrawableIndex = 0;
 
 public:
     MetalSwapchain& operator=(const MetalSwapchain&) = delete;

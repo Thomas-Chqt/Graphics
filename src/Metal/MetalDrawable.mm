@@ -14,26 +14,26 @@
 #include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
 
+#include <memory>
+
 namespace gfx
 {
 
-MetalDrawable::MetalDrawable(id<CAMetalDrawable> mtlDrawable)
-    : m_mtlDrawable(mtlDrawable)
+MetalDrawable::MetalDrawable(const Texture::Descriptor& textureDescriptor)
+    : m_texture(std::make_shared<MetalTexture>(textureDescriptor))
 {
 }
 
 std::shared_ptr<Texture> MetalDrawable::texture() const { @autoreleasepool
 {
-    id<MTLTexture> mtlTexture = m_mtlDrawable.texture;
-    Texture::Descriptor desc = {
-        .type = TextureType::texture2d,
-        .width = static_cast<uint32_t>(mtlTexture.width),
-        .height = static_cast<uint32_t>(mtlTexture.height),
-        .pixelFormat = toPixelFormat(mtlTexture.pixelFormat),
-        .usages = TextureUsage::colorAttachment,
-        .storageMode = ResourceStorageMode::deviceLocal
-    };
-    return std::make_shared<MetalTexture>(m_mtlDrawable.texture, desc);
+    m_texture->setMtlTexture(m_mtlDrawable.texture);
+    return m_texture;
 }}
+
+void MetalDrawable::setMtlDrawable(const id<CAMetalDrawable>& drawable)
+{
+    m_mtlDrawable = drawable;
+    m_texture->setMtlTexture(nil);
+}
 
 }

@@ -13,6 +13,7 @@
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Drawable.hpp"
+#include "Graphics/Texture.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -38,9 +39,8 @@ public:
     Swapchain(const Swapchain&) = delete;
     Swapchain(Swapchain&&) = delete;
 
-    virtual uint32_t width() const = 0;
-    virtual uint32_t height() const = 0;
-    virtual PixelFormat pixelFormat() const = 0;
+    // descriptor used to create textures for drawables
+    virtual const Texture::Descriptor& drawablesTextureDescriptor() const = 0;
 
     virtual std::shared_ptr<Drawable> nextDrawable() = 0;
 

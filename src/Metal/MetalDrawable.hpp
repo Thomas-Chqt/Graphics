@@ -11,6 +11,9 @@
 #define METALDRAWABLE_HPP
 
 #include "Graphics/Drawable.hpp"
+#include "Metal/MetalTexture.hpp"
+
+#include <memory>
 
 #if !defined(__OBJC__)
 #error this file can only by used in objective c
@@ -28,16 +31,18 @@ public:
     MetalDrawable(const MetalDrawable&) = delete;
     MetalDrawable(MetalDrawable&&) = delete;
 
-    MetalDrawable(id<CAMetalDrawable>);
+    MetalDrawable(const Texture::Descriptor&);
 
     std::shared_ptr<Texture> texture() const override;
 
-    id<CAMetalDrawable> mtlDrawable() const { return m_mtlDrawable; }
+    inline id<CAMetalDrawable> mtlDrawable() const { return m_mtlDrawable; }
+    void setMtlDrawable(const id<CAMetalDrawable>& d);
 
     ~MetalDrawable() override = default;
 
 private:
-    id<CAMetalDrawable> m_mtlDrawable;
+    id<CAMetalDrawable> m_mtlDrawable = nil;
+    std::shared_ptr<MetalTexture> m_texture = nullptr;
 
 public:
     MetalDrawable& operator=(const MetalDrawable&) = delete;

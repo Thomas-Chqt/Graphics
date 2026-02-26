@@ -31,9 +31,7 @@ public:
 
     VulkanSwapchain(const VulkanDevice*, const Swapchain::Descriptor&);
 
-    inline uint32_t width() const override { return m_extent.width; }
-    inline uint32_t height() const override { return m_extent.height; }
-    inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
+    inline const Texture::Descriptor& drawablesTextureDescriptor() const override { return m_swapchainImagesDescriptor; }
 
     std::shared_ptr<Drawable> nextDrawable() override;
 
@@ -41,8 +39,7 @@ public:
 
 private:
     const VulkanDevice* m_device;
-    vk::Extent2D m_extent;
-    PixelFormat m_pixelFormat;
+    Texture::Descriptor m_swapchainImagesDescriptor;
 
     vk::SwapchainKHR* m_vkSwapchain;
     std::vector<std::shared_ptr<SwapchainImage>> m_swapchainImages;
