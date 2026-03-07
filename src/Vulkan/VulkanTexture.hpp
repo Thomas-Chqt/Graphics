@@ -16,6 +16,7 @@
 
 #include "Vulkan/Sync.hpp"
 #include "Vulkan/VulkanSampler.hpp"
+#include <cstdint>
 
 namespace gfx
 {
@@ -41,7 +42,7 @@ public:
 
 #if defined (GFX_IMGUI_ENABLED)
     void initImTextureId(const std::shared_ptr<Sampler>&) override;
-    inline std::optional<ImTextureID> imTextureId() const override { return m_imTextureId; }
+    inline std::optional<uint64_t> imTextureId() const override { return m_imTextureId; }
 #endif
 
     inline const vk::Image& vkImage() const { return m_vkImage; }
@@ -71,7 +72,7 @@ protected:
     ImageSyncState m_syncState;
 
 #if defined (GFX_IMGUI_ENABLED)
-    std::optional<ImTextureID> m_imTextureId;
+    std::optional<uint64_t> m_imTextureId;
 #endif
     std::shared_ptr<VulkanSampler> m_imTextureIdSampler;
 

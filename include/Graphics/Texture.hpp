@@ -17,10 +17,6 @@
 #include <memory>
 #include <optional>
 
-#if defined (GFX_IMGUI_ENABLED)
-using ImTextureID = uint64_t;
-#endif
-
 namespace gfx
 {
 
@@ -50,7 +46,7 @@ public:
 
 #if defined (GFX_IMGUI_ENABLED)
     virtual void initImTextureId(const std::shared_ptr<Sampler>&) = 0;
-    virtual std::optional<ImTextureID> imTextureId() const = 0;
+    virtual std::optional<uint64_t> imTextureId() const = 0;
 #endif
 
     virtual ~Texture() = default;

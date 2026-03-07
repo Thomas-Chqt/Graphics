@@ -117,7 +117,7 @@ void VulkanTexture::initImTextureId(const std::shared_ptr<Sampler>& sampler)
     m_imTextureIdSampler = vulkanSampler;
     if (m_imTextureId.has_value())
         ImGui_ImplVulkan_RemoveTexture(std::bit_cast<VkDescriptorSet>(*m_imTextureId));
-    m_imTextureId = std::bit_cast<ImTextureID>(ImGui_ImplVulkan_AddTexture(m_imTextureIdSampler->vkSampler(), m_vkImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+    m_imTextureId = std::bit_cast<uint64_t>(ImGui_ImplVulkan_AddTexture(m_imTextureIdSampler->vkSampler(), m_vkImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
 }
 #endif
 

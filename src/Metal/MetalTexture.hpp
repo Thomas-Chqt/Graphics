@@ -44,7 +44,7 @@ public:
 
 #if defined (GFX_IMGUI_ENABLED)
     inline void initImTextureId(const std::shared_ptr<Sampler>&) override {} // no-op
-    inline std::optional<ImTextureID> imTextureId() const override { return std::bit_cast<ImTextureID>((__bridge void*)m_mtlTexture); }
+    inline std::optional<uint64_t> imTextureId() const override { return std::bit_cast<uint64_t>((__bridge void*)m_mtlTexture); }
 #endif
 
     inline id<MTLTexture> mtltexture() const { return m_mtlTexture; }
