@@ -68,6 +68,8 @@ public:
 
     void presentDrawable(const std::shared_ptr<Drawable>&) override;
 
+    void addSampledTexture(const std::shared_ptr<Texture>&) override;
+
 
     inline id<MTLCommandBuffer> mtlCommandBuffer() const { return m_mtlCommandBuffer; }
     inline id<MTLCommandEncoder> commandEncoder() const { return m_commandEncoder; }

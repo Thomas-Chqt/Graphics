@@ -53,6 +53,20 @@ if (imgui_SOURCE_DIR)
     set_target_properties(imgui PROPERTIES FOLDER "dependencies")
 endif()
 
+## STB_IMAGE ###############################################################
+
+FetchContent_Declare(stb_image
+    GIT_REPOSITORY    https://github.com/Thomas-Chqt/stb_image.git
+    GIT_TAG           a09b799a2ba95c14f511493db4ea59811b2fcc97
+    GIT_SHALLOW       1
+    GIT_PROGRESS      TRUE
+    FIND_PACKAGE_ARGS
+)
+FetchContent_MakeAvailable(stb_image)
+if (stb_image_SOURCE_DIR)
+    set_target_properties(stb_image PROPERTIES FOLDER "dependencies")
+endif()
+
 ##################################################################
 
 add_executable(imgui_usage)
@@ -86,9 +100,10 @@ target_include_directories(imgui_usage PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 if(CMAKE_GENERATOR STREQUAL "Xcode")
     target_compile_definitions(imgui_usage PRIVATE "__XCODE__")
 endif()
+target_compile_definitions(imgui_usage PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 target_compile_definitions(imgui_usage PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(imgui_usage PRIVATE Graphics imgui)
+target_link_libraries(imgui_usage PRIVATE Graphics imgui stb_image)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for imgui_usage")

@@ -11,8 +11,15 @@
 #define TEXTURE_HPP
 
 #include "Graphics/Enums.hpp"
+#include "Graphics/Sampler.hpp"
 
 #include <cstdint>
+#include <memory>
+#include <optional>
+
+#if defined (GFX_IMGUI_ENABLED)
+using ImTextureID = uint64_t;
+#endif
 
 namespace gfx
 {
@@ -40,6 +47,11 @@ public:
     virtual PixelFormat pixelFormat() const = 0;
     virtual TextureUsages usages() const = 0;
     virtual ResourceStorageMode storageMode() const = 0;
+
+#if defined (GFX_IMGUI_ENABLED)
+    virtual void initImTextureId(const std::shared_ptr<Sampler>&) = 0;
+    virtual std::optional<ImTextureID> imTextureId() const = 0;
+#endif
 
     virtual ~Texture() = default;
 

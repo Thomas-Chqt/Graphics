@@ -14,6 +14,7 @@
 #include "Graphics/Texture.hpp"
 
 #include "Metal/MetalBuffer.hpp"
+#include <bit>
 
 #if !defined(__OBJC__)
 #error this file can only by used in objective c
@@ -40,6 +41,11 @@ public:
     PixelFormat pixelFormat() const override;
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
+
+#if defined (GFX_IMGUI_ENABLED)
+    inline void initImTextureId(const std::shared_ptr<Sampler>&) override {} // no-op
+    inline std::optional<ImTextureID> imTextureId() const override { return std::bit_cast<ImTextureID>((__bridge void*)m_mtlTexture); }
+#endif
 
     inline id<MTLTexture> mtltexture() const { return m_mtlTexture; }
     inline void setMtlTexture(const id<MTLTexture>& t) { m_mtlTexture = t; }

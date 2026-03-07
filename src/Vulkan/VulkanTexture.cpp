@@ -9,8 +9,18 @@
 
 #include "Vulkan/VulkanTexture.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Texture.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
+#include "Vulkan/VulkanSampler.hpp"
+
+#include <bit>
+#include <cassert>
+#include <memory>
+
+#if defined (GFX_IMGUI_ENABLED)
+#include "imgui_impl_vulkan.h"
+#endif
 
 namespace gfx
 {
@@ -98,8 +108,23 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descript
     m_vkImageView = m_device->vkDevice().createImageView(imageViewCreateInfo);
 }
 
+#if defined (GFX_IMGUI_ENABLED)
+void VulkanTexture::initImTextureId(const std::shared_ptr<Sampler>& sampler)
+{
+    auto vulkanSampler = std::dynamic_pointer_cast<VulkanSampler>(sampler);
+    assert(vulkanSampler);
+
+    m_imTextureIdSampler = vulkanSampler;
+    if (m_imTextureId.has_value())
+        ImGui_ImplVulkan_RemoveTexture(std::bit_cast<VkDescriptorSet>(*m_imTextureId));
+    m_imTextureId = std::bit_cast<ImTextureID>(ImGui_ImplVulkan_AddTexture(m_imTextureIdSampler->vkSampler(), m_vkImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+}
+#endif
+
 VulkanTexture::~VulkanTexture()
 {
+    if (m_imTextureId.has_value())
+        ImGui_ImplVulkan_RemoveTexture(std::bit_cast<VkDescriptorSet>(*m_imTextureId));
     m_device->vkDevice().destroyImageView(m_vkImageView);
     if (m_allocation != VK_NULL_HANDLE)
         vmaDestroyImage(m_device->allocator(), m_vkImage, m_allocation);

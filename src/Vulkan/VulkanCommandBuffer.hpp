@@ -16,12 +16,14 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
 
+#include "Graphics/Texture.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
+#include <memory>
 
 namespace gfx
 {
@@ -63,6 +65,8 @@ public:
     void endBlitPass() override;
 
     void presentDrawable(const std::shared_ptr<Drawable>&) override;
+
+    void addSampledTexture(const std::shared_ptr<Texture>&) override; // for imgui
 
 
     const vk::CommandBuffer& vkCommandBuffer() const { return m_vkCommandBuffer; }
