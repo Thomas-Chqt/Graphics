@@ -11,10 +11,8 @@
 #define TEXTURE_HPP
 
 #include "Graphics/Enums.hpp"
-#include "Graphics/Sampler.hpp"
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 
 namespace gfx
@@ -45,7 +43,7 @@ public:
     virtual ResourceStorageMode storageMode() const = 0;
 
 #if defined (GFX_IMGUI_ENABLED)
-    virtual void initImTextureId(const std::shared_ptr<Sampler>&) = 0;
+    virtual void initImTextureId() = 0;
     virtual std::optional<uint64_t> imTextureId() const = 0;
 #endif
 

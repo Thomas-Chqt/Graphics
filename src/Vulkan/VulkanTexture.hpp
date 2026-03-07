@@ -16,7 +16,6 @@
 
 #include "Vulkan/Sync.hpp"
 #include "Vulkan/VulkanSampler.hpp"
-#include <cstdint>
 
 namespace gfx
 {
@@ -41,7 +40,7 @@ public:
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
 #if defined (GFX_IMGUI_ENABLED)
-    void initImTextureId(const std::shared_ptr<Sampler>&) override;
+    void initImTextureId() override;
     inline std::optional<uint64_t> imTextureId() const override { return m_imTextureId; }
 #endif
 

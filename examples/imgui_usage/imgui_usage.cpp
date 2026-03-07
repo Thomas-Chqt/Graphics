@@ -12,7 +12,6 @@
 #include "Graphics/Framebuffer.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
-#include "Graphics/Sampler.hpp"
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
@@ -156,7 +155,6 @@ public:
 
         m_device->imguiInit({gfx::PixelFormat::BGRA8Unorm});
 
-        m_texture->initImTextureId(m_device->newSampler(gfx::Sampler::Descriptor{}));
     }
 
     void loop()
@@ -196,6 +194,8 @@ public:
                 ImGui::ShowDemoWindow();
 
                 ImGui::Begin("texture");
+                if (m_texture->imTextureId().has_value() == false)
+                    m_texture->initImTextureId();
                 ImGui::Image(*m_texture->imTextureId(), ImVec2((float)m_texture->width(), (float)m_texture->height()));
                 ImGui::End();
             }

@@ -9,14 +9,11 @@
 
 #include "Vulkan/VulkanTexture.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Sampler.hpp"
 #include "Graphics/Texture.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanSampler.hpp"
-
-#include <bit>
-#include <cassert>
-#include <memory>
 
 #if defined (GFX_IMGUI_ENABLED)
 #include "imgui_impl_vulkan.h"
@@ -109,9 +106,10 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descript
 }
 
 #if defined (GFX_IMGUI_ENABLED)
-void VulkanTexture::initImTextureId(const std::shared_ptr<Sampler>& sampler)
+void VulkanTexture::initImTextureId()
 {
-    auto vulkanSampler = std::dynamic_pointer_cast<VulkanSampler>(sampler);
+    std::shared_ptr<Sampler> aSampler = m_device->newSampler(Sampler::Descriptor{});
+    auto vulkanSampler = std::dynamic_pointer_cast<VulkanSampler>(aSampler);
     assert(vulkanSampler);
 
     m_imTextureIdSampler = vulkanSampler;

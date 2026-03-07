@@ -14,7 +14,6 @@
 #include "Graphics/Texture.hpp"
 
 #include "Metal/MetalBuffer.hpp"
-#include <bit>
 
 #if !defined(__OBJC__)
 #error this file can only by used in objective c
@@ -43,7 +42,7 @@ public:
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
 #if defined (GFX_IMGUI_ENABLED)
-    inline void initImTextureId(const std::shared_ptr<Sampler>&) override {} // no-op
+    inline void initImTextureId() override {} // no-op
     inline std::optional<uint64_t> imTextureId() const override { return std::bit_cast<uint64_t>((__bridge void*)m_mtlTexture); }
 #endif
 
