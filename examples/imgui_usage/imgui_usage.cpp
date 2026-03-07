@@ -26,6 +26,7 @@
 #include <memory>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 
 #if __XCODE__
     #include <unistd.h>
