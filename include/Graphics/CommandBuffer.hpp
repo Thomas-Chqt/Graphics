@@ -62,6 +62,8 @@ public:
 
     virtual void presentDrawable(const std::shared_ptr<Drawable>&) = 0;
 
+    virtual void addSampledTexture(const std::shared_ptr<Texture>&) = 0; // for imgui
+
     virtual ~CommandBuffer() = default;
 
 protected:

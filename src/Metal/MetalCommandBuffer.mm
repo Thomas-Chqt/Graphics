@@ -19,6 +19,7 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
+#include <memory>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Metal/imgui_impl_metal.h"
 #endif
@@ -266,6 +267,12 @@ void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawa
 
     [m_mtlCommandBuffer presentDrawable:drawable->mtlDrawable()];
 }}
+
+void MetalCommandBuffer::addSampledTexture(const std::shared_ptr<Texture>& aTexture)
+{
+    auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
+    m_usedTextures.insert(texture);
+}
 
 MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) noexcept { @autoreleasepool
 {

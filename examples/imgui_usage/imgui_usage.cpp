@@ -15,14 +15,17 @@
 #include "Graphics/Surface.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Swapchain.hpp"
-#include "imgui.h"
+#include "Graphics/Texture.hpp"
 
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
+#include <stb_image/stb_image.h>
 
 #include <memory>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 
 #if __XCODE__
     #include <unistd.h>
@@ -99,6 +102,41 @@ public:
             m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
         }
 
+        int width = 0;
+        int height = 0;
+        stbi_uc* textureBytes = stbi_load(RESOURCE_DIR"/MyImage01.jpg", &width, &height, nullptr, STBI_rgb_alpha);
+        assert(textureBytes);
+
+        m_texture = m_device->newTexture(gfx::Texture::Descriptor{
+            .type = gfx::TextureType::texture2d,
+            .width = static_cast<uint32_t>(width),
+            .height = static_cast<uint32_t>(height),
+            .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+            .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
+            .storageMode = gfx::ResourceStorageMode::deviceLocal
+        });
+        assert(m_texture);
+
+        std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
+            .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm),
+            .usages = gfx::BufferUsage::copySource,
+            .storageMode = gfx::ResourceStorageMode::hostVisible
+        });
+        assert(stagingBuffer);
+
+        auto* bufferData = stagingBuffer->content<stbi_uc>();
+        std::memcpy(bufferData, textureBytes, stagingBuffer->size());
+
+        stbi_image_free(textureBytes);
+
+        std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
+        commandBuffer->beginBlitPass();
+        {
+            commandBuffer->copyBufferToTexture(stagingBuffer, 0, m_texture, 0);
+        }
+        commandBuffer->endBlitPass();
+        m_device->submitCommandBuffers(commandBuffer);
+
         ImGui::CreateContext();
 
         ImGuiIO& io = ImGui::GetIO();
@@ -116,6 +154,7 @@ public:
         }
 
         m_device->imguiInit({gfx::PixelFormat::BGRA8Unorm});
+
     }
 
     void loop()
@@ -144,16 +183,21 @@ public:
 
             if (m_lastCommandBuffers.at(m_frameIdx) != nullptr) {
                 m_device->waitCommandBuffer(*m_lastCommandBuffers.at(m_frameIdx));
-                m_lastCommandBuffers.at(m_frameIdx).reset();
                 m_commandBufferPools.at(m_frameIdx)->reset();
             }
 
             m_device->imguiNewFrame();
             ImGui_ImplGlfw_NewFrame();
+
             ImGui::NewFrame();
             {
-                static bool showDemoWindow = true;
-                ImGui::ShowDemoWindow(&showDemoWindow);
+                ImGui::ShowDemoWindow();
+
+                ImGui::Begin("texture");
+                if (m_texture->imTextureId().has_value() == false)
+                    m_texture->initImTextureId();
+                ImGui::Image(*m_texture->imTextureId(), ImVec2((float)m_texture->width(), (float)m_texture->height()));
+                ImGui::End();
             }
             ImGui::Render();
 
@@ -177,19 +221,17 @@ public:
 
             commandBuffer->beginRenderPass(framebuffer);
             {
+                commandBuffer->addSampledTexture(m_texture);
                 commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
             }
             commandBuffer->endRenderPass();
             commandBuffer->presentDrawable(drawable);
 
-            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer;
             m_device->submitCommandBuffers(commandBuffer);
+            m_lastCommandBuffers.at(m_frameIdx) = commandBuffer.get();
 
-            if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-            {
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-            }
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
 
             m_frameIdx = (m_frameIdx + 1) % maxFrameInFlight;
         }
@@ -197,8 +239,13 @@ public:
 
     void clean()
     {
+        m_texture.reset();
+
         m_device->waitIdle();
+        for (auto& pool : m_commandBufferPools)
+            pool->reset();
         m_device->imguiShutdown();
+
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
         glfwDestroyWindow(m_window);
@@ -212,9 +259,11 @@ private:
     std::unique_ptr<gfx::Device> m_device;
     std::unique_ptr<gfx::Swapchain> m_swapchain;
 
+    std::shared_ptr<gfx::Texture> m_texture;
+
     uint8_t m_frameIdx = 0;
     std::array<std::unique_ptr<gfx::CommandBufferPool>, maxFrameInFlight> m_commandBufferPools;
-    std::array<std::shared_ptr<gfx::CommandBuffer>, maxFrameInFlight> m_lastCommandBuffers = {};
+    std::array<gfx::CommandBuffer*, maxFrameInFlight> m_lastCommandBuffers = {};
 };
 
 int main()

@@ -12,8 +12,10 @@
 
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Sampler.hpp"
 
 #include "Vulkan/Sync.hpp"
+#include "Vulkan/VulkanSampler.hpp"
 
 namespace gfx
 {
@@ -36,6 +38,11 @@ public:
     inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
+
+#if defined (GFX_IMGUI_ENABLED)
+    void initImTextureId() override;
+    inline std::optional<uint64_t> imTextureId() const override { return m_imTextureId; }
+#endif
 
     inline const vk::Image& vkImage() const { return m_vkImage; }
 
@@ -62,6 +69,11 @@ protected:
     vk::ImageView m_vkImageView;
 
     ImageSyncState m_syncState;
+
+#if defined (GFX_IMGUI_ENABLED)
+    std::optional<uint64_t> m_imTextureId;
+#endif
+    std::shared_ptr<VulkanSampler> m_imTextureIdSampler;
 
 public:
     VulkanTexture& operator=(const VulkanTexture&) = delete;

@@ -20,6 +20,7 @@
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
+#include <memory>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Vulkan/imgui_impl_vulkan.h"
 #endif
@@ -537,6 +538,35 @@ void VulkanCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDraw
 {
     auto drawable = std::dynamic_pointer_cast<VulkanDrawable>(aDrawable);
     m_presentedDrawables.insert(drawable);
+}
+
+void VulkanCommandBuffer::addSampledTexture(const std::shared_ptr<Texture>& aTexture)
+{
+    auto texture = std::dynamic_pointer_cast<VulkanTexture>(aTexture);
+    std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
+
+    ImageSyncRequest syncReq{};
+    syncReq.stageMask = vk::PipelineStageFlagBits2::eFragmentShader;
+    syncReq.accessMask = vk::AccessFlagBits2::eShaderRead;
+    syncReq.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    syncReq.preserveContent = true;
+
+    auto it = m_imageFinalSyncStates.find(texture);
+    if (it != m_imageFinalSyncStates.end()) {
+        auto barrier = syncImage(it->second, syncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setImage(texture->vkImage());
+            barrier->setSubresourceRange(texture->subresourceRange());
+            imageMemoryBarriers.push_back(*barrier);
+        }
+    } else {
+        auto [it1, res1] = m_imageSyncRequests.insert(std::make_pair(texture, syncReq));
+        assert(res1);
+        (void)res1;
+        auto [it2, res2] = m_imageFinalSyncStates.insert(std::make_pair(texture, imageStateAfterSync(syncReq)));
+        assert(res2);
+        (void)res2;
+    }
 }
 
 }
