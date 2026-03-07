@@ -70,7 +70,9 @@ protected:
 
     ImageSyncState m_syncState;
 
+#if defined (GFX_IMGUI_ENABLED)
     std::optional<ImTextureID> m_imTextureId;
+#endif
     std::shared_ptr<VulkanSampler> m_imTextureIdSampler;
 
 public:

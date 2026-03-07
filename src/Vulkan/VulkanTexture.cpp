@@ -123,8 +123,10 @@ void VulkanTexture::initImTextureId(const std::shared_ptr<Sampler>& sampler)
 
 VulkanTexture::~VulkanTexture()
 {
+#if defined (GFX_IMGUI_ENABLED)
     if (m_imTextureId.has_value())
         ImGui_ImplVulkan_RemoveTexture(std::bit_cast<VkDescriptorSet>(*m_imTextureId));
+#endif
     m_device->vkDevice().destroyImageView(m_vkImageView);
     if (m_allocation != VK_NULL_HANDLE)
         vmaDestroyImage(m_device->allocator(), m_vkImage, m_allocation);
