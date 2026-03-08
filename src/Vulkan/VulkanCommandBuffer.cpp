@@ -205,12 +205,8 @@ void VulkanCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer
                .setBufferMemoryBarriers(*barrier));
         }
     } else {
-        auto [it1, res1] = m_bufferSyncRequests.insert(std::make_pair(buffer, syncReq));
-        assert(res1);
-        (void)res1;
-        auto [it2, res2] = m_bufferFinalSyncStates.insert(std::make_pair(buffer, bufferStateAfterSync(syncReq)));
-        assert(res2);
-        (void)res2;
+        m_bufferSyncRequests[buffer] = syncReq;
+        m_bufferFinalSyncStates[buffer] = bufferStateAfterSync(syncReq);
     }
 
     m_vkCommandBuffer.bindVertexBuffers(0, buffer->vkBuffer(), {0});
@@ -249,12 +245,8 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
                 bufferMemoryBarriers.push_back(*barrier);
             }
         } else {
-            auto [it1, res1] = m_bufferSyncRequests.insert(std::make_pair(buffer, syncReq));
-            assert(res1);
-            (void)res1;
-            auto [it2, res2] = m_bufferFinalSyncStates.insert(std::make_pair(buffer, bufferStateAfterSync(syncReq)));
-            assert(res2);
-            (void)res2;
+            m_bufferSyncRequests[buffer] = syncReq;
+            m_bufferFinalSyncStates[buffer] = bufferStateAfterSync(syncReq);
         }
     }
 
@@ -289,20 +281,20 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
                 imageMemoryBarriers.push_back(*barrier);
             }
         } else {
-            auto [it1, res1] = m_imageSyncRequests.insert(std::make_pair(texture, syncReq));
-            assert(res1);
-            (void)res1;
-            auto [it2, res2] = m_imageFinalSyncStates.insert(std::make_pair(texture, imageStateAfterSync(syncReq)));
-            assert(res2);
-            (void)res2;
+            m_imageSyncRequests[texture] = syncReq;
+            m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
         }
     }
 
-    if (bufferMemoryBarriers.empty() == false)
+    if (bufferMemoryBarriers.empty() == false || imageMemoryBarriers.empty() == false)
     {
         auto dependencyInfo = vk::DependencyInfo{}
-            .setDependencyFlags(vk::DependencyFlags{})
-            .setBufferMemoryBarriers(bufferMemoryBarriers);
+            .setDependencyFlags(vk::DependencyFlags{});
+
+        if (bufferMemoryBarriers.empty() == false)
+            dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
+        if (imageMemoryBarriers.empty() == false)
+            dependencyInfo.setImageMemoryBarriers(imageMemoryBarriers);
 
         m_vkCommandBuffer.pipelineBarrier2(dependencyInfo);
     }
@@ -344,12 +336,8 @@ void VulkanCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& aBu
                .setBufferMemoryBarriers(*barrier));
         }
     } else {
-        auto [it1, res1] = m_bufferSyncRequests.insert(std::make_pair(buffer, syncReq));
-        assert(res1);
-        (void)res1;
-        auto [it2, res2] = m_bufferFinalSyncStates.insert(std::make_pair(buffer, bufferStateAfterSync(syncReq)));
-        assert(res2);
-        (void)res2;
+        m_bufferSyncRequests[buffer] = syncReq;
+        m_bufferFinalSyncStates[buffer] = bufferStateAfterSync(syncReq);
     }
 
     m_vkCommandBuffer.bindIndexBuffer(buffer->vkBuffer(), 0, vk::IndexType::eUint32);
@@ -400,12 +388,8 @@ void VulkanCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc
             bufferMemoryBarriers.push_back(*barrier);
         }
     } else {
-        auto [it1, res1] = m_bufferSyncRequests.insert(std::make_pair(src, srcBufferSyncReq));
-        assert(res1);
-        (void)res1;
-        auto [it2, res2] = m_bufferFinalSyncStates.insert(std::make_pair(src, bufferStateAfterSync(srcBufferSyncReq)));
-        assert(res2);
-        (void)res2;
+        m_bufferSyncRequests[src] = srcBufferSyncReq;
+        m_bufferFinalSyncStates[src] = bufferStateAfterSync(srcBufferSyncReq);
     }
 
     BufferSyncRequest dstBufferSyncReq{};
@@ -422,12 +406,15 @@ void VulkanCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc
             bufferMemoryBarriers.push_back(*barrier);
         }
     } else {
-        auto [it1, res1] = m_bufferSyncRequests.insert(std::make_pair(dst, dstBufferSyncReq));
-        assert(res1);
-        (void)res1;
-        auto [it2, res2] = m_bufferFinalSyncStates.insert(std::make_pair(dst, bufferStateAfterSync(dstBufferSyncReq)));
-        assert(res2);
-        (void)res2;
+        m_bufferSyncRequests[dst] = dstBufferSyncReq;
+        m_bufferFinalSyncStates[dst] = bufferStateAfterSync(dstBufferSyncReq);
+    }
+
+    if (bufferMemoryBarriers.empty() == false)
+    {
+        m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
+            .setDependencyFlags(vk::DependencyFlags{})
+            .setBufferMemoryBarriers(bufferMemoryBarriers));
     }
 
     auto bufferCopy = vk::BufferCopy{}
@@ -466,12 +453,8 @@ void VulkanCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBu
             bufferMemoryBarriers.push_back(*barrier);
         }
     } else {
-        auto res1 = m_bufferSyncRequests.insert(std::make_pair(buffer, bufferSyncReq)).second;
-        assert(res1);
-        (void)res1;
-        auto res2 = m_bufferFinalSyncStates.insert(std::make_pair(buffer, bufferStateAfterSync(bufferSyncReq))).second;
-        assert(res2);
-        (void)res2;
+        m_bufferSyncRequests[buffer] = bufferSyncReq;
+        m_bufferFinalSyncStates[buffer] = bufferStateAfterSync(bufferSyncReq);
     }
 
     ImageSyncRequest imageSyncReq{};
@@ -489,12 +472,8 @@ void VulkanCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBu
             imageMemoryBarriers.push_back(*barrier);
         }
     } else {
-        auto res1 = m_imageSyncRequests.insert(std::make_pair(texture, imageSyncReq)).second;
-        assert(res1);
-        (void)res1;
-        auto res2 = m_imageFinalSyncStates.insert(std::make_pair(texture, imageStateAfterSync(imageSyncReq))).second;
-        assert(res2);
-        (void)res2;
+        m_imageSyncRequests[texture] = imageSyncReq;
+        m_imageFinalSyncStates[texture] = imageStateAfterSync(imageSyncReq);
     }
 
     if (bufferMemoryBarriers.empty() == false || imageMemoryBarriers.empty() == false)
@@ -543,7 +522,6 @@ void VulkanCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDraw
 void VulkanCommandBuffer::addSampledTexture(const std::shared_ptr<Texture>& aTexture)
 {
     auto texture = std::dynamic_pointer_cast<VulkanTexture>(aTexture);
-    std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
 
     ImageSyncRequest syncReq{};
     syncReq.stageMask = vk::PipelineStageFlagBits2::eFragmentShader;
@@ -557,15 +535,13 @@ void VulkanCommandBuffer::addSampledTexture(const std::shared_ptr<Texture>& aTex
         if (barrier.has_value()) {
             barrier->setImage(texture->vkImage());
             barrier->setSubresourceRange(texture->subresourceRange());
-            imageMemoryBarriers.push_back(*barrier);
+            m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
+               .setDependencyFlags(vk::DependencyFlags{})
+               .setImageMemoryBarriers(*barrier));
         }
     } else {
-        auto [it1, res1] = m_imageSyncRequests.insert(std::make_pair(texture, syncReq));
-        assert(res1);
-        (void)res1;
-        auto [it2, res2] = m_imageFinalSyncStates.insert(std::make_pair(texture, imageStateAfterSync(syncReq)));
-        assert(res2);
-        (void)res2;
+        m_imageSyncRequests[texture] = syncReq;
+        m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
     }
 }
 
