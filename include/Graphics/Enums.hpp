@@ -127,11 +127,13 @@ enum class VertexAttributeFormat : uint8_t
 
 enum class BufferUsage : uint8_t
 {
-    vertexBuffer    = 1 << 0,
-    indexBuffer     = 1 << 1,
-    uniformBuffer   = 1 << 2,
-    copySource      = 1 << 3,
-    copyDestination = 1 << 4
+    vertexBuffer     = 1 << 0,
+    indexBuffer      = 1 << 1,
+    uniformBuffer [[deprecated("use constantBuffer")]] = 1 << 2 ,
+    constantBuffer   = 1 << 2,
+    structuredBuffer = 1 << 3,
+    copySource       = 1 << 4,
+    copyDestination  = 1 << 5
 };
 GFX_ENABLE_BITMASK_OPERATORS(BufferUsage);
 using BufferUsages = Flags<BufferUsage>;
@@ -152,7 +154,9 @@ using Backends = Flags<Backend>;
 
 enum class BindingType : uint8_t
 {
-    uniformBuffer,
+    uniformBuffer [[deprecated("use constantBuffer")]],
+    constantBuffer,
+    structuredBuffer,
     sampledTexture,
     sampler
 };

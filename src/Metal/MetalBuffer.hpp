@@ -45,7 +45,7 @@ protected:
     void* contentVoid() override;
 
 private:
-    BufferUsages m_usages = BufferUsage::uniformBuffer;
+    BufferUsages m_usages = BufferUsage::constantBuffer;
     ResourceStorageMode m_storageMode = ResourceStorageMode::hostVisible;
 
     id<MTLBuffer> m_mtlBuffer = nil;

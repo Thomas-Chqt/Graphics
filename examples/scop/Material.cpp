@@ -44,7 +44,7 @@ FlatColorMaterial::FlatColorMaterial(const gfx::Device& device)
     if (!pbLayout) {
         pbLayout = device.newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
             .bindings = {
-                gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead },
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::constantBuffer, .usages = gfx::BindingUsage::fragmentRead },
             }
         });
         assert(pbLayout);
@@ -84,7 +84,7 @@ FlatColorMaterial::FlatColorMaterial(const gfx::Device& device)
 
     m_materialData = device.newBuffer(gfx::Buffer::Descriptor{
         .size = sizeof(shader::flat_color::MaterialData),
-        .usages = gfx::BufferUsage::uniformBuffer,
+        .usages = gfx::BufferUsage::constantBuffer,
         .storageMode = gfx::ResourceStorageMode::hostVisible});
     setDiffuseColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
     setSpecularColor(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -109,7 +109,7 @@ TexturedMaterial::TexturedMaterial(const gfx::Device& device)
                 gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
                 gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
                 gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
-                gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer,  .usages = gfx::BindingUsage::fragmentRead }
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::constantBuffer,  .usages = gfx::BindingUsage::fragmentRead }
             }
         });
         assert(pbLayout);
@@ -154,7 +154,7 @@ TexturedMaterial::TexturedMaterial(const gfx::Device& device)
 
     m_materialData = device.newBuffer(gfx::Buffer::Descriptor{
         .size = sizeof(shader::textured::MaterialData),
-        .usages = gfx::BufferUsage::uniformBuffer,
+        .usages = gfx::BufferUsage::constantBuffer,
         .storageMode = gfx::ResourceStorageMode::hostVisible});
 
     setSampler(device.newSampler(gfx::Sampler::Descriptor{
@@ -191,7 +191,7 @@ ScopMaterial::ScopMaterial(const gfx::Device& device)
             .bindings = {
                 gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampler,        .usages = gfx::BindingUsage::fragmentRead },
                 gfx::ParameterBlockBinding{ .type = gfx::BindingType::sampledTexture, .usages = gfx::BindingUsage::fragmentRead },
-                gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer,  .usages = gfx::BindingUsage::fragmentRead },
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::constantBuffer,  .usages = gfx::BindingUsage::fragmentRead },
             }
         });
         assert(pbLayout);
@@ -232,7 +232,7 @@ ScopMaterial::ScopMaterial(const gfx::Device& device)
 
     m_materialData = device.newBuffer(gfx::Buffer::Descriptor{
         .size = sizeof(shader::scop::MaterialData),
-        .usages = gfx::BufferUsage::uniformBuffer,
+        .usages = gfx::BufferUsage::constantBuffer,
         .storageMode = gfx::ResourceStorageMode::hostVisible});
 
     setSampler(device.newSampler(gfx::Sampler::Descriptor{

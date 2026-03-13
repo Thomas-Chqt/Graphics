@@ -8,6 +8,7 @@
 
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Device.hpp"
+#include "Graphics/Enums.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/ParameterBlockLayout.hpp"
@@ -78,7 +79,7 @@ TEST(descriptor_operator, parameter_block_layout_descriptor)
     gfx::ParameterBlockLayout::Descriptor lhs {};
     lhs.bindings = {
         {
-            .type=gfx::BindingType::uniformBuffer,
+            .type=gfx::BindingType::constantBuffer,
             .usages=gfx::BindingUsage::vertexRead
         }
     };
@@ -93,7 +94,7 @@ TEST(descriptor_operator, parameter_block_pool_descriptor)
 {
     gfx::ParameterBlockPool::Descriptor lhs {};
     gfx::ParameterBlockPool::Descriptor rhs = lhs;
-    rhs.maxUniformBuffers = lhs.maxUniformBuffers + 1;
+    rhs.maxBindingCount[gfx::BindingType::constantBuffer] = lhs.maxBindingCount[gfx::BindingType::constantBuffer] + 1;
 
     expectDescriptorComparableInMap(lhs, rhs);
 }

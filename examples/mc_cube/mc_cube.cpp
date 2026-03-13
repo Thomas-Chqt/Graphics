@@ -169,14 +169,14 @@ public:
 
         m_vpMatrixBpLayout = m_device->newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
             .bindings = {
-                gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::vertexRead }
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::constantBuffer, .usages = gfx::BindingUsage::vertexRead }
             }
         });
         assert(m_vpMatrixBpLayout);
 
         m_modelMatrixBpLayout = m_device->newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
             .bindings = {
-                gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::vertexRead }
+                gfx::ParameterBlockBinding{ .type = gfx::BindingType::constantBuffer, .usages = gfx::BindingUsage::vertexRead }
             }
         });
         assert(m_modelMatrixBpLayout);
@@ -210,7 +210,13 @@ public:
 
         for (uint8_t i = 0; i < maxFrameInFlight; i++) {
             m_commandBufferPools.at(i) = m_device->newCommandBufferPool();
-            m_parameterBlockPools.at(i) = m_device->newParameterBlockPool(gfx::ParameterBlockPool::Descriptor{});
+            m_parameterBlockPools.at(i) = m_device->newParameterBlockPool(gfx::ParameterBlockPool::Descriptor{
+                .maxBindingCount = {
+                    {gfx::BindingType::constantBuffer, 2},
+                    {gfx::BindingType::sampledTexture, 1},
+                    {gfx::BindingType::sampler, 1}
+                }
+            });
         }
 
         {
@@ -313,14 +319,14 @@ public:
         {
             m_vpMatrix.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size=sizeof(glm::mat4x4),
-                .usages=gfx::BufferUsage::uniformBuffer,
+                .usages=gfx::BufferUsage::constantBuffer,
                 .storageMode = gfx::ResourceStorageMode::hostVisible
             });
             assert(m_vpMatrix.at(i));
 
             m_modelMatrix.at(i) = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size=sizeof(glm::mat4x4),
-                .usages=gfx::BufferUsage::uniformBuffer,
+                .usages=gfx::BufferUsage::constantBuffer,
                 .storageMode = gfx::ResourceStorageMode::hostVisible
             });
             assert(m_modelMatrix.at(i));

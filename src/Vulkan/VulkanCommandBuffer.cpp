@@ -228,7 +228,7 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
             syncReq.stageMask |= vk::PipelineStageFlagBits2::eFragmentShader;
 
         if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead))) {
-            assert(binding.type == BindingType::uniformBuffer); // currently only uniform buffer are implemented
+            assert(binding.type == BindingType::constantBuffer); // currently only constant buffer are implemented
             syncReq.accessMask |= vk::AccessFlagBits2::eUniformRead;
         }
         if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite))) {

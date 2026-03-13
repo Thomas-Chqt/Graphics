@@ -60,25 +60,27 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
         assert(frameData.commandBufferPool);
 
         frameData.parameterBlockPool = m_device->newParameterBlockPool({
-            .maxUniformBuffers = 2, .maxTextures = 0, .maxSamplers = 0
+            .maxBindingCount = {
+                {gfx::BindingType::constantBuffer, 2},
+            }
         });
         assert(frameData.parameterBlockPool);
 
         frameData.vpMatrix = m_device->newBuffer(gfx::Buffer::Descriptor{
             .size = sizeof(glm::mat4x4),
-            .usages = gfx::BufferUsage::uniformBuffer,
+            .usages = gfx::BufferUsage::constantBuffer,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
         assert(frameData.vpMatrix);
 
         frameData.sceneDataBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
             .size = sizeof(shader::SceneData),
-            .usages = gfx::BufferUsage::uniformBuffer,
+            .usages = gfx::BufferUsage::constantBuffer,
             .storageMode = gfx::ResourceStorageMode::hostVisible});
     }
 
     m_vpMatrixBpLayout = m_device->newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
         .bindings = {
-            gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::vertexRead }
+            gfx::ParameterBlockBinding{ .type = gfx::BindingType::constantBuffer, .usages = gfx::BindingUsage::vertexRead }
         }
     });
     assert(m_vpMatrixBpLayout);
@@ -86,7 +88,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
 
     m_sceneDataBpLayout = m_device->newParameterBlockLayout(gfx::ParameterBlockLayout::Descriptor{
         .bindings = {
-            gfx::ParameterBlockBinding{ .type = gfx::BindingType::uniformBuffer, .usages = gfx::BindingUsage::fragmentRead }
+            gfx::ParameterBlockBinding{ .type = gfx::BindingType::constantBuffer, .usages = gfx::BindingUsage::fragmentRead }
         }
     });
     assert(m_sceneDataBpLayout);

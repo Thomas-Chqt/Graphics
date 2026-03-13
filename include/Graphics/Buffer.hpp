@@ -23,7 +23,7 @@ public:
     struct Descriptor
     {
         size_t size = 0;
-        BufferUsages usages = BufferUsage::uniformBuffer;
+        BufferUsages usages = BufferUsage::constantBuffer;
         ResourceStorageMode storageMode = ResourceStorageMode::hostVisible;
 
         auto operator<=>(const Descriptor&) const = default;

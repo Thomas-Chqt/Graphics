@@ -18,7 +18,7 @@ namespace gfx
 
 MetalBuffer::MetalBuffer(MetalBuffer&& other) noexcept
     : Buffer(std::move(other)),
-      m_usages(std::exchange(other.m_usages, BufferUsage::uniformBuffer)),
+      m_usages(std::exchange(other.m_usages, BufferUsage::constantBuffer)),
       m_storageMode(std::exchange(other.m_storageMode, ResourceStorageMode::hostVisible)),
       m_mtlBuffer(std::exchange(other.m_mtlBuffer, nil))
 {
@@ -60,7 +60,7 @@ MetalBuffer& MetalBuffer::operator = (MetalBuffer&& other) noexcept
     Buffer::operator=(std::move(other));
     if (this != &other)
     {
-        m_usages = std::exchange(other.m_usages, BufferUsage::uniformBuffer);
+        m_usages = std::exchange(other.m_usages, BufferUsage::constantBuffer);
         m_storageMode = std::exchange(other.m_storageMode, ResourceStorageMode::hostVisible);
         m_mtlBuffer = std::exchange(other.m_mtlBuffer, nil);
     }

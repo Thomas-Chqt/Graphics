@@ -400,9 +400,11 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
         materials.assign(scene->mNumMaterials, *overrideMaterial);
     } else {
         std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({
-            .maxUniformBuffers = 500,
-            .maxTextures = 500,
-            .maxSamplers = 500
+            .maxBindingCount = {
+                {gfx::BindingType::constantBuffer, 500},
+                {gfx::BindingType::sampledTexture, 500},
+                {gfx::BindingType::sampler, 500}
+            }
         });
         assert(parameterBlockPool);
 

@@ -10,11 +10,13 @@
 #ifndef PARAMETERBLOCKPOOL_HPP
 #define PARAMETERBLOCKPOOL_HPP
 
+#include "Graphics/Enums.hpp"
 #include "Graphics/ParameterBlock.hpp"
 #include "Graphics/ParameterBlockLayout.hpp"
 
 #include <cstdint>
 #include <memory>
+#include <map>
 
 namespace gfx
 {
@@ -24,9 +26,7 @@ class ParameterBlockPool
 public:
     struct Descriptor
     {
-        uint32_t maxUniformBuffers = 16;
-        uint32_t maxTextures = 4;
-        uint32_t maxSamplers = 4;
+        std::map<BindingType, uint32_t> maxBindingCount;
         auto operator<=>(const Descriptor&) const = default;
     };
 

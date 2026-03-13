@@ -19,7 +19,7 @@ namespace gfx
 
 struct ParameterBlockBinding
 {
-    BindingType type = BindingType::uniformBuffer;
+    BindingType type = BindingType::constantBuffer;
     BindingUsages usages = BindingUsage::vertexRead | BindingUsage::fragmentRead;
     auto operator<=>(const ParameterBlockBinding&) const = default;
 };

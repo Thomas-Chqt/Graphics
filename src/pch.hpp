@@ -31,6 +31,7 @@
 #include <print>      // IWYU pragma: keep
 #include <ctime>      // IWYU pragma: keep
 #include <mutex>      // IWYU pragma: keep
+#include <numeric>    // IWYU pragma: keep
 
 #if defined(GFX_BUILD_METAL)
 #if defined(__OBJC__)

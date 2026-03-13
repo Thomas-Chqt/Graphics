@@ -12,7 +12,7 @@ if(NOT GFX_SLANG_FORCE_DOWNLOAD)
 endif()
 
 if(NOT slang_FOUND)
-    set(SLANG_URL "https://github.com/shader-slang/slang/releases/download/v2025.24.2/slang-2025.24.2")
+    set(SLANG_URL "https://github.com/shader-slang/slang/releases/download/v2026.4.2/slang-2026.4.2")
     if(APPLE)
         string(APPEND SLANG_URL "-macos")
     elseif(WIN32)
