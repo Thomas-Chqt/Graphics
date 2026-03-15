@@ -21,6 +21,7 @@
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include <memory>
+#include <utility>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Vulkan/imgui_impl_vulkan.h"
 #endif
@@ -227,9 +228,19 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
         if ((binding.usages & BindingUsage::fragmentRead) || (binding.usages & BindingUsage::fragmentWrite))
             syncReq.stageMask |= vk::PipelineStageFlagBits2::eFragmentShader;
 
-        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead))) {
-            assert(binding.type == BindingType::constantBuffer); // currently only constant buffer are implemented
-            syncReq.accessMask |= vk::AccessFlagBits2::eUniformRead;
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead)))
+        {
+            switch (binding.type)
+            {
+                case BindingType::constantBuffer:
+                    syncReq.accessMask |= vk::AccessFlagBits2::eUniformRead;
+                    break;
+                case BindingType::structuredBuffer:
+                    syncReq.accessMask |= vk::AccessFlagBits2::eShaderStorageRead;
+                    break;
+                default:
+                    std::unreachable();
+            }
         }
         if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite))) {
             throw std::runtime_error("not implemented");

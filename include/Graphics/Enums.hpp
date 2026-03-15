@@ -129,7 +129,6 @@ enum class BufferUsage : uint8_t
 {
     vertexBuffer     = 1 << 0,
     indexBuffer      = 1 << 1,
-    uniformBuffer [[deprecated("use constantBuffer")]] = 1 << 2 ,
     constantBuffer   = 1 << 2,
     structuredBuffer = 1 << 3,
     copySource       = 1 << 4,
