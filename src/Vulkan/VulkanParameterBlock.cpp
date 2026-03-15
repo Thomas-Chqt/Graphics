@@ -15,7 +15,6 @@
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanParameterBlockPool.hpp"
 #include "Vulkan/VulkanParameterBlockLayout.hpp"
-#include <objc/objc.h>
 
 namespace gfx
 {
