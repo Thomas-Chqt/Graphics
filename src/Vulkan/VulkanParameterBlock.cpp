@@ -12,6 +12,7 @@
 #include "Vulkan/VulkanParameterBlock.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanParameterBlockPool.hpp"
 #include "Vulkan/VulkanParameterBlockLayout.hpp"
 
@@ -54,7 +55,7 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Buffer
         .setDstBinding(idx)
         .setDstArrayElement(0)
         .setDescriptorCount(1)
-        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+        .setDescriptorType(toVkDescriptorType(m_layout->bindings()[idx].type))
         .setBufferInfo(bufferDescriptorInfo);
 
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});

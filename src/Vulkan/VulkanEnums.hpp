@@ -111,15 +111,13 @@ constexpr vk::Format toVkFormat(VertexAttributeFormat fmt)
 
 constexpr vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
 {
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     vk::BufferUsageFlags vkUsages;
 
     if (use & BufferUsage::vertexBuffer)
         vkUsages |= vk::BufferUsageFlagBits::eVertexBuffer;
     if (use & BufferUsage::indexBuffer)
         vkUsages |= vk::BufferUsageFlagBits::eIndexBuffer;
-    if (use & BufferUsage::uniformBuffer || use & BufferUsage::constantBuffer)
+    if (use & BufferUsage::constantBuffer)
         vkUsages |= vk::BufferUsageFlagBits::eUniformBuffer;
     if (use & BufferUsage::structuredBuffer)
         vkUsages |= vk::BufferUsageFlagBits::eStorageBuffer;
@@ -129,16 +127,12 @@ constexpr vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
         vkUsages |= vk::BufferUsageFlagBits::eTransferDst;
 
     return vkUsages;
-    #pragma GCC diagnostic pop
 }
 
 constexpr vk::DescriptorType toVkDescriptorType(BindingType tpe)
 {
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     switch (tpe)
     {
-    case BindingType::uniformBuffer:
     case BindingType::constantBuffer:
         return vk::DescriptorType::eUniformBuffer;
     case BindingType::structuredBuffer:
@@ -150,7 +144,6 @@ constexpr vk::DescriptorType toVkDescriptorType(BindingType tpe)
     default:
         throw std::runtime_error("not implemented");
     }
-    #pragma GCC diagnostic pop
 }
 
 constexpr vk::ShaderStageFlags toVkShaderStageFlags(BindingUsages use)
