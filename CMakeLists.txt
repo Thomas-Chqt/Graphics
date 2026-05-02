@@ -87,7 +87,7 @@ endif()
 if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
     FetchContent_Declare(dlLoad
         GIT_REPOSITORY    https://github.com/Thomas-Chqt/dlLoad.git
-        GIT_TAG           8950c93fc5861be0f8fe3146047502075f130b0a
+        GIT_TAG           fd860b8200983b89d3ca58b371f6ec25b9972bd3
         GIT_SHALLOW       1
         GIT_PROGRESS      TRUE
         FIND_PACKAGE_ARGS
