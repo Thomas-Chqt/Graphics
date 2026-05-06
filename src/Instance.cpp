@@ -22,7 +22,14 @@ namespace gfx
 
 std::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 {
+#if defined(_MSC_VER)
+# pragma warning(push)
+# pragma warning(disable:4996)
+#endif
     if (const char* val = std::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
+#if defined(_MSC_VER)
+# pragma warning(pop)
+#endif
     {
 #if defined(GFX_BUILD_METAL)
         if (std::strcmp(val, "METAL") == 0)

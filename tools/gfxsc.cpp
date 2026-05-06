@@ -323,8 +323,8 @@ int main(int argc, char* argv[])
                 return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
             if (metalLayout == nullptr)
                 return std::println(stderr, "getLayout (metal): error"), 1;
-            SlangResult result = metalLayout->toJson(targetReflection.writeRef());
-            if (targetReflection == nullptr || SLANG_FAILED(result))
+            SlangResult reflectionResult = metalLayout->toJson(targetReflection.writeRef());
+            if (targetReflection == nullptr || SLANG_FAILED(reflectionResult))
                 return std::println(stderr, "toJson (metal): error"), 1;
         }
     }
@@ -370,8 +370,8 @@ int main(int argc, char* argv[])
                 return std::println("{}", (const char*)diagnosticsBlob->getBufferPointer()), 1;
             if (spirvLayout == nullptr)
                 return std::println(stderr, "getLayout (spirv): error"), 1;
-            SlangResult result = spirvLayout->toJson(targetReflection.writeRef());
-            if (targetReflection == nullptr || SLANG_FAILED(result))
+            SlangResult reflectionResult = spirvLayout->toJson(targetReflection.writeRef());
+            if (targetReflection == nullptr || SLANG_FAILED(reflectionResult))
                 return std::println(stderr, "toJson (spirv): error"), 1;
         }
     }

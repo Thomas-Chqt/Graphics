@@ -333,15 +333,15 @@ int main(int argc, char** argv)
                         }
                     }
 
-                    if (auto* light = dynamic_cast<scop::Light*>(selectedEntity))
+                    if (auto* selectedLight = dynamic_cast<scop::Light*>(selectedEntity))
                     {
-                        glm::vec3 lightColor = light->color();
+                        glm::vec3 lightColor = selectedLight->color();
                         ImGui::ColorEdit3("light color", std::bit_cast<float*>(&lightColor));
-                        light->setColor(lightColor);
-                        bool attachedToCamera = lightAttachedToCamera == light;
+                        selectedLight->setColor(lightColor);
+                        bool attachedToCamera = lightAttachedToCamera == selectedLight;
                         ImGui::Checkbox("attach to camera", &attachedToCamera);
                         if(attachedToCamera)
-                            lightAttachedToCamera = light;
+                            lightAttachedToCamera = selectedLight;
                         else
                             lightAttachedToCamera = nullptr;
                     }

@@ -35,9 +35,11 @@ SLAND_PUBLIC struct SceneData
     FLOAT3_PADDING(1);
 
     SLAND_PUBLIC int directionalLightCount;
+    int _padding2[3];
     SLAND_PUBLIC DirectionalLight directionalLights[8]; // NOLINT(cppcoreguidelines-avoid-c-arrays)
 
     SLAND_PUBLIC int pointLightCount = 0;
+    int _padding3[3];
     SLAND_PUBLIC PointLight pointLights[8]; // NOLINT(cppcoreguidelines-avoid-c-arrays)
 };
 

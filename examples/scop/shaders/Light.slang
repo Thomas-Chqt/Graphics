@@ -36,6 +36,7 @@ SLAND_PUBLIC struct CPP_ALIGNAS(16) PointLight
     SLAND_PUBLIC float3 color;
     FLOAT3_PADDING(1);
     SLAND_PUBLIC float attenuation;
+    SLAND_PUBLIC float3 _padding2;
 };
 
 #ifdef __cplusplus
