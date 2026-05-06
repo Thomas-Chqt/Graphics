@@ -34,6 +34,9 @@ VulkanParameterBlockPool::VulkanParameterBlockPool(const VulkanDevice* device, c
         .setMaxSets(std::accumulate(descriptor.maxBindingCount.begin(), descriptor.maxBindingCount.end(), 0, [](auto acc, const auto& kv) { return acc + kv.second; }))
         .setPoolSizes(poolSizes);
 
+    if (descriptor.updateAfterBind)
+        descriptorPoolCreateInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eUpdateAfterBind);
+
     m_descriptorPool = std::shared_ptr<vk::DescriptorPool>(
         new vk::DescriptorPool(m_device->vkDevice().createDescriptorPool(descriptorPoolCreateInfo)),
         [device=m_device](vk::DescriptorPool* pool){

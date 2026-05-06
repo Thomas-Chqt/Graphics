@@ -119,29 +119,29 @@ void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const Parameter
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
 
-    for (const auto& [buffer, binding] : pBlock->encodedBuffers())
-        [renderCommandEncoder useResource:buffer->mtlBuffer() usage:toMTLResourceUsage(binding.usages) stages:toMTLRenderStages(binding.usages)];
+    for (const auto& encodedBuffer : pBlock->encodedBuffers())
+        [renderCommandEncoder useResource:encodedBuffer.resource->mtlBuffer() usage:toMTLResourceUsage(encodedBuffer.binding.usages) stages:toMTLRenderStages(encodedBuffer.binding.usages)];
 
-    for (const auto& [texture, binding] : pBlock->encodedTextures())
-        [renderCommandEncoder useResource:texture->mtltexture() usage:toMTLResourceUsage(binding.usages) stages:toMTLRenderStages(binding.usages)];
+    for (const auto& encodedTexture : pBlock->encodedTextures())
+        [renderCommandEncoder useResource:encodedTexture.resource->mtltexture() usage:toMTLResourceUsage(encodedTexture.binding.usages) stages:toMTLRenderStages(encodedTexture.binding.usages)];
 
-    if (std::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
-        std::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }) ||
-        std::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::vertexRead || pair.second.usages & BindingUsage::vertexWrite; }))
+    if (std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages  & BindingUsage::vertexRead || encodedBuffer.binding.usages & BindingUsage::vertexWrite;  }) ||
+        std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::vertexRead || encodedTexture.binding.usages & BindingUsage::vertexWrite; }) ||
+        std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::vertexRead || encodedSampler.binding.usages & BindingUsage::vertexWrite; }))
     {
         [renderCommandEncoder setVertexBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
     }
 
-    if (std::ranges::any_of(pBlock->encodedBuffers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
-        std::ranges::any_of(pBlock->encodedTextures(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }) ||
-        std::ranges::any_of(pBlock->encodedSamplers(), [](auto& pair) { return pair.second.usages & BindingUsage::fragmentRead || pair.second.usages & BindingUsage::fragmentWrite; }))
+    if (std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages & BindingUsage::fragmentRead  || encodedBuffer.binding.usages & BindingUsage::fragmentWrite;  }) ||
+        std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::fragmentRead || encodedTexture.binding.usages & BindingUsage::fragmentWrite; }) ||
+        std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::fragmentRead || encodedSampler.binding.usages & BindingUsage::fragmentWrite; }))
     {
         [renderCommandEncoder setFragmentBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
     }
 
-    m_usedBuffers.insert_range(pBlock->encodedBuffers() | std::views::transform([](auto& pair) -> std::shared_ptr<MetalBuffer> { return pair.first; }));
-    m_usedTextures.insert_range(pBlock->encodedTextures() | std::views::transform([](auto& pair) -> std::shared_ptr<MetalTexture> { return pair.first; }));
-    m_usedSamplers.insert_range(pBlock->encodedSamplers() | std::views::transform([](auto& pair) -> std::shared_ptr<MetalSampler> { return pair.first; }));
+    m_usedBuffers.insert_range(pBlock->encodedBuffers()   | std::views::transform([](const auto& encodedBuffer)  -> std::shared_ptr<MetalBuffer>  { return encodedBuffer.resource;  }));
+    m_usedTextures.insert_range(pBlock->encodedTextures() | std::views::transform([](const auto& encodedTexture) -> std::shared_ptr<MetalTexture> { return encodedTexture.resource; }));
+    m_usedSamplers.insert_range(pBlock->encodedSamplers() | std::views::transform([](const auto& encodedSampler) -> std::shared_ptr<MetalSampler> { return encodedSampler.resource; }));
     m_usedPBlock.insert(pBlock);
 }}
 

@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 
 namespace gfx
 {
@@ -29,8 +30,15 @@ public:
     virtual std::shared_ptr<ParameterBlockLayout> layout() const = 0;
 
     virtual void setBinding(uint32_t idx, const std::shared_ptr<Buffer>&) = 0;
+
     virtual void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) = 0;
+    virtual void setBinding(uint32_t idx, uint32_t arrayIndex, const std::shared_ptr<Texture>&) = 0;
+    virtual void setBinding(uint32_t idx, uint32_t firstArrayIndex, std::span<const std::shared_ptr<Texture>>) = 0;
+
     virtual void setBinding(uint32_t idx, const std::shared_ptr<Sampler>&) = 0;
+
+    virtual void clearBinding(uint32_t idx, uint32_t arrayIndex) = 0;
+    virtual void clearBinding(uint32_t idx, uint32_t firstArrayIndex, uint32_t count) = 0;
 
     virtual ~ParameterBlock() = default;
 

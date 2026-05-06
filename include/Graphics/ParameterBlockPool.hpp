@@ -27,6 +27,7 @@ public:
     struct Descriptor
     {
         std::map<BindingType, uint32_t> maxBindingCount;
+        bool updateAfterBind = false;
         auto operator<=>(const Descriptor&) const = default;
     };
 

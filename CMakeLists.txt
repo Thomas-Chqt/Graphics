@@ -29,7 +29,7 @@ option(GFX_BUILD_TESTS    "Build the tests"                     OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
 
 if(GFX_BUILD_EXAMPLES)
-    set(GFX_EXAMPLES_TO_BUILD "triangle;multiBuffer;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
+    set(GFX_EXAMPLES_TO_BUILD "triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
 endif()
 
 enable_language(CXX)

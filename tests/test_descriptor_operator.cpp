@@ -90,11 +90,24 @@ TEST(descriptor_operator, parameter_block_layout_descriptor)
     expectDescriptorComparableInMap(lhs, rhs);
 }
 
+TEST(descriptor_operator, parameter_block_binding)
+{
+    gfx::ParameterBlockBinding lhs {
+        .type = gfx::BindingType::sampledTexture,
+        .usages = gfx::BindingUsage::fragmentRead,
+        .count = 1
+    };
+    gfx::ParameterBlockBinding rhs = lhs;
+    rhs.count = 8;
+
+    expectDescriptorComparableInMap(lhs, rhs);
+}
+
 TEST(descriptor_operator, parameter_block_pool_descriptor)
 {
     gfx::ParameterBlockPool::Descriptor lhs {};
     gfx::ParameterBlockPool::Descriptor rhs = lhs;
-    rhs.maxBindingCount[gfx::BindingType::constantBuffer] = lhs.maxBindingCount[gfx::BindingType::constantBuffer] + 1;
+    rhs.updateAfterBind = true;
 
     expectDescriptorComparableInMap(lhs, rhs);
 }

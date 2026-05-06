@@ -12,6 +12,7 @@
 
 #include "Graphics/Enums.hpp"
 
+#include <cstdint>
 #include <vector>
 
 namespace gfx
@@ -21,6 +22,7 @@ struct ParameterBlockBinding
 {
     BindingType type = BindingType::constantBuffer;
     BindingUsages usages = BindingUsage::vertexRead | BindingUsage::fragmentRead;
+    uint32_t count = 1;
     auto operator<=>(const ParameterBlockBinding&) const = default;
 };
 
