@@ -53,8 +53,12 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setTimelineSemaphore(vk::True)
         .setPNext(dynamicRenderingFeature);
 
+    auto hostQueryResetFeature = vk::PhysicalDeviceHostQueryResetFeatures{}
+        .setHostQueryReset(vk::True)
+        .setPNext(&timelineSemaphoreFeature);
+
     auto descriptorIndexingFeatures = vk::PhysicalDeviceDescriptorIndexingFeatures{}
-        .setPNext(&timelineSemaphoreFeature)
+        .setPNext(&hostQueryResetFeature)
         .setShaderSampledImageArrayNonUniformIndexing(vk::True)
         .setDescriptorBindingSampledImageUpdateAfterBind(vk::True)
         .setDescriptorBindingUpdateUnusedWhilePending(vk::True)
