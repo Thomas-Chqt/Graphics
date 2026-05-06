@@ -53,6 +53,13 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setTimelineSemaphore(vk::True)
         .setPNext(dynamicRenderingFeature);
 
+    auto descriptorIndexingFeatures = vk::PhysicalDeviceDescriptorIndexingFeatures{}
+        .setPNext(&timelineSemaphoreFeature)
+        .setShaderSampledImageArrayNonUniformIndexing(vk::True)
+        .setDescriptorBindingSampledImageUpdateAfterBind(vk::True)
+        .setDescriptorBindingUpdateUnusedWhilePending(vk::True)
+        .setDescriptorBindingPartiallyBound(vk::True);
+
     m_queueFamily = (m_physicalDevice->getQueueFamilies() | std::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).front();
     float queuePriority = 1.0f;
     auto queueCreateInfo = vk::DeviceQueueCreateInfo{}
@@ -71,7 +78,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     vk::PhysicalDeviceFeatures deviceFeatures{};
 
     auto deviceCreateInfo = vk::DeviceCreateInfo{}
-        .setPNext(&timelineSemaphoreFeature)
+        .setPNext(&descriptorIndexingFeatures)
         .setQueueCreateInfos(queueCreateInfo)
         .setEnabledExtensionCount(static_cast<uint32_t>(enabledExtensions.size()))
         .setPpEnabledExtensionNames(enabledExtensions.data())

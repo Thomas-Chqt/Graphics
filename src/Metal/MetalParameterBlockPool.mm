@@ -14,6 +14,10 @@
 #include "Metal/MetalDevice.hpp"
 #include "MetalParameterBlockLayout.hpp"
 
+#include <cstdint>
+#include <numeric>
+#include <ranges>
+
 namespace gfx
 {
 
@@ -38,7 +42,8 @@ std::shared_ptr<ParameterBlock> MetalParameterBlockPool::get(const std::shared_p
     }
     else {
         pBlock = std::make_shared<MetalParameterBlock>(pbLayout, m_argumentBuffer, m_nextOffset);
-        size_t usedSize = sizeof(uint64_t) * pbLayout->bindings().size();
+        const auto bindingCounts = pbLayout->bindings() | std::views::transform([](const auto& binding) { return binding.count; });
+        size_t usedSize = sizeof(uint64_t) * std::accumulate(bindingCounts.begin(), bindingCounts.end(), 0u);
         m_nextOffset += (usedSize + 31uz) & ~31uz;
     }
     m_usedPBlocks.push_back(pBlock);

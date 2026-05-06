@@ -18,6 +18,10 @@
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanParameterBlockLayout.hpp"
 
+#include <ranges>
+#include <unordered_map>
+#include <vector>
+
 namespace gfx
 {
 
@@ -25,6 +29,14 @@ class VulkanDevice;
 
 class VulkanParameterBlock : public ParameterBlock
 {
+public:
+    template<typename T>
+    struct UsedResource
+    {
+        std::shared_ptr<T> resource;
+        ParameterBlockBinding binding;
+    };
+
 public:
     VulkanParameterBlock() = default;
     VulkanParameterBlock(const VulkanParameterBlock&) = delete;
@@ -35,14 +47,21 @@ public:
     inline std::shared_ptr<ParameterBlockLayout> layout() const override { return m_layout; }
 
     void setBinding(uint32_t idx, const std::shared_ptr<Buffer>&) override;
+
     void setBinding(uint32_t idx, const std::shared_ptr<Texture>&) override;
+    void setBinding(uint32_t idx, uint32_t arrayIndex, const std::shared_ptr<Texture>&) override;
+    void setBinding(uint32_t idx, uint32_t firstArrayIndex, std::span<const std::shared_ptr<Texture>>) override;
+
     void setBinding(uint32_t idx, const std::shared_ptr<Sampler>&) override;
+
+    void clearBinding(uint32_t idx, uint32_t arrayIndex) override;
+    void clearBinding(uint32_t idx, uint32_t firstArrayIndex, uint32_t count) override;
 
     inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
 
-    inline const std::map<std::shared_ptr<VulkanBuffer>, ParameterBlockBinding>& usedBuffers() const { return m_usedBuffers; }
-    inline const std::map<std::shared_ptr<VulkanTexture>, ParameterBlockBinding>& usedTextures() const { return m_usedTextures; }
-    inline const std::map<std::shared_ptr<VulkanSampler>, ParameterBlockBinding>& usedSamplers() const { return m_usedSampler; }
+    inline auto usedBuffers()  const { return m_usedBuffers  | std::views::transform([](const auto& resources) { return resources | std::views::values; }) | std::views::join; }
+    inline auto usedTextures() const { return m_usedTextures | std::views::transform([](const auto& resources) { return resources | std::views::values; }) | std::views::join; }
+    inline auto usedSamplers() const { return m_usedSamplers | std::views::transform([](const auto& resources) { return resources | std::views::values; }) | std::views::join; }
 
     ~VulkanParameterBlock() override = default;
 
@@ -53,9 +72,9 @@ private:
 
     vk::DescriptorSet m_descriptorSet;
 
-    std::map<std::shared_ptr<VulkanBuffer>, ParameterBlockBinding> m_usedBuffers;
-    std::map<std::shared_ptr<VulkanTexture>, ParameterBlockBinding> m_usedTextures;
-    std::map<std::shared_ptr<VulkanSampler>, ParameterBlockBinding> m_usedSampler;
+    std::vector<std::unordered_map<uint32_t, UsedResource<VulkanBuffer>>> m_usedBuffers;
+    std::vector<std::unordered_map<uint32_t, UsedResource<VulkanTexture>>> m_usedTextures;
+    std::vector<std::unordered_map<uint32_t, UsedResource<VulkanSampler>>> m_usedSamplers;
 
 public:
     VulkanParameterBlock& operator=(const VulkanParameterBlock&) = delete;
