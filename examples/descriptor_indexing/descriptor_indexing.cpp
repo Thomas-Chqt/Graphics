@@ -289,7 +289,7 @@ public:
                 if (m_availableTextureIndices.empty() == false) {
                     int width = 0;
                     int height = 0;
-                    glfwGetFramebufferSize(m_window, &width, &height);
+                    glfwGetWindowSize(m_window, &width, &height);
                     if (width > 0 && height > 0) {
                         double mouseX = 0.0;
                         double mouseY = 0.0;
