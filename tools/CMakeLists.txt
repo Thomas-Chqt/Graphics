@@ -36,7 +36,7 @@ if(NOT slang_FOUND)
         find_file(SLANG_COMPILER_DLL NAMES slang-compiler.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED NO_DEFAULT_PATH)
         set(REQUIRED_COPY_DLL "${SLANG_DLL};${SLANG_GLSLANG_DLL};${SLANG_COMPILER_DLL}" CACHE STRING "Runtime DLLs copied next to gfxsc")
     endif()
-    find_package(slang 2026.8 REQUIRED PATHS "${slang_SOURCE_DIR}")
+    find_package(slang 2026.8 REQUIRED PATHS "${slang_SOURCE_DIR}" NO_DEFAULT_PATH)
 endif()
 
 FetchContent_Declare(argparse
