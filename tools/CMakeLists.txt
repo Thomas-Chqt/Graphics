@@ -8,7 +8,7 @@
 include(FetchContent)
 
 if(NOT GFX_SLANG_FORCE_DOWNLOAD)
-    find_package(slang PATHS $ENV{HOME}/.local QUIET)
+    find_package(slang 2026.8 PATHS $ENV{HOME}/.local QUIET)
 endif()
 
 if(NOT slang_FOUND)
@@ -31,12 +31,12 @@ if(NOT slang_FOUND)
     FetchContent_Declare(slang URL "${SLANG_URL}" DOWNLOAD_EXTRACT_TIMESTAMP ON)
     FetchContent_MakeAvailable(slang)
     if(WIN32)
-        find_file(SLANG_DLL NAMES slang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
-        find_file(SLANG_GLSLANG_DLL NAMES slang-glslang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
-        find_file(SLANG_COMPILER_DLL NAMES slang-compiler.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED)
+        find_file(SLANG_DLL NAMES slang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED NO_DEFAULT_PATH)
+        find_file(SLANG_GLSLANG_DLL NAMES slang-glslang.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED NO_DEFAULT_PATH)
+        find_file(SLANG_COMPILER_DLL NAMES slang-compiler.dll PATHS ${slang_SOURCE_DIR}/bin REQUIRED NO_DEFAULT_PATH)
         set(REQUIRED_COPY_DLL "${SLANG_DLL};${SLANG_GLSLANG_DLL};${SLANG_COMPILER_DLL}" CACHE STRING "Runtime DLLs copied next to gfxsc")
     endif()
-    find_package(slang REQUIRED PATHS "${slang_SOURCE_DIR}")
+    find_package(slang 2026.8 REQUIRED PATHS "${slang_SOURCE_DIR}" NO_DEFAULT_PATH)
 endif()
 
 FetchContent_Declare(argparse
