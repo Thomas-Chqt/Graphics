@@ -8,6 +8,7 @@
  */
 
 #include "gfx_imgui/gfx_imgui.hpp"
+
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Texture.hpp"
@@ -16,16 +17,20 @@
 #include "Metal/MetalDevice.hpp"
 #include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
+
+#if defined(GFX_BUILD_VULKAN)
+    #include "Vulkan/VulkanCommandBuffer.hpp"
+    #include "Vulkan/VulkanDevice.hpp"
+    #include "Vulkan/VulkanEnums.hpp"
+    #include "Vulkan/VulkanInstance.hpp"
+    #include "Vulkan/VulkanSampler.hpp"
+    #include "Vulkan/VulkanTexture.hpp"
+#endif
+
 #include "imgui_impl_metal.h"
 
 #if defined(GFX_BUILD_VULKAN)
-# include "Vulkan/VulkanCommandBuffer.hpp"
-# include "Vulkan/VulkanDevice.hpp"
-# include "Vulkan/VulkanEnums.hpp"
-# include "Vulkan/VulkanInstance.hpp"
-# include "Vulkan/VulkanSampler.hpp"
-# include "Vulkan/VulkanTexture.hpp"
-# include "imgui_impl_vulkan.h"
+    #include "imgui_impl_vulkan.h"
 #endif
 
 namespace gfx::imgui
@@ -33,29 +38,34 @@ namespace gfx::imgui
 
 namespace
 {
+
 #if defined(GFX_BUILD_VULKAN)
-    void removeVulkanTextureId(uint64_t textureId)
-    {
-        ImGui_ImplVulkan_RemoveTexture(std::bit_cast<VkDescriptorSet>(textureId));
-    }
+void removeVulkanTextureId(uint64_t textureId)
+{
+    ImGui_ImplVulkan_RemoveTexture(std::bit_cast<VkDescriptorSet>(textureId));
+}
 #endif
+
 }
 
-void init(const Device& device, const InitInfo& info) { @autoreleasepool
+void init(const Device& device, const InitInfo& info)
 {
     if (const auto* metalDevice = dynamic_cast<const MetalDevice*>(&device))
     {
-        ImGui_ImplMetal_Init(
-            metalDevice->mtlDevice(),
-            1,
-            toMTLPixelFormat(info.colorAttachmentPixelFormats.front()),
-            info.depthAttachmentPixelFormat.has_value() ? toMTLPixelFormat(*info.depthAttachmentPixelFormat) : MTLPixelFormatInvalid,
-            MTLPixelFormatInvalid
-        );
-        return;
+        @autoreleasepool
+        {
+            ImGui_ImplMetal_Init(
+                metalDevice->mtlDevice(),
+                1,
+                toMTLPixelFormat(info.colorAttachmentPixelFormats.front()),
+                info.depthAttachmentPixelFormat.has_value() ? toMTLPixelFormat(*info.depthAttachmentPixelFormat) : MTLPixelFormatInvalid,
+                MTLPixelFormatInvalid
+            );
+            return;
+        }
     }
 
-#if defined(GFX_BUILD_VULKAN)
+    #if defined(GFX_BUILD_VULKAN)
     if (const auto* vulkanDevice = dynamic_cast<const VulkanDevice*>(&device))
     {
         std::vector<vk::Format> colorAttachmentFormats;
@@ -104,73 +114,86 @@ void init(const Device& device, const InitInfo& info) { @autoreleasepool
         ImGui_ImplVulkan_Init(&initInfo);
         return;
     }
-#endif
+    #endif
 
     throw std::runtime_error("unsupported gfx::Device backend for ImGui");
-}}
+}
 
-void newFrame(const Device& device) { @autoreleasepool
+void newFrame(const Device& device)
 {
     if (dynamic_cast<const MetalDevice*>(&device) != nullptr)
     {
-        ImGui_ImplMetal_NewFrame();
-        return;
+        @autoreleasepool
+        {
+            ImGui_ImplMetal_NewFrame();
+            return;
+        }
     }
-#if defined(GFX_BUILD_VULKAN)
+
+    #if defined(GFX_BUILD_VULKAN)
     if (dynamic_cast<const VulkanDevice*>(&device) != nullptr)
     {
         ImGui_ImplVulkan_NewFrame();
         return;
     }
-#endif
+    #endif
 
     throw std::runtime_error("unsupported gfx::Device backend for ImGui");
-}}
+}
 
-void renderDrawData(CommandBuffer& commandBuffer, ImDrawData* drawData) { @autoreleasepool
+void renderDrawData(CommandBuffer& commandBuffer, ImDrawData* drawData)
 {
     if (auto* metalCommandBuffer = dynamic_cast<MetalCommandBuffer*>(&commandBuffer))
     {
-        assert([metalCommandBuffer->commandEncoder() conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-        auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)metalCommandBuffer->commandEncoder();
-        ImGui_ImplMetal_RenderDrawData(drawData, metalCommandBuffer->mtlCommandBuffer(), renderCommandEncoder);
-        return;
+        @autoreleasepool
+        {
+            assert([metalCommandBuffer->commandEncoder() conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
+            auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)metalCommandBuffer->commandEncoder();
+            ImGui_ImplMetal_RenderDrawData(drawData, metalCommandBuffer->mtlCommandBuffer(), renderCommandEncoder);
+            return;
+        }
     }
-#if defined(GFX_BUILD_VULKAN)
+
+    #if defined(GFX_BUILD_VULKAN)
     if (auto* vulkanCommandBuffer = dynamic_cast<VulkanCommandBuffer*>(&commandBuffer))
     {
         ImGui_ImplVulkan_RenderDrawData(drawData, vulkanCommandBuffer->vkCommandBuffer());
         return;
     }
-#endif
+    #endif
 
     throw std::runtime_error("unsupported gfx::CommandBuffer backend for ImGui");
-}}
+}
 
-void shutdown(Device& device) { @autoreleasepool
+void shutdown(Device& device)
 {
     if (dynamic_cast<MetalDevice*>(&device) != nullptr)
     {
-        ImGui_ImplMetal_Shutdown();
-        return;
+        @autoreleasepool
+        {
+            ImGui_ImplMetal_Shutdown();
+            return;
+        }
     }
-#if defined(GFX_BUILD_VULKAN)
+
+    #if defined(GFX_BUILD_VULKAN)
     if (auto* vulkanDevice = dynamic_cast<VulkanDevice*>(&device))
     {
         vulkanDevice->waitIdle();
         ImGui_ImplVulkan_Shutdown();
         return;
     }
-#endif
+    #endif
 
     throw std::runtime_error("unsupported gfx::Device backend for ImGui");
-}}
+}
 
 uint64_t initTextureId(Texture& texture)
 {
     if (auto* metalTexture = dynamic_cast<MetalTexture*>(&texture))
         return metalTexture->imTextureId();
-#if defined(GFX_BUILD_VULKAN)
+
+    #if defined(GFX_BUILD_VULKAN)
     if (auto* vulkanTexture = dynamic_cast<VulkanTexture*>(&texture))
     {
         std::shared_ptr<Sampler> sampler = vulkanTexture->device().newSampler(Sampler::Descriptor{});
@@ -181,7 +204,7 @@ uint64_t initTextureId(Texture& texture)
         vulkanTexture->setImTextureId(textureId, vulkanSampler, removeVulkanTextureId);
         return textureId;
     }
-#endif
+    #endif
 
     throw std::runtime_error("unsupported gfx::Texture backend for ImGui");
 }
@@ -190,23 +213,24 @@ std::optional<uint64_t> textureId(const Texture& texture)
 {
     if (const auto* metalTexture = dynamic_cast<const MetalTexture*>(&texture))
         return metalTexture->imTextureId();
-#if defined(GFX_BUILD_VULKAN)
+
+    #if defined(GFX_BUILD_VULKAN)
     if (const auto* vulkanTexture = dynamic_cast<const VulkanTexture*>(&texture))
         return vulkanTexture->imTextureId();
-#endif
+    #endif
 
-    return std::nullopt;
+    throw std::runtime_error("unsupported gfx::Texture backend for ImGui");
 }
 
 void removeTextureId(Texture& texture)
 {
-#if defined(GFX_BUILD_VULKAN)
+    #if defined(GFX_BUILD_VULKAN)
     if (auto* vulkanTexture = dynamic_cast<VulkanTexture*>(&texture))
     {
         vulkanTexture->removeImTextureId();
         return;
     }
-#endif
+    #endif
 }
 
 } // namespace gfx::imgui

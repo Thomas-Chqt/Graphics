@@ -5,15 +5,10 @@
 
 struct GLFWwindow;
 
-namespace gfx
+namespace gfx::glfw
 {
 
-namespace glfw
-{
-
-const InstanceExtension* newInstanceExtension();
+const InstanceExtension* getInstanceExtension();
 std::unique_ptr<Surface> createSurface(Instance&, GLFWwindow*);
 
-} // namespace glfw
-
-} // namespace gfx
+} // namespace gfx::glfw

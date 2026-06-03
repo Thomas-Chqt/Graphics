@@ -24,7 +24,7 @@ public:
     VulkanSurface(const VulkanSurface&) = delete;
     VulkanSurface(VulkanSurface&&) = delete;
 
-    VulkanSurface(vk::Instance&, VkSurfaceKHR);
+    VulkanSurface(const vk::Instance&, VkSurfaceKHR);
 
     const std::set<PixelFormat> supportedPixelFormats(const Device&) const override;
     const std::set<PresentMode> supportedPresentModes(const Device&) const override;
@@ -34,7 +34,7 @@ public:
     ~VulkanSurface();
 
 private:
-    vk::Instance* m_vkInstance;
+    const vk::Instance* m_vkInstance;
     vk::SurfaceKHR m_vkSurface;
 
 public:

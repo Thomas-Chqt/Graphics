@@ -108,7 +108,9 @@ public:
             static_cast<Application*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
         });
 
-        m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
+        m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{
+            .instanceExtension = gfx::glfw::getInstanceExtension()
+        });
         assert(m_instance);
 
         m_surface = gfx::glfw::createSurface(*m_instance, m_window);

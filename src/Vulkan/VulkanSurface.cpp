@@ -17,14 +17,14 @@
 namespace gfx
 {
 
-VulkanSurface::VulkanSurface(vk::Instance& instance, VkSurfaceKHR surface)
+VulkanSurface::VulkanSurface(const vk::Instance& instance, VkSurfaceKHR surface)
     : m_vkInstance(&instance), m_vkSurface(surface)
 {
 }
 
 const std::set<PixelFormat> VulkanSurface::supportedPixelFormats(const Device& _device) const
 {
-    const VulkanDevice& device = dynamic_cast<const VulkanDevice&>(_device);
+    const auto& device = dynamic_cast<const VulkanDevice&>(_device);
 
     std::set<PixelFormat> pixelFormats;
     for (const vk::SurfaceFormatKHR& format : device.physicalDevice().getSurfaceFormatsKHR(m_vkSurface))
@@ -43,7 +43,7 @@ const std::set<PixelFormat> VulkanSurface::supportedPixelFormats(const Device& _
 
 const std::set<PresentMode> VulkanSurface::supportedPresentModes(const Device& _device) const
 {
-    const VulkanDevice& device = dynamic_cast<const VulkanDevice&>(_device);
+    const auto& device = dynamic_cast<const VulkanDevice&>(_device);
 
     std::set<PresentMode> modes;
     for (const vk::PresentModeKHR& mode : device.physicalDevice().getSurfacePresentModesKHR(m_vkSurface))

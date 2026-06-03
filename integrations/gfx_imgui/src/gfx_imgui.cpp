@@ -8,6 +8,7 @@
  */
 
 #include "gfx_imgui/gfx_imgui.hpp"
+
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Texture.hpp"
@@ -18,6 +19,7 @@
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
+
 #include "imgui_impl_vulkan.h"
 
 namespace gfx::imgui

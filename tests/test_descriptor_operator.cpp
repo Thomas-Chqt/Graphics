@@ -166,8 +166,8 @@ TEST(descriptor_operator, instance_descriptor)
 #if defined(GFX_TEST_HAS_GLFW_INTEGRATION)
 TEST(instance_extension, glfw_singleton)
 {
-    const gfx::InstanceExtension* lhs = gfx::glfw::newInstanceExtension();
-    const gfx::InstanceExtension* rhs = gfx::glfw::newInstanceExtension();
+    const gfx::InstanceExtension* lhs = gfx::glfw::getInstanceExtension();
+    const gfx::InstanceExtension* rhs = gfx::glfw::getInstanceExtension();
 
     ASSERT_NE(lhs, nullptr);
     EXPECT_EQ(lhs, rhs);

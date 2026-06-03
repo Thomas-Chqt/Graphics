@@ -102,7 +102,9 @@ int main(int argc, char** argv)
                 pressedKeys.erase(key);
         });
 
-        std::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
+        std::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{
+            .instanceExtension = gfx::glfw::getInstanceExtension()
+        });
         assert(instance);
 
         std::unique_ptr<gfx::Surface> surface = gfx::glfw::createSurface(*instance, window);
