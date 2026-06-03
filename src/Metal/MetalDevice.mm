@@ -24,9 +24,6 @@
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
 #include "MetalParameterBlockLayout.hpp"
-#if defined(GFX_IMGUI_ENABLED)
-# include "Metal/imgui_impl_metal.h"
-#endif
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
 
@@ -87,29 +84,6 @@ std::unique_ptr<Sampler> MetalDevice::newSampler(const Sampler::Descriptor& desc
 {
     return std::make_unique<MetalSampler>(*this, desc);
 }
-
-#if defined (GFX_IMGUI_ENABLED)
-void MetalDevice::imguiInit(std::vector<PixelFormat> colorPixelFomats, std::optional<PixelFormat> depthPixelFormat) const { @autoreleasepool
-{
-    ImGui_ImplMetal_Init(
-        m_mtlDevice,
-        1,
-        toMTLPixelFormat(colorPixelFomats.front()),
-        depthPixelFormat.has_value() ? toMTLPixelFormat(*depthPixelFormat) : MTLPixelFormatInvalid,
-        MTLPixelFormatInvalid
-    );
-}}
-
-void MetalDevice::imguiNewFrame() const { @autoreleasepool
-{
-    ImGui_ImplMetal_NewFrame();
-}}
-
-void MetalDevice::imguiShutdown() { @autoreleasepool
-{
-    ImGui_ImplMetal_Shutdown();
-}}
-#endif
 
 void MetalDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {

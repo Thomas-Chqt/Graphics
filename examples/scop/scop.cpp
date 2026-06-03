@@ -24,6 +24,7 @@
 #include <Graphics/Enums.hpp>
 
 #include <GLFW/glfw3.h>
+#include <gfx_glfw/gfx_glfw.hpp>
 #if !defined(SCOP_MANDATORY)
     #include <imgui.h>
     #include <glm/glm.hpp>
@@ -67,28 +68,6 @@
     #include <unistd.h>
 #endif
 
-#if !defined (SCOP_MANDATORY)
-#if (defined(__GNUC__) || defined(__clang__))
-    #define SCOP_EXPORT __attribute__((used, visibility("default")))
-#elif defined(_MSC_VER)
-    #define SCOP_EXPORT __declspec(dllexport)
-#else
-    #error "unknown compiler"
-#endif
-
-extern "C"
-{
-    SCOP_EXPORT ImGuiContext* GetCurrentContext() { return ImGui::GetCurrentContext(); }
-    SCOP_EXPORT ImGuiIO* GetIO() { return &ImGui::GetIO(); }
-    SCOP_EXPORT ImGuiPlatformIO* GetPlatformIO() { return &ImGui::GetPlatformIO(); }
-    SCOP_EXPORT ImGuiViewport* GetMainViewport() { return ImGui::GetMainViewport(); }
-    SCOP_EXPORT bool DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx) { return ImGui::DebugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx); }
-    SCOP_EXPORT void* MemAlloc(size_t size) { return ImGui::MemAlloc(size); }
-    SCOP_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
-    SCOP_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
-}
-#endif
-
 constexpr uint32_t WINDOW_WIDTH = 800;
 constexpr uint32_t WINDOW_HEIGHT = 600;
 
@@ -126,7 +105,7 @@ int main(int argc, char** argv)
         std::unique_ptr<gfx::Instance> instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
         assert(instance);
 
-        std::unique_ptr<gfx::Surface> surface = instance->createSurface(window);
+        std::unique_ptr<gfx::Surface> surface = gfx::glfw::createSurface(*instance, window);
         assert(surface);
 
         gfx::Device::Descriptor deviceDescriptor = {

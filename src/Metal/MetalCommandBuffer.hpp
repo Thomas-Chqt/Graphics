@@ -51,10 +51,6 @@ public:
     void drawVertices(uint32_t start, uint32_t count) override;
     void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) override;
 
-#if defined(GFX_IMGUI_ENABLED)
-    void imGuiRenderDrawData(ImDrawData*) const override;
-#endif
-
     void endRenderPass() override;
 
 

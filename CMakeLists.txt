@@ -21,12 +21,13 @@ if (APPLE)
     option(GFX_BUILD_METAL "Build the metal backend" ON)
 endif()
 option(GFX_BUILD_VULKAN   "Build the vulkan backend"             ON)
-option(GFX_ENABLE_IMGUI   "Build with imgui capabilities"       OFF)
-option(GFX_ENABLE_GLFW    "Build with glfw capabilities"        OFF)
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
 option(GFX_BUILD_TRACY    "Build the tracy client"              OFF)
 option(GFX_BUILD_TESTS    "Build the tests"                     OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
+
+option(GFX_BUILD_IMGUI_INTEGRATION "Build the imgui integration static library" ON)
+option(GFX_BUILD_GLFW_INTEGRATION  "Build the glfw integration static library"  ON)
 
 if(GFX_BUILD_EXAMPLES)
     set(GFX_EXAMPLES_TO_BUILD "triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
@@ -84,20 +85,6 @@ if (NOT GFX_BUILD_METAL AND NOT GFX_BUILD_VULKAN)
     message(FATAL_ERROR "One backend must be build")
 endif()
 
-if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
-    FetchContent_Declare(dlLoad
-        GIT_REPOSITORY    https://github.com/Thomas-Chqt/dlLoad.git
-        GIT_TAG           fd860b8200983b89d3ca58b371f6ec25b9972bd3
-        GIT_SHALLOW       1
-        GIT_PROGRESS      TRUE
-        FIND_PACKAGE_ARGS
-    )
-    set(DL_BUILD_TESTS OFF)
-    set(DL_INSTALL     ${GFX_INSTALL})
-    FetchContent_MakeAvailable(dlLoad)
-    set_target_properties(dlLoad PROPERTIES FOLDER "dependencies")
-endif()
-
 if (GFX_BUILD_VULKAN)
     FetchContent_Declare(VulkanMemoryAllocator
         GIT_REPOSITORY    https://github.com/Thomas-Chqt/VulkanMemoryAllocator.git
@@ -143,33 +130,20 @@ file(GLOB_RECURSE GFX_INC "include/*.hpp")
 target_sources(Graphics PRIVATE ${GFX_INC})
 
 file(GLOB GFX_SRC "src/*.cpp" "src/*.hpp" "src/*.h")
-if (NOT GFX_ENABLE_IMGUI)
-    list(REMOVE_ITEM GFX_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/imconfig.h" "${CMAKE_CURRENT_SOURCE_DIR}/src/imgui.h")
-endif()
 target_sources(Graphics PRIVATE ${GFX_SRC})
 
 if (GFX_BUILD_METAL)
     file(GLOB_RECURSE GFX_METAL_SRC "src/Metal/*.cpp" "src/Metal/*.mm" "src/Metal/*.hpp" "src/Metal/*.h")
-    if (NOT GFX_ENABLE_IMGUI)
-        list(REMOVE_ITEM GFX_METAL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.mm" "${CMAKE_CURRENT_SOURCE_DIR}/src/Metal/imgui_impl_metal.h")
-    endif()
     target_sources(Graphics PRIVATE ${GFX_METAL_SRC})
 endif()
 
 if (GFX_BUILD_VULKAN)
     file(GLOB_RECURSE GFX_VULKAN_SRC "src/Vulkan/*.cpp" "src/Vulkan/*.hpp" "src/Vulkan/*.h")
-    if (NOT GFX_ENABLE_IMGUI)
-        list(REMOVE_ITEM GFX_VULKAN_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.h")
-    endif()
     target_sources(Graphics PRIVATE ${GFX_VULKAN_SRC})
 endif()
 
 target_include_directories(Graphics PRIVATE "src" PUBLIC "include")
 target_precompile_headers(Graphics PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/pch.hpp")
-
-if (GFX_BUILD_VULKAN AND GFX_ENABLE_IMGUI)
-    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan/imgui_impl_vulkan.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
-endif()
 
 if (GFX_BUILD_METAL)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_METAL")
@@ -183,12 +157,8 @@ if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
 endif()
 
-if (GFX_ENABLE_IMGUI)
-    target_compile_definitions(Graphics PUBLIC "GFX_IMGUI_ENABLED")
-endif()
-
-if (GFX_ENABLE_GLFW)
-    target_compile_definitions(Graphics PUBLIC "GFX_GLFW_ENABLED")
+if (GFX_BUILD_GLFW_INTEGRATION)
+    target_compile_definitions(Graphics PRIVATE "GFX_GLFW_INTEGRATION_ENABLED")
 endif()
 
 if (GFX_BUILD_TRACY)
@@ -203,12 +173,16 @@ if (GFX_BUILD_VULKAN)
     target_link_libraries(Graphics PRIVATE Vulkan::Headers VulkanMemoryAllocator)
 endif()
 
-if (GFX_ENABLE_GLFW OR GFX_ENABLE_IMGUI)
-    target_link_libraries(Graphics PRIVATE dlLoad)
-endif()
-
 if (GFX_BUILD_TRACY)
     target_link_libraries(Graphics PUBLIC TracyClient)
+endif()
+
+if (GFX_BUILD_GLFW_INTEGRATION)
+    add_subdirectory("integrations/gfx_glfw")
+endif()
+
+if (GFX_BUILD_IMGUI_INTEGRATION)
+    add_subdirectory("integrations/gfx_imgui")
 endif()
 
 add_subdirectory("tools")
@@ -223,10 +197,23 @@ if (GFX_BUILD_TESTS)
 endif()
 
 if(GFX_INSTALL)
-    install(TARGETS Graphics
+    set(GFX_INSTALL_TARGETS Graphics)
+    if (TARGET GraphicsGLFW)
+        list(APPEND GFX_INSTALL_TARGETS GraphicsGLFW)
+    endif()
+    if (TARGET GraphicsImGui)
+        list(APPEND GFX_INSTALL_TARGETS GraphicsImGui)
+    endif()
+    install(TARGETS ${GFX_INSTALL_TARGETS}
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib"
     )
     install(DIRECTORY "include/" DESTINATION "include")
+    if (TARGET GraphicsGLFW)
+        install(DIRECTORY "integrations/gfx_glfw/include/" DESTINATION "include")
+    endif()
+    if (TARGET GraphicsImGui)
+        install(DIRECTORY "integrations/gfx_imgui/include/" DESTINATION "include")
+    endif()
 endif()

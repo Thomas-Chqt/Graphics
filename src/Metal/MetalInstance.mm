@@ -20,13 +20,6 @@ MetalInstance::MetalInstance(const Instance::Descriptor&)
 {
 }
 
-#if defined(GFX_GLFW_ENABLED)
-std::unique_ptr<Surface> MetalInstance::createSurface(GLFWwindow* glfwWindow)
-{
-    return std::make_unique<MetalSurface>(glfwWindow);
-}
-#endif
-
 std::unique_ptr<Device> MetalInstance::newDevice(const Device::Descriptor& desc) { @autoreleasepool
 {
 #if defined(TARGET_OS_OSX)

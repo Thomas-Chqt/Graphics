@@ -24,9 +24,7 @@ public:
     VulkanSurface(const VulkanSurface&) = delete;
     VulkanSurface(VulkanSurface&&) = delete;
 
-#if defined(GFX_GLFW_ENABLED)
-    VulkanSurface(vk::Instance&, GLFWwindow*);
-#endif
+    VulkanSurface(vk::Instance&, VkSurfaceKHR);
 
     const std::set<PixelFormat> supportedPixelFormats(const Device&) const override;
     const std::set<PresentMode> supportedPresentModes(const Device&) const override;

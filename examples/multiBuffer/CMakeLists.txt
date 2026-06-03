@@ -108,7 +108,7 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
 endif()
 target_compile_definitions(multiBuffer PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(multiBuffer PRIVATE Graphics glfw glm::glm)
+target_link_libraries(multiBuffer PRIVATE Graphics GraphicsGLFW glfw glm::glm)
 add_dependencies(multiBuffer multiBuffer_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")

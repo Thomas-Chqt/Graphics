@@ -17,9 +17,6 @@
 #include <string>
 #include <array>
 
-#if defined(GFX_GLFW_ENABLED)
-    struct GLFWwindow;
-#endif
 
 namespace gfx
 {
@@ -48,10 +45,6 @@ public:
 #endif
 #if defined(GFX_BUILD_VULKAN)
     static std::unique_ptr<Instance> newVulkanInstance(const Descriptor&);
-#endif
-
-#if defined(GFX_GLFW_ENABLED)
-    virtual std::unique_ptr<Surface> createSurface(GLFWwindow*) = 0;
 #endif
 
     virtual std::unique_ptr<Device> newDevice(const Device::Descriptor&) = 0;

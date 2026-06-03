@@ -11,7 +11,6 @@
 #include "Graphics/Instance.hpp"
 
 #include "Vulkan/VulkanInstance.hpp"
-#include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
@@ -27,11 +26,15 @@ namespace
     {
         std::vector<const char*> extensions;
 
-#if defined(GFX_GLFW_ENABLED)
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount); // NOLINT
-        if (glfwExtensionCount > 0)
-            extensions.insert(extensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount); // NOLINT
+#if defined(GFX_GLFW_INTEGRATION_ENABLED)
+        extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    #if defined(_WIN32)
+        extensions.push_back("VK_KHR_win32_surface");
+    #elif defined(__APPLE__)
+        extensions.push_back("VK_EXT_metal_surface");
+    #elif defined(__linux__)
+        extensions.push_back("VK_KHR_xcb_surface");
+    #endif
 #endif
 
 #if !defined(NDEBUG)
@@ -168,13 +171,6 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         | std::views::transform([](auto& d){ return VulkanPhysicalDevice(d); })
         | std::ranges::to<std::vector>();
 }
-
-#if defined(GFX_GLFW_ENABLED)
-std::unique_ptr<Surface> VulkanInstance::createSurface(GLFWwindow* glfwWindow)
-{
-    return std::make_unique<VulkanSurface>(m_vkInstance, glfwWindow);
-}
-#endif
 
 std::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc)
 {

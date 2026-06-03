@@ -22,9 +22,6 @@
 #include "Vulkan/VulkanEnums.hpp"
 #include <memory>
 #include <utility>
-#if defined(GFX_IMGUI_ENABLED)
-# include "Vulkan/imgui_impl_vulkan.h"
-#endif
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
@@ -354,13 +351,6 @@ void VulkanCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& aBu
     m_vkCommandBuffer.bindIndexBuffer(buffer->vkBuffer(), 0, vk::IndexType::eUint32);
     m_vkCommandBuffer.drawIndexed(static_cast<uint32_t>(buffer->size() / sizeof(uint32_t)), 1, 0, 0, 0);
 }
-
-#if defined(GFX_IMGUI_ENABLED)
-void VulkanCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const
-{
-    ImGui_ImplVulkan_RenderDrawData(drawData, m_vkCommandBuffer);
-}
-#endif
 
 void VulkanCommandBuffer::endRenderPass()
 {

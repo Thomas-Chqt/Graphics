@@ -108,7 +108,7 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
 endif()
 target_compile_definitions(triangle PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(triangle PRIVATE Graphics glfw glm::glm)
+target_link_libraries(triangle PRIVATE Graphics GraphicsGLFW glfw glm::glm)
 add_dependencies(triangle triangle_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")

@@ -19,9 +19,6 @@
 #include <memory>
 #include <cstdint>
 
-#if defined(GFX_IMGUI_ENABLED)
-    struct ImDrawData;
-#endif
 
 namespace gfx
 {
@@ -45,10 +42,6 @@ public:
     virtual void drawVertices(uint32_t start, uint32_t count) = 0;
     virtual void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) = 0;
 
-#if defined(GFX_IMGUI_ENABLED)
-    virtual void imGuiRenderDrawData(ImDrawData*) const = 0;
-#endif
-
     virtual void endRenderPass() = 0;
 
 
@@ -62,7 +55,7 @@ public:
 
     virtual void presentDrawable(const std::shared_ptr<Drawable>&) = 0;
 
-    virtual void addSampledTexture(const std::shared_ptr<Texture>&) = 0; // for imgui
+    virtual void addSampledTexture(const std::shared_ptr<Texture>&) = 0;
 
     virtual ~CommandBuffer() = default;
 

@@ -20,6 +20,7 @@
 #include "Graphics/Swapchain.hpp"
 
 #include <GLFW/glfw3.h>
+#include <gfx_glfw/gfx_glfw.hpp>
 #include <glm/glm.hpp>
 #include <vector>
 
@@ -107,7 +108,7 @@ public:
         m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
         assert(m_instance);
 
-        m_surface = m_instance->createSurface(m_window);
+        m_surface = gfx::glfw::createSurface(*m_instance, m_window);
         assert(m_surface);
 
         gfx::Device::Descriptor deviceDescriptor = {

@@ -20,9 +20,6 @@
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
 #include <memory>
-#if defined(GFX_IMGUI_ENABLED)
-# include "Metal/imgui_impl_metal.h"
-#endif
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalDrawable.hpp"
@@ -179,15 +176,6 @@ void MetalCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& buff
 
     m_usedBuffers.insert(idxBuffer);
 }}
-
-#if defined(GFX_IMGUI_ENABLED)
-void MetalCommandBuffer::imGuiRenderDrawData(ImDrawData* drawData) const { @autoreleasepool
-{
-    assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
-    ImGui_ImplMetal_RenderDrawData(drawData, m_mtlCommandBuffer, renderCommandEncoder);
-}}
-#endif
 
 void MetalCommandBuffer::endRenderPass() { @autoreleasepool
 {

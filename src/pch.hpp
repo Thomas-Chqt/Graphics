@@ -75,28 +75,6 @@
 #endif
 #endif // GFX_BUILD_VULKAN
 
-#if defined(GFX_GLFW_ENABLED) || defined(GFX_IMGUI_ENABLED)
-
-#include <dlLoad/dlLoad.h>
-
-#endif
-
-#if defined(GFX_GLFW_ENABLED)
-
-struct GLFWwindow;
-
-#define glfwCreateWindowSurface ((VkResult (*)(void*, GLFWwindow*, const VkAllocationCallbacks*, uint64_t*))::getSym(DL_DEFAULT, "glfwCreateWindowSurface"))
-#define glfwGetRequiredInstanceExtensions ((const char** (*)(uint32_t* count))::getSym(DL_DEFAULT, "glfwGetRequiredInstanceExtensions"))
-#define glfwGetCocoaWindow ((id (*)(GLFWwindow*))::getSym(DL_DEFAULT, "glfwGetCocoaWindow"))
-
-#endif // GFX_GLFW_ENABLED
-
-#if defined(GFX_IMGUI_ENABLED)
-
-#include "imgui.h" // IWYU pragma: keep
-
-#endif // GFX_IMGUI_ENABLED
-
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #if defined(GFX_BUILD_TRACY)
     #include <tracy/Tracy.hpp>

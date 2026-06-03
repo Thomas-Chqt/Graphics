@@ -5,7 +5,7 @@
 # Date: 2024/05/15 13:50:09
 # ---------------------------------------------------
 
-if (GFX_ENABLE_GLFW)
+if (TARGET GraphicsGLFW)
     if ("triangle" IN_LIST GFX_EXAMPLES_TO_BUILD)
         add_subdirectory(triangle)
     endif()
@@ -15,7 +15,7 @@ if (GFX_ENABLE_GLFW)
     if ("descriptor_indexing" IN_LIST GFX_EXAMPLES_TO_BUILD)
         add_subdirectory(descriptor_indexing)
     endif()
-    if (GFX_ENABLE_IMGUI)
+    if (TARGET GraphicsImGui)
         if ("imgui_usage" IN_LIST GFX_EXAMPLES_TO_BUILD)
             add_subdirectory(imgui_usage)
         endif()

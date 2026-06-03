@@ -18,6 +18,7 @@
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
     #include <imgui.h>
+    #include <gfx_imgui/gfx_imgui.hpp>
     #include <backends/imgui_impl_glfw.h>
     #include <glm/glm.hpp>
     #include <glm/gtc/matrix_transform.hpp>
@@ -111,7 +112,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
             break;
     }
 
-    m_device->imguiInit({gfx::PixelFormat::BGRA8Unorm}, gfx::PixelFormat::Depth32Float);
+    gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8Unorm}, .depthAttachmentPixelFormat = gfx::PixelFormat::Depth32Float});
 #endif
 }
 
@@ -170,7 +171,7 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, 
 #if !defined (SCOP_MANDATORY)
     {
         ZoneScopedN("imguiNewFrame");
-        m_device->imguiNewFrame();
+        gfx::imgui::newFrame(*m_device);
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
     }
@@ -272,7 +273,7 @@ void Renderer::endFrame()
         }
 
 #if !defined (SCOP_MANDATORY)
-        commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
+        gfx::imgui::renderDrawData(*commandBuffer, ImGui::GetDrawData());
 #endif
     }
     commandBuffer->endRenderPass();
@@ -292,7 +293,7 @@ void Renderer::endFrame()
 Renderer::~Renderer()
 {
 #if !defined (SCOP_MANDATORY)
-    m_device->imguiShutdown();
+    gfx::imgui::shutdown(*m_device);
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 #endif

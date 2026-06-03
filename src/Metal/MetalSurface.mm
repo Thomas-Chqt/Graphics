@@ -14,17 +14,10 @@
 namespace gfx
 {
 
-#if defined(GFX_GLFW_ENABLED)
-MetalSurface::MetalSurface(GLFWwindow* glfwWindow) { @autoreleasepool
+MetalSurface::MetalSurface(CAMetalLayer* layer)
+    : m_mtlLayer(layer)
 {
-    m_mtlLayer = [CAMetalLayer layer];
-    m_mtlLayer.displaySyncEnabled = YES;
-
-    NSWindow* nswindow = glfwGetCocoaWindow(glfwWindow); // NOLINT
-    nswindow.contentView.layer = m_mtlLayer;
-    nswindow.contentView.wantsLayer = YES;
-}}
-#endif
+}
 
 const std::set<PixelFormat> MetalSurface::supportedPixelFormats(const Device&) const
 {

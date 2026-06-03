@@ -17,15 +17,10 @@
 namespace gfx
 {
 
-#if defined(GFX_GLFW_ENABLED)
-VulkanSurface::VulkanSurface(vk::Instance& instance, GLFWwindow* glfwWindow) : m_vkInstance(&instance)
+VulkanSurface::VulkanSurface(vk::Instance& instance, VkSurfaceKHR surface)
+    : m_vkInstance(&instance), m_vkSurface(surface)
 {
-    VkSurfaceKHR rawSurface;
-    if (glfwCreateWindowSurface(static_cast<VkInstance>(instance), glfwWindow, nullptr, (uint64_t*)&rawSurface) != VK_SUCCESS)
-        throw std::runtime_error("unable to create the surface");
-    m_vkSurface = rawSurface;
 }
-#endif
 
 const std::set<PixelFormat> VulkanSurface::supportedPixelFormats(const Device& _device) const
 {
