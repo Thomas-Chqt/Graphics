@@ -17,10 +17,6 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Texture.hpp"
 
-#if defined(GFX_TEST_HAS_GLFW_INTEGRATION)
-    #include <gfx_glfw/gfx_glfw.hpp>
-#endif
-
 #include <gtest/gtest.h>
 
 #include <cstdint>
@@ -162,17 +158,6 @@ TEST(descriptor_operator, instance_descriptor)
 
     EXPECT_NE(lhs, rhs);
 }
-
-#if defined(GFX_TEST_HAS_GLFW_INTEGRATION)
-TEST(instance_extension, glfw_singleton)
-{
-    const gfx::InstanceExtension* lhs = gfx::glfw::getInstanceExtension();
-    const gfx::InstanceExtension* rhs = gfx::glfw::getInstanceExtension();
-
-    ASSERT_NE(lhs, nullptr);
-    EXPECT_EQ(lhs, rhs);
-}
-#endif
 
 TEST(descriptor_operator, graphics_pipeline_descriptor)
 {

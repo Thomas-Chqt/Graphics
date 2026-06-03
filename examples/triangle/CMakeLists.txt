@@ -96,9 +96,6 @@ endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(triangle PRIVATE ${EXE_SRCS})
-if (WIN32)
-    target_sources(triangle PRIVATE triangle.def)
-endif()
 
 target_include_directories(triangle PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 

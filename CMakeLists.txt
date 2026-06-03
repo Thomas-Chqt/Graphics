@@ -157,10 +157,6 @@ if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
 endif()
 
-if (GFX_BUILD_GLFW_INTEGRATION)
-    target_compile_definitions(Graphics PRIVATE "GFX_GLFW_INTEGRATION_ENABLED")
-endif()
-
 if (GFX_BUILD_TRACY)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_TRACY")
 endif()

@@ -31,10 +31,5 @@ set_target_properties(gtest PROPERTIES FOLDER "dependencies")
 set_target_properties(gtest_main PROPERTIES FOLDER "dependencies")
 
 target_link_libraries(gfx_test PRIVATE Graphics GTest::gtest_main)
-if (TARGET GraphicsGLFW AND TARGET glfw)
-    target_link_libraries(gfx_test PRIVATE GraphicsGLFW)
-    target_link_libraries(gfx_test PRIVATE glfw)
-    target_compile_definitions(gfx_test PRIVATE "GFX_TEST_HAS_GLFW_INTEGRATION")
-endif()
 
 gtest_discover_tests(gfx_test)

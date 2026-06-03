@@ -95,9 +95,6 @@ endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(descriptor_indexing PRIVATE ${EXE_SRCS})
-if (WIN32)
-    target_sources(descriptor_indexing PRIVATE descriptor_indexing.def)
-endif()
 
 target_include_directories(descriptor_indexing PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 

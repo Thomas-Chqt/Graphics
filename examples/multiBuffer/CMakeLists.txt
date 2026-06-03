@@ -96,9 +96,6 @@ endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(multiBuffer PRIVATE ${EXE_SRCS})
-if (WIN32)
-    target_sources(multiBuffer PRIVATE multiBuffer.def)
-endif()
 
 target_include_directories(multiBuffer PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 

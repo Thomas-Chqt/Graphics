@@ -127,9 +127,6 @@ endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(mc_cube PRIVATE ${EXE_SRCS})
-if (WIN32)
-    target_sources(mc_cube PRIVATE mc_cube.def)
-endif()
 
 target_include_directories(mc_cube PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
