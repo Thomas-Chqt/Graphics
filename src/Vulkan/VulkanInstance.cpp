@@ -26,17 +26,6 @@ namespace
     {
         std::vector<const char*> extensions;
 
-#if defined(GFX_GLFW_INTEGRATION_ENABLED)
-        extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-    #if defined(_WIN32)
-        extensions.push_back("VK_KHR_win32_surface");
-    #elif defined(__APPLE__)
-        extensions.push_back("VK_EXT_metal_surface");
-    #elif defined(__linux__)
-        extensions.push_back("VK_KHR_xcb_surface");
-    #endif
-#endif
-
 #if !defined(NDEBUG)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -99,6 +88,11 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         .setApiVersion(VK_VERSION_MINOR(instanceVersion) >= 3 ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2);
 
     std::vector<const char*> extensions = getRequiredExtensions();
+    if (desc.instanceExtension != nullptr)
+    {
+        for (std::string_view extension : desc.instanceExtension->getRequiredVulkanInstanceExtensions())
+            extensions.push_back(extension.data());
+    }
 
     vk::InstanceCreateFlags flags = {};
 #if defined(__APPLE__)

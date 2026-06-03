@@ -16,8 +16,29 @@
 
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 
+#include <span>
+#include <string_view>
+
 namespace gfx
 {
+
+class InstanceExtension
+{
+public:
+    InstanceExtension(const InstanceExtension&) = delete;
+    InstanceExtension(InstanceExtension&&) = delete;
+
+    virtual std::span<const std::string_view> getRequiredVulkanInstanceExtensions() const = 0;
+
+    virtual ~InstanceExtension() = default;
+
+protected:
+    InstanceExtension() = default;
+
+public:
+    InstanceExtension& operator=(const InstanceExtension&) = delete;
+    InstanceExtension& operator=(InstanceExtension&&) = delete;
+};
 
 class VulkanInstance : public Instance
 {

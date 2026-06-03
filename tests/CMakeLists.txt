@@ -11,7 +11,7 @@ include(GoogleTest)
 add_executable(gfx_test)
 
 # test file only require 11, will be higher when linking to something that need higher
-target_compile_features(gfx_test PUBLIC cxx_std_11)
+target_compile_features(gfx_test PUBLIC cxx_std_23)
 set_target_properties(gfx_test PROPERTIES FOLDER "tests")
 
 file(GLOB_RECURSE SRC "*.cpp")
@@ -31,5 +31,10 @@ set_target_properties(gtest PROPERTIES FOLDER "dependencies")
 set_target_properties(gtest_main PROPERTIES FOLDER "dependencies")
 
 target_link_libraries(gfx_test PRIVATE Graphics GTest::gtest_main)
+if (TARGET GraphicsGLFW AND TARGET glfw)
+    target_link_libraries(gfx_test PRIVATE GraphicsGLFW)
+    target_link_libraries(gfx_test PRIVATE glfw)
+    target_compile_definitions(gfx_test PRIVATE "GFX_TEST_HAS_GLFW_INTEGRATION")
+endif()
 
 gtest_discover_tests(gfx_test)

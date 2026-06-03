@@ -1,19 +1,17 @@
 #pragma once
 
+#include "Graphics/Instance.hpp"
 #include "Graphics/Surface.hpp"
-
-#include <memory>
 
 struct GLFWwindow;
 
 namespace gfx
 {
 
-class Instance;
-
 namespace glfw
 {
 
+const InstanceExtension* newInstanceExtension();
 std::unique_ptr<Surface> createSurface(Instance&, GLFWwindow*);
 
 } // namespace glfw

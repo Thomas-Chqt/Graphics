@@ -21,6 +21,8 @@
 namespace gfx
 {
 
+class InstanceExtension;
+
 class Instance
 {
 public:
@@ -30,6 +32,7 @@ public:
         std::array<int, 3> appVersion;
         std::string engineName;
         std::array<int, 3> engineVersion;
+        const InstanceExtension* instanceExtension = nullptr;
 
         auto operator<=>(const Descriptor&) const = default;
     };
