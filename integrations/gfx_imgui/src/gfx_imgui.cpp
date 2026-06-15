@@ -143,6 +143,8 @@ std::optional<uint64_t> textureId(const Texture& texture)
         return vulkanTexture->imTextureId();
 
     return std::nullopt;
+
+    throw std::runtime_error("unsupported gfx::Texture backend for ImGui");
 }
 
 void removeTextureId(Texture& texture)

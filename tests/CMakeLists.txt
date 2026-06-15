@@ -10,7 +10,6 @@ include(GoogleTest)
 
 add_executable(gfx_test)
 
-# test file only require 11, will be higher when linking to something that need higher
 target_compile_features(gfx_test PUBLIC cxx_std_23)
 set_target_properties(gfx_test PROPERTIES FOLDER "tests")
 

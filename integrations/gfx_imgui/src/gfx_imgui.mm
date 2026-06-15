@@ -50,6 +50,7 @@ void removeVulkanTextureId(uint64_t textureId)
 
 void init(const Device& device, const InitInfo& info)
 {
+    assert(info.colorAttachmentPixelFormats.empty() == false);
     if (const auto* metalDevice = dynamic_cast<const MetalDevice*>(&device))
     {
         @autoreleasepool
