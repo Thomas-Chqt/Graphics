@@ -29,11 +29,13 @@ uint32_t bindingOffset(const gfx::ParameterBlockLayout& layout, uint32_t idx)
     return std::accumulate(bindingCounts.begin(), std::next(bindingCounts.begin(), idx), 0u);
 }
 
+#ifndef NDEBUG
 uint32_t totalDescriptorCount(const gfx::ParameterBlockLayout& layout)
 {
     const auto bindingCounts = layout.bindings() | std::views::transform([](const auto& binding) { return binding.count; });
     return std::accumulate(bindingCounts.begin(), bindingCounts.end(), 0u);
 }
+#endif
 
 }
 

@@ -107,8 +107,10 @@ if (GFX_BUILD_TRACY)
         GIT_SHALLOW    1
         GIT_PROGRESS   TRUE
     )
-    set(TRACY_LTO ON)
+    set(TRACY_ENABLE OFF)
+    set(TRACY_LTO     ON)
     FetchContent_MakeAvailable(tracy)
+    target_compile_definitions(TracyClient PUBLIC "$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>")
     if(NOT MSVC)
         target_compile_options(TracyClient PRIVATE -Wno-deprecated-declarations)
     endif()
