@@ -109,9 +109,6 @@ struct GLFWwindow;
 #if defined (GFX_BUILD_METAL)
     #if defined(GFX_BUILD_TRACY) && defined(__OBJC__) && (defined(__aarch64__) || defined(__arm64__))
         #define GFX_TRACY_METAL_ENABLED
-    #endif
-
-    #if defined(GFX_TRACY_METAL_ENABLED)
         #include <tracy/TracyMetal.hmm>
     #else
         #define TracyMetalContext(device) nullptr
