@@ -113,7 +113,7 @@ private:
     }
     m_nonReusedRessources;
 
-#if defined(TRACY_ENABLE)
+#if defined(GFX_TRACY_VULKAN_ENABLED) && defined(TRACY_ENABLE)
     std::shared_ptr<tracy::VkCtxScope> m_tracyVkCtxScope = nullptr;
 #endif
 
