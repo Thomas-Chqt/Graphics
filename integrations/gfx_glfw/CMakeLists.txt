@@ -12,8 +12,6 @@ target_include_directories(GraphicsGLFW
 
 target_precompile_headers(GraphicsGLFW REUSE_FROM Graphics)
 
-target_link_libraries(GraphicsGLFW PUBLIC Graphics)
-
 if (GFX_BUILD_METAL)
     target_sources(GraphicsGLFW PRIVATE "src/gfx_glfw.mm")
 else()

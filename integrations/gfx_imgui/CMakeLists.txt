@@ -12,8 +12,6 @@ target_include_directories(GraphicsImGui
 
 target_precompile_headers(GraphicsImGui REUSE_FROM Graphics)
 
-target_link_libraries(GraphicsImGui PUBLIC Graphics)
-
 target_sources(GraphicsImGui PRIVATE "src/imconfig.h" "src/imgui.h")
 if (GFX_BUILD_METAL)
     target_sources(GraphicsImGui PRIVATE "src/gfx_imgui.mm")

@@ -137,7 +137,7 @@ endif()
 target_compile_definitions(mc_cube PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 target_compile_definitions(mc_cube PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(mc_cube PRIVATE GraphicsGLFW GraphicsImGui glm::glm imgui stb_image)
+target_link_libraries(mc_cube PRIVATE Graphics GraphicsGLFW GraphicsImGui glm::glm imgui stb_image)
 add_dependencies(mc_cube mc_cube_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")

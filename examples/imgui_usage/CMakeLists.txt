@@ -100,7 +100,7 @@ endif()
 target_compile_definitions(imgui_usage PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 target_compile_definitions(imgui_usage PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(imgui_usage PRIVATE GraphicsGLFW GraphicsImGui imgui stb_image)
+target_link_libraries(imgui_usage PRIVATE Graphics GraphicsGLFW GraphicsImGui imgui stb_image)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for imgui_usage")

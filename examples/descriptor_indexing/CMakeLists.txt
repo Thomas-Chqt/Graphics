@@ -104,7 +104,7 @@ if(CMAKE_GENERATOR STREQUAL "Xcode")
 endif()
 target_compile_definitions(descriptor_indexing PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(descriptor_indexing PRIVATE GraphicsGLFW glfw glm::glm)
+target_link_libraries(descriptor_indexing PRIVATE Graphics GraphicsGLFW glfw glm::glm)
 add_dependencies(descriptor_indexing descriptor_indexing_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")

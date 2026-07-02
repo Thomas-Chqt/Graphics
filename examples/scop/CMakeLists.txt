@@ -169,9 +169,9 @@ endif()
 target_compile_definitions(scop PRIVATE "GLFW_INCLUDE_NONE")
 
 if (SCOP_MANDATORY)
-    target_link_libraries(scop PRIVATE GraphicsGLFW glfw stb_image)
+    target_link_libraries(scop PRIVATE Graphics GraphicsGLFW glfw stb_image)
 else()
-    target_link_libraries(scop PRIVATE GraphicsGLFW GraphicsImGui glm::glm imgui stb_image assimp::assimp)
+    target_link_libraries(scop PRIVATE Graphics GraphicsGLFW GraphicsImGui glm::glm imgui stb_image assimp::assimp)
 endif()
 add_dependencies(scop flat_color_shader textured_shader scop_shader)
 
