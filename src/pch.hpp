@@ -86,6 +86,7 @@
 
 #if defined (GFX_BUILD_METAL)
     #if defined(GFX_BUILD_TRACY) && defined(__OBJC__) && (defined(__aarch64__) || defined(__arm64__))
+        #define GFX_TRACY_METAL_ENABLED
         #include <tracy/TracyMetal.hmm>
     #else
         #define TracyMetalContext(device) nullptr
@@ -97,7 +98,7 @@
 #endif
 
 #if defined (GFX_BUILD_VULKAN)
-    #if defined(GFX_BUILD_TRACY)
+    #if defined(GFX_TRACY_VULKAN_ENABLED)
         #define TRACY_VK_USE_SYMBOL_TABLE
         #include <tracy/TracyVulkan.hpp>
         #if defined (TRACY_ENABLE)
