@@ -5,12 +5,14 @@ target_compile_features(GraphicsGLFW PUBLIC cxx_std_23)
 target_include_directories(GraphicsGLFW
     PRIVATE
         "${CMAKE_CURRENT_LIST_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/include"
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/include"
     PUBLIC
         "include")
 
 target_precompile_headers(GraphicsGLFW REUSE_FROM Graphics)
+
+target_link_libraries(GraphicsGLFW PUBLIC Graphics)
 
 if (GFX_BUILD_METAL)
     target_sources(GraphicsGLFW PRIVATE "src/gfx_glfw.mm")

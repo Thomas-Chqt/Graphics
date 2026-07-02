@@ -5,12 +5,14 @@ target_compile_features(GraphicsImGui PUBLIC cxx_std_23)
 target_include_directories(GraphicsImGui
     PRIVATE
         "${CMAKE_CURRENT_LIST_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/src"
-        "${CMAKE_SOURCE_DIR}/include"
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/include"
     PUBLIC
         "include")
 
 target_precompile_headers(GraphicsImGui REUSE_FROM Graphics)
+
+target_link_libraries(GraphicsImGui PUBLIC Graphics)
 
 target_sources(GraphicsImGui PRIVATE "src/imconfig.h" "src/imgui.h")
 if (GFX_BUILD_METAL)
