@@ -213,6 +213,8 @@ void MetalCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc,
     assert(dst);
 
     assert(src->usages() & BufferUsage::copySource && dst->usages() & BufferUsage::copyDestination);
+    assert(size <= src->size());
+    assert(size <= dst->size());
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
     auto blitCommandEncoder = (id<MTLBlitCommandEncoder>)m_commandEncoder;
@@ -231,6 +233,8 @@ void MetalCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBuf
     auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
     assert(texture);
 
+    assert(buffer->usages() & BufferUsage::copySource);
+    assert(texture->usages() & TextureUsage::copyDestination);
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
 
     size_t bytesPerPixel = pixelFormatSize(texture->pixelFormat());
@@ -251,6 +255,38 @@ void MetalCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBuf
 
     m_usedBuffers.insert(buffer);
     m_usedTextures.insert(texture);
+}}
+
+void MetalCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aTexture, uint32_t layerIndex, const std::shared_ptr<Buffer>& aBuffer, size_t bufferOffset) { @autoreleasepool
+{
+    auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
+    assert(texture);
+
+    auto buffer = std::dynamic_pointer_cast<MetalBuffer>(aBuffer);
+    assert(buffer);
+
+    assert(texture->usages() & TextureUsage::copySource);
+    assert(buffer->usages() & BufferUsage::copyDestination);
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
+
+    size_t bytesPerPixel = pixelFormatSize(texture->pixelFormat());
+    size_t bytesPerRow = bytesPerPixel * texture->width();
+    size_t bytesPerImage = bytesPerRow * texture->height();
+
+    assert(bufferOffset + bytesPerImage <= buffer->size());
+
+    [(id<MTLBlitCommandEncoder>)m_commandEncoder copyFromTexture:texture->mtltexture()
+                                                     sourceSlice:layerIndex
+                                                     sourceLevel:0
+                                                    sourceOrigin:MTLOrigin{0, 0, 0}
+                                                      sourceSize:MTLSizeMake(texture->width(), texture->height(), 1)
+                                                        toBuffer:buffer->mtlBuffer()
+                                               destinationOffset:bufferOffset
+                                          destinationBytesPerRow:bytesPerRow
+                                        destinationBytesPerImage:bytesPerImage];
+
+    m_usedTextures.insert(texture);
+    m_usedBuffers.insert(buffer);
 }}
 
 void MetalCommandBuffer::endBlitPass() { @autoreleasepool

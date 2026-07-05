@@ -382,6 +382,8 @@ void VulkanCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc
 
     assert(src->usages() & BufferUsage::copySource);
     assert(dst->usages() & BufferUsage::copyDestination);
+    assert(size <= src->size());
+    assert(size <= dst->size());
 
     std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
 
@@ -516,6 +518,88 @@ void VulkanCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBu
         buffer->vkBuffer(),
         texture->vkImage(),
         vk::ImageLayout::eTransferDstOptimal,
+        bufferImageCopy);
+}
+
+void VulkanCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aTexture, uint32_t layerIndex, const std::shared_ptr<Buffer>& aBuffer, size_t bufferOffset)
+{
+    auto texture = std::dynamic_pointer_cast<VulkanTexture>(aTexture);
+    assert(texture);
+    auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
+    assert(buffer);
+
+    assert(texture->usages() & TextureUsage::copySource);
+    assert(buffer->usages() & BufferUsage::copyDestination);
+    assert(bufferOffset + pixelFormatSize(texture->pixelFormat()) * texture->width() * texture->height() <= buffer->size());
+
+    std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
+    std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
+
+    ImageSyncRequest imageSyncReq{};
+    imageSyncReq.stageMask = vk::PipelineStageFlagBits2::eTransfer;
+    imageSyncReq.accessMask = vk::AccessFlagBits2::eTransferRead;
+    imageSyncReq.layout = vk::ImageLayout::eTransferSrcOptimal;
+
+    auto imageIt = m_imageFinalSyncStates.find(texture);
+    if (imageIt != m_imageFinalSyncStates.end()) {
+        auto barrier = syncImage(imageIt->second, imageSyncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setImage(texture->vkImage());
+            barrier->setSubresourceRange(texture->subresourceRange());
+            imageMemoryBarriers.push_back(*barrier);
+        }
+    } else {
+        m_imageSyncRequests[texture] = imageSyncReq;
+        m_imageFinalSyncStates[texture] = imageStateAfterSync(imageSyncReq);
+    }
+
+    BufferSyncRequest bufferSyncReq{};
+    bufferSyncReq.stageMask = vk::PipelineStageFlagBits2::eTransfer;
+    bufferSyncReq.accessMask = vk::AccessFlagBits2::eTransferWrite;
+
+    auto bufferIt = m_bufferFinalSyncStates.find(buffer);
+    if (bufferIt != m_bufferFinalSyncStates.end()) {
+        auto barrier = syncBuffer(bufferIt->second, bufferSyncReq); // will update the final sync state
+        if (barrier.has_value()) {
+            barrier->setBuffer(buffer->vkBuffer());
+            barrier->setOffset(0);
+            barrier->setSize(vk::WholeSize);
+            bufferMemoryBarriers.push_back(*barrier);
+        }
+    } else {
+        m_bufferSyncRequests[buffer] = bufferSyncReq;
+        m_bufferFinalSyncStates[buffer] = bufferStateAfterSync(bufferSyncReq);
+    }
+
+    if (imageMemoryBarriers.empty() == false || bufferMemoryBarriers.empty() == false)
+    {
+        auto dependencyInfo = vk::DependencyInfo{}
+            .setDependencyFlags(vk::DependencyFlags{});
+
+        if (imageMemoryBarriers.empty() == false)
+            dependencyInfo.setImageMemoryBarriers(imageMemoryBarriers);
+        if (bufferMemoryBarriers.empty() == false)
+            dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
+
+        m_vkCommandBuffer.pipelineBarrier2(dependencyInfo);
+    }
+
+    auto bufferImageCopy = vk::BufferImageCopy{}
+        .setBufferOffset(bufferOffset)
+        .setImageSubresource(vk::ImageSubresourceLayers{}
+            .setAspectMask(texture->subresourceRange().aspectMask)
+            .setMipLevel(0)
+            .setBaseArrayLayer(layerIndex)
+            .setLayerCount(1))
+        .setImageExtent(vk::Extent3D{}
+            .setWidth(texture->width())
+            .setHeight(texture->height())
+            .setDepth(1));
+
+    m_vkCommandBuffer.copyImageToBuffer(
+        texture->vkImage(),
+        vk::ImageLayout::eTransferSrcOptimal,
+        buffer->vkBuffer(),
         bufferImageCopy);
 }
 

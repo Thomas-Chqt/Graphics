@@ -175,7 +175,8 @@ enum class TextureUsage : uint8_t
     shaderRead             = 1 << 0,
     colorAttachment        = 1 << 1,
     depthStencilAttachment = 1 << 2,
-    copyDestination        = 1 << 3
+    copyDestination        = 1 << 3,
+    copySource             = 1 << 4
 };
 GFX_ENABLE_BITMASK_OPERATORS(TextureUsage);
 using TextureUsages = Flags<TextureUsage>;
