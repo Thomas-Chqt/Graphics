@@ -20,6 +20,7 @@
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
 #include <memory>
+#include <utility>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Metal/imgui_impl_metal.h"
 #endif
@@ -37,38 +38,13 @@ namespace gfx
 
 namespace
 {
-    constexpr bool isFloatColorFormat(PixelFormat format)
+    MTLClearColor toMTLClearColor(const ClearValue& clearValue)
     {
-        switch (format)
-        {
-        case PixelFormat::RGBA8Unorm:
-        case PixelFormat::BGRA8Unorm:
-        case PixelFormat::BGRA8Unorm_sRGB:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    MTLClearColor toMTLClearColor(const ClearValue& clearValue, PixelFormat pixelFormat)
-    {
-        return std::visit([pixelFormat](const auto& clear) -> MTLClearColor {
-            using Clear = std::decay_t<decltype(clear)>;
-            if constexpr (std::is_same_v<Clear, ClearFloatColor>)
-            {
-                assert(isFloatColorFormat(pixelFormat));
+        return std::visit([]<typename T>(const T& clear) -> MTLClearColor {
+            if constexpr (std::is_same_v<T, ClearFloatColor> || std::is_same_v<T, ClearUIntColor>)
                 return MTLClearColorMake(clear.value[0], clear.value[1], clear.value[2], clear.value[3]);
-            }
-            else if constexpr (std::is_same_v<Clear, ClearUIntColor>)
-            {
-                assert(pixelFormat == PixelFormat::RG32Uint);
-                return MTLClearColorMake(clear.value[0], clear.value[1], clear.value[2], clear.value[3]);
-            }
             else
-            {
-                assert(false);
-                return MTLClearColorMake(0, 0, 0, 0);
-            }
+                std::unreachable();
         }, clearValue.value);
     }
 
@@ -109,7 +85,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         assert(texture);
         renderPassDescriptor.colorAttachments[i].loadAction = toMTLLoadAction(colorAttachment.loadAction);
         renderPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
-        renderPassDescriptor.colorAttachments[i].clearColor = toMTLClearColor(colorAttachment.clearValue, texture->pixelFormat());
+        renderPassDescriptor.colorAttachments[i].clearColor = toMTLClearColor(colorAttachment.clearValue);
         renderPassDescriptor.colorAttachments[i].texture = texture->mtltexture();
         m_usedTextures.insert(texture);
 

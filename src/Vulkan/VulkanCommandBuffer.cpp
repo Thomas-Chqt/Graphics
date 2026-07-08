@@ -45,38 +45,15 @@ namespace gfx
 
 namespace
 {
-    constexpr bool isFloatColorFormat(PixelFormat format)
+    vk::ClearValue toVkColorClearValue(const ClearValue& clearValue)
     {
-        switch (format)
-        {
-        case PixelFormat::RGBA8Unorm:
-        case PixelFormat::BGRA8Unorm:
-        case PixelFormat::BGRA8Unorm_sRGB:
-            return true;
-        default:
-            return false;
-        }
-    }
-
-    vk::ClearValue toVkColorClearValue(const ClearValue& clearValue, PixelFormat pixelFormat)
-    {
-        return std::visit([pixelFormat](const auto& clear) -> vk::ClearValue {
-            using Clear = std::decay_t<decltype(clear)>;
-            if constexpr (std::is_same_v<Clear, ClearFloatColor>)
-            {
-                assert(isFloatColorFormat(pixelFormat));
+        return std::visit([]<typename T>(const T& clear) -> vk::ClearValue {
+            if constexpr (std::is_same_v<T, ClearFloatColor>)
                 return vk::ClearValue{}.setColor(vk::ClearColorValue{}.setFloat32(clear.value));
-            }
-            else if constexpr (std::is_same_v<Clear, ClearUIntColor>)
-            {
-                assert(pixelFormat == PixelFormat::RG32Uint);
+            else if constexpr (std::is_same_v<T, ClearUIntColor>)
                 return vk::ClearValue{}.setColor(vk::ClearColorValue{}.setUint32(clear.value));
-            }
             else
-            {
-                assert(false);
-                return {};
-            }
+                std::unreachable();
         }, clearValue.value);
     }
 
@@ -128,7 +105,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 
         colorAttachmentInfos[i] = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(colorAttachment.loadAction))
-            .setClearValue(toVkColorClearValue(colorAttachment.clearValue, texture->pixelFormat()))
+            .setClearValue(toVkColorClearValue(colorAttachment.clearValue))
             .setImageView(texture->vkImageView())
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
