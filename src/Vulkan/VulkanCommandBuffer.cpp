@@ -107,6 +107,8 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
             m_imageSyncRequests[texture] = syncReq;
             m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
         }
+
+        i++;
     }
 
     if (auto& depthAttachment = framebuffer.depthAttachment)
