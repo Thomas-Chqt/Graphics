@@ -67,6 +67,8 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
             colorAttachment.clearColor[2], colorAttachment.clearColor[3]);
         renderPassDescriptor.colorAttachments[i].texture = texture->mtltexture();
         m_usedTextures.insert(texture);
+
+        i++;
     }
 
     if (auto& depthAttachment = framebuffer.depthAttachment)
