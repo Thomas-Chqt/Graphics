@@ -29,6 +29,8 @@
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
+#include <type_traits>
+
 #define m_usedPipelines m_nonReusedRessources.usedPipelines
 #define m_boundPipeline m_nonReusedRessources.boundPipeline
 #define m_usedPBlock m_nonReusedRessources.usedPBlock
@@ -40,6 +42,51 @@
 
 namespace gfx
 {
+
+namespace
+{
+    constexpr bool isFloatColorFormat(PixelFormat format)
+    {
+        switch (format)
+        {
+        case PixelFormat::RGBA8Unorm:
+        case PixelFormat::BGRA8Unorm:
+        case PixelFormat::BGRA8Unorm_sRGB:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    vk::ClearValue toVkColorClearValue(const ClearValue& clearValue, PixelFormat pixelFormat)
+    {
+        return std::visit([pixelFormat](const auto& clear) -> vk::ClearValue {
+            using Clear = std::decay_t<decltype(clear)>;
+            if constexpr (std::is_same_v<Clear, ClearFloatColor>)
+            {
+                assert(isFloatColorFormat(pixelFormat));
+                return vk::ClearValue{}.setColor(vk::ClearColorValue{}.setFloat32(clear.value));
+            }
+            else if constexpr (std::is_same_v<Clear, ClearUIntColor>)
+            {
+                assert(pixelFormat == PixelFormat::RG32Uint);
+                return vk::ClearValue{}.setColor(vk::ClearColorValue{}.setUint32(clear.value));
+            }
+            else
+            {
+                assert(false);
+                return {};
+            }
+        }, clearValue.value);
+    }
+
+    vk::ClearValue toVkDepthClearValue(const ClearValue& clearValue)
+    {
+        const auto* clearDepth = std::get_if<ClearDepth>(&clearValue.value);
+        assert(clearDepth);
+        return vk::ClearValue{}.setDepthStencil(vk::ClearDepthStencilValue{}.setDepth(clearDepth->value));
+    }
+}
 
 VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const std::shared_ptr<vk::CommandPool>& commandPool)
     : m_device(device),
@@ -81,11 +128,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 
         colorAttachmentInfos[i] = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(colorAttachment.loadAction))
-            .setClearValue(vk::ClearValue{}.setColor(vk::ClearColorValue{}.setFloat32({
-                  colorAttachment.clearColor[0],
-                  colorAttachment.clearColor[1],
-                  colorAttachment.clearColor[2],
-                  colorAttachment.clearColor[3]})))
+            .setClearValue(toVkColorClearValue(colorAttachment.clearValue, texture->pixelFormat()))
             .setImageView(texture->vkImageView())
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
@@ -118,7 +161,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 
         depthAttachmentInfo = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(depthAttachment->loadAction))
-            .setClearValue(vk::ClearValue{}.setDepthStencil(vk::ClearDepthStencilValue{}.setDepth(depthAttachment->clearDepth)))
+            .setClearValue(toVkDepthClearValue(depthAttachment->clearValue))
             .setImageView(texture->vkImageView())
             .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
 

@@ -30,8 +30,55 @@
 
 #import "Metal/MetalEnums.hpp"
 
+#include <type_traits>
+
 namespace gfx
 {
+
+namespace
+{
+    constexpr bool isFloatColorFormat(PixelFormat format)
+    {
+        switch (format)
+        {
+        case PixelFormat::RGBA8Unorm:
+        case PixelFormat::BGRA8Unorm:
+        case PixelFormat::BGRA8Unorm_sRGB:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    MTLClearColor toMTLClearColor(const ClearValue& clearValue, PixelFormat pixelFormat)
+    {
+        return std::visit([pixelFormat](const auto& clear) -> MTLClearColor {
+            using Clear = std::decay_t<decltype(clear)>;
+            if constexpr (std::is_same_v<Clear, ClearFloatColor>)
+            {
+                assert(isFloatColorFormat(pixelFormat));
+                return MTLClearColorMake(clear.value[0], clear.value[1], clear.value[2], clear.value[3]);
+            }
+            else if constexpr (std::is_same_v<Clear, ClearUIntColor>)
+            {
+                assert(pixelFormat == PixelFormat::RG32Uint);
+                return MTLClearColorMake(clear.value[0], clear.value[1], clear.value[2], clear.value[3]);
+            }
+            else
+            {
+                assert(false);
+                return MTLClearColorMake(0, 0, 0, 0);
+            }
+        }, clearValue.value);
+    }
+
+    double toMTLClearDepth(const ClearValue& clearValue)
+    {
+        const auto* clearDepth = std::get_if<ClearDepth>(&clearValue.value);
+        assert(clearDepth);
+        return clearDepth->value;
+    }
+}
 
 MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
     : CommandBuffer(std::move(other)),
@@ -62,9 +109,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         assert(texture);
         renderPassDescriptor.colorAttachments[i].loadAction = toMTLLoadAction(colorAttachment.loadAction);
         renderPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
-        renderPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(
-            colorAttachment.clearColor[0], colorAttachment.clearColor[1],
-            colorAttachment.clearColor[2], colorAttachment.clearColor[3]);
+        renderPassDescriptor.colorAttachments[i].clearColor = toMTLClearColor(colorAttachment.clearValue, texture->pixelFormat());
         renderPassDescriptor.colorAttachments[i].texture = texture->mtltexture();
         m_usedTextures.insert(texture);
 
@@ -76,7 +121,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         auto texture = std::dynamic_pointer_cast<MetalTexture>(depthAttachment->texture);
         renderPassDescriptor.depthAttachment.loadAction = toMTLLoadAction(depthAttachment->loadAction);
         renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
-        renderPassDescriptor.depthAttachment.clearDepth = depthAttachment->clearDepth;
+        renderPassDescriptor.depthAttachment.clearDepth = toMTLClearDepth(depthAttachment->clearValue);
         renderPassDescriptor.depthAttachment.texture = texture->mtltexture();
         m_usedTextures.insert(texture);
     }
