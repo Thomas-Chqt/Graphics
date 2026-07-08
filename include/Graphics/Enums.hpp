@@ -95,6 +95,7 @@ enum class PixelFormat : uint8_t
     RGBA8Unorm,
     BGRA8Unorm,
     BGRA8Unorm_sRGB,
+    RG32Uint,
     Depth32Float
 };
 
@@ -216,6 +217,8 @@ constexpr inline size_t pixelFormatSize(PixelFormat format)
     case PixelFormat::BGRA8Unorm_sRGB:
     case PixelFormat::Depth32Float:
         return 4;
+    case PixelFormat::RG32Uint:
+        return 8;
     default:
         throw std::runtime_error("not implemented");
     }
