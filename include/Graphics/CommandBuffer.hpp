@@ -55,8 +55,13 @@ public:
     virtual void beginBlitPass() = 0;
 
     virtual void copyBufferToBuffer(const std::shared_ptr<Buffer>& src, const std::shared_ptr<Buffer>& dst, size_t size) = 0;
+
     virtual void copyBufferToTexture(const std::shared_ptr<Buffer>& buffer, size_t bufferOffset, const std::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) = 0;
     inline void copyBufferToTexture(const std::shared_ptr<Buffer>& buffer, const std::shared_ptr<Texture>& texture) { copyBufferToTexture(buffer, 0, texture); }
+
+    virtual void copyTextureToBuffer(const std::shared_ptr<Texture>& texture, uint32_t layerIndex, const std::shared_ptr<Buffer>& buffer, size_t bufferOffset) = 0;
+    inline void copyTextureToBuffer(const std::shared_ptr<Texture>& texture, const std::shared_ptr<Buffer>& buffer) { copyTextureToBuffer(texture, 0, buffer, 0); }
+    inline void copyTextureToBuffer(const std::shared_ptr<Texture>& texture, const std::shared_ptr<Buffer>& buffer, size_t bufferOffset) { copyTextureToBuffer(texture, 0, buffer, bufferOffset); }
 
     virtual void endBlitPass() = 0;
 

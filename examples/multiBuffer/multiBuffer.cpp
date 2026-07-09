@@ -222,7 +222,7 @@ public:
                 .colorAttachments = {
                     gfx::Framebuffer::Attachment{
                         .loadAction = gfx::LoadAction::clear,
-                        .clearColor = {0.0f, 0.0f, 0.0f, 0.0f },
+                        .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
                         .texture = drawable->texture()
                     }
                 }

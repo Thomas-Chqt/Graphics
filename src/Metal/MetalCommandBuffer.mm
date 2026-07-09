@@ -20,6 +20,7 @@
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
 #include <memory>
+#include <utility>
 #if defined(GFX_IMGUI_ENABLED)
 # include "Metal/imgui_impl_metal.h"
 #endif
@@ -30,8 +31,30 @@
 
 #import "Metal/MetalEnums.hpp"
 
+#include <type_traits>
+
 namespace gfx
 {
+
+namespace
+{
+    MTLClearColor toMTLClearColor(const ClearValue& clearValue)
+    {
+        return std::visit([]<typename T>(const T& clear) -> MTLClearColor {
+            if constexpr (std::is_same_v<T, ClearFloatColor> || std::is_same_v<T, ClearUIntColor>)
+                return MTLClearColorMake(clear.value[0], clear.value[1], clear.value[2], clear.value[3]);
+            else
+                std::unreachable();
+        }, clearValue.value);
+    }
+
+    double toMTLClearDepth(const ClearValue& clearValue)
+    {
+        const auto* clearDepth = std::get_if<ClearDepth>(&clearValue.value);
+        assert(clearDepth);
+        return clearDepth->value;
+    }
+}
 
 MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
     : CommandBuffer(std::move(other)),
@@ -62,11 +85,11 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         assert(texture);
         renderPassDescriptor.colorAttachments[i].loadAction = toMTLLoadAction(colorAttachment.loadAction);
         renderPassDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;
-        renderPassDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(
-            colorAttachment.clearColor[0], colorAttachment.clearColor[1],
-            colorAttachment.clearColor[2], colorAttachment.clearColor[3]);
+        renderPassDescriptor.colorAttachments[i].clearColor = toMTLClearColor(colorAttachment.clearValue);
         renderPassDescriptor.colorAttachments[i].texture = texture->mtltexture();
         m_usedTextures.insert(texture);
+
+        i++;
     }
 
     if (auto& depthAttachment = framebuffer.depthAttachment)
@@ -74,7 +97,7 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         auto texture = std::dynamic_pointer_cast<MetalTexture>(depthAttachment->texture);
         renderPassDescriptor.depthAttachment.loadAction = toMTLLoadAction(depthAttachment->loadAction);
         renderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;
-        renderPassDescriptor.depthAttachment.clearDepth = depthAttachment->clearDepth;
+        renderPassDescriptor.depthAttachment.clearDepth = toMTLClearDepth(depthAttachment->clearValue);
         renderPassDescriptor.depthAttachment.texture = texture->mtltexture();
         m_usedTextures.insert(texture);
     }
@@ -213,6 +236,8 @@ void MetalCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc,
     assert(dst);
 
     assert(src->usages() & BufferUsage::copySource && dst->usages() & BufferUsage::copyDestination);
+    assert(size <= src->size());
+    assert(size <= dst->size());
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
     auto blitCommandEncoder = (id<MTLBlitCommandEncoder>)m_commandEncoder;
@@ -231,6 +256,8 @@ void MetalCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBuf
     auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
     assert(texture);
 
+    assert(buffer->usages() & BufferUsage::copySource);
+    assert(texture->usages() & TextureUsage::copyDestination);
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
 
     size_t bytesPerPixel = pixelFormatSize(texture->pixelFormat());
@@ -251,6 +278,38 @@ void MetalCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBuf
 
     m_usedBuffers.insert(buffer);
     m_usedTextures.insert(texture);
+}}
+
+void MetalCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aTexture, uint32_t layerIndex, const std::shared_ptr<Buffer>& aBuffer, size_t bufferOffset) { @autoreleasepool
+{
+    auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
+    assert(texture);
+
+    auto buffer = std::dynamic_pointer_cast<MetalBuffer>(aBuffer);
+    assert(buffer);
+
+    assert(texture->usages() & TextureUsage::copySource);
+    assert(buffer->usages() & BufferUsage::copyDestination);
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
+
+    size_t bytesPerPixel = pixelFormatSize(texture->pixelFormat());
+    size_t bytesPerRow = bytesPerPixel * texture->width();
+    size_t bytesPerImage = bytesPerRow * texture->height();
+
+    assert(bufferOffset + bytesPerImage <= buffer->size());
+
+    [(id<MTLBlitCommandEncoder>)m_commandEncoder copyFromTexture:texture->mtltexture()
+                                                     sourceSlice:layerIndex
+                                                     sourceLevel:0
+                                                    sourceOrigin:MTLOrigin{0, 0, 0}
+                                                      sourceSize:MTLSizeMake(texture->width(), texture->height(), 1)
+                                                        toBuffer:buffer->mtlBuffer()
+                                               destinationOffset:bufferOffset
+                                          destinationBytesPerRow:bytesPerRow
+                                        destinationBytesPerImage:bytesPerImage];
+
+    m_usedTextures.insert(texture);
+    m_usedBuffers.insert(buffer);
 }}
 
 void MetalCommandBuffer::endBlitPass() { @autoreleasepool

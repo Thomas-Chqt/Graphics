@@ -25,6 +25,8 @@ constexpr vk::Format toVkFormat(PixelFormat pxf)
         return vk::Format::eB8G8R8A8Unorm;
     case PixelFormat::BGRA8Unorm_sRGB:
         return vk::Format::eB8G8R8A8Srgb;
+    case PixelFormat::RG32Uint:
+        return vk::Format::eR32G32Uint;
     case PixelFormat::Depth32Float:
         return vk::Format::eD32Sfloat;
     default:
@@ -40,6 +42,8 @@ constexpr PixelFormat toPixelFormat(vk::Format fmt)
         return PixelFormat::BGRA8Unorm;
     case vk::Format::eB8G8R8A8Srgb:
         return PixelFormat::BGRA8Unorm_sRGB;
+    case vk::Format::eR32G32Uint:
+        return PixelFormat::RG32Uint;
     default:
         throw std::runtime_error("not implemented");
     }
@@ -174,22 +178,26 @@ constexpr vk::ImageUsageFlags toVkImageUsageFlags(TextureUsages use)
         vkUsages |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     if (use & TextureUsage::copyDestination)
         vkUsages |= vk::ImageUsageFlagBits::eTransferDst;
+    if (use & TextureUsage::copySource)
+        vkUsages |= vk::ImageUsageFlagBits::eTransferSrc;
 
     return vkUsages;
 }
 
-constexpr vk::ImageAspectFlags toVkImageAspectFlags(TextureUsages use)
+constexpr vk::ImageAspectFlags toVkImageAspectFlags(PixelFormat format)
 {
-    vk::ImageAspectFlags vkImgAspectFlags;
-
-    if (use & TextureUsage::shaderRead)
-        vkImgAspectFlags |= vk::ImageAspectFlagBits::eColor;
-    if (use & TextureUsage::colorAttachment)
-        vkImgAspectFlags |= vk::ImageAspectFlagBits::eColor;
-    if (use & TextureUsage::depthStencilAttachment)
-        vkImgAspectFlags |= vk::ImageAspectFlagBits::eDepth;
-
-    return vkImgAspectFlags;
+    switch (format)
+    {
+    case PixelFormat::RGBA8Unorm:
+    case PixelFormat::BGRA8Unorm:
+    case PixelFormat::BGRA8Unorm_sRGB:
+    case PixelFormat::RG32Uint:
+        return vk::ImageAspectFlagBits::eColor;
+    case PixelFormat::Depth32Float:
+        return vk::ImageAspectFlagBits::eDepth;
+    default:
+        throw std::runtime_error("not implemented");
+    }
 }
 
 constexpr vk::SamplerAddressMode toVkSamplerAddressMode(SamplerAddressMode mode)
