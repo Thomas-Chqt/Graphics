@@ -29,6 +29,8 @@ constexpr MTLPixelFormat toMTLPixelFormat(PixelFormat pxf)
         return MTLPixelFormatBGRA8Unorm;
     case PixelFormat::BGRA8Unorm_sRGB:
         return MTLPixelFormatBGRA8Unorm_sRGB;
+    case PixelFormat::RG32Uint:
+        return MTLPixelFormatRG32Uint;
     case PixelFormat::Depth32Float:
         return MTLPixelFormatDepth32Float;
     default:
@@ -46,6 +48,8 @@ constexpr PixelFormat toPixelFormat(MTLPixelFormat pxf)
         return PixelFormat::BGRA8Unorm;
     case MTLPixelFormatBGRA8Unorm_sRGB:
         return PixelFormat::BGRA8Unorm_sRGB;
+    case MTLPixelFormatRG32Uint:
+        return PixelFormat::RG32Uint;
     default:
         throw std::runtime_error("not implemented");
     }

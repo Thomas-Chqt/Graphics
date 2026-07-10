@@ -228,14 +228,14 @@ void Renderer::endFrame()
         .colorAttachments = {
             gfx::Framebuffer::Attachment{
                 .loadAction = gfx::LoadAction::clear,
-                .clearColor = {0.0f, 0.0f, 0.0f, 0.0f},
+                .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
                 .texture = drawable->texture()
             }
         },
         .depthAttachment = {
             gfx::Framebuffer::Attachment{
                 .loadAction = gfx::LoadAction::clear,
-                .clearDepth = 1.0f,
+                .clearValue = gfx::ClearValue::depth(1.0f),
                 .texture = cfd.depthTexture
             }
         }

@@ -88,6 +88,8 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
                 std::unreachable();
             }
         }
+
+        i++;
     }
 
     if (auto& depthPxFmt = desc.depthAttachmentPxFormat)
