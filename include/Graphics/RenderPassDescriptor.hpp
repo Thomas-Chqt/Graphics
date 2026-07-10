@@ -1,24 +1,24 @@
 /*
  * ---------------------------------------------------
- * Framebuffer.hpp
+ * RenderPassDescriptor.hpp
  *
  * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
- * Date: 2025/06/06 06:41:27
+ * Date: 2026/07/10
  * ---------------------------------------------------
  */
 
-#ifndef FRAMEBUFFER_HPP
-#define FRAMEBUFFER_HPP
+#ifndef RENDERPASSDESCRIPTOR_HPP
+#define RENDERPASSDESCRIPTOR_HPP
 
-#include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Texture.hpp"
 
-#include <vector>
-#include <memory>
-#include <optional>
 #include <array>
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <variant>
+#include <vector>
 
 namespace gfx
 {
@@ -58,8 +58,9 @@ struct ClearValue
     static ClearValue depth(float value) { return ClearValue{ClearDepth{value}}; }
 };
 
-struct Framebuffer
+class RenderPassDescriptor
 {
+public:
     struct Attachment
     {
         LoadAction loadAction = LoadAction::load;
@@ -67,10 +68,26 @@ struct Framebuffer
         std::shared_ptr<Texture> texture;
     };
 
-    std::vector<Attachment> colorAttachments;
-    std::optional<Attachment> depthAttachment;
+public:
+    RenderPassDescriptor(const RenderPassDescriptor&) = delete;
+    RenderPassDescriptor(RenderPassDescriptor&&) = delete;
+
+    virtual const std::vector<Attachment>& colorAttachments() const = 0;
+    virtual void setColorAttachments(std::vector<Attachment>) = 0;
+
+    virtual const std::optional<Attachment>& depthAttachment() const = 0;
+    virtual void setDepthAttachment(std::optional<Attachment>) = 0;
+
+    virtual ~RenderPassDescriptor() = default;
+
+protected:
+    RenderPassDescriptor() = default;
+
+public:
+    RenderPassDescriptor& operator=(const RenderPassDescriptor&) = delete;
+    RenderPassDescriptor& operator=(RenderPassDescriptor&&) = delete;
 };
 
-}
+} // namespace gfx
 
-#endif // FRAMEBUFFER_HPP
+#endif // RENDERPASSDESCRIPTOR_HPP

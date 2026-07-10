@@ -1,24 +1,20 @@
 #include "gfx_tracy_private.hpp"
 
+#if defined(TRACY_ENABLE)
+
+#include "Graphics/BlitPassDescriptor.hpp"
 #include "Graphics/Device.hpp"
-#include "Graphics/Framebuffer.hpp"
-#include "Vulkan/VulkanCommandBuffer.hpp"
+#include "Graphics/RenderPassDescriptor.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanInstance.hpp"
+#include "Vulkan/VulkanPassDescriptor.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 
 #include <cassert>
-#include <cstdint>
-#include <deque>
-#include <limits>
-#include <map>
 #include <memory>
-#include <mutex>
-#include <vector>
+#include <variant>
 
-#if defined(TRACY_ENABLE)
 #include <tracy/TracyVulkan.hpp>
-#endif
 
 namespace gfx::tracy
 {
@@ -26,168 +22,120 @@ namespace gfx::tracy
 namespace
 {
 
-struct VulkanTracyGfxData
+struct VulkanGraphicsData
 {
-#if defined(TRACY_ENABLE)
     ::tracy::VkCtx* context = nullptr;
-    std::mutex sourceLocationsMtx;
-    std::deque<::tracy::SourceLocationData> sourceLocations;
-    std::mutex activeZonesMtx;
-    std::map<CommandBuffer*, std::vector<std::unique_ptr<::tracy::VkCtxScope>>> activeZones;
-#endif
 };
 
-VulkanTracyGfxData& vulkanData(TracyGfxCtx& context)
+struct VulkanZoneData
+{
+    using Descriptor = std::variant<VulkanRenderPassDescriptor*, VulkanBlitPassDescriptor*>;
+
+    VulkanZoneData(::tracy::VkCtx* context, VulkanRenderPassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation, bool active)
+        : m_context(context), m_descriptor(&descriptor), m_sourceLocation(sourceLocation), m_active(active)
+    {
+        descriptor.setBeginCallback([this](const vk::CommandBuffer& commandBuffer) { begin(commandBuffer); });
+    }
+
+    VulkanZoneData(::tracy::VkCtx* context, VulkanBlitPassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation, bool active)
+        : m_context(context), m_descriptor(&descriptor), m_sourceLocation(sourceLocation), m_active(active)
+    {
+        descriptor.setBeginCallback([this](const vk::CommandBuffer& commandBuffer) { begin(commandBuffer); });
+    }
+
+    ~VulkanZoneData()
+    {
+        m_scope.reset();
+        std::visit([](auto* descriptor) { descriptor->clearBeginCallback(); }, m_descriptor);
+    }
+
+    void begin(const vk::CommandBuffer& commandBuffer)
+    {
+        assert(m_scope == nullptr);
+        m_scope = std::make_unique<::tracy::VkCtxScope>(m_context, m_sourceLocation, commandBuffer, m_active);
+    }
+
+private:
+    ::tracy::VkCtx* m_context;
+    Descriptor m_descriptor;
+    const ::tracy::SourceLocationData* m_sourceLocation;
+    bool m_active;
+    std::unique_ptr<::tracy::VkCtxScope> m_scope;
+};
+
+VulkanGraphicsData& vulkanData(GraphicsContext& context)
 {
     assert(context.backend == Backend::vulkan);
     assert(context.backendData);
-    return *static_cast<VulkanTracyGfxData*>(context.backendData);
+    return *static_cast<VulkanGraphicsData*>(context.backendData);
 }
 
 const VulkanDevice& vulkanDevice(const Device& device)
 {
-    auto* vulkanDevice = dynamic_cast<const VulkanDevice*>(&device);
-    assert(vulkanDevice);
-    return *vulkanDevice;
+    auto* result = dynamic_cast<const VulkanDevice*>(&device);
+    assert(result);
+    return *result;
 }
 
-VulkanCommandBuffer& vulkanCommandBuffer(CommandBuffer& commandBuffer)
-{
-    auto* vulkanCommandBuffer = dynamic_cast<VulkanCommandBuffer*>(&commandBuffer);
-    assert(vulkanCommandBuffer);
-    return *vulkanCommandBuffer;
-}
-
-#if defined(TRACY_ENABLE)
-const ::tracy::SourceLocationData* storeSourceLocation(VulkanTracyGfxData& data, TracyGfxSourceLocation sourceLocation)
-{
-    std::scoped_lock lock(data.sourceLocationsMtx);
-    return &data.sourceLocations.emplace_back(::tracy::SourceLocationData{
-        sourceLocation.name,
-        sourceLocation.function,
-        sourceLocation.file,
-        sourceLocation.line,
-        sourceLocation.color});
-}
-#endif
-
-void destroyVulkanTracyGfxContext(TracyGfxCtx* context)
+void destroyVulkanGraphicsContext(GraphicsContext* context)
 {
     assert(context);
     auto& data = vulkanData(*context);
-#if defined(TRACY_ENABLE)
     ::tracy::DestroyVkContext(data.context);
-#endif
     delete &data;
     delete context;
 }
 
-void collectVulkanTracyGfxContext(TracyGfxCtx* context)
+void collectVulkanGraphicsContext(GraphicsContext* context)
 {
     assert(context);
-#if defined(TRACY_ENABLE)
-    auto& data = vulkanData(*context);
-    data.context->Collect(VK_NULL_HANDLE);
-#else
-    (void)context;
-#endif
+    vulkanData(*context).context->Collect(VK_NULL_HANDLE);
 }
 
-void beginVulkanTracyGfxZone(TracyGfxCtx& context, CommandBuffer& commandBuffer, TracyGfxSourceLocation sourceLocation, bool active)
+void* createVulkanRenderZone(GraphicsContext& context, RenderPassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation, bool active)
 {
-#if defined(TRACY_ENABLE)
-    auto& data = vulkanData(context);
-    auto& vkCommandBuffer = vulkanCommandBuffer(commandBuffer);
-    auto sourceLocationData = storeSourceLocation(data, sourceLocation);
-
-    auto scope = std::make_unique<::tracy::VkCtxScope>(data.context, sourceLocationData, vkCommandBuffer.vkCommandBuffer(), active);
-    std::scoped_lock lock(data.activeZonesMtx);
-    data.activeZones[&commandBuffer].push_back(std::move(scope));
-#else
-    (void)context;
-    (void)commandBuffer;
-    (void)sourceLocation;
-    (void)active;
-#endif
+    auto* vulkanDescriptor = dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor);
+    assert(vulkanDescriptor);
+    return new VulkanZoneData(vulkanData(context).context, *vulkanDescriptor, sourceLocation, active);
 }
 
-void endVulkanTracyGfxZone(TracyGfxCtx& context, CommandBuffer& commandBuffer)
+void* createVulkanBlitZone(GraphicsContext& context, BlitPassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation, bool active)
 {
-#if defined(TRACY_ENABLE)
-    auto& data = vulkanData(context);
-    std::scoped_lock lock(data.activeZonesMtx);
-    auto zonesIt = data.activeZones.find(&commandBuffer);
-    assert(zonesIt != data.activeZones.end());
-    assert(zonesIt->second.empty() == false);
-    zonesIt->second.pop_back();
-    if (zonesIt->second.empty())
-        data.activeZones.erase(zonesIt);
-#else
-    (void)context;
-    (void)commandBuffer;
-#endif
+    auto* vulkanDescriptor = dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor);
+    assert(vulkanDescriptor);
+    return new VulkanZoneData(vulkanData(context).context, *vulkanDescriptor, sourceLocation, active);
 }
 
-void beginVulkanTracyGfxRenderPass(TracyGfxCtx& context, CommandBuffer& commandBuffer, const Framebuffer& framebuffer, TracyGfxSourceLocation sourceLocation, bool active)
+void destroyVulkanZone(void* zone)
 {
-    beginVulkanTracyGfxZone(context, commandBuffer, sourceLocation, active);
-    vulkanCommandBuffer(commandBuffer).beginRenderPass(framebuffer);
-}
-
-void endVulkanTracyGfxRenderPass(TracyGfxCtx& context, CommandBuffer& commandBuffer)
-{
-    vulkanCommandBuffer(commandBuffer).endRenderPass();
-    endVulkanTracyGfxZone(context, commandBuffer);
-}
-
-void beginVulkanTracyGfxBlitPass(TracyGfxCtx& context, CommandBuffer& commandBuffer, TracyGfxSourceLocation sourceLocation, bool active)
-{
-    beginVulkanTracyGfxZone(context, commandBuffer, sourceLocation, active);
-    vulkanCommandBuffer(commandBuffer).beginBlitPass();
-}
-
-void endVulkanTracyGfxBlitPass(TracyGfxCtx& context, CommandBuffer& commandBuffer)
-{
-    vulkanCommandBuffer(commandBuffer).endBlitPass();
-    endVulkanTracyGfxZone(context, commandBuffer);
+    assert(zone);
+    delete static_cast<VulkanZoneData*>(zone);
 }
 
 } // namespace
 
-TracyGfxCtx* createVulkanTracyGfxContext(const Device& device, std::string_view name)
+GraphicsContext* createVulkanGraphicsContext(const Device& device)
 {
     const auto& vkDevice = vulkanDevice(device);
-    auto* data = new VulkanTracyGfxData();
+    auto* data = new VulkanGraphicsData{
+        .context = ::tracy::CreateVkContext(
+            vkDevice.instance().vkInstance(),
+            static_cast<VkPhysicalDevice>(vkDevice.physicalDevice()),
+            vkDevice.vkDevice(),
+            reinterpret_cast<PFN_vkGetInstanceProcAddr>(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr),
+            reinterpret_cast<PFN_vkGetDeviceProcAddr>(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr))
+    };
 
-#if defined(TRACY_ENABLE)
-    data->context = ::tracy::CreateVkContext(
-        vkDevice.instance().vkInstance(),
-        static_cast<VkPhysicalDevice>(vkDevice.physicalDevice()),
-        vkDevice.vkDevice(),
-        reinterpret_cast<PFN_vkGetInstanceProcAddr>(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr),
-        reinterpret_cast<PFN_vkGetDeviceProcAddr>(VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr));
-
-    if (name.empty() == false)
-    {
-        assert(name.size() <= std::numeric_limits<std::uint16_t>::max());
-        data->context->Name(name.data(), static_cast<std::uint16_t>(name.size()));
-    }
-#else
-    (void)vkDevice;
-    (void)name;
-#endif
-
-    return new TracyGfxCtx{
+    return new GraphicsContext{
         .backend = Backend::vulkan,
         .backendData = data,
-        .destroy = destroyVulkanTracyGfxContext,
-        .collect = collectVulkanTracyGfxContext,
-        .beginZone = beginVulkanTracyGfxZone,
-        .endZone = endVulkanTracyGfxZone,
-        .beginRenderPass = beginVulkanTracyGfxRenderPass,
-        .endRenderPass = endVulkanTracyGfxRenderPass,
-        .beginBlitPass = beginVulkanTracyGfxBlitPass,
-        .endBlitPass = endVulkanTracyGfxBlitPass};
+        .destroy = destroyVulkanGraphicsContext,
+        .collect = collectVulkanGraphicsContext,
+        .createRenderZone = createVulkanRenderZone,
+        .createBlitZone = createVulkanBlitZone,
+        .destroyZone = destroyVulkanZone};
 }
 
 } // namespace gfx::tracy
+
+#endif

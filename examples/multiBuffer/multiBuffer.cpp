@@ -10,7 +10,7 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
-#include "Graphics/Framebuffer.hpp"
+#include "Graphics/RenderPassDescriptor.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
@@ -173,7 +173,8 @@ public:
 
             std::ranges::copy(vertices.at(i), stagingBuffer->content<Vertex>());
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-            commandBuffer->beginBlitPass();
+            auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+            commandBuffer->beginBlitPass(*blitPassDescriptor);
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffers.at(i), stagingBuffer->size());
             commandBuffer->endBlitPass();
             m_device->submitCommandBuffers(commandBuffer);
@@ -221,17 +222,17 @@ public:
                 continue;
             }
 
-            gfx::Framebuffer framebuffer = {
-                .colorAttachments = {
-                    gfx::Framebuffer::Attachment{
-                        .loadAction = gfx::LoadAction::clear,
-                        .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
-                        .texture = drawable->texture()
-                    }
+            auto renderPassDescriptor = m_device->newRenderPassDescriptor();
+            auto colorAttachments = std::vector<gfx::RenderPassDescriptor::Attachment>{
+                gfx::RenderPassDescriptor::Attachment{
+                    .loadAction = gfx::LoadAction::clear,
+                    .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
+                    .texture = drawable->texture()
                 }
             };
+            renderPassDescriptor->setColorAttachments(colorAttachments);
 
-            commandBuffers.at(0)->beginRenderPass(framebuffer);
+            commandBuffers.at(0)->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffers.at(0)->usePipeline(m_graphicsPipeline);
                 commandBuffers.at(0)->useVertexBuffer(m_vertexBuffers[0]);
@@ -239,9 +240,10 @@ public:
             }
             commandBuffers.at(0)->endRenderPass();
 
-            framebuffer.colorAttachments[0].loadAction = gfx::LoadAction::load;
+            colorAttachments[0].loadAction = gfx::LoadAction::load;
+            renderPassDescriptor->setColorAttachments(colorAttachments);
 
-            commandBuffers.at(0)->beginRenderPass(framebuffer);
+            commandBuffers.at(0)->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffers.at(0)->usePipeline(m_graphicsPipeline);
                 commandBuffers.at(0)->useVertexBuffer(m_vertexBuffers[1]);
@@ -249,7 +251,7 @@ public:
             }
             commandBuffers.at(0)->endRenderPass();
 
-            commandBuffers.at(1)->beginRenderPass(framebuffer);
+            commandBuffers.at(1)->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffers.at(1)->usePipeline(m_graphicsPipeline);
                 commandBuffers.at(1)->useVertexBuffer(m_vertexBuffers[2]);
@@ -257,7 +259,7 @@ public:
             }
             commandBuffers.at(1)->endRenderPass();
 
-            commandBuffers.at(1)->beginRenderPass(framebuffer);
+            commandBuffers.at(1)->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffers.at(1)->usePipeline(m_graphicsPipeline);
                 commandBuffers.at(1)->useVertexBuffer(m_vertexBuffers[3]);

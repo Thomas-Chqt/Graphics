@@ -1,6 +1,10 @@
 #include "gfx_tracy/gfx_tracy.hpp"
 
+#if defined(TRACY_ENABLE)
+
+#include "Graphics/BlitPassDescriptor.hpp"
 #include "Graphics/Device.hpp"
+#include "Graphics/RenderPassDescriptor.hpp"
 #include "gfx_tracy_private.hpp"
 
 #include <cassert>
@@ -9,76 +13,65 @@
 namespace gfx::tracy
 {
 
-TracyGfxCtx* createTracyGfxContext(const Device& device, std::string_view name)
+GraphicsContext* createGraphicsContext(const Device& device)
 {
     switch (device.backend())
     {
-#if defined(GFX_BUILD_METAL)
         case Backend::metal:
-            return createMetalTracyGfxContext(device, name);
+#if defined(GFX_BUILD_METAL)
+            return createMetalGraphicsContext(device);
+#else
+            std::unreachable();
 #endif
-#if defined(GFX_BUILD_VULKAN)
         case Backend::vulkan:
-            return createVulkanTracyGfxContext(device, name);
+#if defined(GFX_BUILD_VULKAN)
+            return createVulkanGraphicsContext(device);
+#else
+            std::unreachable();
 #endif
     }
     std::unreachable();
 }
 
-void destroyTracyGfxContext(TracyGfxCtx* context)
+void destroyGraphicsContext(GraphicsContext* context)
 {
-    if (context == nullptr)
-        return;
+    assert(context);
     assert(context->destroy);
     context->destroy(context);
 }
 
-void collectTracyGfxContext(TracyGfxCtx* context)
+void collectGraphicsContext(GraphicsContext* context)
 {
     assert(context);
     assert(context->collect);
     context->collect(context);
 }
 
-TracyGfxCtxPtr makeTracyGfxContext(const Device& device, std::string_view name)
+GraphicsZoneScope::GraphicsZoneScope(GraphicsContext* context, RenderPassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation, bool active)
 {
-    return {createTracyGfxContext(device, name), destroyTracyGfxContext};
+    assert(context);
+    assert(context->createRenderZone);
+    assert(context->destroyZone);
+    m_backendData = context->createRenderZone(*context, descriptor, sourceLocation, active);
+    m_destroy = context->destroyZone;
 }
 
-void beginTracyGfxZone(TracyGfxCtx& context, CommandBuffer& commandBuffer, TracyGfxSourceLocation sourceLocation, bool active)
+GraphicsZoneScope::GraphicsZoneScope(GraphicsContext* context, BlitPassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation, bool active)
 {
-    assert(context.beginZone);
-    context.beginZone(context, commandBuffer, sourceLocation, active);
+    assert(context);
+    assert(context->createBlitZone);
+    assert(context->destroyZone);
+    m_backendData = context->createBlitZone(*context, descriptor, sourceLocation, active);
+    m_destroy = context->destroyZone;
 }
 
-void endTracyGfxZone(TracyGfxCtx& context, CommandBuffer& commandBuffer)
+GraphicsZoneScope::~GraphicsZoneScope()
 {
-    assert(context.endZone);
-    context.endZone(context, commandBuffer);
-}
-
-void beginTracyGfxRenderPass(TracyGfxCtx& context, CommandBuffer& commandBuffer, const Framebuffer& framebuffer, TracyGfxSourceLocation sourceLocation, bool active)
-{
-    assert(context.beginRenderPass);
-    context.beginRenderPass(context, commandBuffer, framebuffer, sourceLocation, active);
-}
-
-void endTracyGfxRenderPass(TracyGfxCtx& context, CommandBuffer& commandBuffer)
-{
-    assert(context.endRenderPass);
-    context.endRenderPass(context, commandBuffer);
-}
-
-void beginTracyGfxBlitPass(TracyGfxCtx& context, CommandBuffer& commandBuffer, TracyGfxSourceLocation sourceLocation, bool active)
-{
-    assert(context.beginBlitPass);
-    context.beginBlitPass(context, commandBuffer, sourceLocation, active);
-}
-
-void endTracyGfxBlitPass(TracyGfxCtx& context, CommandBuffer& commandBuffer)
-{
-    assert(context.endBlitPass);
-    context.endBlitPass(context, commandBuffer);
+    assert(m_backendData);
+    assert(m_destroy);
+    m_destroy(m_backendData);
 }
 
 } // namespace gfx::tracy
+
+#endif

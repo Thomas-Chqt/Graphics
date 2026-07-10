@@ -139,7 +139,8 @@ int main(int argc, char** argv)
         auto commandBufferPool = device->newCommandBufferPool();
         auto scopMaterial = std::make_shared<scop::ScopMaterial>(*device);
         auto commandBuffer = commandBufferPool->get();
-        commandBuffer->beginBlitPass();
+        auto blitPassDescriptor = device->newBlitPassDescriptor();
+        commandBuffer->beginBlitPass(*blitPassDescriptor);
         scopMaterial->setDiffuseTexture(assetLoader.loadTexture(RESOURCE_DIR"/kittens.png", *commandBuffer));
         commandBuffer->endBlitPass();
         device->submitCommandBuffers(commandBuffer);

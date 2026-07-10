@@ -11,7 +11,6 @@
 #define METALCOMMANDBUFFER_HPP
 
 #include "Graphics/CommandBuffer.hpp"
-#include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
@@ -21,8 +20,6 @@
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
-
-#include <functional>
 
 #if !defined(__OBJC__)
 #error this file can only by used in objective c
@@ -36,18 +33,13 @@ class MetalCommandBufferPool;
 class MetalCommandBuffer : public CommandBuffer
 {
 public:
-    using RenderPassDescriptorCallback = std::function<void(MTLRenderPassDescriptor*)>;
-    using BlitPassDescriptorCallback = std::function<void(MTLBlitPassDescriptor*)>;
-    using EncoderCreatedCallback = std::function<void()>;
-
     MetalCommandBuffer() = default;
     MetalCommandBuffer(const MetalCommandBuffer&) = delete;
     MetalCommandBuffer(MetalCommandBuffer&&) noexcept;
 
     MetalCommandBuffer(const id<MTLCommandQueue>&);
 
-    void beginRenderPass(const Framebuffer&) override;
-    void beginRenderPass(const Framebuffer&, const RenderPassDescriptorCallback&, const EncoderCreatedCallback&);
+    void beginRenderPass(RenderPassDescriptor&) override;
 
     void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) override;
     void useVertexBuffer(const std::shared_ptr<Buffer>&) override;
@@ -61,8 +53,7 @@ public:
     void endRenderPass() override;
 
 
-    void beginBlitPass() override;
-    void beginBlitPass(const BlitPassDescriptorCallback&, const EncoderCreatedCallback&);
+    void beginBlitPass(BlitPassDescriptor&) override;
 
     void copyBufferToBuffer(const std::shared_ptr<Buffer>& src, const std::shared_ptr<Buffer>& dst, size_t size) override;
     void copyBufferToTexture(const std::shared_ptr<Buffer>& buffer, size_t bufferOffset, const std::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) override;

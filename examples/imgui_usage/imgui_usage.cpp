@@ -9,7 +9,7 @@
 
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
-#include "Graphics/Framebuffer.hpp"
+#include "Graphics/RenderPassDescriptor.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Surface.hpp"
@@ -113,7 +113,8 @@ public:
         stbi_image_free(textureBytes);
 
         std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-        commandBuffer->beginBlitPass();
+        auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+        commandBuffer->beginBlitPass(*blitPassDescriptor);
         {
             commandBuffer->copyBufferToTexture(stagingBuffer, 0, m_texture, 0);
         }
@@ -192,17 +193,16 @@ public:
                 continue;
             }
 
-            gfx::Framebuffer framebuffer = {
-                .colorAttachments = {
-                    gfx::Framebuffer::Attachment{
-                        .loadAction = gfx::LoadAction::clear,
-                        .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
-                        .texture = drawable->texture()
-                    }
+            auto renderPassDescriptor = m_device->newRenderPassDescriptor();
+            renderPassDescriptor->setColorAttachments({
+                gfx::RenderPassDescriptor::Attachment{
+                    .loadAction = gfx::LoadAction::clear,
+                    .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
+                    .texture = drawable->texture()
                 }
-            };
+            });
 
-            commandBuffer->beginRenderPass(framebuffer);
+            commandBuffer->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffer->addSampledTexture(m_texture);
                 gfx::imgui::renderDrawData(*commandBuffer, ImGui::GetDrawData());

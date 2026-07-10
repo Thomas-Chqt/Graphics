@@ -26,6 +26,7 @@
 #include "MetalParameterBlockLayout.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
+#include "Metal/MetalPassDescriptor.hpp"
 
 #import "Metal/MetalEnums.hpp"
 
@@ -67,6 +68,16 @@ std::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) c
 std::unique_ptr<Texture> MetalDevice::newTexture(const Texture::Descriptor& desc) const
 {
     return std::make_unique<MetalTexture>(*this, desc);
+}
+
+std::unique_ptr<RenderPassDescriptor> MetalDevice::newRenderPassDescriptor() const
+{
+    return std::make_unique<MetalRenderPassDescriptor>();
+}
+
+std::unique_ptr<BlitPassDescriptor> MetalDevice::newBlitPassDescriptor() const
+{
+    return std::make_unique<MetalBlitPassDescriptor>();
 }
 
 std::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const

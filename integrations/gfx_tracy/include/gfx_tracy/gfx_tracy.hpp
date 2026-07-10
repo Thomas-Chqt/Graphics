@@ -1,63 +1,75 @@
 #ifndef GFX_TRACY_HPP
 #define GFX_TRACY_HPP
 
-#include <cstdint>
-#include <memory>
-#include <string_view>
+#if defined(TRACY_ENABLE)
+
+#include <tracy/Tracy.hpp>
 
 namespace gfx
 {
 
-class CommandBuffer;
+class BlitPassDescriptor;
 class Device;
-struct Framebuffer;
+class RenderPassDescriptor;
 
 namespace tracy
 {
 
-struct TracyGfxSourceLocation
+struct GraphicsContext;
+
+class GraphicsZoneScope
 {
-    const char* name;
-    const char* function;
-    const char* file;
-    std::uint32_t line;
-    std::uint32_t color;
+public:
+    GraphicsZoneScope(GraphicsContext*, RenderPassDescriptor&, const ::tracy::SourceLocationData*, bool active);
+    GraphicsZoneScope(GraphicsContext*, BlitPassDescriptor&, const ::tracy::SourceLocationData*, bool active);
+
+    GraphicsZoneScope(const GraphicsZoneScope&) = delete;
+    GraphicsZoneScope(GraphicsZoneScope&&) = delete;
+
+    ~GraphicsZoneScope();
+
+private:
+    void* m_backendData = nullptr;
+    void (*m_destroy)(void*) = nullptr;
+
+public:
+    GraphicsZoneScope& operator=(const GraphicsZoneScope&) = delete;
+    GraphicsZoneScope& operator=(GraphicsZoneScope&&) = delete;
 };
 
-struct TracyGfxCtx;
-
-using TracyGfxCtxPtr = std::unique_ptr<TracyGfxCtx, void (*)(TracyGfxCtx*)>;
-
-TracyGfxCtx* createTracyGfxContext(const Device&, std::string_view name = {});
-void destroyTracyGfxContext(TracyGfxCtx*);
-void collectTracyGfxContext(TracyGfxCtx*);
-
-TracyGfxCtxPtr makeTracyGfxContext(const Device&, std::string_view name = {});
-
-void beginTracyGfxZone(TracyGfxCtx&, CommandBuffer&, TracyGfxSourceLocation, bool active = true);
-void endTracyGfxZone(TracyGfxCtx&, CommandBuffer&);
-
-void beginTracyGfxRenderPass(TracyGfxCtx&, CommandBuffer&, const Framebuffer&, TracyGfxSourceLocation, bool active = true);
-void endTracyGfxRenderPass(TracyGfxCtx&, CommandBuffer&);
-
-void beginTracyGfxBlitPass(TracyGfxCtx&, CommandBuffer&, TracyGfxSourceLocation, bool active = true);
-void endTracyGfxBlitPass(TracyGfxCtx&, CommandBuffer&);
+GraphicsContext* createGraphicsContext(const Device&);
+void destroyGraphicsContext(GraphicsContext*);
+void collectGraphicsContext(GraphicsContext*);
 
 } // namespace tracy
 
 } // namespace gfx
 
+using TracyGraphicsCtx = gfx::tracy::GraphicsContext;
+
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
-#define GFX_TRACY_SOURCE_LOCATION(name) ::gfx::tracy::TracyGfxSourceLocation{(name), __func__, __FILE__, static_cast<std::uint32_t>(__LINE__), 0}
-#define GFX_TRACY_GPU_ZONE(ctx, cmd, name) ::gfx::tracy::beginTracyGfxZone((ctx), (cmd), GFX_TRACY_SOURCE_LOCATION(name))
-#define GFX_TRACY_GPU_ZONE_ACTIVE(ctx, cmd, name, active) ::gfx::tracy::beginTracyGfxZone((ctx), (cmd), GFX_TRACY_SOURCE_LOCATION(name), (active))
-#define GFX_TRACY_GPU_ZONE_END(ctx, cmd) ::gfx::tracy::endTracyGfxZone((ctx), (cmd))
-#define GFX_TRACY_GPU_RENDER_PASS(ctx, cmd, framebuffer, name) ::gfx::tracy::beginTracyGfxRenderPass((ctx), (cmd), (framebuffer), GFX_TRACY_SOURCE_LOCATION(name))
-#define GFX_TRACY_GPU_RENDER_PASS_ACTIVE(ctx, cmd, framebuffer, name, active) ::gfx::tracy::beginTracyGfxRenderPass((ctx), (cmd), (framebuffer), GFX_TRACY_SOURCE_LOCATION(name), (active))
-#define GFX_TRACY_GPU_RENDER_PASS_END(ctx, cmd) ::gfx::tracy::endTracyGfxRenderPass((ctx), (cmd))
-#define GFX_TRACY_GPU_BLIT_PASS(ctx, cmd, name) ::gfx::tracy::beginTracyGfxBlitPass((ctx), (cmd), GFX_TRACY_SOURCE_LOCATION(name))
-#define GFX_TRACY_GPU_BLIT_PASS_ACTIVE(ctx, cmd, name, active) ::gfx::tracy::beginTracyGfxBlitPass((ctx), (cmd), GFX_TRACY_SOURCE_LOCATION(name), (active))
-#define GFX_TRACY_GPU_BLIT_PASS_END(ctx, cmd) ::gfx::tracy::endTracyGfxBlitPass((ctx), (cmd))
+#define TracyGraphicsContext(device) ::gfx::tracy::createGraphicsContext((device))
+#define TracyGraphicsDestroy(ctx) ::gfx::tracy::destroyGraphicsContext((ctx))
+#define TracyGraphicsCollect(ctx) ::gfx::tracy::collectGraphicsContext((ctx))
+#define TracyGraphicsZone(ctx, passDescriptor, name) TracyGraphicsNamedZone((ctx), ___tracy_gpu_zone, (passDescriptor), (name), true)
+#define TracyGraphicsNamedZone(ctx, varname, passDescriptor, name, active)                                                               \
+    static constexpr ::tracy::SourceLocationData TracyConcat(__tracy_gpu_source_location, TracyLine){                                   \
+        (name), TracyFunction, TracyFile, static_cast<uint32_t>(TracyLine), 0};                                                          \
+    ::gfx::tracy::GraphicsZoneScope varname((ctx), (passDescriptor), &TracyConcat(__tracy_gpu_source_location, TracyLine), (active))
 // NOLINTEND(cppcoreguidelines-macro-usage)
+
+#else
+
+using TracyGraphicsCtx = void;
+
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+#define TracyGraphicsContext(device) nullptr
+#define TracyGraphicsDestroy(ctx)
+#define TracyGraphicsCollect(ctx)
+#define TracyGraphicsZone(ctx, passDescriptor, name)
+#define TracyGraphicsNamedZone(ctx, varname, passDescriptor, name, active)
+// NOLINTEND(cppcoreguidelines-macro-usage)
+
+#endif
 
 #endif // GFX_TRACY_HPP

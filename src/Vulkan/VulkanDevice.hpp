@@ -54,6 +54,8 @@ public:
     std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const override;
     std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
+    std::unique_ptr<RenderPassDescriptor> newRenderPassDescriptor() const override;
+    std::unique_ptr<BlitPassDescriptor> newBlitPassDescriptor() const override;
     std::unique_ptr<CommandBufferPool> newCommandBufferPool() const override;
     std::unique_ptr<ParameterBlockPool> newParameterBlockPool(const ParameterBlockPool::Descriptor&) const override;
     std::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const override;

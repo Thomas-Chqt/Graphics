@@ -14,6 +14,7 @@
 
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
+#include <Graphics/RenderPassDescriptor.hpp>
 
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
@@ -50,6 +51,12 @@ namespace scop
 Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surface)
     : m_device(device), m_window(window), m_surface(surface)
 {
+    assert(m_device);
+
+#if defined(GFX_BUILD_TRACY_INTEGRATION)
+    m_tracyGraphicsContext = TracyGraphicsContext(*m_device);
+#endif
+
     glfwSetWindowUserPointer(m_window, this);
     glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){
         static_cast<Renderer*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
@@ -152,6 +159,10 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, 
         cfd.parameterBlockPool->reset();
     }
 
+#if defined(GFX_BUILD_TRACY_INTEGRATION)
+    TracyGraphicsCollect(m_tracyGraphicsContext);
+#endif
+
     cfd.renderables.clear();
     cfsd = shader::SceneData{
         .cameraPosition = -viewMatrix[3],
@@ -224,24 +235,25 @@ void Renderer::endFrame()
         return;
     }
 
-    gfx::Framebuffer framebuffer = {
-        .colorAttachments = {
-            gfx::Framebuffer::Attachment{
-                .loadAction = gfx::LoadAction::clear,
-                .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
-                .texture = drawable->texture()
-            }
-        },
-        .depthAttachment = {
-            gfx::Framebuffer::Attachment{
-                .loadAction = gfx::LoadAction::clear,
-                .clearValue = gfx::ClearValue::depth(1.0f),
-                .texture = cfd.depthTexture
-            }
+    auto renderPassDescriptor = m_device->newRenderPassDescriptor();
+    renderPassDescriptor->setColorAttachments({
+        gfx::RenderPassDescriptor::Attachment{
+            .loadAction = gfx::LoadAction::clear,
+            .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
+            .texture = drawable->texture()
         }
-    };
+    });
+    renderPassDescriptor->setDepthAttachment(gfx::RenderPassDescriptor::Attachment{
+        .loadAction = gfx::LoadAction::clear,
+        .clearValue = gfx::ClearValue::depth(1.0f),
+        .texture = cfd.depthTexture
+    });
 
-    commandBuffer->beginRenderPass(framebuffer);
+#if defined(GFX_BUILD_TRACY_INTEGRATION)
+    {
+        TracyGraphicsZone(m_tracyGraphicsContext, *renderPassDescriptor, "renderPass");
+#endif
+    commandBuffer->beginRenderPass(*renderPassDescriptor);
     {
         ZoneScopedN("renderPass");
         std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = cfd.parameterBlockPool->get(vpMatrixBpLayout());
@@ -277,6 +289,9 @@ void Renderer::endFrame()
 #endif
     }
     commandBuffer->endRenderPass();
+#if defined(GFX_BUILD_TRACY_INTEGRATION)
+    }
+#endif
     commandBuffer->presentDrawable(drawable);
 
     cfd.lastCommandBuffer = commandBuffer.get();
@@ -292,6 +307,13 @@ void Renderer::endFrame()
 
 Renderer::~Renderer()
 {
+    m_device->waitIdle();
+
+#if defined(GFX_BUILD_TRACY_INTEGRATION)
+    TracyGraphicsCollect(m_tracyGraphicsContext);
+    TracyGraphicsDestroy(m_tracyGraphicsContext);
+#endif
+
 #if !defined (SCOP_MANDATORY)
     gfx::imgui::shutdown(*m_device);
     ImGui_ImplGlfw_Shutdown();

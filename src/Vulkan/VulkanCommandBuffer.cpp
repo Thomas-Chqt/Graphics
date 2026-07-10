@@ -8,7 +8,6 @@
  */
 
 #include "Graphics/Enums.hpp"
-#include "Graphics/Framebuffer.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
 
@@ -20,6 +19,7 @@
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
+#include "Vulkan/VulkanPassDescriptor.hpp"
 #include <memory>
 #include <utility>
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
@@ -88,13 +88,21 @@ VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const vk::C
     m_vkCommandBuffer = m_device->vkDevice().allocateCommandBuffers(commandBufferAllocateInfo).front();
 }
 
-void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
+void VulkanCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor)
 {
-    std::vector<vk::RenderingAttachmentInfo> colorAttachmentInfos(framebuffer.colorAttachments.size());
+    auto* vulkanDescriptor = dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor);
+    assert(vulkanDescriptor);
+    vulkanDescriptor->invokeBeginCallback(m_vkCommandBuffer);
+
+    const auto& colorAttachments = descriptor.colorAttachments();
+    const auto& depthAttachment = descriptor.depthAttachment();
+    assert(colorAttachments.empty() == false);
+
+    std::vector<vk::RenderingAttachmentInfo> colorAttachmentInfos(colorAttachments.size());
     std::optional<vk::RenderingAttachmentInfo> depthAttachmentInfo;
     std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
 
-    for (size_t i = 0; auto& colorAttachment : framebuffer.colorAttachments)
+    for (size_t i = 0; const auto& colorAttachment : colorAttachments)
     {
         std::shared_ptr<VulkanTexture> texture = dynamic_pointer_cast<VulkanTexture>(colorAttachment.texture);
         assert(texture);
@@ -127,7 +135,7 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
         i++;
     }
 
-    if (auto& depthAttachment = framebuffer.depthAttachment)
+    if (depthAttachment)
     {
         std::shared_ptr<VulkanTexture> texture = dynamic_pointer_cast<VulkanTexture>(depthAttachment->texture);
         assert(texture);
@@ -167,24 +175,24 @@ void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
     m_vkCommandBuffer.setViewport(0, vk::Viewport{}
         .setX(0)
         .setY(0)
-        .setWidth(static_cast<float>(framebuffer.colorAttachments[0].texture->width()))
-        .setHeight(static_cast<float>(framebuffer.colorAttachments[0].texture->height()))
+        .setWidth(static_cast<float>(colorAttachments[0].texture->width()))
+        .setHeight(static_cast<float>(colorAttachments[0].texture->height()))
         .setMinDepth(0)
         .setMaxDepth(1));
 
     m_vkCommandBuffer.setScissor(0, vk::Rect2D{}
         .setOffset({.x=0, .y=0})
         .setExtent({
-            .width = framebuffer.colorAttachments[0].texture->width(),
-            .height = framebuffer.colorAttachments[0].texture->height()
+            .width = colorAttachments[0].texture->width(),
+            .height = colorAttachments[0].texture->height()
         }));
 
     auto renderingInfo = vk::RenderingInfo{}
         .setRenderArea(vk::Rect2D{}
             .setOffset({.x=0, .y=0})
             .setExtent({
-                .width = framebuffer.colorAttachments[0].texture->width(),
-                .height = framebuffer.colorAttachments[0].texture->height()
+                .width = colorAttachments[0].texture->width(),
+                .height = colorAttachments[0].texture->height()
             }))
         .setLayerCount(1)
         .setViewMask(0)
@@ -378,9 +386,11 @@ void VulkanCommandBuffer::endRenderPass()
     m_vkCommandBuffer.endRendering();
 }
 
-void VulkanCommandBuffer::beginBlitPass()
+void VulkanCommandBuffer::beginBlitPass(BlitPassDescriptor& descriptor)
 {
-    // nothing
+    auto* vulkanDescriptor = dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor);
+    assert(vulkanDescriptor);
+    vulkanDescriptor->invokeBeginCallback(m_vkCommandBuffer);
 }
 
 void VulkanCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc, const std::shared_ptr<Buffer>& aDst, size_t size)

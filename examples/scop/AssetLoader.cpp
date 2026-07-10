@@ -357,7 +357,8 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
     assert(commandBufferPool);
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
-    commandBuffer->beginBlitPass();
+    auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+    commandBuffer->beginBlitPass(*blitPassDescriptor);
     auto mesh = Mesh{
         .name = "cube_mesh",
         .bBoxMin = {-0.5, -0.5, -0.5},
@@ -393,7 +394,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
     assert(commandBufferPool);
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
-    commandBuffer->beginBlitPass();
+    auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+    commandBuffer->beginBlitPass(*blitPassDescriptor);
 
     std::vector<std::shared_ptr<Material>> materials;
     if (overrideMaterial.has_value()) {
@@ -581,7 +583,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
     assert(commandBufferPool);
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
-    commandBuffer->beginBlitPass();
+    auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+    commandBuffer->beginBlitPass(*blitPassDescriptor);
 
     std::shared_ptr<Material> material;
     if (overrideMaterial.has_value()) {

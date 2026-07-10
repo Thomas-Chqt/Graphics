@@ -10,7 +10,8 @@
 #ifndef COMMANDBUFFER_HPP
 #define COMMANDBUFFER_HPP
 
-#include "Graphics/Framebuffer.hpp"
+#include "Graphics/BlitPassDescriptor.hpp"
+#include "Graphics/RenderPassDescriptor.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
@@ -30,7 +31,7 @@ class CommandBuffer
 public:
     CommandBuffer(const CommandBuffer&) = delete;
 
-    virtual void beginRenderPass(const Framebuffer&) = 0;
+    virtual void beginRenderPass(RenderPassDescriptor&) = 0;
 
     virtual void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) = 0;
     virtual void useVertexBuffer(const std::shared_ptr<Buffer>&) = 0;
@@ -45,7 +46,7 @@ public:
     virtual void endRenderPass() = 0;
 
 
-    virtual void beginBlitPass() = 0;
+    virtual void beginBlitPass(BlitPassDescriptor&) = 0;
 
     virtual void copyBufferToBuffer(const std::shared_ptr<Buffer>& src, const std::shared_ptr<Buffer>& dst, size_t size) = 0;
 

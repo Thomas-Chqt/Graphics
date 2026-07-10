@@ -10,7 +10,7 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
-#include "Graphics/Framebuffer.hpp"
+#include "Graphics/RenderPassDescriptor.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
@@ -221,7 +221,8 @@ public:
             std::ranges::copy(cube_vertices, stagingBuffer->content<Vertex>());
 
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-            commandBuffer->beginBlitPass();
+            auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+            commandBuffer->beginBlitPass(*blitPassDescriptor);
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, m_vertexBuffer->size());
             commandBuffer->endBlitPass();
             m_device->submitCommandBuffers(commandBuffer);
@@ -245,7 +246,8 @@ public:
             std::ranges::copy(cube_indices, stagingBuffer->content<uint32_t>());
 
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-            commandBuffer->beginBlitPass();
+            auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+            commandBuffer->beginBlitPass(*blitPassDescriptor);
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_indexBuffer, m_indexBuffer->size());
             commandBuffer->endBlitPass();
             m_device->submitCommandBuffers(commandBuffer);
@@ -288,7 +290,8 @@ public:
             stbi_image_free(bottomBytes);
 
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-            commandBuffer->beginBlitPass();
+            auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+            commandBuffer->beginBlitPass(*blitPassDescriptor);
             {
                 for (int face = 0; face < 6; ++face)
                     commandBuffer->copyBufferToTexture(stagingBuffer, face * faceSize, m_grassTexture, face);
@@ -428,24 +431,21 @@ public:
                 continue;
             }
 
-            gfx::Framebuffer framebuffer = {
-                .colorAttachments = {
-                    gfx::Framebuffer::Attachment{
-                        .loadAction = gfx::LoadAction::clear,
-                        .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
-                        .texture = drawable->texture()
-                    }
-                },
-                .depthAttachment = {
-                    gfx::Framebuffer::Attachment{
-                        .loadAction = gfx::LoadAction::clear,
-                        .clearValue = gfx::ClearValue::depth(1.0f),
-                        .texture = m_depthTexture.at(m_frameIdx)
-                    }
+            auto renderPassDescriptor = m_device->newRenderPassDescriptor();
+            renderPassDescriptor->setColorAttachments({
+                gfx::RenderPassDescriptor::Attachment{
+                    .loadAction = gfx::LoadAction::clear,
+                    .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
+                    .texture = drawable->texture()
                 }
-            };
+            });
+            renderPassDescriptor->setDepthAttachment(gfx::RenderPassDescriptor::Attachment{
+                .loadAction = gfx::LoadAction::clear,
+                .clearValue = gfx::ClearValue::depth(1.0f),
+                .texture = m_depthTexture.at(m_frameIdx)
+            });
 
-            commandBuffer->beginRenderPass(framebuffer);
+            commandBuffer->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffer->usePipeline(m_graphicsPipeline);
                 commandBuffer->setParameterBlock(vpMatrixPBlock, 0);

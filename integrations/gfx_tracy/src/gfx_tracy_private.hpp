@@ -4,35 +4,34 @@
 #include "Graphics/Enums.hpp"
 #include "gfx_tracy/gfx_tracy.hpp"
 
+#if defined(TRACY_ENABLE)
+
 namespace gfx::tracy
 {
 
-struct TracyGfxCtx
+struct GraphicsContext
 {
     Backend backend;
     void* backendData;
 
-    void (*destroy)(TracyGfxCtx*);
-    void (*collect)(TracyGfxCtx*);
+    void (*destroy)(GraphicsContext*);
+    void (*collect)(GraphicsContext*);
 
-    void (*beginZone)(TracyGfxCtx&, CommandBuffer&, TracyGfxSourceLocation, bool);
-    void (*endZone)(TracyGfxCtx&, CommandBuffer&);
-
-    void (*beginRenderPass)(TracyGfxCtx&, CommandBuffer&, const Framebuffer&, TracyGfxSourceLocation, bool);
-    void (*endRenderPass)(TracyGfxCtx&, CommandBuffer&);
-
-    void (*beginBlitPass)(TracyGfxCtx&, CommandBuffer&, TracyGfxSourceLocation, bool);
-    void (*endBlitPass)(TracyGfxCtx&, CommandBuffer&);
+    void* (*createRenderZone)(GraphicsContext&, RenderPassDescriptor&, const ::tracy::SourceLocationData*, bool);
+    void* (*createBlitZone)(GraphicsContext&, BlitPassDescriptor&, const ::tracy::SourceLocationData*, bool);
+    void (*destroyZone)(void*);
 };
 
 #if defined(GFX_BUILD_METAL)
-TracyGfxCtx* createMetalTracyGfxContext(const Device&, std::string_view);
+GraphicsContext* createMetalGraphicsContext(const Device&);
 #endif
 
 #if defined(GFX_BUILD_VULKAN)
-TracyGfxCtx* createVulkanTracyGfxContext(const Device&, std::string_view);
+GraphicsContext* createVulkanGraphicsContext(const Device&);
 #endif
 
 } // namespace gfx::tracy
+
+#endif
 
 #endif // GFX_TRACY_PRIVATE_HPP

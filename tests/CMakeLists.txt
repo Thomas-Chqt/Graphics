@@ -30,5 +30,8 @@ set_target_properties(gtest PROPERTIES FOLDER "dependencies")
 set_target_properties(gtest_main PROPERTIES FOLDER "dependencies")
 
 target_link_libraries(gfx_test PRIVATE Graphics GTest::gtest_main)
+if(TARGET GraphicsTracy)
+    target_link_libraries(gfx_test PRIVATE GraphicsTracy)
+endif()
 
 gtest_discover_tests(gfx_test)
