@@ -29,12 +29,12 @@
         namespace glm = scop::math;
     #endif
 #endif
-#if defined (GFX_BUILD_TRACY)
+#if defined (GFX_BUILD_TRACY_INTEGRATION)
     #include <tracy/Tracy.hpp>
 #else
     #define ZoneScoped
     #define ZoneScopedN(x)
-#endif // GFX_BUILD_TRACY
+#endif // GFX_BUILD_TRACY_INTEGRATION
 
 #include <array>
 #include <cstddef>
@@ -228,14 +228,14 @@ void Renderer::endFrame()
         .colorAttachments = {
             gfx::Framebuffer::Attachment{
                 .loadAction = gfx::LoadAction::clear,
-                .clearColor = {0.0f, 0.0f, 0.0f, 0.0f},
+                .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
                 .texture = drawable->texture()
             }
         },
         .depthAttachment = {
             gfx::Framebuffer::Attachment{
                 .loadAction = gfx::LoadAction::clear,
-                .clearDepth = 1.0f,
+                .clearValue = gfx::ClearValue::depth(1.0f),
                 .texture = cfd.depthTexture
             }
         }

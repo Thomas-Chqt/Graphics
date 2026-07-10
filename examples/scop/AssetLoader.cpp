@@ -32,7 +32,7 @@
     #endif
 #endif
 #include <stb_image/stb_image.h>
-#if defined (GFX_BUILD_TRACY)
+#if defined (GFX_BUILD_TRACY_INTEGRATION)
     #include <tracy/Tracy.hpp>
 #else
     #define ZoneScoped

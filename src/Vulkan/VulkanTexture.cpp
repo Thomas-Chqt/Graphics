@@ -28,7 +28,7 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, vk::Image&& vkImage, co
       m_vkImage(std::move(vkImage))
 {
     m_subresourceRange = vk::ImageSubresourceRange{}
-          .setAspectMask(toVkImageAspectFlags(desc.usages))
+          .setAspectMask(toVkImageAspectFlags(desc.pixelFormat))
           .setBaseMipLevel(0)
           .setLevelCount(1)
           .setBaseArrayLayer(0)
@@ -81,7 +81,7 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descript
     m_vkImage = std::exchange(image, VK_NULL_HANDLE);
 
     m_subresourceRange = vk::ImageSubresourceRange{}
-        .setAspectMask(toVkImageAspectFlags(desc.usages))
+        .setAspectMask(toVkImageAspectFlags(desc.pixelFormat))
         .setBaseMipLevel(0)
         .setLevelCount(1)
         .setBaseArrayLayer(0)

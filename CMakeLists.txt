@@ -22,12 +22,12 @@ if (APPLE)
 endif()
 option(GFX_BUILD_VULKAN   "Build the vulkan backend"             ON)
 option(GFX_BUILD_EXAMPLES "Build Graphics examples executables" OFF)
-option(GFX_BUILD_TRACY    "Build the tracy client"              OFF)
 option(GFX_BUILD_TESTS    "Build the tests"                     OFF)
 option(GFX_INSTALL        "Enable the install command"           ON)
 
 option(GFX_BUILD_IMGUI_INTEGRATION "Build the imgui integration static library" ON)
 option(GFX_BUILD_GLFW_INTEGRATION  "Build the glfw integration static library"  ON)
+option(GFX_BUILD_TRACY_INTEGRATION "Build the tracy integration static library" OFF)
 
 if(GFX_BUILD_EXAMPLES)
     set(GFX_EXAMPLES_TO_BUILD "triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
@@ -100,7 +100,7 @@ if (GFX_BUILD_VULKAN)
     set_target_properties(VulkanMemoryAllocator PROPERTIES FOLDER "dependencies")
 endif()
 
-if (GFX_BUILD_TRACY)
+if (GFX_BUILD_TRACY_INTEGRATION)
     FetchContent_Declare(tracy
         GIT_REPOSITORY https://github.com/wolfpld/tracy.git
         GIT_TAG        v0.13.0
@@ -159,14 +159,6 @@ if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
 endif()
 
-if (GFX_BUILD_TRACY)
-    target_compile_definitions(Graphics PUBLIC "GFX_BUILD_TRACY")
-endif()
-
-if (GFX_BUILD_TRACY AND GFX_BUILD_VULKAN AND NOT APPLE)
-    target_compile_definitions(Graphics PRIVATE "GFX_TRACY_VULKAN_ENABLED")
-endif()
-
 if (GFX_BUILD_METAL)
     target_link_libraries(Graphics PRIVATE ${METAL_FRAMEWORK} ${QUARTZ_CORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK})
 endif()
@@ -175,16 +167,16 @@ if (GFX_BUILD_VULKAN)
     target_link_libraries(Graphics PRIVATE Vulkan::Headers VulkanMemoryAllocator)
 endif()
 
-if (GFX_BUILD_TRACY)
-    target_link_libraries(Graphics PUBLIC TracyClient)
-endif()
-
 if (GFX_BUILD_GLFW_INTEGRATION)
     add_subdirectory("integrations/gfx_glfw")
 endif()
 
 if (GFX_BUILD_IMGUI_INTEGRATION)
     add_subdirectory("integrations/gfx_imgui")
+endif()
+
+if (GFX_BUILD_TRACY_INTEGRATION)
+    add_subdirectory("integrations/gfx_tracy")
 endif()
 
 add_subdirectory("tools")
@@ -206,6 +198,9 @@ if(GFX_INSTALL)
     if (TARGET GraphicsImGui)
         list(APPEND GFX_INSTALL_TARGETS GraphicsImGui)
     endif()
+    if (TARGET GraphicsTracy)
+        list(APPEND GFX_INSTALL_TARGETS GraphicsTracy)
+    endif()
     install(TARGETS ${GFX_INSTALL_TARGETS}
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
@@ -217,5 +212,8 @@ if(GFX_INSTALL)
     endif()
     if (TARGET GraphicsImGui)
         install(DIRECTORY "integrations/gfx_imgui/include/" DESTINATION "include")
+    endif()
+    if (TARGET GraphicsTracy)
+        install(DIRECTORY "integrations/gfx_tracy/include/" DESTINATION "include")
     endif()
 endif()

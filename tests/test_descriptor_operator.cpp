@@ -9,6 +9,7 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/ParameterBlockLayout.hpp"
@@ -21,6 +22,7 @@
 
 #include <cstdint>
 #include <map>
+#include <variant>
 
 namespace gfx_test
 {
@@ -64,6 +66,26 @@ TEST(descriptor_operator, texture_descriptor)
     rhs.width = 32;
 
     expectDescriptorComparableInMap(lhs, rhs);
+}
+
+TEST(clear_value, default_value_is_zero_float_color)
+{
+    gfx::ClearValue clearValue {};
+
+    const auto* clearColor = std::get_if<gfx::ClearFloatColor>(&clearValue.value);
+    ASSERT_NE(clearColor, nullptr);
+
+    EXPECT_EQ(clearColor->value, (std::array<float, 4>{0.0f, 0.0f, 0.0f, 0.0f}));
+}
+
+TEST(clear_value, uint64_packs_low_and_high_bits)
+{
+    gfx::ClearValue clearValue = gfx::ClearValue::uint64(0x0123456789abcdef);
+
+    const auto* clearColor = std::get_if<gfx::ClearUIntColor>(&clearValue.value);
+    ASSERT_NE(clearColor, nullptr);
+
+    EXPECT_EQ(clearColor->value, (std::array<uint32_t, 4>{0x89abcdef, 0x01234567, 0, 0}));
 }
 
 TEST(descriptor_operator, sampler_descriptor)

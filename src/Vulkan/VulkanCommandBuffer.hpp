@@ -58,6 +58,7 @@ public:
 
     void copyBufferToBuffer(const std::shared_ptr<Buffer>& src, const std::shared_ptr<Buffer>& dst, size_t size) override;
     void copyBufferToTexture(const std::shared_ptr<Buffer>& buffer, size_t bufferOffset, const std::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) override;
+    void copyTextureToBuffer(const std::shared_ptr<Texture>& texture, uint32_t layerIndex, const std::shared_ptr<Buffer>& buffer, size_t bufferOffset) override;
 
     void endBlitPass() override;
 
@@ -109,11 +110,6 @@ private:
         uint64_t signaledTimeValue = 0;
     }
     m_nonReusedRessources;
-
-#if defined(TRACY_ENABLE) && defined(GFX_TRACY_VULKAN_ENABLED)
-    std::shared_ptr<tracy::VkCtxScope> m_tracyVkCtxScope = nullptr;
-#endif
-
 public:
     VulkanCommandBuffer& operator=(const VulkanCommandBuffer&) = delete;
     VulkanCommandBuffer& operator=(VulkanCommandBuffer&&) = delete;
