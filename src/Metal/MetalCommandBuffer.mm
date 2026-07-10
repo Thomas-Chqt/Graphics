@@ -47,7 +47,12 @@ MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue) { @auto
     m_mtlCommandBuffer = [queue commandBuffer];
 }}
 
-void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @autoreleasepool
+void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
+{
+    beginRenderPass(framebuffer, {}, {});
+}
+
+void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer, const RenderPassDescriptorCallback& beforeEncoderCreation, const EncoderCreatedCallback& afterEncoderCreation) { @autoreleasepool
 {
     assert(m_commandEncoder == nil);
 
@@ -75,8 +80,12 @@ void MetalCommandBuffer::beginRenderPass(const Framebuffer& framebuffer) { @auto
         renderPassDescriptor.depthAttachment.texture = texture->mtltexture();
         m_usedTextures.insert(texture);
     }
-    TracyMetalZone(MetalDevice::s_tracyMtlContext, renderPassDescriptor, "renderPass");
+
+    if (beforeEncoderCreation)
+        beforeEncoderCreation(renderPassDescriptor);
     m_commandEncoder = [m_mtlCommandBuffer renderCommandEncoderWithDescriptor: renderPassDescriptor];
+    if (afterEncoderCreation)
+        afterEncoderCreation();
 }}
 
 void MetalCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
@@ -184,12 +193,20 @@ void MetalCommandBuffer::endRenderPass() { @autoreleasepool
     m_commandEncoder = nil;
 }}
 
-void MetalCommandBuffer::beginBlitPass() { @autoreleasepool
+void MetalCommandBuffer::beginBlitPass()
+{
+    beginBlitPass({}, {});
+}
+
+void MetalCommandBuffer::beginBlitPass(const BlitPassDescriptorCallback& beforeEncoderCreation, const EncoderCreatedCallback& afterEncoderCreation) { @autoreleasepool
 {
     assert(m_commandEncoder == nil);
     MTLBlitPassDescriptor* blitPassDescriptor = [[MTLBlitPassDescriptor alloc] init];
-    TracyMetalZone(MetalDevice::s_tracyMtlContext, blitPassDescriptor, "blitPass");
+    if (beforeEncoderCreation)
+        beforeEncoderCreation(blitPassDescriptor);
     m_commandEncoder = [m_mtlCommandBuffer blitCommandEncoderWithDescriptor:blitPassDescriptor];
+    if (afterEncoderCreation)
+        afterEncoderCreation();
 }}
 
 void MetalCommandBuffer::copyBufferToBuffer(const std::shared_ptr<Buffer>& aSrc, const std::shared_ptr<Buffer>& aDst, size_t size) { @autoreleasepool

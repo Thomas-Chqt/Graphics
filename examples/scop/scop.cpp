@@ -35,7 +35,7 @@
     namespace glm = scop::math;
     #endif
 #endif
-#if defined (GFX_BUILD_TRACY)
+#if defined (GFX_BUILD_TRACY_INTEGRATION)
     #include <tracy/Tracy.hpp>
     #include <tracy/TracyC.h>
 #else

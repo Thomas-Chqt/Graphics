@@ -50,7 +50,6 @@ MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descr
 
 std::shared_ptr<Drawable> MetalSwapchain::nextDrawable() { @autoreleasepool
 {
-    ZoneScoped;
     std::shared_ptr<MetalDrawable> nextDrawable = m_drawables.at(m_nextDrawableIndex);
     m_nextDrawableIndex = (m_nextDrawableIndex + 1) % m_drawables.size();
     nextDrawable->setMtlDrawable([m_mtlLayer nextDrawable]);

@@ -62,9 +62,6 @@ public:
 
     ~MetalDevice() override;
 
-public:
-    inline static TracyMetalCtx* s_tracyMtlContext = nullptr;
-
 private:
     id<MTLDevice> m_mtlDevice = nil;
     id<MTLCommandQueue> m_queue = nil;

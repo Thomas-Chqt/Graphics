@@ -29,12 +29,12 @@
         namespace glm = scop::math;
     #endif
 #endif
-#if defined (GFX_BUILD_TRACY)
+#if defined (GFX_BUILD_TRACY_INTEGRATION)
     #include <tracy/Tracy.hpp>
 #else
     #define ZoneScoped
     #define ZoneScopedN(x)
-#endif // GFX_BUILD_TRACY
+#endif // GFX_BUILD_TRACY_INTEGRATION
 
 #include <array>
 #include <cstddef>

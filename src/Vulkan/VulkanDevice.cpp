@@ -116,12 +116,6 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setQueueFamilyIndex(m_queueFamily.index)
         .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer));
 
-    s_tracyVkContext = TracyVkContextHostCalibrated(
-        m_instance->vkInstance(),
-        static_cast<VkPhysicalDevice>(*m_physicalDevice),
-        m_vkDevice,
-        (PFN_vkGetInstanceProcAddr)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
-        (PFN_vkGetDeviceProcAddr)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr);
 }
 
 std::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -277,10 +271,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
                 dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
 
             std::shared_ptr<VulkanCommandBuffer> barrierCmdBuffer = getBarrierCommandBuffer();
-            {
-                TracyVkZone(s_tracyVkContext, commandBuffer->vkCommandBuffer(), "barrierCmdBuffer");
-                barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
-            }
+            barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
             barrierCmdBuffer->end();
             // barrierCmdBuffer is added before the user command buffer
             barrierCmdBuffer->setSignaledTimeValue(m_nextSignaledTimeValue);
@@ -333,7 +324,6 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
 
 void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
 {
-    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
@@ -344,7 +334,6 @@ void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
             .setValues((*waitedIt)->signaledTimeValue());
         if (m_vkDevice.waitSemaphores(semaphoreWaitInfo, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
             throw std::runtime_error("failed to wait timeline semaphore");
-        TracyVkCollectHost(s_tracyVkContext);
         for (auto it = m_submittedCommandBuffers.begin(); it != waitedIt; ++it) {
             if (m_usedBarrierCmdBuffers.contains(*it)) {
                 auto node = m_usedBarrierCmdBuffers.extract(*it);
@@ -374,7 +363,6 @@ void VulkanDevice::waitIdle()
 VulkanDevice::~VulkanDevice()
 {
     waitIdle();
-    TracyVkDestroy(s_tracyVkContext);
     m_vkDevice.destroyCommandPool(m_barrierCommandPool);
     m_vkDevice.destroySemaphore(m_timelineSemaphore);
     vmaDestroyAllocator(m_allocator);

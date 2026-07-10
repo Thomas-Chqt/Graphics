@@ -66,7 +66,6 @@ VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const vk::C
 
 void VulkanCommandBuffer::beginRenderPass(const Framebuffer& framebuffer)
 {
-    TracyVkZone_begin(VulkanDevice::s_tracyVkContext, m_vkCommandBuffer, "renderPass", m_tracyVkCtxScope, true);
     std::vector<vk::RenderingAttachmentInfo> colorAttachmentInfos(framebuffer.colorAttachments.size());
     std::optional<vk::RenderingAttachmentInfo> depthAttachmentInfo;
     std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
@@ -355,7 +354,6 @@ void VulkanCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& aBu
 void VulkanCommandBuffer::endRenderPass()
 {
     m_vkCommandBuffer.endRendering();
-    TracyVkZone_end(m_tracyVkCtxScope);
 }
 
 void VulkanCommandBuffer::beginBlitPass()
