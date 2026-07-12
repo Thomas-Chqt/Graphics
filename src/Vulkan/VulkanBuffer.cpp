@@ -27,7 +27,15 @@ VulkanBuffer::VulkanBuffer(const VulkanDevice* device, const Buffer::Descriptor&
 
     VmaAllocationCreateInfo allocInfo = { .usage = VMA_MEMORY_USAGE_AUTO, };
     if (m_storageMode == ResourceStorageMode::hostVisible)
-        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    {
+        const bool needsCpuRead = static_cast<bool>(m_usages & BufferUsage::copyDestination);
+        // hostVisible + copyDestination is this API's readback convention; use RANDOM for CPU reads.
+        // Other host-visible buffers are upload-style sequential CPU writes.
+        // Revisit this if a future CPU-readable buffer pattern does not include copyDestination.
+        allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT |
+            (needsCpuRead ? VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT : VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
+        allocInfo.requiredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    }
 
     VkBuffer buffer = VK_NULL_HANDLE;
     vmaCreateBuffer(m_device->allocator(), &bufferCreateInfo, &allocInfo, &buffer, &m_allocation, &m_allocInfo);
