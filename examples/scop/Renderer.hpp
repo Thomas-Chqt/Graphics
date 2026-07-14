@@ -23,6 +23,9 @@
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
     #include <glm/glm.hpp>
+    #if defined (TRACY_ENABLE)
+        #include <tracy/Tracy.hpp>
+    #endif
     #include <gfx_tracy/gfx_tracy.hpp>
 #else
     #include "math/math.hpp"
@@ -97,7 +100,7 @@ private:
     GLFWwindow* m_window;
     gfx::Surface* m_surface;
 
-    gfx::tracy::TracyGfxCtx* m_tracyGraphicsContext = nullptr;
+    void* m_tracyGraphicsContext = nullptr;
 
     std::unique_ptr<gfx::Swapchain> m_swapchain;
 
