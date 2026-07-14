@@ -36,7 +36,7 @@ std::unique_ptr<Surface> createSurface(Instance& instance, GLFWwindow* window)
         return std::make_unique<VulkanSurface>(vulkanInstance->vkInstance(), surface);
     }
 
-    throw std::runtime_error("unsupported gfx::Instance backend for GLFW surface creation");
+    std::unreachable();
 }
 
 } // namespace gfx::glfw

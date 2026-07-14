@@ -1,8 +1,7 @@
 #ifndef VULKANPASSDESCRIPTOR_HPP
 #define VULKANPASSDESCRIPTOR_HPP
 
-#include "Graphics/BlitPassDescriptor.hpp"
-#include "Graphics/RenderPassDescriptor.hpp"
+#include "Graphics/PassDescriptor.hpp"
 
 #include <cassert>
 #include <functional>

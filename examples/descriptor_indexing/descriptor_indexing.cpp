@@ -11,7 +11,7 @@
 #include "Graphics/Device.hpp"
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Enums.hpp"
-#include "Graphics/RenderPassDescriptor.hpp"
+#include "Graphics/PassDescriptor.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/ParameterBlock.hpp"

@@ -27,7 +27,7 @@ option(GFX_INSTALL        "Enable the install command"           ON)
 
 option(GFX_BUILD_IMGUI_INTEGRATION "Build the imgui integration static library" ON)
 option(GFX_BUILD_GLFW_INTEGRATION  "Build the glfw integration static library"  ON)
-option(GFX_BUILD_TRACY_INTEGRATION "Build the tracy integration static library" OFF)
+option(GFX_BUILD_TRACY_INTEGRATION "Build the tracy integration static library" ON)
 
 if(GFX_BUILD_EXAMPLES)
     set(GFX_EXAMPLES_TO_BUILD "triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
@@ -98,23 +98,6 @@ if (GFX_BUILD_VULKAN)
     target_compile_definitions(VulkanMemoryAllocator PUBLIC "VMA_DYNAMIC_VULKAN_FUNCTIONS=1")
     target_link_libraries(VulkanMemoryAllocator PRIVATE Vulkan::Headers)
     set_target_properties(VulkanMemoryAllocator PROPERTIES FOLDER "dependencies")
-endif()
-
-if (GFX_BUILD_TRACY_INTEGRATION)
-    FetchContent_Declare(tracy
-        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-        GIT_TAG        v0.13.0
-        GIT_SHALLOW    1
-        GIT_PROGRESS   TRUE
-    )
-    set(TRACY_ENABLE OFF)
-    set(TRACY_LTO     ON)
-    FetchContent_MakeAvailable(tracy)
-    target_compile_definitions(TracyClient PUBLIC "$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>")
-    if(NOT MSVC)
-        target_compile_options(TracyClient PRIVATE -Wno-deprecated-declarations)
-    endif()
-    set_target_properties(TracyClient PROPERTIES FOLDER "dependencies")
 endif()
 
 add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARED_LIBS for `Graphics`

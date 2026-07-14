@@ -13,7 +13,6 @@
 #include "Graphics/Enums.hpp"
 
 #include <cstdint>
-#include <memory>
 #include <optional>
 #include <vector>
 

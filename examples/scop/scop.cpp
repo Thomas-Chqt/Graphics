@@ -28,22 +28,14 @@
 #if !defined(SCOP_MANDATORY)
     #include <imgui.h>
     #include <glm/glm.hpp>
+    #include <Tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
 #else
     #include "math/math.hpp"
     #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
     #define SCOP_MATH_GLM_ALIAS_DEFINED
     namespace glm = scop::math;
     #endif
-#endif
-#if defined (GFX_BUILD_TRACY_INTEGRATION)
-    #include <tracy/Tracy.hpp>
-    #include <tracy/TracyC.h>
-#else
-    #define ZoneScoped
-    #define ZoneScopedN(x)
-    #define TracyCZoneN(c,x,y)
-    #define TracyCZoneEnd(c)
-    #define FrameMark
 #endif
 
 #include <cassert>

@@ -59,8 +59,8 @@ endif()
 if (NOT SCOP_MANDATORY)
     FetchContent_Declare(imgui
         GIT_REPOSITORY    https://github.com/Thomas-Chqt/imgui.git
-        GIT_TAG           4d8f55183c2e974916daf6336ee2c4b9c8e72891
-        GIT_SHALLOW       1
+        GIT_TAG           9a22f710b92e7ab31d526e4948cdf8c6c6cce85c
+        GIT_SHALLOW       0
         GIT_PROGRESS      TRUE
         FIND_PACKAGE_ARGS
     )
@@ -78,7 +78,7 @@ endif()
 FetchContent_Declare(stb_image
     GIT_REPOSITORY    https://github.com/Thomas-Chqt/stb_image.git
     GIT_TAG           a09b799a2ba95c14f511493db4ea59811b2fcc97
-    GIT_SHALLOW       1
+    GIT_SHALLOW       0
     GIT_PROGRESS      TRUE
     FIND_PACKAGE_ARGS
 )
@@ -120,6 +120,25 @@ if (NOT SCOP_MANDATORY)
             set_target_properties(assimp PROPERTIES FOLDER "dependencies")
         endif()
     endif()
+endif()
+
+## ASSIMP ###################################################################
+
+if (NOT SCOP_MANDATORY)
+    FetchContent_Declare(tracy
+        GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+        GIT_TAG        v0.13.0
+        GIT_SHALLOW    1
+        GIT_PROGRESS   TRUE
+    )
+    set(TRACY_ENABLE OFF)
+    set(TRACY_LTO     ON)
+    FetchContent_MakeAvailable(tracy)
+    target_compile_definitions(TracyClient PUBLIC "$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>")
+    if(NOT MSVC)
+        target_compile_options(TracyClient PRIVATE -Wno-deprecated-declarations)
+    endif()
+    set_target_properties(TracyClient PROPERTIES FOLDER "dependencies")
 endif()
 
 ##################################################################
@@ -171,10 +190,7 @@ target_compile_definitions(scop PRIVATE "GLFW_INCLUDE_NONE")
 if (SCOP_MANDATORY)
     target_link_libraries(scop PRIVATE Graphics GraphicsGLFW glfw stb_image)
 else()
-    target_link_libraries(scop PRIVATE Graphics GraphicsGLFW GraphicsImGui glm::glm imgui stb_image assimp::assimp)
-endif()
-if(TARGET GraphicsTracy)
-    target_link_libraries(scop PRIVATE GraphicsTracy)
+    target_link_libraries(scop PRIVATE Graphics GraphicsGLFW glm::glm GraphicsImGui imgui stb_image assimp::assimp GraphicsTracy TracyClient)
 endif()
 add_dependencies(scop flat_color_shader textured_shader scop_shader)
 

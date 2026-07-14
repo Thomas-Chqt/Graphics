@@ -371,6 +371,16 @@ void VulkanDevice::waitIdle()
     m_availableBarrierCmdBuffers.clear();
 }
 
+PFN_vkGetInstanceProcAddr VulkanDevice::vkGetInstanceProcAddr() const
+{
+    return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr;
+}
+
+PFN_vkGetDeviceProcAddr VulkanDevice::vkGetDeviceProcAddr() const
+{
+    return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr;
+}
+
 VulkanDevice::~VulkanDevice()
 {
     waitIdle();

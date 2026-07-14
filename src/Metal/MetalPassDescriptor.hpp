@@ -1,8 +1,7 @@
 #ifndef METALPASSDESCRIPTOR_HPP
 #define METALPASSDESCRIPTOR_HPP
 
-#include "Graphics/BlitPassDescriptor.hpp"
-#include "Graphics/RenderPassDescriptor.hpp"
+#include "Graphics/PassDescriptor.hpp"
 
 #if !defined(__OBJC__)
 #error this file can only be used in objective c

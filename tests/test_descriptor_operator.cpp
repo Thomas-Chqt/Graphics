@@ -13,7 +13,7 @@
 #include "Graphics/Instance.hpp"
 #include "Graphics/ParameterBlockLayout.hpp"
 #include "Graphics/ParameterBlockPool.hpp"
-#include "Graphics/RenderPassDescriptor.hpp"
+#include "Graphics/PassDescriptor.hpp"
 #include "Graphics/Sampler.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Texture.hpp"

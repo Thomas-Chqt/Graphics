@@ -1,6 +1,24 @@
+include(FetchContent)
+
+FetchContent_Declare(gfx_tracy_headers
+    GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+    GIT_TAG        v0.13.0
+    GIT_SHALLOW    1
+    GIT_PROGRESS   TRUE
+    SOURCE_SUBDIR  _headers_only_
+)
+FetchContent_MakeAvailable(gfx_tracy_headers)
+
 add_library(GraphicsTracy STATIC)
 
 target_compile_features(GraphicsTracy PUBLIC cxx_std_23)
+
+target_sources(GraphicsTracy PRIVATE "include/gfx_tracy/gfx_tracy.hpp")
+if (GFX_BUILD_METAL)
+    target_sources(GraphicsTracy PRIVATE "src/gfx_tracy.mm")
+else()
+    target_sources(GraphicsTracy PRIVATE "src/gfx_tracy.cpp")
+endif()
 
 target_include_directories(GraphicsTracy
     PRIVATE
@@ -8,37 +26,26 @@ target_include_directories(GraphicsTracy
         "${PROJECT_SOURCE_DIR}/src"
         "${PROJECT_SOURCE_DIR}/include"
     PUBLIC
-        "include")
+        "${CMAKE_CURRENT_LIST_DIR}/include"
+)
+target_include_directories(GraphicsTracy SYSTEM PRIVATE "${gfx_tracy_headers_SOURCE_DIR}/public")
 
 target_precompile_headers(GraphicsTracy REUSE_FROM Graphics)
 
-target_sources(GraphicsTracy PRIVATE
-    "include/gfx_tracy/gfx_tracy.hpp"
-    "src/gfx_tracy.cpp"
-    "src/gfx_tracy_private.hpp")
-
-if (GFX_BUILD_METAL)
-    target_sources(GraphicsTracy PRIVATE "src/gfx_tracy_metal.mm")
-endif()
-if (GFX_BUILD_VULKAN)
-    target_sources(GraphicsTracy PRIVATE "src/gfx_tracy_vulkan.cpp")
-endif()
-
-target_compile_definitions(GraphicsTracy PUBLIC "GFX_BUILD_TRACY_INTEGRATION")
-
+target_compile_definitions(GraphicsTracy PRIVATE "TRACY_ENABLE")
 if (GFX_BUILD_METAL)
     target_compile_definitions(GraphicsTracy PRIVATE "GFX_BUILD_METAL")
     target_compile_options(GraphicsTracy PRIVATE "-fobjc-arc")
 endif()
 if (GFX_BUILD_VULKAN)
     target_compile_definitions(GraphicsTracy PRIVATE "GFX_BUILD_VULKAN")
-    target_compile_definitions(GraphicsTracy PRIVATE "TRACY_VK_USE_SYMBOL_TABLE")
     target_compile_definitions(GraphicsTracy PRIVATE "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1")
     target_compile_definitions(GraphicsTracy PRIVATE "VULKAN_HPP_NO_CONSTRUCTORS=1")
     target_compile_definitions(GraphicsTracy PRIVATE "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
-endif()
 
-target_link_libraries(GraphicsTracy PUBLIC TracyClient)
+    target_compile_definitions(GraphicsTracy PRIVATE "TRACY_VK_USE_SYMBOL_TABLE")
+endif()
+target_compile_definitions(GraphicsTracy PRIVATE "GFX_TRACY_IMPL")
 
 if (GFX_BUILD_METAL)
     target_link_libraries(GraphicsTracy PRIVATE ${METAL_FRAMEWORK} ${QUARTZ_CORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK})

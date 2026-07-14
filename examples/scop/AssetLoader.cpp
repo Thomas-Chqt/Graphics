@@ -23,6 +23,8 @@
     #include <assimp/scene.h>
     #include <assimp/types.h>
     #include <glm/ext/matrix_transform.hpp>
+    #include <Tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
 #else
     #include "math/math.hpp"
     #include "ObjParser/ObjParser.hpp"
@@ -32,16 +34,9 @@
     #endif
 #endif
 #include <stb_image/stb_image.h>
-#if defined (GFX_BUILD_TRACY_INTEGRATION)
-    #include <tracy/Tracy.hpp>
-#else
-    #define ZoneScoped
-    #define ZoneScopedN(x)
-#endif
 
 #include <algorithm>
 #include <bit> // IWYU pragma: keep
-#include <print>
 #include <format> // IWYU pragma: keep
 #include <functional> // IWYU pragma: keep
 #include <span> // IWYU pragma: keep

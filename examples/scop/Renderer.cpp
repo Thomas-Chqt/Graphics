@@ -9,12 +9,13 @@
 
 #include "Renderer.hpp"
 #include "Mesh.hpp"
+#include "gfx_tracy/gfx_tracy.hpp"
 #include "shaders/SceneData.slang"
 #include "shaders/Light.slang"
 
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
-#include <Graphics/RenderPassDescriptor.hpp>
+#include <Graphics/PassDescriptor.hpp>
 
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
@@ -23,6 +24,8 @@
     #include <backends/imgui_impl_glfw.h>
     #include <glm/glm.hpp>
     #include <glm/gtc/matrix_transform.hpp>
+    #include <Tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
 #else
     #include "math/math.hpp"
     #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
@@ -30,12 +33,6 @@
         namespace glm = scop::math;
     #endif
 #endif
-#if defined (GFX_BUILD_TRACY_INTEGRATION)
-    #include <tracy/Tracy.hpp>
-#else
-    #define ZoneScoped
-    #define ZoneScopedN(x)
-#endif // GFX_BUILD_TRACY_INTEGRATION
 
 #include <array>
 #include <cstddef>
@@ -53,9 +50,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
 {
     assert(m_device);
 
-#if defined(GFX_BUILD_TRACY_INTEGRATION)
-    m_tracyGraphicsContext = TracyGraphicsContext(*m_device);
-#endif
+    m_tracyGraphicsContext = TracyGFXContext(*m_device);
 
     glfwSetWindowUserPointer(m_window, this);
     glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){
@@ -154,14 +149,12 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, 
 
     if (cfd.lastCommandBuffer != nullptr) {
         m_device->waitCommandBuffer(*cfd.lastCommandBuffer);
+        TracyGFXCollect(*m_device, m_tracyGraphicsContext);
         cfd.lastCommandBuffer = nullptr;
         cfd.commandBufferPool->reset();
         cfd.parameterBlockPool->reset();
     }
 
-#if defined(GFX_BUILD_TRACY_INTEGRATION)
-    TracyGraphicsCollect(m_tracyGraphicsContext);
-#endif
 
     cfd.renderables.clear();
     cfsd = shader::SceneData{
@@ -219,18 +212,18 @@ void Renderer::addPointLight(const glm::vec3& position, const glm::vec3& color)
 void Renderer::endFrame()
 {
     ZoneScoped;
-#if !defined (SCOP_MANDATORY)
+    #if !defined (SCOP_MANDATORY)
     ImGui::Render();
-#endif
+    #endif
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = cfd.commandBufferPool->get();
 
     std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
     if (drawable == nullptr) {
-#if !defined (SCOP_MANDATORY)
+        #if !defined (SCOP_MANDATORY)
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
-#endif
+        #endif
         m_swapchain = nullptr;
         return;
     }
@@ -249,10 +242,6 @@ void Renderer::endFrame()
         .texture = cfd.depthTexture
     });
 
-#if defined(GFX_BUILD_TRACY_INTEGRATION)
-    {
-        TracyGraphicsZone(m_tracyGraphicsContext, *renderPassDescriptor, "renderPass");
-#endif
     commandBuffer->beginRenderPass(*renderPassDescriptor);
     {
         ZoneScopedN("renderPass");
@@ -284,14 +273,12 @@ void Renderer::endFrame()
             }
         }
 
-#if !defined (SCOP_MANDATORY)
+        #if !defined (SCOP_MANDATORY)
         gfx::imgui::renderDrawData(*commandBuffer, ImGui::GetDrawData());
-#endif
+        #endif
     }
     commandBuffer->endRenderPass();
-#if defined(GFX_BUILD_TRACY_INTEGRATION)
-    }
-#endif
+
     commandBuffer->presentDrawable(drawable);
 
     cfd.lastCommandBuffer = commandBuffer.get();
@@ -309,10 +296,8 @@ Renderer::~Renderer()
 {
     m_device->waitIdle();
 
-#if defined(GFX_BUILD_TRACY_INTEGRATION)
-    TracyGraphicsCollect(m_tracyGraphicsContext);
-    TracyGraphicsDestroy(m_tracyGraphicsContext);
-#endif
+    TracyGFXCollect(*m_device, m_tracyGraphicsContext);
+    TracyGFXDestroy(*m_device, m_tracyGraphicsContext);
 
 #if !defined (SCOP_MANDATORY)
     gfx::imgui::shutdown(*m_device);

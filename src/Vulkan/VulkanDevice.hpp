@@ -67,6 +67,9 @@ public:
     void waitCommandBuffer(const CommandBuffer&) override;
     void waitIdle() override;
 
+    PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr() const;
+    PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr() const;
+
     inline const VulkanInstance& instance() const { return *m_instance; }
     inline const vk::Device& vkDevice() const { return m_vkDevice; }
     inline const VulkanPhysicalDevice& physicalDevice() const { return *m_physicalDevice; }

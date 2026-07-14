@@ -84,7 +84,7 @@ void init(const Device& device, const InitInfo& info)
         return;
     }
 
-    throw std::runtime_error("unsupported gfx::Device backend for ImGui");
+    std::unreachable();
 }
 
 void newFrame(const Device& device)
@@ -95,7 +95,7 @@ void newFrame(const Device& device)
         return;
     }
 
-    throw std::runtime_error("unsupported gfx::Device backend for ImGui");
+    std::unreachable();
 }
 
 void renderDrawData(CommandBuffer& commandBuffer, ImDrawData* drawData)
@@ -106,7 +106,7 @@ void renderDrawData(CommandBuffer& commandBuffer, ImDrawData* drawData)
         return;
     }
 
-    throw std::runtime_error("unsupported gfx::CommandBuffer backend for ImGui");
+    std::unreachable();
 }
 
 void shutdown(Device& device)
@@ -118,7 +118,7 @@ void shutdown(Device& device)
         return;
     }
 
-    throw std::runtime_error("unsupported gfx::Device backend for ImGui");
+    std::unreachable();
 }
 
 uint64_t initTextureId(Texture& texture)
@@ -134,7 +134,7 @@ uint64_t initTextureId(Texture& texture)
         return textureId;
     }
 
-    throw std::runtime_error("unsupported gfx::Texture backend for ImGui");
+    std::unreachable();
 }
 
 std::optional<uint64_t> textureId(const Texture& texture)
@@ -144,7 +144,7 @@ std::optional<uint64_t> textureId(const Texture& texture)
 
     return std::nullopt;
 
-    throw std::runtime_error("unsupported gfx::Texture backend for ImGui");
+    std::unreachable();
 }
 
 void removeTextureId(Texture& texture)

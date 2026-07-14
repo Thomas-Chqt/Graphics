@@ -20,13 +20,10 @@
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlockLayout.hpp>
 
-#if defined(GFX_BUILD_TRACY_INTEGRATION)
-    #include <gfx_tracy/gfx_tracy.hpp>
-#endif
-
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
     #include <glm/glm.hpp>
+    #include <gfx_tracy/gfx_tracy.hpp>
 #else
     #include "math/math.hpp"
     #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
@@ -100,9 +97,7 @@ private:
     GLFWwindow* m_window;
     gfx::Surface* m_surface;
 
-#if defined(GFX_BUILD_TRACY_INTEGRATION)
-    TracyGraphicsCtx* m_tracyGraphicsContext = nullptr;
-#endif
+    gfx::tracy::TracyGfxCtx* m_tracyGraphicsContext = nullptr;
 
     std::unique_ptr<gfx::Swapchain> m_swapchain;
 

@@ -9,7 +9,7 @@
 
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
-#include "Graphics/RenderPassDescriptor.hpp"
+#include "Graphics/PassDescriptor.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Surface.hpp"

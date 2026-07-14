@@ -117,7 +117,7 @@ void init(const Device& device, const InitInfo& info)
     }
     #endif
 
-    throw std::runtime_error("unsupported gfx::Device backend for ImGui");
+    std::unreachable();
 }
 
 void newFrame(const Device& device)
@@ -139,7 +139,7 @@ void newFrame(const Device& device)
     }
     #endif
 
-    throw std::runtime_error("unsupported gfx::Device backend for ImGui");
+    std::unreachable();
 }
 
 void renderDrawData(CommandBuffer& commandBuffer, ImDrawData* drawData)
@@ -163,7 +163,7 @@ void renderDrawData(CommandBuffer& commandBuffer, ImDrawData* drawData)
     }
     #endif
 
-    throw std::runtime_error("unsupported gfx::CommandBuffer backend for ImGui");
+    std::unreachable();
 }
 
 void shutdown(Device& device)
@@ -186,7 +186,7 @@ void shutdown(Device& device)
     }
     #endif
 
-    throw std::runtime_error("unsupported gfx::Device backend for ImGui");
+    std::unreachable();
 }
 
 uint64_t initTextureId(Texture& texture)
@@ -207,7 +207,7 @@ uint64_t initTextureId(Texture& texture)
     }
     #endif
 
-    throw std::runtime_error("unsupported gfx::Texture backend for ImGui");
+    std::unreachable();
 }
 
 std::optional<uint64_t> textureId(const Texture& texture)
@@ -220,7 +220,7 @@ std::optional<uint64_t> textureId(const Texture& texture)
         return vulkanTexture->imTextureId();
     #endif
 
-    throw std::runtime_error("unsupported gfx::Texture backend for ImGui");
+    std::unreachable();
 }
 
 void removeTextureId(Texture& texture)

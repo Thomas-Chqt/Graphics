@@ -1,14 +1,4 @@
-/*
- * ---------------------------------------------------
- * RenderPassDescriptor.hpp
- *
- * Author: Thomas Choquet <semoir.dense-0h@icloud.com>
- * Date: 2026/07/10
- * ---------------------------------------------------
- */
-
-#ifndef RENDERPASSDESCRIPTOR_HPP
-#define RENDERPASSDESCRIPTOR_HPP
+#pragma once
 
 #include "Graphics/Enums.hpp"
 #include "Graphics/Texture.hpp"
@@ -22,6 +12,22 @@
 
 namespace gfx
 {
+
+class PassDescriptor
+{
+public:
+    PassDescriptor(const PassDescriptor&) = delete;
+    PassDescriptor(PassDescriptor&&) = delete;
+
+    virtual ~PassDescriptor() = default;
+
+protected:
+    PassDescriptor() = default;
+
+public:
+    PassDescriptor& operator=(const PassDescriptor&) = delete;
+    PassDescriptor& operator=(PassDescriptor&&) = delete;
+};
 
 struct ClearFloatColor
 {
@@ -58,7 +64,7 @@ struct ClearValue
     static ClearValue depth(float value) { return ClearValue{ClearDepth{value}}; }
 };
 
-class RenderPassDescriptor
+class RenderPassDescriptor : public PassDescriptor
 {
 public:
     struct Attachment
@@ -88,6 +94,20 @@ public:
     RenderPassDescriptor& operator=(RenderPassDescriptor&&) = delete;
 };
 
-} // namespace gfx
+class BlitPassDescriptor : public PassDescriptor
+{
+public:
+    BlitPassDescriptor(const BlitPassDescriptor&) = delete;
+    BlitPassDescriptor(BlitPassDescriptor&&) = delete;
 
-#endif // RENDERPASSDESCRIPTOR_HPP
+    virtual ~BlitPassDescriptor() = default;
+
+protected:
+    BlitPassDescriptor() = default;
+
+public:
+    BlitPassDescriptor& operator=(const BlitPassDescriptor&) = delete;
+    BlitPassDescriptor& operator=(BlitPassDescriptor&&) = delete;
+};
+
+}

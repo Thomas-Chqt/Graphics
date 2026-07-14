@@ -10,8 +10,7 @@
 #ifndef COMMANDBUFFER_HPP
 #define COMMANDBUFFER_HPP
 
-#include "Graphics/BlitPassDescriptor.hpp"
-#include "Graphics/RenderPassDescriptor.hpp"
+#include "Graphics/PassDescriptor.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
