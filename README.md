@@ -18,7 +18,7 @@ Features
 - **Dynamic backend switching**: Switch between backends without rebuilding or restarting the application, simply recreate the instance
 - **Automatic synchronization**: All resources are tracked inside and across command buffers, with barriers and semaphores inserted automatically when necessary
 - **Resource lifetime management**: All resources use RAII and are shared using smart pointers, so there's no need to keep staging buffers alive until commands execute, buffers can go out of scope as soon as they're no longer needed
-- **Optional integrations**: GLFW, ImGui, and Tracy support live in separate integration libraries. Build and link only the integrations you use, and provide the external GLFW and ImGui libraries from your own project
+- **Optional integrations**: GLFW, ImGui, and Tracy support live in separate integration libraries. Build and link only the integrations you use, and provide the corresponding external libraries from your own project
 
 Build
 -----
@@ -45,11 +45,11 @@ On macOS, Vulkan requires the `vulkan-loader` and `molten-vk` Homebrew packages,
 | `GFX_BUILD_VULKAN`    | `ON`          | Build the Vulkan backend             |
 | `GFX_BUILD_IMGUI_INTEGRATION` | `ON`  | Build the `GraphicsImGui` integration library |
 | `GFX_BUILD_GLFW_INTEGRATION`  | `ON`  | Build the `GraphicsGLFW` integration library  |
-| `GFX_BUILD_TRACY_INTEGRATION` | `OFF` | Build the `GraphicsTracy` integration library |
+| `GFX_BUILD_TRACY_INTEGRATION` | `ON`  | Build the `GraphicsTracy` integration library |
 | `GFX_BUILD_EXAMPLES`  | `OFF`         | Build the example executables        |
 | `GFX_INSTALL`         | `ON`          | Enable the CMake install command     |
 
-> **Note**: Example targets are only added when the required integration targets are enabled. GLFW and ImGui themselves are still external dependencies that users are expected to provide.
+> **Note**: Example targets are only added when the required integration targets are enabled. GLFW, ImGui, and Tracy themselves are still external dependencies that users are expected to provide and link.
 
 Examples
 --------
@@ -73,6 +73,6 @@ Additionally, some example applications also use:
 
 - **[GLFW](https://github.com/glfw/glfw)**: Required by projects that use the `GraphicsGLFW` integration library
 - **[ImGui](https://github.com/Thomas-Chqt/imgui)**: Required by projects that use the `GraphicsImGui` integration library. **Graphics** provides the rendering/backend integration, but the Dear ImGui library itself must still be linked by the user
-- **[Tracy](https://github.com/wolfpld/tracy)**: Fetched when `GFX_BUILD_TRACY_INTEGRATION` is enabled and linked through the `GraphicsTracy` integration library
+- **[Tracy](https://github.com/wolfpld/tracy)**: Required by projects that use the `GraphicsTracy` integration library. Users must provide and link Tracy themselves, and include `<tracy/Tracy.hpp>` before `<gfx_tracy/gfx_tracy.hpp>`
 - **[stb_image](https://github.com/Thomas-Chqt/stb_image)**: A lightweight image loading library for loading textures
 - **[Assimp](https://github.com/assimp/assimp)**: A library for importing 3D models and meshes, commonly used for asset loading
