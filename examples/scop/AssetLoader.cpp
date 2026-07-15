@@ -23,7 +23,7 @@
     #include <assimp/scene.h>
     #include <assimp/types.h>
     #include <glm/ext/matrix_transform.hpp>
-    #include <Tracy/Tracy.hpp>
+    #include <tracy/Tracy.hpp>
     #include <tracy/TracyC.h>
 #else
     #include "math/math.hpp"

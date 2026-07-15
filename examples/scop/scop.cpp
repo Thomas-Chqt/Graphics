@@ -28,7 +28,7 @@
 #if !defined(SCOP_MANDATORY)
     #include <imgui.h>
     #include <glm/glm.hpp>
-    #include <Tracy/Tracy.hpp>
+    #include <tracy/Tracy.hpp>
     #include <tracy/TracyC.h>
 #else
     #include "math/math.hpp"

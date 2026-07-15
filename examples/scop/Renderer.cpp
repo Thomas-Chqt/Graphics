@@ -23,7 +23,7 @@
     #include <backends/imgui_impl_glfw.h>
     #include <glm/glm.hpp>
     #include <glm/gtc/matrix_transform.hpp>
-    #include <Tracy/Tracy.hpp>
+    #include <tracy/Tracy.hpp>
     #include <tracy/TracyC.h>
     #include <gfx_tracy/gfx_tracy.hpp>
 #else
