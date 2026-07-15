@@ -9,7 +9,6 @@
 
 #include "Renderer.hpp"
 #include "Mesh.hpp"
-#include "gfx_tracy/gfx_tracy.hpp"
 #include "shaders/SceneData.slang"
 #include "shaders/Light.slang"
 
@@ -26,6 +25,7 @@
     #include <glm/gtc/matrix_transform.hpp>
     #include <Tracy/Tracy.hpp>
     #include <tracy/TracyC.h>
+    #include <gfx_tracy/gfx_tracy.hpp>
 #else
     #include "math/math.hpp"
     #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
@@ -242,8 +242,10 @@ void Renderer::endFrame()
         .texture = cfd.depthTexture
     });
 
-    commandBuffer->beginRenderPass(*renderPassDescriptor);
     {
+        TracyGFXZone(m_tracyGraphicsContext, *renderPassDescriptor, "main pass");
+        commandBuffer->beginRenderPass(*renderPassDescriptor);
+
         ZoneScopedN("renderPass");
         std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = cfd.parameterBlockPool->get(vpMatrixBpLayout());
         vpMatrixPBlock->setBinding(0, cfd.vpMatrix);
@@ -276,8 +278,8 @@ void Renderer::endFrame()
         #if !defined (SCOP_MANDATORY)
         gfx::imgui::renderDrawData(*commandBuffer, ImGui::GetDrawData());
         #endif
+        commandBuffer->endRenderPass();
     }
-    commandBuffer->endRenderPass();
 
     commandBuffer->presentDrawable(drawable);
 

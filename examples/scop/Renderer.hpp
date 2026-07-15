@@ -23,6 +23,7 @@
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
     #include <glm/glm.hpp>
+    #include <tracy/Tracy.hpp>
     #include <gfx_tracy/gfx_tracy.hpp>
 #else
     #include "math/math.hpp"

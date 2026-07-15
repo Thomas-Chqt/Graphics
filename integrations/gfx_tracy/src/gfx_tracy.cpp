@@ -1,10 +1,14 @@
+#include <tracy/Tracy.hpp>
+
 #include "gfx_tracy/gfx_tracy.hpp"
 
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 
-#include <tracy/TracyVulkan.hpp>
+#include "gfx_tracy_vulkan.hpp"
 
+#include <cassert>
+#include <memory>
 #include <utility>
 
 namespace gfx::tracy
@@ -41,6 +45,34 @@ void TracyGFXCollect(const gfx::Device& device, TracyGfxCtx* tracyCtx)
         return;
     }
     std::unreachable();
+}
+
+void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::PassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation)
+{
+    assert(state.m_active == false);
+    assert(state.m_destroy == nullptr);
+
+    if (dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor) || dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor))
+    {
+        std::construct_at(reinterpret_cast<VulkanZoneImpl*>(state.m_storage.data()), context, descriptor, sourceLocation); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        state.m_destroy = [](void* storage) noexcept {
+            std::destroy_at(reinterpret_cast<VulkanZoneImpl*>(storage)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        };
+        state.m_active = true;
+        return;
+    }
+
+    std::unreachable();
+}
+
+void TracyGFXZoneEnd(TracyGFXZoneState& state) noexcept
+{
+    assert(state.m_active);
+    assert(state.m_destroy);
+
+    state.m_destroy(state.m_storage.data());
+    state.m_destroy = nullptr;
+    state.m_active = false;
 }
 
 }
