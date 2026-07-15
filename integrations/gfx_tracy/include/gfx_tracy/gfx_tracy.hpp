@@ -5,12 +5,8 @@ namespace gfx::tracy
     using TracyGfxCtx = void;
 }
 
-#if defined (GFX_BUILD_METAL) && defined (__APPLE__) && (defined (__arm64__) || defined (__aarch64__))
+#if defined (GFX_TRACY_METAL_AVAILABLE) && (defined (__arm64__) || defined (__aarch64__))
     #define GFX_TRACY_METAL_ENABLED
-#endif
-
-#if defined (GFX_BUILD_VULKAN) && !defined (__APPLE__)
-    #define GFX_TRACY_VULKAN_ENABLED
 #endif
 
 #if defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED)

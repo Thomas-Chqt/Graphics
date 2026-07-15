@@ -4,22 +4,15 @@
 
 #if defined (GFX_TRACY_GPU_ENABLED)
 
-#if defined (GFX_TRACY_METAL_ENABLED)
-#include "Metal/MetalDevice.hpp"
-#include "Metal/MetalPassDescriptor.hpp"
-#endif
+#include "Graphics/Device.hpp"
 
-#if defined (GFX_BUILD_VULKAN)
-    #include "Vulkan/VulkanDevice.hpp"
-#endif
-
-#if defined (GFX_TRACY_VULKAN_ENABLED)
-    #include "Vulkan/VulkanInstance.hpp"
-    #include "gfx_tracy_vulkan.hpp"
-#endif
+#include <deque>
 
 #if defined (GFX_TRACY_METAL_ENABLED)
 #include <tracy/TracyMetal.hmm>
+
+#include "Metal/MetalDevice.hpp"
+#include "Metal/MetalPassDescriptor.hpp"
 #endif
 
 #include <cassert>
@@ -85,23 +78,8 @@ TracyGfxCtx* TracyGFXContext(const gfx::Device& device)
     }
     #endif
 
-    #if defined (GFX_BUILD_VULKAN)
-    if (const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
-    {
-        #if defined (GFX_TRACY_VULKAN_ENABLED)
-        return (TracyGfxCtx*)::tracy::CreateVkContext(
-            vulkanDevice->instance().vkInstance(),
-            vulkanDevice->physicalDevice(),
-            vulkanDevice->vkDevice(),
-            vulkanDevice->vkGetInstanceProcAddr(),
-            vulkanDevice->vkGetDeviceProcAddr());
-        #else
-        return nullptr;
-        #endif
-    }
-    #endif
-
-    std::unreachable();
+    assert(device.backend() == Backend::vulkan);
+    return nullptr;
 }
 
 void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
@@ -113,14 +91,6 @@ void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
     if ([[maybe_unused]] const auto* metalDevice = dynamic_cast<const gfx::MetalDevice*>(&device))
     {
         ::tracy::MetalCtx::Destroy(reinterpret_cast<::tracy::MetalCtx*>(tracyCtx)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-        return;
-    }
-    #endif
-
-    #if defined (GFX_TRACY_VULKAN_ENABLED)
-    if ([[maybe_unused]] const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
-    {
-        ::tracy::DestroyVkContext(reinterpret_cast<::tracy::VkCtx*>(tracyCtx)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         return;
     }
     #endif
@@ -137,14 +107,6 @@ void TracyGFXCollect(const gfx::Device& device, TracyGfxCtx* tracyCtx)
     if ([[maybe_unused]] const auto* metalDevice = dynamic_cast<const gfx::MetalDevice*>(&device))
     {
         reinterpret_cast<::tracy::MetalCtx*>(tracyCtx)->Collect(); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-        return;
-    }
-    #endif
-
-    #if defined (GFX_TRACY_VULKAN_ENABLED)
-    if ([[maybe_unused]] const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
-    {
-        reinterpret_cast<::tracy::VkCtx*>(tracyCtx)->Collect(VK_NULL_HANDLE); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         return;
     }
     #endif
@@ -180,18 +142,6 @@ void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::Pass
         std::construct_at(reinterpret_cast<MetalZoneImpl*>(state.m_storage.data()), context, blitDescriptor->mtlBlitPassDescriptor(), sourceLocation); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         state.m_destroy = [](void* storage) noexcept {
             std::destroy_at(reinterpret_cast<MetalZoneImpl*>(storage)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-        };
-        state.m_active = true;
-        return;
-    }
-    #endif
-
-    #if defined (GFX_TRACY_VULKAN_ENABLED)
-    if (dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor) || dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor))
-    {
-        std::construct_at(reinterpret_cast<VulkanZoneImpl*>(state.m_storage.data()), context, descriptor, sourceLocation); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-        state.m_destroy = [](void* storage) noexcept {
-            std::destroy_at(reinterpret_cast<VulkanZoneImpl*>(storage)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         };
         state.m_active = true;
         return;
