@@ -35,7 +35,7 @@ endif()
 
 enable_language(CXX)
 
-if(APPLE AND GFX_BUILD_METAL)
+if(APPLE)
     enable_language(OBJCXX)
 endif()
 

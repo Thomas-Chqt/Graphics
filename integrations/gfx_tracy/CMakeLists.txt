@@ -14,13 +14,16 @@ add_library(GraphicsTracy STATIC)
 target_compile_features(GraphicsTracy PUBLIC cxx_std_23)
 
 target_sources(GraphicsTracy PRIVATE "include/gfx_tracy/gfx_tracy.hpp")
-if (GFX_BUILD_METAL)
+if (APPLE)
     target_sources(GraphicsTracy PRIVATE "src/gfx_tracy.mm")
-else()
-    target_sources(GraphicsTracy PRIVATE "src/gfx_tracy.cpp")
-endif()
-if (GFX_BUILD_VULKAN AND NOT APPLE)
-    target_sources(GraphicsTracy PRIVATE "src/gfx_tracy_vulkan.hpp")
+    if (NOT GFX_BUILD_METAL)
+        set_source_files_properties("src/gfx_tracy.mm" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+    endif()
+elseif (GFX_BUILD_VULKAN)
+    target_sources(GraphicsTracy PRIVATE
+        "src/gfx_tracy.cpp"
+        "src/gfx_tracy_vulkan.hpp"
+    )
 endif()
 
 target_include_directories(GraphicsTracy

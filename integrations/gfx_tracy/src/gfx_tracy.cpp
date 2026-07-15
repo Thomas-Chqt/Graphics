@@ -2,8 +2,6 @@
 
 #include "gfx_tracy/gfx_tracy.hpp"
 
-#if defined (GFX_TRACY_VULKAN_ENABLED)
-
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 
@@ -92,5 +90,3 @@ void TracyGFXZoneEnd(TracyGFXZoneState& state) noexcept
 }
 
 }
-
-#endif
