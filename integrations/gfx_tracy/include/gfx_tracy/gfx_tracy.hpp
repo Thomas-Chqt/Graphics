@@ -2,7 +2,7 @@
 
 namespace gfx::tracy
 {
-using TracyGfxCtx = void;
+    using TracyGfxCtx = void;
 }
 
 #if defined (GFX_BUILD_METAL) && defined (__APPLE__) && (defined (__arm64__) || defined (__aarch64__))
