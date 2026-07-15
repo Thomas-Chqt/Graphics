@@ -1,6 +1,15 @@
 #pragma once
 
-#if defined (TRACY_ENABLE)
+namespace gfx::tracy
+{
+    using TracyGfxCtx = void;
+}
+
+#if defined (GFX_BUILD_METAL) && (defined (__arm64__) || defined (__aarch64__))
+    #define GFX_TRACY_METAL_ENABLED
+#endif
+
+#if defined (TRACY_ENABLE) && (defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED))
 
 #include <array>
 #include <cassert>
@@ -89,9 +98,9 @@ private:
     ::gfx::tracy::TracyGFXZoneScope TracyConcat(__tracy_gfx_zone, TracyLine) { ctx, passDescriptor, &TracyConcat(__tracy_gfx_source_location, TracyLine) }
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
-#endif
+#endif // GFX_TRACY_IMPL
 
-#else
+#else // defined (TRACY_ENABLE) && (defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED))
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 #define TracyGFXContext(device) nullptr
@@ -102,5 +111,4 @@ private:
 #define TracyGFXZone(ctx, passDescriptor, name)
 // NOLINTEND(cppcoreguidelines-macro-usage)
 
-
-#endif
+#endif // defined (TRACY_ENABLE) && (defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED))
