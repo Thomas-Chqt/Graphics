@@ -9,8 +9,11 @@
 #include "Metal/MetalPassDescriptor.hpp"
 #endif
 
-#if defined (GFX_TRACY_VULKAN_ENABLED)
+#if defined (GFX_BUILD_VULKAN)
     #include "Vulkan/VulkanDevice.hpp"
+#endif
+
+#if defined (GFX_TRACY_VULKAN_ENABLED)
     #include "Vulkan/VulkanInstance.hpp"
     #include "gfx_tracy_vulkan.hpp"
 #endif
@@ -82,15 +85,19 @@ TracyGfxCtx* TracyGFXContext(const gfx::Device& device)
     }
     #endif
 
-    #if defined (GFX_TRACY_VULKAN_ENABLED)
+    #if defined (GFX_BUILD_VULKAN)
     if (const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
     {
+        #if defined (GFX_TRACY_VULKAN_ENABLED)
         return (TracyGfxCtx*)::tracy::CreateVkContext(
             vulkanDevice->instance().vkInstance(),
             vulkanDevice->physicalDevice(),
             vulkanDevice->vkDevice(),
             vulkanDevice->vkGetInstanceProcAddr(),
             vulkanDevice->vkGetDeviceProcAddr());
+        #else
+        return nullptr;
+        #endif
     }
     #endif
 
@@ -99,6 +106,9 @@ TracyGfxCtx* TracyGFXContext(const gfx::Device& device)
 
 void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
+    if (tracyCtx == nullptr)
+        return;
+
     #if defined (GFX_TRACY_METAL_ENABLED)
     if ([[maybe_unused]] const auto* metalDevice = dynamic_cast<const gfx::MetalDevice*>(&device))
     {
@@ -120,6 +130,9 @@ void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 
 void TracyGFXCollect(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
+    if (tracyCtx == nullptr)
+        return;
+
     #if defined (GFX_TRACY_METAL_ENABLED)
     if ([[maybe_unused]] const auto* metalDevice = dynamic_cast<const gfx::MetalDevice*>(&device))
     {
@@ -143,6 +156,13 @@ void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::Pass
 {
     assert(state.m_active == false);
     assert(state.m_destroy == nullptr);
+
+    if (context == nullptr)
+    {
+        state.m_destroy = [](void*) noexcept {};
+        state.m_active = true;
+        return;
+    }
 
     #if defined (GFX_TRACY_METAL_ENABLED)
     if (auto* renderDescriptor = dynamic_cast<MetalRenderPassDescriptor*>(&descriptor))

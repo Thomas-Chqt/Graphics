@@ -32,6 +32,9 @@ TracyGfxCtx* TracyGFXContext(const gfx::Device& device)
 
 void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
+    if (tracyCtx == nullptr)
+        return;
+
     if ([[maybe_unused]] const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
     {
         ::tracy::DestroyVkContext(reinterpret_cast<::tracy::VkCtx*>(tracyCtx)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -42,6 +45,9 @@ void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 
 void TracyGFXCollect(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
+    if (tracyCtx == nullptr)
+        return;
+
     if ([[maybe_unused]] const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
     {
         reinterpret_cast<::tracy::VkCtx*>(tracyCtx)->Collect(VK_NULL_HANDLE); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -54,6 +60,13 @@ void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::Pass
 {
     assert(state.m_active == false);
     assert(state.m_destroy == nullptr);
+
+    if (context == nullptr)
+    {
+        state.m_destroy = [](void*) noexcept {};
+        state.m_active = true;
+        return;
+    }
 
     if (dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor) || dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor))
     {
