@@ -52,5 +52,5 @@ if (GFX_BUILD_VULKAN)
 endif()
 
 if (GFX_BUILD_VULKAN)
-    target_link_libraries(GraphicsImGui PRIVATE Vulkan::Headers)
+    target_link_libraries(GraphicsImGui PRIVATE Vulkan::Headers VulkanMemoryAllocator)
 endif()
