@@ -33,6 +33,7 @@ void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
     if ([[maybe_unused]] const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
     {
         ::tracy::DestroyVkContext(reinterpret_cast<::tracy::VkCtx*>(tracyCtx)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        return;
     }
     std::unreachable();
 }

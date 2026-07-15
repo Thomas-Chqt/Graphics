@@ -69,6 +69,7 @@ static_assert(alignof(MetalZoneImpl) <= TracyGFXZoneState::storageAlignment);
 }
 #endif
 
+#if defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED)
 TracyGfxCtx* TracyGFXContext(const gfx::Device& device)
 {
     #if defined (GFX_TRACY_METAL_ENABLED)
@@ -92,7 +93,9 @@ TracyGfxCtx* TracyGFXContext(const gfx::Device& device)
 
     return nullptr;
 }
+#endif
 
+#if defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED)
 void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
     if (tracyCtx == nullptr)
@@ -114,7 +117,9 @@ void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
     }
     #endif
 }
+#endif
 
+#if defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED)
 void TracyGFXCollect(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
     if (tracyCtx == nullptr)
@@ -136,7 +141,9 @@ void TracyGFXCollect(const gfx::Device& device, TracyGfxCtx* tracyCtx)
     }
     #endif
 }
+#endif
 
+#if defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED)
 void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::PassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation)
 {
     if (context == nullptr)
@@ -179,7 +186,9 @@ void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::Pass
     }
     #endif
 }
+#endif
 
+#if defined (GFX_TRACY_METAL_ENABLED) || defined (GFX_TRACY_VULKAN_ENABLED)
 void TracyGFXZoneEnd(TracyGFXZoneState& state) noexcept
 {
     if (state.m_destroy == nullptr)
@@ -192,5 +201,6 @@ void TracyGFXZoneEnd(TracyGFXZoneState& state) noexcept
     state.m_destroy = nullptr;
     state.m_active = false;
 }
+#endif
 
 }
