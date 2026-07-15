@@ -94,12 +94,13 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
 
 std::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
 {
-    std::shared_ptr<VulkanDrawable> drawable = m_drawables.at(m_nextDrawableIndex);
+	std::shared_ptr<VulkanDrawable> drawable = m_drawables.at(m_nextDrawableIndex);
 
     uint64_t timeout = std::numeric_limits<uint64_t>::max();
     auto& semaphore = drawable->imageAvailableSemaphore();
 
-    auto [result, value] = m_device->vkDevice().acquireNextImageKHR(*m_vkSwapchain, timeout, semaphore, nullptr);
+    uint32_t value;
+    auto result = m_device->vkDevice().acquireNextImageKHR(*m_vkSwapchain, timeout, semaphore, nullptr, &value);
 
     switch (result)
     {

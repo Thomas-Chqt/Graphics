@@ -8,6 +8,7 @@
 include(FetchContent)
 
 option(SCOP_MANDATORY "respect 42 subject requirements" OFF)
+option(SCOP_TRACY_ENABLE "Enable tracy for scop executable (except Release)" ON)
 
 ## GLFW ##########################################################
 
@@ -134,7 +135,9 @@ if (NOT SCOP_MANDATORY)
     set(TRACY_ENABLE OFF)
     set(TRACY_LTO     ON)
     FetchContent_MakeAvailable(tracy)
-    target_compile_definitions(TracyClient PUBLIC "$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>")
+    if(SCOP_TRACY_ENABLE)
+        target_compile_definitions(TracyClient PUBLIC "$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>")
+    endif()
     if(NOT MSVC)
         target_compile_options(TracyClient PRIVATE -Wno-deprecated-declarations)
     endif()
