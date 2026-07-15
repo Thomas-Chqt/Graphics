@@ -19,7 +19,7 @@ if (GFX_BUILD_METAL)
 else()
     target_sources(GraphicsTracy PRIVATE "src/gfx_tracy.cpp")
 endif()
-if (GFX_BUILD_VULKAN)
+if (GFX_BUILD_VULKAN AND NOT APPLE)
     target_sources(GraphicsTracy PRIVATE "src/gfx_tracy_vulkan.hpp")
 endif()
 
