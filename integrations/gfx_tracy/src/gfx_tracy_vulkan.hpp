@@ -8,7 +8,7 @@
 #include <optional>
 #include <utility>
 
-namespace gfx::tracy::detail
+namespace gfx::tracy
 {
 
 class VulkanZoneImpl
