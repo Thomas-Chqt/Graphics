@@ -33,4 +33,6 @@ if (GFX_BUILD_VULKAN)
     target_compile_definitions(GraphicsGLFW PRIVATE "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
 endif()
 
-target_link_libraries(GraphicsGLFW PRIVATE Vulkan::Headers)
+if (GFX_BUILD_VULKAN)
+    target_link_libraries(GraphicsGLFW PRIVATE Vulkan::Headers)
+endif()

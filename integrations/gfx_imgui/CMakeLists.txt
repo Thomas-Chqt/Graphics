@@ -51,4 +51,6 @@ if (GFX_BUILD_VULKAN)
     set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/src/imgui_impl_vulkan.cpp" PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 endif()
 
-target_link_libraries(GraphicsImGui PRIVATE Vulkan::Headers)
+if (GFX_BUILD_VULKAN)
+    target_link_libraries(GraphicsImGui PRIVATE Vulkan::Headers)
+endif()
