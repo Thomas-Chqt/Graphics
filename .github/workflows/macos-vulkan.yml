@@ -37,8 +37,9 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }}
           -DGFX_BUILD_METAL=OFF
           -DGFX_BUILD_VULKAN=ON
-          -DGFX_ENABLE_${{ matrix.enable-glfw }}
-          -DGFX_ENABLE_${{ matrix.enable-imgui }}
+          -DGFX_BUILD_TRACY_INTEGRATION=ON
+          -DGFX_BUILD_GLFW_INTEGRATION=${{ matrix.enable-glfw == 'GLFW=ON' && 'ON' || 'OFF' }}
+          -DGFX_BUILD_IMGUI_INTEGRATION=${{ matrix.enable-imgui == 'IMGUI=ON' && 'ON' || 'OFF' }}
           -DGFX_BUILD_${{ matrix.build-examples }}
           -DGFX_BUILD_TESTS=ON
 

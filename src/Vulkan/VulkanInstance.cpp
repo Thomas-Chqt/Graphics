@@ -11,7 +11,6 @@
 #include "Graphics/Instance.hpp"
 
 #include "Vulkan/VulkanInstance.hpp"
-#include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 
@@ -26,13 +25,6 @@ namespace
     std::vector<const char*> getRequiredExtensions()
     {
         std::vector<const char*> extensions;
-
-#if defined(GFX_GLFW_ENABLED)
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount); // NOLINT
-        if (glfwExtensionCount > 0)
-            extensions.insert(extensions.end(), glfwExtensions, glfwExtensions + glfwExtensionCount); // NOLINT
-#endif
 
 #if !defined(NDEBUG)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -96,6 +88,11 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         .setApiVersion(VK_VERSION_MINOR(instanceVersion) >= 3 ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2);
 
     std::vector<const char*> extensions = getRequiredExtensions();
+    if (desc.instanceExtension != nullptr)
+    {
+        for (std::string_view extension : desc.instanceExtension->getRequiredVulkanInstanceExtensions())
+            extensions.push_back(extension.data());
+    }
 
     vk::InstanceCreateFlags flags = {};
 #if defined(__APPLE__)
@@ -168,13 +165,6 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
         | std::views::transform([](auto& d){ return VulkanPhysicalDevice(d); })
         | std::ranges::to<std::vector>();
 }
-
-#if defined(GFX_GLFW_ENABLED)
-std::unique_ptr<Surface> VulkanInstance::createSurface(GLFWwindow* glfwWindow)
-{
-    return std::make_unique<VulkanSurface>(m_vkInstance, glfwWindow);
-}
-#endif
 
 std::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc)
 {

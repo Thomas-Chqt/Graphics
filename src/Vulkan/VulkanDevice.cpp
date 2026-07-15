@@ -27,10 +27,8 @@
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanPassDescriptor.hpp"
 #include "VulkanParameterBlockLayout.hpp"
-#if defined(GFX_IMGUI_ENABLED)
-# include "Vulkan/imgui_impl_vulkan.h"
-#endif
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 
@@ -119,12 +117,6 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setQueueFamilyIndex(m_queueFamily.index)
         .setFlags(vk::CommandPoolCreateFlagBits::eResetCommandBuffer));
 
-    s_tracyVkContext = TracyVkContextHostCalibrated(
-        m_instance->vkInstance(),
-        static_cast<VkPhysicalDevice>(*m_physicalDevice),
-        m_vkDevice,
-        (PFN_vkGetInstanceProcAddr)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr,
-        (PFN_vkGetDeviceProcAddr)VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr);
 }
 
 std::unique_ptr<Swapchain> VulkanDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -157,6 +149,16 @@ std::unique_ptr<Texture> VulkanDevice::newTexture(const Texture::Descriptor& des
     return std::make_unique<VulkanTexture>(this, desc);
 }
 
+std::unique_ptr<RenderPassDescriptor> VulkanDevice::newRenderPassDescriptor() const
+{
+    return std::make_unique<VulkanRenderPassDescriptor>();
+}
+
+std::unique_ptr<BlitPassDescriptor> VulkanDevice::newBlitPassDescriptor() const
+{
+    return std::make_unique<VulkanBlitPassDescriptor>();
+}
+
 std::unique_ptr<CommandBufferPool> VulkanDevice::newCommandBufferPool() const
 {
     return std::make_unique<VulkanCommandBufferPool>(this, m_queueFamily);
@@ -171,67 +173,6 @@ std::unique_ptr<Sampler> VulkanDevice::newSampler(const Sampler::Descriptor& des
 {
     return std::make_unique<VulkanSampler>(this, desc);
 }
-
-#if defined (GFX_IMGUI_ENABLED)
-void VulkanDevice::imguiInit(std::vector<PixelFormat> colorAttachmentPxFormats, std::optional<PixelFormat> depthAttachmentPxFormat) const
-{
-    std::vector<vk::Format> colorAttachmentFormats;
-    colorAttachmentFormats.reserve(colorAttachmentPxFormats.size());
-    for (PixelFormat pxf : colorAttachmentPxFormats)
-    colorAttachmentFormats.push_back(toVkFormat(pxf));
-
-    auto pipelineRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
-        .setColorAttachmentFormats(colorAttachmentFormats);
-    if (depthAttachmentPxFormat.has_value())
-        pipelineRenderingCreateInfo.setDepthAttachmentFormat(toVkFormat(depthAttachmentPxFormat.value()));
-
-    constexpr auto minAllocSize = static_cast<VkDeviceSize>(1024*1024);
-
-    ImGui_ImplVulkan_LoadFunctions(
-        VK_API_VERSION_1_2,
-        [](const char* function_name, void* user_data) -> PFN_vkVoidFunction {
-            auto* instance = static_cast<VkInstance>(user_data);
-            return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr(instance, function_name);
-        },
-        static_cast<void*>(m_instance->vkInstance())
-    );
-
-    ImGui_ImplVulkan_InitInfo initInfo = {
-        .ApiVersion = m_physicalDevice->getProperties().apiVersion,
-        .Instance = m_instance->vkInstance(),
-        .PhysicalDevice = *m_physicalDevice,
-        .Device = m_vkDevice,
-        .QueueFamily = m_queueFamily.index,
-        .Queue = m_queue,
-        .DescriptorPool = VK_NULL_HANDLE,
-        .RenderPass = VK_NULL_HANDLE,
-        .MinImageCount = 3,
-        .ImageCount = 3,
-        .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
-        .PipelineCache = VK_NULL_HANDLE,
-        .Subpass = 1,
-        .DescriptorPoolSize = IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE,
-        .UseDynamicRendering = true,
-        .PipelineRenderingCreateInfo = pipelineRenderingCreateInfo,
-        .Allocator = nullptr,
-        .CheckVkResultFn = nullptr,
-        .MinAllocationSize = minAllocSize
-    };
-
-    ImGui_ImplVulkan_Init(&initInfo);
-}
-
-void VulkanDevice::imguiNewFrame() const
-{
-    ImGui_ImplVulkan_NewFrame();
-}
-
-void VulkanDevice::imguiShutdown()
-{
-    waitIdle();
-    ImGui_ImplVulkan_Shutdown();
-}
-#endif
 
 void VulkanDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer)
 {
@@ -341,10 +282,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
                 dependencyInfo.setBufferMemoryBarriers(bufferMemoryBarriers);
 
             std::shared_ptr<VulkanCommandBuffer> barrierCmdBuffer = getBarrierCommandBuffer();
-            {
-                TracyVkZone(s_tracyVkContext, commandBuffer->vkCommandBuffer(), "barrierCmdBuffer");
-                barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
-            }
+            barrierCmdBuffer->vkCommandBuffer().pipelineBarrier2(dependencyInfo);
             barrierCmdBuffer->end();
             // barrierCmdBuffer is added before the user command buffer
             barrierCmdBuffer->setSignaledTimeValue(m_nextSignaledTimeValue);
@@ -397,7 +335,6 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
 
 void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
 {
-    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
@@ -408,7 +345,6 @@ void VulkanDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer)
             .setValues((*waitedIt)->signaledTimeValue());
         if (m_vkDevice.waitSemaphores(semaphoreWaitInfo, std::numeric_limits<uint64_t>::max()) != vk::Result::eSuccess)
             throw std::runtime_error("failed to wait timeline semaphore");
-        TracyVkCollectHost(s_tracyVkContext);
         for (auto it = m_submittedCommandBuffers.begin(); it != waitedIt; ++it) {
             if (m_usedBarrierCmdBuffers.contains(*it)) {
                 auto node = m_usedBarrierCmdBuffers.extract(*it);
@@ -435,10 +371,19 @@ void VulkanDevice::waitIdle()
     m_availableBarrierCmdBuffers.clear();
 }
 
+PFN_vkGetInstanceProcAddr VulkanDevice::vkGetInstanceProcAddr() const
+{
+    return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetInstanceProcAddr;
+}
+
+PFN_vkGetDeviceProcAddr VulkanDevice::vkGetDeviceProcAddr() const
+{
+    return VULKAN_HPP_DEFAULT_DISPATCHER.vkGetDeviceProcAddr;
+}
+
 VulkanDevice::~VulkanDevice()
 {
     waitIdle();
-    TracyVkDestroy(s_tracyVkContext);
     m_vkDevice.destroyCommandPool(m_barrierCommandPool);
     m_vkDevice.destroySemaphore(m_timelineSemaphore);
     vmaDestroyAllocator(m_allocator);

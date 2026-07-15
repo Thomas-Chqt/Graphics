@@ -23,6 +23,8 @@
     #include <assimp/scene.h>
     #include <assimp/types.h>
     #include <glm/ext/matrix_transform.hpp>
+    #include <tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
 #else
     #include "math/math.hpp"
     #include "ObjParser/ObjParser.hpp"
@@ -32,16 +34,9 @@
     #endif
 #endif
 #include <stb_image/stb_image.h>
-#if defined (GFX_BUILD_TRACY)
-    #include <tracy/Tracy.hpp>
-#else
-    #define ZoneScoped
-    #define ZoneScopedN(x)
-#endif
 
 #include <algorithm>
 #include <bit> // IWYU pragma: keep
-#include <print>
 #include <format> // IWYU pragma: keep
 #include <functional> // IWYU pragma: keep
 #include <span> // IWYU pragma: keep
@@ -357,7 +352,8 @@ Mesh AssetLoader::builtinCube(const std::shared_ptr<Material>& material)
     assert(commandBufferPool);
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
-    commandBuffer->beginBlitPass();
+    auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+    commandBuffer->beginBlitPass(*blitPassDescriptor);
     auto mesh = Mesh{
         .name = "cube_mesh",
         .bBoxMin = {-0.5, -0.5, -0.5},
@@ -393,7 +389,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
     assert(commandBufferPool);
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
-    commandBuffer->beginBlitPass();
+    auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+    commandBuffer->beginBlitPass(*blitPassDescriptor);
 
     std::vector<std::shared_ptr<Material>> materials;
     if (overrideMaterial.has_value()) {
@@ -581,7 +578,8 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
     assert(commandBufferPool);
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = commandBufferPool->get();
-    commandBuffer->beginBlitPass();
+    auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+    commandBuffer->beginBlitPass(*blitPassDescriptor);
 
     std::shared_ptr<Material> material;
     if (overrideMaterial.has_value()) {

@@ -41,10 +41,7 @@ public:
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
-#if defined (GFX_IMGUI_ENABLED)
-    inline void initImTextureId() override {} // no-op
-    inline std::optional<uint64_t> imTextureId() const override { return std::bit_cast<uint64_t>((__bridge void*)m_mtlTexture); }
-#endif
+    inline uint64_t imTextureId() const { return std::bit_cast<uint64_t>((__bridge void*)m_mtlTexture); }
 
     inline id<MTLTexture> mtltexture() const { return m_mtlTexture; }
     inline void setMtlTexture(const id<MTLTexture>& t) { m_mtlTexture = t; }

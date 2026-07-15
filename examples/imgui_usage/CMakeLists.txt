@@ -40,8 +40,8 @@ endif()
 
 FetchContent_Declare(imgui
     GIT_REPOSITORY    https://github.com/Thomas-Chqt/imgui.git
-    GIT_TAG           4d8f55183c2e974916daf6336ee2c4b9c8e72891
-    GIT_SHALLOW       1
+    GIT_TAG           9a22f710b92e7ab31d526e4948cdf8c6c6cce85c
+    GIT_SHALLOW       0
     GIT_PROGRESS      TRUE
     FIND_PACKAGE_ARGS
 )
@@ -58,7 +58,7 @@ endif()
 FetchContent_Declare(stb_image
     GIT_REPOSITORY    https://github.com/Thomas-Chqt/stb_image.git
     GIT_TAG           a09b799a2ba95c14f511493db4ea59811b2fcc97
-    GIT_SHALLOW       1
+    GIT_SHALLOW       0
     GIT_PROGRESS      TRUE
     FIND_PACKAGE_ARGS
 )
@@ -91,9 +91,6 @@ endif()
 
 file(GLOB EXE_SRCS "*.cpp" "*.hpp")
 target_sources(imgui_usage PRIVATE ${EXE_SRCS})
-if (WIN32)
-    target_sources(imgui_usage PRIVATE imgui_usage.def)
-endif()
 
 target_include_directories(imgui_usage PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -103,7 +100,7 @@ endif()
 target_compile_definitions(imgui_usage PRIVATE "RESOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/resources\"")
 target_compile_definitions(imgui_usage PRIVATE "GLFW_INCLUDE_NONE")
 
-target_link_libraries(imgui_usage PRIVATE Graphics imgui stb_image)
+target_link_libraries(imgui_usage PRIVATE Graphics GraphicsGLFW GraphicsImGui imgui stb_image)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for imgui_usage")

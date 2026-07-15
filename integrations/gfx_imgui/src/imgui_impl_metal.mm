@@ -38,37 +38,11 @@
 //  2018-11-30: Misc: Setting up io.BackendRendererName so it can be displayed in the About Window.
 //  2018-07-05: Metal: Added new Metal backend implementation.
 
-#include "imgui.h"
+#include <imgui.h>
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_metal.h"
 #import <time.h>
 #import <Metal/Metal.h>
-
-// NOLINTBEGIN
-#define GetCurrentContext() (reinterpret_cast<ImGuiContext*(*)()>(getSym(DL_DEFAULT, "GetCurrentContext"))())
-#define GetIO() (*reinterpret_cast<ImGuiIO*(*)()>(getSym(DL_DEFAULT, "GetIO"))())
-#define GetPlatformIO() (*reinterpret_cast<ImGuiPlatformIO*(*)()>(getSym(DL_DEFAULT, "GetPlatformIO"))())
-#define GetMainViewport() (reinterpret_cast<ImGuiViewport*(*)()>(getSym(DL_DEFAULT, "GetMainViewport"))())
-#define DebugCheckVersionAndDataLayout(...) (reinterpret_cast<bool(*)(const char*, size_t, size_t, size_t, size_t, size_t, size_t)>(getSym(DL_DEFAULT, "DebugCheckVersionAndDataLayout"))(__VA_ARGS__))
-#define MemAlloc(...) (reinterpret_cast<void*(*)(size_t)>(getSym(DL_DEFAULT, "MemAlloc"))(__VA_ARGS__))
-#define MemFree(...) (reinterpret_cast<void(*)(void*)>(getSym(DL_DEFAULT, "MemFree"))(__VA_ARGS__))
-#define DestroyPlatformWindows() (reinterpret_cast<void(*)()>(getSym(DL_DEFAULT, "DestroyPlatformWindows"))())
-
-#undef IMGUI_CHECKVERSION
-#define IMGUI_CHECKVERSION() DebugCheckVersionAndDataLayout(IMGUI_VERSION, sizeof(ImGuiIO), sizeof(ImGuiStyle), sizeof(ImVec2), sizeof(ImVec4), sizeof(ImDrawVert), sizeof(ImDrawIdx))
-
-#undef IM_ALLOC
-#define IM_ALLOC(_SIZE) MemAlloc(_SIZE)
-
-#undef IM_FREE
-#define IM_FREE(_PTR) MemFree(_PTR)
-
-#undef IM_NEW
-#define IM_NEW(_TYPE) new(ImNewWrapper(), MemAlloc(sizeof(_TYPE))) _TYPE
-
-template<typename T> void GFX_IM_DELETE(T* p) { if (p) { p->~T(); MemFree(p); } }
-#define IM_DELETE GFX_IM_DELETE
-// NOLINTEND
 
 // Forward Declarations
 static void ImGui_ImplMetal_InitMultiViewportSupport();
@@ -122,7 +96,7 @@ struct ImGui_ImplMetal_Data
     ImGui_ImplMetal_Data()      { memset((void*)this, 0, sizeof(*this)); }
 };
 
-static ImGui_ImplMetal_Data*    ImGui_ImplMetal_GetBackendData()    { return GetCurrentContext() ? (ImGui_ImplMetal_Data*)GetIO().BackendRendererUserData : nullptr; }
+static ImGui_ImplMetal_Data*    ImGui_ImplMetal_GetBackendData()    { return ImGui::GetCurrentContext() ? (ImGui_ImplMetal_Data*)ImGui::GetIO().BackendRendererUserData : nullptr; }
 static void                     ImGui_ImplMetal_DestroyBackendData(){ IM_DELETE(ImGui_ImplMetal_GetBackendData()); }
 
 static inline CFTimeInterval    GetMachAbsoluteTimeInSeconds()      { return (CFTimeInterval)(double)(clock_gettime_nsec_np(CLOCK_UPTIME_RAW) / 1e9); }
@@ -162,7 +136,7 @@ bool ImGui_ImplMetal_CreateDeviceObjects(MTL::Device* device)
 
 bool ImGui_ImplMetal_Init(id<MTLDevice> device)
 {
-    ImGuiIO& io = GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     IMGUI_CHECKVERSION();
     IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
@@ -183,31 +157,15 @@ bool ImGui_ImplMetal_Init(id<MTLDevice> device)
 
 bool ImGui_ImplMetal_Init(id<MTLDevice> device, NSUInteger sampleCount, MTLPixelFormat colorPixelFormat, MTLPixelFormat depthPixelFormat, MTLPixelFormat stencilPixelFormat)
 {
-    ImGuiIO& io = GetIO();
-    IMGUI_CHECKVERSION();
-    IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
+    if (!ImGui_ImplMetal_Init(device))
+        return false;
 
-    ImGui_ImplMetal_Data* bd = IM_NEW(ImGui_ImplMetal_Data)();
-    io.BackendRendererUserData = (void*)bd;
-    io.BackendRendererName = "imgui_impl_metal";
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;   // We can honor ImGuiPlatformIO::Textures[] requests during render.
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;  // We can create multi-viewports on the Renderer side (optional)
-
-    bd->SharedMetalContext = [[MetalContext alloc] init];
-    bd->SharedMetalContext.device = device;
-
-    ImGui_ImplMetal_InitMultiViewportSupport();
-
-    #ifdef IMGUI_IMPL_METAL_CPP
-        #error "not implemented"
-    #else
-        bd->SharedMetalContext.framebufferDescriptor = [[FramebufferDescriptor alloc] initWithSampleCount:sampleCount
-                                                                                         colorPixelFormat:colorPixelFormat
-                                                                                         depthPixelFormat:depthPixelFormat
-                                                                                       stencilPixelFormat:stencilPixelFormat];
-    #endif
-
+    ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
+#ifdef IMGUI_IMPL_METAL_CPP
+    bd->SharedMetalContext.framebufferDescriptor = [[[FramebufferDescriptor alloc] initWithSampleCount:sampleCount colorPixelFormat:colorPixelFormat depthPixelFormat:depthPixelFormat stencilPixelFormat:stencilPixelFormat] autorelease];
+#else
+    bd->SharedMetalContext.framebufferDescriptor = [[FramebufferDescriptor alloc] initWithSampleCount:sampleCount colorPixelFormat:colorPixelFormat depthPixelFormat:depthPixelFormat stencilPixelFormat:stencilPixelFormat];
+#endif
     return true;
 }
 
@@ -220,7 +178,7 @@ void ImGui_ImplMetal_Shutdown()
     ImGui_ImplMetal_DestroyDeviceObjects();
     ImGui_ImplMetal_DestroyBackendData();
 
-    ImGuiIO& io = GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = nullptr;
     io.BackendRendererUserData = nullptr;
     io.BackendFlags &= ~(ImGuiBackendFlags_RendererHasVtxOffset | ImGuiBackendFlags_RendererHasTextures | ImGuiBackendFlags_RendererHasViewports);
@@ -496,7 +454,7 @@ void ImGui_ImplMetal_DestroyDeviceObjects()
     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
 
     // Destroy all textures
-    for (ImTextureData* tex : GetPlatformIO().Textures)
+    for (ImTextureData* tex : ImGui::GetPlatformIO().Textures)
         if (tex->RefCount == 1)
             ImGui_ImplMetal_DestroyTexture(tex);
 
@@ -577,8 +535,6 @@ static void ImGui_ImplMetal_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
 static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
 {
     ImGuiViewportDataMetal* data = (ImGuiViewportDataMetal*)viewport->RendererUserData;
-    ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
-    MetalContext* ctx = bd->SharedMetalContext;
 
 #if TARGET_OS_OSX
     void* handle = viewport->PlatformHandleRaw ? viewport->PlatformHandleRaw : viewport->PlatformHandle;
@@ -597,8 +553,8 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
     if (data->MetalLayer.contentsScale != fb_scale)
     {
         data->MetalLayer.contentsScale = fb_scale;
+        data->MetalLayer.drawableSize = MakeScaledSize(window.frame.size, fb_scale);
     }
-    data->MetalLayer.drawableSize = MakeScaledSize(window.frame.size, (float)window.backingScaleFactor);
 #endif
 
     id <CAMetalDrawable> drawable = [data->MetalLayer nextDrawable];
@@ -613,10 +569,7 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
 
     id <MTLCommandBuffer> commandBuffer = [data->CommandQueue commandBuffer];
     id <MTLRenderCommandEncoder> renderEncoder = [commandBuffer renderCommandEncoderWithDescriptor:renderPassDescriptor];
-    FramebufferDescriptor* fbdesc = [ctx.framebufferDescriptor copy];
-    ctx.framebufferDescriptor.depthPixelFormat = MTLPixelFormatInvalid;
     ImGui_ImplMetal_RenderDrawData(viewport->DrawData, commandBuffer, renderEncoder);
-    ctx.framebufferDescriptor = fbdesc;
     [renderEncoder endEncoding];
 
     [commandBuffer presentDrawable:drawable];
@@ -625,7 +578,7 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
 
 static void ImGui_ImplMetal_InitMultiViewportSupport()
 {
-    ImGuiPlatformIO& platform_io = GetPlatformIO();
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     platform_io.Renderer_CreateWindow = ImGui_ImplMetal_CreateWindow;
     platform_io.Renderer_DestroyWindow = ImGui_ImplMetal_DestroyWindow;
     platform_io.Renderer_SetWindowSize = ImGui_ImplMetal_SetWindowSize;
@@ -634,12 +587,12 @@ static void ImGui_ImplMetal_InitMultiViewportSupport()
 
 static void ImGui_ImplMetal_ShutdownMultiViewportSupport()
 {
-    DestroyPlatformWindows();
+    ImGui::DestroyPlatformWindows();
 }
 
 static void ImGui_ImplMetal_CreateDeviceObjectsForPlatformWindows()
 {
-    ImGuiPlatformIO& platform_io = GetPlatformIO();
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     for (int i = 1; i < platform_io.Viewports.Size; i++)
         if (!platform_io.Viewports[i]->RendererUserData)
             ImGui_ImplMetal_CreateWindow(platform_io.Viewports[i]);
@@ -647,7 +600,7 @@ static void ImGui_ImplMetal_CreateDeviceObjectsForPlatformWindows()
 
 static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
 {
-    ImGuiPlatformIO& platform_io = GetPlatformIO();
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     for (int i = 1; i < platform_io.Viewports.Size; i++)
         if (platform_io.Viewports[i]->RendererUserData)
             ImGui_ImplMetal_DestroyWindow(platform_io.Viewports[i]);

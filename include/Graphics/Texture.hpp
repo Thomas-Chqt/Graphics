@@ -42,11 +42,6 @@ public:
     virtual TextureUsages usages() const = 0;
     virtual ResourceStorageMode storageMode() const = 0;
 
-#if defined (GFX_IMGUI_ENABLED)
-    virtual void initImTextureId() = 0;
-    virtual std::optional<uint64_t> imTextureId() const = 0;
-#endif
-
     virtual ~Texture() = default;
 
 protected:

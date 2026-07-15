@@ -24,11 +24,9 @@
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalShaderLib.hpp"
 #include "MetalParameterBlockLayout.hpp"
-#if defined(GFX_IMGUI_ENABLED)
-# include "Metal/imgui_impl_metal.h"
-#endif
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
+#include "Metal/MetalPassDescriptor.hpp"
 
 #import "Metal/MetalEnums.hpp"
 
@@ -40,7 +38,6 @@ MetalDevice::MetalDevice(id<MTLDevice> device, const Device::Descriptor&)
 {
     m_queue = [m_mtlDevice newCommandQueue];
     m_sharedEvent = [m_mtlDevice newSharedEvent];
-    s_tracyMtlContext = TracyMetalContext(device);
 }}
 
 std::unique_ptr<Swapchain> MetalDevice::newSwapchain(const Swapchain::Descriptor& desc) const
@@ -73,6 +70,16 @@ std::unique_ptr<Texture> MetalDevice::newTexture(const Texture::Descriptor& desc
     return std::make_unique<MetalTexture>(*this, desc);
 }
 
+std::unique_ptr<RenderPassDescriptor> MetalDevice::newRenderPassDescriptor() const
+{
+    return std::make_unique<MetalRenderPassDescriptor>();
+}
+
+std::unique_ptr<BlitPassDescriptor> MetalDevice::newBlitPassDescriptor() const
+{
+    return std::make_unique<MetalBlitPassDescriptor>();
+}
+
 std::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const
 {
     return std::make_unique<MetalCommandBufferPool>(&m_queue);
@@ -87,29 +94,6 @@ std::unique_ptr<Sampler> MetalDevice::newSampler(const Sampler::Descriptor& desc
 {
     return std::make_unique<MetalSampler>(*this, desc);
 }
-
-#if defined (GFX_IMGUI_ENABLED)
-void MetalDevice::imguiInit(std::vector<PixelFormat> colorPixelFomats, std::optional<PixelFormat> depthPixelFormat) const { @autoreleasepool
-{
-    ImGui_ImplMetal_Init(
-        m_mtlDevice,
-        1,
-        toMTLPixelFormat(colorPixelFomats.front()),
-        depthPixelFormat.has_value() ? toMTLPixelFormat(*depthPixelFormat) : MTLPixelFormatInvalid,
-        MTLPixelFormatInvalid
-    );
-}}
-
-void MetalDevice::imguiNewFrame() const { @autoreleasepool
-{
-    ImGui_ImplMetal_NewFrame();
-}}
-
-void MetalDevice::imguiShutdown() { @autoreleasepool
-{
-    ImGui_ImplMetal_Shutdown();
-}}
-#endif
 
 void MetalDevice::submitCommandBuffers(const std::shared_ptr<CommandBuffer>& aCommandBuffer) { @autoreleasepool // NOLINT(cppcoreguidelines-rvalue-reference-param-not-moved)
 {
@@ -133,14 +117,12 @@ void MetalDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Command
 
 void MetalDevice::waitCommandBuffer(const CommandBuffer& aCommandBuffer) { @autoreleasepool
 {
-    ZoneScoped;
     std::scoped_lock lock(m_submitMtx);
 
     auto waitedIt = std::ranges::find_if(m_submittedCommandBuffers, [&](auto& c){ return c.get() == &aCommandBuffer; });
     if (waitedIt != m_submittedCommandBuffers.end())
     {
         [m_sharedEvent waitUntilSignaledValue:(*waitedIt)->signaledSharedEventValue() timeoutMS:UINT64_MAX];
-        TracyMetalCollect(s_tracyMtlContext);
         m_submittedCommandBuffers.erase(m_submittedCommandBuffers.begin(), std::next(waitedIt));
     }
 }}
@@ -154,7 +136,6 @@ void MetalDevice::waitIdle()
 MetalDevice::~MetalDevice()
 {
     waitIdle();
-    TracyMetalDestroy(s_tracyMtlContext);
 }
 
 }

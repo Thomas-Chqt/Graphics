@@ -27,6 +27,8 @@
 // Read comments in imgui_impl_vulkan.h.
 
 #pragma once
+#ifndef IMGUI_DISABLE
+#include <imgui.h>      // IMGUI_IMPL_API
 
 // [Configuration] in order to use a custom Vulkan function loader:
 // (1) You'll need to disable default Vulkan function prototypes.
@@ -38,7 +40,7 @@
 //     - Do not simply add it in a .cpp file!
 // (2) Call ImGui_ImplVulkan_LoadFunctions() before ImGui_ImplVulkan_Init() with your custom function.
 // If you have no idea what this is, leave it alone!
-#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
+//#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES
 
 // Convenience support for Volk
 // (you can also technically use IMGUI_IMPL_VULKAN_NO_PROTOTYPES + wrap Volk via ImGui_ImplVulkan_LoadFunctions().)
@@ -51,10 +53,12 @@
 #define NOMINMAX
 #endif
 
-#ifdef IMGUI_IMPL_VULKAN_CPP
-#include "pch.hpp"
+// Vulkan includes
+#ifdef IMGUI_IMPL_VULKAN_USE_VOLK
+#include <volk.h>
+#else
+#include <vulkan/vulkan.h>
 #endif
-
 #if defined(VK_VERSION_1_3) || defined(VK_KHR_dynamic_rendering)
 #define IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
 #endif
@@ -205,8 +209,8 @@ struct ImGui_ImplVulkanH_Window
     uint32_t            ImageCount;             // Number of simultaneous in-flight frames (returned by vkGetSwapchainImagesKHR, usually derived from min_image_count)
     uint32_t            SemaphoreCount;         // Number of simultaneous in-flight frames + 1, to be able to use it in vkAcquireNextImageKHR
     uint32_t            SemaphoreIndex;         // Current set of swapchain wait semaphores we're using (needs to be distinct from per frame data)
-    std::vector<ImGui_ImplVulkanH_Frame>           Frames;
-    std::vector<ImGui_ImplVulkanH_FrameSemaphores> FrameSemaphores;
+    ImVector<ImGui_ImplVulkanH_Frame>           Frames;
+    ImVector<ImGui_ImplVulkanH_FrameSemaphores> FrameSemaphores;
 
     ImGui_ImplVulkanH_Window()
     {
@@ -215,3 +219,5 @@ struct ImGui_ImplVulkanH_Window
         ClearEnable = true;
     }
 };
+
+#endif // #ifndef IMGUI_DISABLE

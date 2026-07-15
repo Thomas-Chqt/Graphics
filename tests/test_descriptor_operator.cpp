@@ -9,17 +9,18 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Device.hpp"
 #include "Graphics/Enums.hpp"
-#include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/ParameterBlockLayout.hpp"
 #include "Graphics/ParameterBlockPool.hpp"
+#include "Graphics/PassDescriptor.hpp"
 #include "Graphics/Sampler.hpp"
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/Texture.hpp"
 
 #include <gtest/gtest.h>
 
+#include <cstdint>
 #include <map>
 #include <variant>
 
@@ -28,6 +29,20 @@ namespace gfx_test
 
 namespace
 {
+    class TestRenderPassDescriptor final : public gfx::RenderPassDescriptor
+    {
+    public:
+        const std::vector<Attachment>& colorAttachments() const override { return m_colorAttachments; }
+        void setColorAttachments(std::vector<Attachment> attachments) override { m_colorAttachments = std::move(attachments); }
+
+        const std::optional<Attachment>& depthAttachment() const override { return m_depthAttachment; }
+        void setDepthAttachment(std::optional<Attachment> attachment) override { m_depthAttachment = std::move(attachment); }
+
+    private:
+        std::vector<Attachment> m_colorAttachments;
+        std::optional<Attachment> m_depthAttachment;
+    };
+
     template<typename T>
     void expectDescriptorComparableInMap(const T& lower, const T& higher)
     {
@@ -47,6 +62,28 @@ namespace
         EXPECT_EQ(values.size(), 2u);
         EXPECT_EQ(values.at(lower), 5);
     }
+}
+
+TEST(render_pass_descriptor, stores_attachments_through_accessors)
+{
+    TestRenderPassDescriptor descriptor;
+    descriptor.setColorAttachments({
+        gfx::RenderPassDescriptor::Attachment{
+            .loadAction = gfx::LoadAction::clear,
+            .clearValue = gfx::ClearValue::color({1.0f, 0.5f, 0.25f, 1.0f}),
+            .texture = nullptr
+        }
+    });
+    descriptor.setDepthAttachment(gfx::RenderPassDescriptor::Attachment{
+        .loadAction = gfx::LoadAction::clear,
+        .clearValue = gfx::ClearValue::depth(1.0f),
+        .texture = nullptr
+    });
+
+    ASSERT_EQ(descriptor.colorAttachments().size(), 1u);
+    EXPECT_EQ(descriptor.colorAttachments().front().loadAction, gfx::LoadAction::clear);
+    ASSERT_TRUE(descriptor.depthAttachment().has_value());
+    EXPECT_EQ(descriptor.depthAttachment()->loadAction, gfx::LoadAction::clear);
 }
 
 TEST(descriptor_operator, buffer_descriptor)
@@ -165,12 +202,19 @@ TEST(descriptor_operator, instance_descriptor)
         .appName="App",
         .appVersion={ 1, 0, 0 },
         .engineName="Engine",
-        .engineVersion={ 1, 0, 0 }
+        .engineVersion={ 1, 0, 0 },
+        .instanceExtension=reinterpret_cast<const gfx::InstanceExtension*>(static_cast<std::uintptr_t>(0x1))
     };
     gfx::Instance::Descriptor rhs = lhs;
+    rhs.instanceExtension = reinterpret_cast<const gfx::InstanceExtension*>(static_cast<std::uintptr_t>(0x2));
     rhs.appVersion = { 1, 0, 1 };
 
     expectDescriptorComparableInMap(lhs, rhs);
+
+    rhs = lhs;
+    rhs.instanceExtension = reinterpret_cast<const gfx::InstanceExtension*>(static_cast<std::uintptr_t>(0x2));
+
+    EXPECT_NE(lhs, rhs);
 }
 
 TEST(descriptor_operator, graphics_pipeline_descriptor)

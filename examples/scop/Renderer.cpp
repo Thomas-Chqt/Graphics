@@ -14,13 +14,18 @@
 
 #include <Graphics/Buffer.hpp>
 #include <Graphics/Enums.hpp>
+#include <Graphics/PassDescriptor.hpp>
 
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
     #include <imgui.h>
+    #include <gfx_imgui/gfx_imgui.hpp>
     #include <backends/imgui_impl_glfw.h>
     #include <glm/glm.hpp>
     #include <glm/gtc/matrix_transform.hpp>
+    #include <tracy/Tracy.hpp>
+    #include <tracy/TracyC.h>
+    #include <gfx_tracy/gfx_tracy.hpp>
 #else
     #include "math/math.hpp"
     #ifndef SCOP_MATH_GLM_ALIAS_DEFINED
@@ -28,12 +33,6 @@
         namespace glm = scop::math;
     #endif
 #endif
-#if defined (GFX_BUILD_TRACY)
-    #include <tracy/Tracy.hpp>
-#else
-    #define ZoneScoped
-    #define ZoneScopedN(x)
-#endif // GFX_BUILD_TRACY
 
 #include <array>
 #include <cstddef>
@@ -49,6 +48,10 @@ namespace scop
 Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surface)
     : m_device(device), m_window(window), m_surface(surface)
 {
+    assert(m_device);
+
+    m_tracyGraphicsContext = TracyGFXContext(*m_device);
+
     glfwSetWindowUserPointer(m_window, this);
     glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){
         static_cast<Renderer*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
@@ -111,7 +114,7 @@ Renderer::Renderer(gfx::Device* device, GLFWwindow* window, gfx::Surface* surfac
             break;
     }
 
-    m_device->imguiInit({gfx::PixelFormat::BGRA8Unorm}, gfx::PixelFormat::Depth32Float);
+    gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8Unorm}, .depthAttachmentPixelFormat = gfx::PixelFormat::Depth32Float});
 #endif
 }
 
@@ -146,10 +149,12 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, 
 
     if (cfd.lastCommandBuffer != nullptr) {
         m_device->waitCommandBuffer(*cfd.lastCommandBuffer);
+        TracyGFXCollect(*m_device, m_tracyGraphicsContext);
         cfd.lastCommandBuffer = nullptr;
         cfd.commandBufferPool->reset();
         cfd.parameterBlockPool->reset();
     }
+
 
     cfd.renderables.clear();
     cfsd = shader::SceneData{
@@ -170,7 +175,7 @@ void Renderer::beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, 
 #if !defined (SCOP_MANDATORY)
     {
         ZoneScopedN("imguiNewFrame");
-        m_device->imguiNewFrame();
+        gfx::imgui::newFrame(*m_device);
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
     }
@@ -207,41 +212,40 @@ void Renderer::addPointLight(const glm::vec3& position, const glm::vec3& color)
 void Renderer::endFrame()
 {
     ZoneScoped;
-#if !defined (SCOP_MANDATORY)
+    #if !defined (SCOP_MANDATORY)
     ImGui::Render();
-#endif
+    #endif
 
     std::shared_ptr<gfx::CommandBuffer> commandBuffer = cfd.commandBufferPool->get();
 
     std::shared_ptr<gfx::Drawable> drawable = m_swapchain->nextDrawable();
     if (drawable == nullptr) {
-#if !defined (SCOP_MANDATORY)
+        #if !defined (SCOP_MANDATORY)
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
-#endif
+        #endif
         m_swapchain = nullptr;
         return;
     }
 
-    gfx::Framebuffer framebuffer = {
-        .colorAttachments = {
-            gfx::Framebuffer::Attachment{
-                .loadAction = gfx::LoadAction::clear,
-                .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
-                .texture = drawable->texture()
-            }
-        },
-        .depthAttachment = {
-            gfx::Framebuffer::Attachment{
-                .loadAction = gfx::LoadAction::clear,
-                .clearValue = gfx::ClearValue::depth(1.0f),
-                .texture = cfd.depthTexture
-            }
+    auto renderPassDescriptor = m_device->newRenderPassDescriptor();
+    renderPassDescriptor->setColorAttachments({
+        gfx::RenderPassDescriptor::Attachment{
+            .loadAction = gfx::LoadAction::clear,
+            .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
+            .texture = drawable->texture()
         }
-    };
+    });
+    renderPassDescriptor->setDepthAttachment(gfx::RenderPassDescriptor::Attachment{
+        .loadAction = gfx::LoadAction::clear,
+        .clearValue = gfx::ClearValue::depth(1.0f),
+        .texture = cfd.depthTexture
+    });
 
-    commandBuffer->beginRenderPass(framebuffer);
     {
+        TracyGFXZone(m_tracyGraphicsContext, *renderPassDescriptor, "main pass");
+        commandBuffer->beginRenderPass(*renderPassDescriptor);
+
         ZoneScopedN("renderPass");
         std::shared_ptr<gfx::ParameterBlock> vpMatrixPBlock = cfd.parameterBlockPool->get(vpMatrixBpLayout());
         vpMatrixPBlock->setBinding(0, cfd.vpMatrix);
@@ -271,11 +275,12 @@ void Renderer::endFrame()
             }
         }
 
-#if !defined (SCOP_MANDATORY)
-        commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
-#endif
+        #if !defined (SCOP_MANDATORY)
+        gfx::imgui::renderDrawData(*commandBuffer, ImGui::GetDrawData());
+        #endif
+        commandBuffer->endRenderPass();
     }
-    commandBuffer->endRenderPass();
+
     commandBuffer->presentDrawable(drawable);
 
     cfd.lastCommandBuffer = commandBuffer.get();
@@ -291,8 +296,13 @@ void Renderer::endFrame()
 
 Renderer::~Renderer()
 {
+    m_device->waitIdle();
+
+    TracyGFXCollect(*m_device, m_tracyGraphicsContext);
+    TracyGFXDestroy(*m_device, m_tracyGraphicsContext);
+
 #if !defined (SCOP_MANDATORY)
-    m_device->imguiShutdown();
+    gfx::imgui::shutdown(*m_device);
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 #endif

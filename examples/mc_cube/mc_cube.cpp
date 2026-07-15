@@ -10,7 +10,7 @@
 #include "Graphics/Buffer.hpp"
 #include "Graphics/CommandBuffer.hpp"
 #include "Graphics/Drawable.hpp"
-#include "Graphics/Framebuffer.hpp"
+#include "Graphics/PassDescriptor.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/Device.hpp"
@@ -24,10 +24,12 @@
 #include "glm/fwd.hpp"
 
 #include <GLFW/glfw3.h>
+#include <gfx_glfw/gfx_glfw.hpp>
 #include <cstring>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
+#include <gfx_imgui/gfx_imgui.hpp>
 #include <backends/imgui_impl_glfw.h>
 #include <stb_image/stb_image.h>
 
@@ -43,26 +45,6 @@
 #if __XCODE__
     #include <unistd.h>
 #endif
-
-#if defined(__GNUC__)
-    #define GFX_EXPORT __attribute__((used, visibility("default")))
-#elif defined(_MSC_VER)
-    #define GFX_EXPORT __declspec(dllexport)
-#else
-    #error "unknown compiler"
-#endif
-
-extern "C"
-{
-    GFX_EXPORT ImGuiContext* GetCurrentContext() { return ImGui::GetCurrentContext(); }
-    GFX_EXPORT ImGuiIO* GetIO() { return &ImGui::GetIO(); }
-    GFX_EXPORT ImGuiPlatformIO* GetPlatformIO() { return &ImGui::GetPlatformIO(); }
-    GFX_EXPORT ImGuiViewport* GetMainViewport() { return ImGui::GetMainViewport(); }
-    GFX_EXPORT bool DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx) { return ImGui::DebugCheckVersionAndDataLayout(version_str, sz_io, sz_style, sz_vec2, sz_vec4, sz_drawvert, sz_drawidx); }
-    GFX_EXPORT void* MemAlloc(size_t size) { return ImGui::MemAlloc(size); }
-    GFX_EXPORT void MemFree(void* ptr) { return ImGui::MemFree(ptr); }
-    GFX_EXPORT void DestroyPlatformWindows() { return ImGui::DestroyPlatformWindows(); }
-}
 
 constexpr uint32_t WINDOW_WIDTH = 800;
 constexpr uint32_t WINDOW_HEIGHT = 600;
@@ -144,10 +126,12 @@ public:
             static_cast<Application*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
         });
 
-        m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
+        m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{
+            .instanceExtension = gfx::glfw::getInstanceExtension()
+        });
         assert(m_instance);
 
-        m_surface = m_instance->createSurface(m_window);
+        m_surface = gfx::glfw::createSurface(*m_instance, m_window);
         assert(m_surface);
 
         gfx::Device::Descriptor deviceDescriptor = {
@@ -237,7 +221,8 @@ public:
             std::ranges::copy(cube_vertices, stagingBuffer->content<Vertex>());
 
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-            commandBuffer->beginBlitPass();
+            auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+            commandBuffer->beginBlitPass(*blitPassDescriptor);
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, m_vertexBuffer->size());
             commandBuffer->endBlitPass();
             m_device->submitCommandBuffers(commandBuffer);
@@ -261,7 +246,8 @@ public:
             std::ranges::copy(cube_indices, stagingBuffer->content<uint32_t>());
 
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-            commandBuffer->beginBlitPass();
+            auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+            commandBuffer->beginBlitPass(*blitPassDescriptor);
             commandBuffer->copyBufferToBuffer(stagingBuffer, m_indexBuffer, m_indexBuffer->size());
             commandBuffer->endBlitPass();
             m_device->submitCommandBuffers(commandBuffer);
@@ -304,7 +290,8 @@ public:
             stbi_image_free(bottomBytes);
 
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
-            commandBuffer->beginBlitPass();
+            auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+            commandBuffer->beginBlitPass(*blitPassDescriptor);
             {
                 for (int face = 0; face < 6; ++face)
                     commandBuffer->copyBufferToTexture(stagingBuffer, face * faceSize, m_grassTexture, face);
@@ -348,7 +335,7 @@ public:
             break;
         }
 
-        m_device->imguiInit({ gfx::PixelFormat::BGRA8Unorm }, gfx::PixelFormat::Depth32Float);
+        gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8Unorm}, .depthAttachmentPixelFormat = gfx::PixelFormat::Depth32Float});
     }
 
     void loop()
@@ -401,7 +388,7 @@ public:
             glm::mat4 projectionMatrix = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.1f, 10.0f);
             *m_vpMatrix.at(m_frameIdx)->content<glm::mat4x4>() = projectionMatrix * viewMatrix;
 
-            m_device->imguiNewFrame();
+            gfx::imgui::newFrame(*m_device);
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
             {
@@ -444,24 +431,21 @@ public:
                 continue;
             }
 
-            gfx::Framebuffer framebuffer = {
-                .colorAttachments = {
-                    gfx::Framebuffer::Attachment{
-                        .loadAction = gfx::LoadAction::clear,
-                        .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
-                        .texture = drawable->texture()
-                    }
-                },
-                .depthAttachment = {
-                    gfx::Framebuffer::Attachment{
-                        .loadAction = gfx::LoadAction::clear,
-                        .clearValue = gfx::ClearValue::depth(1.0f),
-                        .texture = m_depthTexture.at(m_frameIdx)
-                    }
+            auto renderPassDescriptor = m_device->newRenderPassDescriptor();
+            renderPassDescriptor->setColorAttachments({
+                gfx::RenderPassDescriptor::Attachment{
+                    .loadAction = gfx::LoadAction::clear,
+                    .clearValue = gfx::ClearValue::color({0.0f, 0.0f, 0.0f, 0.0f}),
+                    .texture = drawable->texture()
                 }
-            };
+            });
+            renderPassDescriptor->setDepthAttachment(gfx::RenderPassDescriptor::Attachment{
+                .loadAction = gfx::LoadAction::clear,
+                .clearValue = gfx::ClearValue::depth(1.0f),
+                .texture = m_depthTexture.at(m_frameIdx)
+            });
 
-            commandBuffer->beginRenderPass(framebuffer);
+            commandBuffer->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffer->usePipeline(m_graphicsPipeline);
                 commandBuffer->setParameterBlock(vpMatrixPBlock, 0);
@@ -470,7 +454,7 @@ public:
                 commandBuffer->useVertexBuffer(m_vertexBuffer);
                 commandBuffer->drawIndexedVertices(m_indexBuffer);
 
-                commandBuffer->imGuiRenderDrawData(ImGui::GetDrawData());
+                gfx::imgui::renderDrawData(*commandBuffer, ImGui::GetDrawData());
             }
             commandBuffer->endRenderPass();
             commandBuffer->presentDrawable(drawable);
@@ -487,7 +471,7 @@ public:
 
     void clean()
     {
-        m_device->imguiShutdown();
+        gfx::imgui::shutdown(*m_device);
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
         glfwDestroyWindow(m_window);

@@ -11,7 +11,7 @@
 #include "Graphics/Device.hpp"
 #include "Graphics/Drawable.hpp"
 #include "Graphics/Enums.hpp"
-#include "Graphics/Framebuffer.hpp"
+#include "Graphics/PassDescriptor.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/ParameterBlock.hpp"
@@ -24,6 +24,7 @@
 #include "Graphics/Texture.hpp"
 
 #include <GLFW/glfw3.h>
+#include <gfx_glfw/gfx_glfw.hpp>
 #include <cstddef>
 #include <glm/glm.hpp>
 
@@ -107,10 +108,12 @@ public:
             static_cast<Application*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
         });
 
-        m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{});
+        m_instance = gfx::Instance::newInstance(gfx::Instance::Descriptor{
+            .instanceExtension = gfx::glfw::getInstanceExtension()
+        });
         assert(m_instance);
 
-        m_surface = m_instance->createSurface(m_window);
+        m_surface = gfx::glfw::createSurface(*m_instance, m_window);
         assert(m_surface);
 
         gfx::Device::Descriptor deviceDescriptor = {
@@ -169,7 +172,8 @@ public:
         std::ranges::copy(sprite_vertices, stagingBuffer->content<Vertex>());
 
         std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_device->newCommandBufferPool()->get();
-        commandBuffer->beginBlitPass();
+        auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+        commandBuffer->beginBlitPass(*blitPassDescriptor);
         commandBuffer->copyBufferToBuffer(stagingBuffer, m_vertexBuffer, m_vertexBuffer->size());
         commandBuffer->endBlitPass();
         m_device->submitCommandBuffers(commandBuffer);
@@ -230,7 +234,8 @@ public:
                     std::memcpy(bytes + texel * rgba.size(), rgba.data(), rgba.size());
 
                 std::shared_ptr<gfx::CommandBuffer> uploadCommandBuffer = cmdBufferPool->get();
-                uploadCommandBuffer->beginBlitPass();
+                auto blitPassDescriptor = m_device->newBlitPassDescriptor();
+                uploadCommandBuffer->beginBlitPass(*blitPassDescriptor);
                 uploadCommandBuffer->copyBufferToTexture(stagingBuffer, texture);
                 uploadCommandBuffer->endBlitPass();
                 m_device->submitCommandBuffers(uploadCommandBuffer);
@@ -321,17 +326,16 @@ public:
 
             std::shared_ptr<gfx::CommandBuffer> commandBuffer = m_commandBufferPools.at(m_frameIdx)->get();
 
-            gfx::Framebuffer framebuffer = {
-                .colorAttachments = {
-                    gfx::Framebuffer::Attachment{
-                        .loadAction = gfx::LoadAction::clear,
-                        .clearValue = gfx::ClearValue::color({0.08f, 0.08f, 0.10f, 1.0f}),
-                        .texture = drawable->texture()
-                    }
+            auto renderPassDescriptor = m_device->newRenderPassDescriptor();
+            renderPassDescriptor->setColorAttachments({
+                gfx::RenderPassDescriptor::Attachment{
+                    .loadAction = gfx::LoadAction::clear,
+                    .clearValue = gfx::ClearValue::color({0.08f, 0.08f, 0.10f, 1.0f}),
+                    .texture = drawable->texture()
                 }
-            };
+            });
 
-            commandBuffer->beginRenderPass(framebuffer);
+            commandBuffer->beginRenderPass(*renderPassDescriptor);
             {
                 commandBuffer->usePipeline(m_graphicsPipeline);
                 commandBuffer->useVertexBuffer(m_vertexBuffer);

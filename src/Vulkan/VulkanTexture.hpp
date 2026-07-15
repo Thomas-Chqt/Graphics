@@ -17,6 +17,7 @@
 #include "Vulkan/Sync.hpp"
 #include "Vulkan/VulkanSampler.hpp"
 
+
 namespace gfx
 {
 
@@ -39,11 +40,13 @@ public:
     inline TextureUsages usages() const override { return m_usages; };
     inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
-#if defined (GFX_IMGUI_ENABLED)
-    void initImTextureId() override;
-    inline std::optional<uint64_t> imTextureId() const override { return m_imTextureId; }
-#endif
+    using ImTextureIdCleanup = void(*)(uint64_t);
 
+    void setImTextureId(uint64_t, const std::shared_ptr<VulkanSampler>&, ImTextureIdCleanup);
+    void removeImTextureId();
+    inline std::optional<uint64_t> imTextureId() const { return m_imTextureId; }
+
+    inline const VulkanDevice& device() const { return *m_device; }
     inline const vk::Image& vkImage() const { return m_vkImage; }
 
     inline const vk::ImageSubresourceRange& subresourceRange() const { return m_subresourceRange; }
@@ -70,9 +73,8 @@ protected:
 
     ImageSyncState m_syncState;
 
-#if defined (GFX_IMGUI_ENABLED)
     std::optional<uint64_t> m_imTextureId;
-#endif
+    ImTextureIdCleanup m_imTextureIdCleanup = nullptr;
     std::shared_ptr<VulkanSampler> m_imTextureIdSampler;
 
 public:

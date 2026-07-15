@@ -94,39 +94,13 @@
 //  2016-10-18: Vulkan: Add location decorators & change to use structs as in/out in glsl, update embedded spv (produced with glslangValidator -x). Null the released resources.
 //  2016-08-27: Vulkan: Fix Vulkan example for use when a depth buffer is active.
 
-#define IMGUI_IMPL_VULKAN_CPP
+#include <imgui.h>
+#ifndef IMGUI_DISABLE
 #include "imgui_impl_vulkan.h"
-
-// NOLINTBEGIN
-#define GetCurrentContext() (reinterpret_cast<ImGuiContext*(*)()>(getSym(DL_DEFAULT, "GetCurrentContext"))())
-#define GetIO() (*reinterpret_cast<ImGuiIO*(*)()>(getSym(DL_DEFAULT, "GetIO"))())
-#define GetPlatformIO() (*reinterpret_cast<ImGuiPlatformIO*(*)()>(getSym(DL_DEFAULT, "GetPlatformIO"))())
-#define GetMainViewport() (reinterpret_cast<ImGuiViewport*(*)()>(getSym(DL_DEFAULT, "GetMainViewport"))())
-#define DebugCheckVersionAndDataLayout(...) (reinterpret_cast<bool(*)(const char*, size_t, size_t, size_t, size_t, size_t, size_t)>(getSym(DL_DEFAULT, "DebugCheckVersionAndDataLayout"))(__VA_ARGS__))
-#define MemAlloc(...) (reinterpret_cast<void*(*)(size_t)>(getSym(DL_DEFAULT, "MemAlloc"))(__VA_ARGS__))
-#define MemFree(...) (reinterpret_cast<void(*)(void*)>(getSym(DL_DEFAULT, "MemFree"))(__VA_ARGS__))
-#define DestroyPlatformWindows() (reinterpret_cast<void(*)()>(getSym(DL_DEFAULT, "DestroyPlatformWindows"))())
-
-#undef IMGUI_CHECKVERSION
-#define IMGUI_CHECKVERSION() DebugCheckVersionAndDataLayout(IMGUI_VERSION, sizeof(ImGuiIO), sizeof(ImGuiStyle), sizeof(ImVec2), sizeof(ImVec4), sizeof(ImDrawVert), sizeof(ImDrawIdx))
-
-#undef IM_ALLOC
-#define IM_ALLOC(_SIZE) MemAlloc(_SIZE)
-
-#undef IM_FREE
-#define IM_FREE(_PTR) MemFree(_PTR)
-
-#undef IM_NEW
-#define IM_NEW(_TYPE) new(ImNewWrapper(), MemAlloc(sizeof(_TYPE))) _TYPE
-
-template<typename T> void GFX_IM_DELETE(T* p) { if (p) { p->~T(); MemFree(p); } }
-#define IM_DELETE GFX_IM_DELETE
-// NOLINTEND
-
+#include <stdio.h>
 #ifndef IM_MAX
 #define IM_MAX(A, B)    (((A) >= (B)) ? (A) : (B))
 #endif
-
 #undef Status // X11 headers are leaking this.
 
 // Visual Studio warnings
@@ -264,7 +238,7 @@ struct ImGui_ImplVulkan_WindowRenderBuffers
 {
     uint32_t            Index;
     uint32_t            Count;
-    std::vector<ImGui_ImplVulkan_FrameRenderBuffers> FrameRenderBuffers;
+    ImVector<ImGui_ImplVulkan_FrameRenderBuffers> FrameRenderBuffers;
 };
 
 struct ImGui_ImplVulkan_Texture
@@ -444,7 +418,7 @@ static uint32_t __glsl_shader_frag_spv[] =
 // FIXME: multi-context support is not tested and probably dysfunctional in this backend.
 static ImGui_ImplVulkan_Data* ImGui_ImplVulkan_GetBackendData()
 {
-    return GetCurrentContext() ? (ImGui_ImplVulkan_Data*)GetIO().BackendRendererUserData : nullptr;
+    return ImGui::GetCurrentContext() ? (ImGui_ImplVulkan_Data*)ImGui::GetIO().BackendRendererUserData : nullptr;
 }
 
 static uint32_t ImGui_ImplVulkan_MemoryType(VkMemoryPropertyFlags properties, uint32_t type_bits)
@@ -578,12 +552,12 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
     ImGui_ImplVulkan_ViewportData* viewport_renderer_data = (ImGui_ImplVulkan_ViewportData*)draw_data->OwnerViewport->RendererUserData;
     IM_ASSERT(viewport_renderer_data != nullptr);
     ImGui_ImplVulkan_WindowRenderBuffers* wrb = &viewport_renderer_data->RenderBuffers;
-    if (wrb->FrameRenderBuffers.size() == 0)
+    if (wrb->FrameRenderBuffers.Size == 0)
     {
         wrb->Index = 0;
         wrb->Count = v->ImageCount;
         wrb->FrameRenderBuffers.resize(wrb->Count);
-        memset((void*)wrb->FrameRenderBuffers.data(), 0, wrb->FrameRenderBuffers.size() * (int)sizeof(ImGui_ImplVulkan_FrameRenderBuffers));
+        memset((void*)wrb->FrameRenderBuffers.Data, 0, wrb->FrameRenderBuffers.size_in_bytes());
     }
     IM_ASSERT(wrb->Count == v->ImageCount);
     wrb->Index = (wrb->Index + 1) % wrb->Count;
@@ -630,7 +604,7 @@ void ImGui_ImplVulkan_RenderDrawData(ImDrawData* draw_data, VkCommandBuffer comm
     ImGui_ImplVulkan_SetupRenderState(draw_data, pipeline, command_buffer, rb, fb_width, fb_height);
 
     // Setup render state structure (for callbacks and custom texture bindings)
-    ImGuiPlatformIO& platform_io = GetPlatformIO();
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     ImGui_ImplVulkan_RenderState render_state;
     render_state.CommandBuffer = command_buffer;
     render_state.Pipeline = pipeline;
@@ -1175,7 +1149,7 @@ void    ImGui_ImplVulkan_DestroyDeviceObjects()
     ImGui_ImplVulkanH_DestroyAllViewportsRenderBuffers(v->Device, v->Allocator);
 
     // Destroy all textures
-    for (ImTextureData* tex : GetPlatformIO().Textures)
+    for (ImTextureData* tex : ImGui::GetPlatformIO().Textures)
         if (tex->RefCount == 1)
             ImGui_ImplVulkan_DestroyTexture(tex);
 
@@ -1270,7 +1244,7 @@ bool    ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo* info)
 #endif
     }
 
-    ImGuiIO& io = GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     IMGUI_CHECKVERSION();
     IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
@@ -1316,7 +1290,7 @@ bool    ImGui_ImplVulkan_Init(ImGui_ImplVulkan_InitInfo* info)
         IM_ASSERT(0 && "ImGui_ImplVulkan_CreateDeviceObjects() failed!"); // <- Can't be hit yet.
 
     // Our render function expect RendererUserData to be storing the window render buffer we need (for the main viewport we won't use ->Window)
-    ImGuiViewport* main_viewport = GetMainViewport();
+    ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     main_viewport->RendererUserData = IM_NEW(ImGui_ImplVulkan_ViewportData)();
 
     ImGui_ImplVulkan_InitMultiViewportSupport();
@@ -1328,7 +1302,7 @@ void ImGui_ImplVulkan_Shutdown()
 {
     ImGui_ImplVulkan_Data* bd = ImGui_ImplVulkan_GetBackendData();
     IM_ASSERT(bd != nullptr && "No renderer backend to shutdown, or already shutdown?");
-    ImGuiIO& io = GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
     // First destroy objects in all viewports
     ImGui_ImplVulkan_DestroyDeviceObjects();
@@ -1337,7 +1311,7 @@ void ImGui_ImplVulkan_Shutdown()
 #endif
 
     // Manually delete main viewport render data in-case we haven't initialized for viewports
-    ImGuiViewport* main_viewport = GetMainViewport();
+    ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     if (ImGui_ImplVulkan_ViewportData* vd = (ImGui_ImplVulkan_ViewportData*)main_viewport->RendererUserData)
         IM_DELETE(vd);
     main_viewport->RendererUserData = nullptr;
@@ -1466,9 +1440,9 @@ VkSurfaceFormatKHR ImGui_ImplVulkanH_SelectSurfaceFormat(VkPhysicalDevice physic
     // hence we must make sure that a format with the mostly available color space, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR, is found and used.
     uint32_t avail_count;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &avail_count, nullptr);
-    std::vector<VkSurfaceFormatKHR> avail_format;
+    ImVector<VkSurfaceFormatKHR> avail_format;
     avail_format.resize((int)avail_count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &avail_count, avail_format.data());
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &avail_count, avail_format.Data);
 
     // First check if only one format, VK_FORMAT_UNDEFINED, is available, which would imply that any format is available
     if (avail_count == 1)
@@ -1508,9 +1482,9 @@ VkPresentModeKHR ImGui_ImplVulkanH_SelectPresentMode(VkPhysicalDevice physical_d
     // Request a certain mode and confirm that it is available. If not use VK_PRESENT_MODE_FIFO_KHR which is mandatory
     uint32_t avail_count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &avail_count, nullptr);
-    std::vector<VkPresentModeKHR> avail_modes;
+    ImVector<VkPresentModeKHR> avail_modes;
     avail_modes.resize((int)avail_count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &avail_count, avail_modes.data());
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &avail_count, avail_modes.Data);
     //for (uint32_t avail_i = 0; avail_i < avail_count; avail_i++)
     //    printf("[vulkan] avail_modes[%d] = %d\n", avail_i, avail_modes[avail_i]);
 
@@ -1529,9 +1503,9 @@ VkPhysicalDevice ImGui_ImplVulkanH_SelectPhysicalDevice(VkInstance instance)
     check_vk_result(err);
     IM_ASSERT(gpu_count > 0);
 
-    std::vector<VkPhysicalDevice> gpus;
+    ImVector<VkPhysicalDevice> gpus;
     gpus.resize(gpu_count);
-    err = vkEnumeratePhysicalDevices(instance, &gpu_count, gpus.data());
+    err = vkEnumeratePhysicalDevices(instance, &gpu_count, gpus.Data);
     check_vk_result(err);
 
     // If a number >1 of GPUs got reported, find discrete GPU if present, or use first one available. This covers
@@ -1556,9 +1530,9 @@ uint32_t ImGui_ImplVulkanH_SelectQueueFamilyIndex(VkPhysicalDevice physical_devi
 {
     uint32_t count;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &count, nullptr);
-    std::vector<VkQueueFamilyProperties> queues_properties;
+    ImVector<VkQueueFamilyProperties> queues_properties;
     queues_properties.resize((int)count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &count, queues_properties.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &count, queues_properties.Data);
     for (uint32_t i = 0; i < count; i++)
         if (queues_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             return i;
@@ -1642,8 +1616,8 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         ImGui_ImplVulkanH_DestroyFrame(device, &wd->Frames[i], allocator);
     for (uint32_t i = 0; i < wd->SemaphoreCount; i++)
         ImGui_ImplVulkanH_DestroyFrameSemaphores(device, &wd->FrameSemaphores[i], allocator);
-    //wd->Frames.clear();
-    //wd->FrameSemaphores.clear();
+    wd->Frames.clear();
+    wd->FrameSemaphores.clear();
     wd->ImageCount = 0;
     if (wd->RenderPass)
         vkDestroyRenderPass(device, wd->RenderPass, allocator);
@@ -1699,8 +1673,8 @@ void ImGui_ImplVulkanH_CreateWindowSwapChain(VkPhysicalDevice physical_device, V
         wd->SemaphoreCount = wd->ImageCount + 1;
         wd->Frames.resize(wd->ImageCount);
         wd->FrameSemaphores.resize(wd->SemaphoreCount);
-        memset(wd->Frames.data(), 0, wd->Frames.size() * sizeof(ImGui_ImplVulkanH_Frame));
-        memset(wd->FrameSemaphores.data(), 0, wd->FrameSemaphores.size() * sizeof(ImGui_ImplVulkanH_FrameSemaphores));
+        memset(wd->Frames.Data, 0, wd->Frames.size_in_bytes());
+        memset(wd->FrameSemaphores.Data, 0, wd->FrameSemaphores.size_in_bytes());
         for (uint32_t i = 0; i < wd->ImageCount; i++)
             wd->Frames[i].Backbuffer = backbuffers[i];
     }
@@ -1918,7 +1892,7 @@ void ImGui_ImplVulkanH_DestroyFrameSemaphores(VkDevice device, ImGui_ImplVulkanH
 
 void ImGui_ImplVulkanH_DestroyAllViewportsRenderBuffers(VkDevice device, const VkAllocationCallbacks* allocator)
 {
-    ImGuiPlatformIO& platform_io = GetPlatformIO();
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     for (int n = 0; n < platform_io.Viewports.Size; n++)
         if (ImGui_ImplVulkan_ViewportData* vd = (ImGui_ImplVulkan_ViewportData*)platform_io.Viewports[n]->RendererUserData)
             ImGui_ImplVulkan_DestroyWindowRenderBuffers(device, &vd->RenderBuffers, allocator);
@@ -1939,7 +1913,7 @@ static void ImGui_ImplVulkan_CreateWindow(ImGuiViewport* viewport)
     ImGui_ImplVulkan_InitInfo* v = &bd->VulkanInitInfo;
 
     // Create surface
-    ImGuiPlatformIO& platform_io = GetPlatformIO();
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
     VkResult err = (VkResult)platform_io.Platform_CreateVkSurface(viewport, (ImU64)v->Instance, (const void*)v->Allocator, (ImU64*)&wd->Surface);
     check_vk_result(err);
 
@@ -1953,7 +1927,7 @@ static void ImGui_ImplVulkan_CreateWindow(ImGuiViewport* viewport)
     }
 
     // Select Surface Format
-    std::vector<VkFormat> requestSurfaceImageFormats;
+    ImVector<VkFormat> requestSurfaceImageFormats;
 #ifdef IMGUI_IMPL_VULKAN_HAS_DYNAMIC_RENDERING
     for (uint32_t n = 0; n < v->PipelineRenderingCreateInfo.colorAttachmentCount; n++)
         requestSurfaceImageFormats.push_back(v->PipelineRenderingCreateInfo.pColorAttachmentFormats[n]);
@@ -1963,7 +1937,7 @@ static void ImGui_ImplVulkan_CreateWindow(ImGuiViewport* viewport)
         requestSurfaceImageFormats.push_back(format);
 
     const VkColorSpaceKHR requestSurfaceColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
-    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(v->PhysicalDevice, wd->Surface, requestSurfaceImageFormats.data(), (int)requestSurfaceImageFormats.size(), requestSurfaceColorSpace);
+    wd->SurfaceFormat = ImGui_ImplVulkanH_SelectSurfaceFormat(v->PhysicalDevice, wd->Surface, requestSurfaceImageFormats.Data, (size_t)requestSurfaceImageFormats.Size, requestSurfaceColorSpace);
 
     // Select Present Mode
     // FIXME-VULKAN: Even thought mailbox seems to get us maximum framerate with a single window, it halves framerate with a second window etc. (w/ Nvidia and SDK 1.82.1)
@@ -2191,8 +2165,8 @@ static void ImGui_ImplVulkan_SwapBuffers(ImGuiViewport* viewport, void*)
 
 void ImGui_ImplVulkan_InitMultiViewportSupport()
 {
-    ImGuiPlatformIO& platform_io = GetPlatformIO();
-    if (GetIO().BackendFlags & ImGuiBackendFlags_PlatformHasViewports)
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+    if (ImGui::GetIO().BackendFlags & ImGuiBackendFlags_PlatformHasViewports)
         IM_ASSERT(platform_io.Platform_CreateVkSurface != nullptr && "Platform needs to setup the CreateVkSurface handler.");
     platform_io.Renderer_CreateWindow = ImGui_ImplVulkan_CreateWindow;
     platform_io.Renderer_DestroyWindow = ImGui_ImplVulkan_DestroyWindow;
@@ -2203,5 +2177,9 @@ void ImGui_ImplVulkan_InitMultiViewportSupport()
 
 void ImGui_ImplVulkan_ShutdownMultiViewportSupport()
 {
-    DestroyPlatformWindows();
+    ImGui::DestroyPlatformWindows();
 }
+
+//-----------------------------------------------------------------------------
+
+#endif // #ifndef IMGUI_DISABLE

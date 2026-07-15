@@ -11,7 +11,6 @@
 #define METALCOMMANDBUFFER_HPP
 
 #include "Graphics/CommandBuffer.hpp"
-#include "Graphics/Framebuffer.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
@@ -40,7 +39,7 @@ public:
 
     MetalCommandBuffer(const id<MTLCommandQueue>&);
 
-    void beginRenderPass(const Framebuffer&) override;
+    void beginRenderPass(RenderPassDescriptor&) override;
 
     void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) override;
     void useVertexBuffer(const std::shared_ptr<Buffer>&) override;
@@ -51,14 +50,10 @@ public:
     void drawVertices(uint32_t start, uint32_t count) override;
     void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) override;
 
-#if defined(GFX_IMGUI_ENABLED)
-    void imGuiRenderDrawData(ImDrawData*) const override;
-#endif
-
     void endRenderPass() override;
 
 
-    void beginBlitPass() override;
+    void beginBlitPass(BlitPassDescriptor&) override;
 
     void copyBufferToBuffer(const std::shared_ptr<Buffer>& src, const std::shared_ptr<Buffer>& dst, size_t size) override;
     void copyBufferToTexture(const std::shared_ptr<Buffer>& buffer, size_t bufferOffset, const std::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) override;
