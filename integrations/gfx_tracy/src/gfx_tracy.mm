@@ -51,6 +51,11 @@ public:
     {
     }
 
+    MetalZoneImpl(TracyGfxCtx* context, MTLComputePassDescriptor* descriptor, const ::tracy::SourceLocationData* sourceLocation)
+        : m_scope(metalContext(context), descriptor, checkedSourceLocation(sourceLocation), true)
+    {
+    }
+
     MetalZoneImpl(const MetalZoneImpl&) = delete;
     MetalZoneImpl(MetalZoneImpl&&) = delete;
 
@@ -172,10 +177,22 @@ void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::Pass
         state.m_active = true;
         return;
     }
+
+    if (auto* computeDescriptor = dynamic_cast<MetalComputePassDescriptor*>(&descriptor))
+    {
+        std::construct_at(reinterpret_cast<MetalZoneImpl*>(state.m_storage.data()), context, computeDescriptor->mtlComputePassDescriptor(), sourceLocation); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        state.m_destroy = [](void* storage) noexcept {
+            std::destroy_at(reinterpret_cast<MetalZoneImpl*>(storage)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        };
+        state.m_active = true;
+        return;
+    }
     #endif
 
     #if defined (GFX_TRACY_VULKAN_ENABLED)
-    if (dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor) || dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor))
+    if (dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor)
+        || dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor)
+        || dynamic_cast<VulkanComputePassDescriptor*>(&descriptor))
     {
         std::construct_at(reinterpret_cast<VulkanZoneImpl*>(state.m_storage.data()), context, descriptor, sourceLocation); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         state.m_destroy = [](void* storage) noexcept {

@@ -25,6 +25,7 @@
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanShaderLib.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
+#include "Vulkan/VulkanComputePipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanPassDescriptor.hpp"
@@ -139,6 +140,11 @@ std::unique_ptr<GraphicsPipeline> VulkanDevice::newGraphicsPipeline(const Graphi
     return std::make_unique<VulkanGraphicsPipeline>(this, desc);
 }
 
+std::unique_ptr<ComputePipeline> VulkanDevice::newComputePipeline(const ComputePipeline::Descriptor& desc) const
+{
+    return std::make_unique<VulkanComputePipeline>(this, desc);
+}
+
 std::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) const
 {
     return std::make_unique<VulkanBuffer>(this, desc);
@@ -157,6 +163,11 @@ std::unique_ptr<RenderPassDescriptor> VulkanDevice::newRenderPassDescriptor() co
 std::unique_ptr<BlitPassDescriptor> VulkanDevice::newBlitPassDescriptor() const
 {
     return std::make_unique<VulkanBlitPassDescriptor>();
+}
+
+std::unique_ptr<ComputePassDescriptor> VulkanDevice::newComputePassDescriptor() const
+{
+    return std::make_unique<VulkanComputePassDescriptor>();
 }
 
 std::unique_ptr<CommandBufferPool> VulkanDevice::newCommandBufferPool() const

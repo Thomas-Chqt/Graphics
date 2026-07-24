@@ -11,7 +11,7 @@
 #define COMMANDBUFFER_HPP
 
 #include "Graphics/PassDescriptor.hpp"
-#include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/Pipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
 #include "Graphics/Drawable.hpp"
@@ -32,7 +32,7 @@ public:
 
     virtual void beginRenderPass(RenderPassDescriptor&) = 0;
 
-    virtual void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) = 0;
+    virtual void usePipeline(const std::shared_ptr<const Pipeline>&) = 0;
     virtual void useVertexBuffer(const std::shared_ptr<Buffer>&) = 0;
 
     virtual void setParameterBlock(const std::shared_ptr<const ParameterBlock>&, uint32_t index) = 0;
@@ -43,6 +43,12 @@ public:
     virtual void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) = 0;
 
     virtual void endRenderPass() = 0;
+
+    virtual void beginComputePass(ComputePassDescriptor&) = 0;
+
+    virtual void dispatchThreadgroups(uint32_t x, uint32_t y = 1, uint32_t z = 1) = 0;
+
+    virtual void endComputePass() = 0;
 
 
     virtual void beginBlitPass(BlitPassDescriptor&) = 0;

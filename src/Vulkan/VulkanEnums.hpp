@@ -27,6 +27,8 @@ constexpr vk::Format toVkFormat(PixelFormat pxf)
         return vk::Format::eB8G8R8A8Srgb;
     case PixelFormat::RG32Uint:
         return vk::Format::eR32G32Uint;
+    case PixelFormat::RG32Float:
+        return vk::Format::eR32G32Sfloat;
     case PixelFormat::Depth32Float:
         return vk::Format::eD32Sfloat;
     default:
@@ -44,6 +46,8 @@ constexpr PixelFormat toPixelFormat(vk::Format fmt)
         return PixelFormat::BGRA8Unorm_sRGB;
     case vk::Format::eR32G32Uint:
         return PixelFormat::RG32Uint;
+    case vk::Format::eR32G32Sfloat:
+        return PixelFormat::RG32Float;
     default:
         throw std::runtime_error("not implemented");
     }
@@ -143,6 +147,8 @@ constexpr vk::DescriptorType toVkDescriptorType(BindingType tpe)
         return vk::DescriptorType::eStorageBuffer;
     case BindingType::sampledTexture:
         return vk::DescriptorType::eSampledImage;
+    case BindingType::storageTexture:
+        return vk::DescriptorType::eStorageImage;
     case BindingType::sampler:
         return vk::DescriptorType::eSampler;
     default:
@@ -162,6 +168,10 @@ constexpr vk::ShaderStageFlags toVkShaderStageFlags(BindingUsages use)
         vkShaderStageFlags |= vk::ShaderStageFlagBits::eFragment;
     if (use & BindingUsage::fragmentWrite)
         vkShaderStageFlags |= vk::ShaderStageFlagBits::eFragment;
+    if (use & BindingUsage::computeRead)
+        vkShaderStageFlags |= vk::ShaderStageFlagBits::eCompute;
+    if (use & BindingUsage::computeWrite)
+        vkShaderStageFlags |= vk::ShaderStageFlagBits::eCompute;
 
     return vkShaderStageFlags;
 }
@@ -180,6 +190,8 @@ constexpr vk::ImageUsageFlags toVkImageUsageFlags(TextureUsages use)
         vkUsages |= vk::ImageUsageFlagBits::eTransferDst;
     if (use & TextureUsage::copySource)
         vkUsages |= vk::ImageUsageFlagBits::eTransferSrc;
+    if (use & TextureUsage::shaderWrite)
+        vkUsages |= vk::ImageUsageFlagBits::eStorage;
 
     return vkUsages;
 }
@@ -192,6 +204,7 @@ constexpr vk::ImageAspectFlags toVkImageAspectFlags(PixelFormat format)
     case PixelFormat::BGRA8Unorm:
     case PixelFormat::BGRA8Unorm_sRGB:
     case PixelFormat::RG32Uint:
+    case PixelFormat::RG32Float:
         return vk::ImageAspectFlagBits::eColor;
     case PixelFormat::Depth32Float:
         return vk::ImageAspectFlagBits::eDepth;

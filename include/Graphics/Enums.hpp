@@ -96,6 +96,7 @@ enum class PixelFormat : uint8_t
     BGRA8Unorm,
     BGRA8Unorm_sRGB,
     RG32Uint,
+    RG32Float,
     Depth32Float
 };
 
@@ -158,6 +159,7 @@ enum class BindingType : uint8_t
     constantBuffer,
     structuredBuffer,
     sampledTexture,
+    storageTexture,
     sampler
 };
 
@@ -166,7 +168,9 @@ enum class BindingUsage : uint8_t
     vertexRead    = 1 << 1,
     vertexWrite   = 1 << 2,
     fragmentRead  = 1 << 3,
-    fragmentWrite = 1 << 4
+    fragmentWrite = 1 << 4,
+    computeRead   = 1 << 5,
+    computeWrite  = 1 << 6
 };
 GFX_ENABLE_BITMASK_OPERATORS(BindingUsage);
 using BindingUsages = Flags<BindingUsage>;
@@ -174,10 +178,11 @@ using BindingUsages = Flags<BindingUsage>;
 enum class TextureUsage : uint8_t
 {
     shaderRead             = 1 << 0,
-    colorAttachment        = 1 << 1,
-    depthStencilAttachment = 1 << 2,
-    copyDestination        = 1 << 3,
-    copySource             = 1 << 4
+    shaderWrite            = 1 << 1,
+    colorAttachment        = 1 << 2,
+    depthStencilAttachment = 1 << 3,
+    copyDestination        = 1 << 4,
+    copySource             = 1 << 5
 };
 GFX_ENABLE_BITMASK_OPERATORS(TextureUsage);
 using TextureUsages = Flags<TextureUsage>;
@@ -218,6 +223,7 @@ constexpr inline size_t pixelFormatSize(PixelFormat format)
     case PixelFormat::Depth32Float:
         return 4;
     case PixelFormat::RG32Uint:
+    case PixelFormat::RG32Float:
         return 8;
     default:
         throw std::runtime_error("not implemented");

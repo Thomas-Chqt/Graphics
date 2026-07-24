@@ -14,9 +14,11 @@
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
+#include "Graphics/Pipeline.hpp"
 
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
+#include "Metal/MetalComputePipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalSampler.hpp"
@@ -41,7 +43,7 @@ public:
 
     void beginRenderPass(RenderPassDescriptor&) override;
 
-    void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) override;
+    void usePipeline(const std::shared_ptr<const Pipeline>&) override;
     void useVertexBuffer(const std::shared_ptr<Buffer>&) override;
 
     void setParameterBlock(const std::shared_ptr<const ParameterBlock>&, uint32_t index) override;
@@ -51,6 +53,10 @@ public:
     void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) override;
 
     void endRenderPass() override;
+
+    void beginComputePass(ComputePassDescriptor&) override;
+    void dispatchThreadgroups(uint32_t x, uint32_t y = 1, uint32_t z = 1) override;
+    void endComputePass() override;
 
 
     void beginBlitPass(BlitPassDescriptor&) override;
@@ -79,7 +85,8 @@ private:
     id<MTLCommandBuffer> m_mtlCommandBuffer = nil;
     id<MTLCommandEncoder> m_commandEncoder = nil;
 
-    std::set<std::shared_ptr<const MetalGraphicsPipeline>> m_usedPipelines;
+    std::set<std::shared_ptr<const Pipeline>> m_usedPipelines;
+    const Pipeline* m_boundPipeline = nullptr;
 
     std::set<std::shared_ptr<MetalTexture>> m_usedTextures;
     std::set<std::shared_ptr<MetalBuffer>> m_usedBuffers;

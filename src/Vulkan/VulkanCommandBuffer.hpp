@@ -18,6 +18,7 @@
 #include "Graphics/Texture.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
+#include "Vulkan/VulkanComputePipeline.hpp"
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
@@ -41,7 +42,7 @@ public:
 
     void beginRenderPass(RenderPassDescriptor&) override;
 
-    void usePipeline(const std::shared_ptr<const GraphicsPipeline>&) override;
+    void usePipeline(const std::shared_ptr<const Pipeline>&) override;
     void useVertexBuffer(const std::shared_ptr<Buffer>&) override;
 
     void setParameterBlock(const std::shared_ptr<const ParameterBlock>&, uint32_t index) override;
@@ -52,6 +53,10 @@ public:
 
 
     void endRenderPass() override;
+
+    void beginComputePass(ComputePassDescriptor&) override;
+    void dispatchThreadgroups(uint32_t x, uint32_t y = 1, uint32_t z = 1) override;
+    void endComputePass() override;
 
     void beginBlitPass(BlitPassDescriptor&) override;
 
@@ -93,8 +98,8 @@ private:
 
     struct NonReusedRessources
     {
-        std::set<std::shared_ptr<const VulkanGraphicsPipeline>> usedPipelines;
-        const VulkanGraphicsPipeline* boundPipeline = nullptr;
+        std::set<std::shared_ptr<const Pipeline>> usedPipelines;
+        const Pipeline* boundPipeline = nullptr;
 
         std::set<std::shared_ptr<const VulkanParameterBlock>> usedPBlock;
 
@@ -109,6 +114,7 @@ private:
         uint64_t signaledTimeValue = 0;
     }
     m_nonReusedRessources;
+
 public:
     VulkanCommandBuffer& operator=(const VulkanCommandBuffer&) = delete;
     VulkanCommandBuffer& operator=(VulkanCommandBuffer&&) = delete;

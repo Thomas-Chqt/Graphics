@@ -20,13 +20,12 @@
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanPassDescriptor.hpp"
-#include <memory>
-#include <utility>
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
+#include "Vulkan/VulkanComputePipeline.hpp"
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
-
-#include <type_traits>
+#include "Vulkan/VulkanPhysicalDevice.hpp"
+#include <cassert>
 
 #define m_usedPipelines m_nonReusedRessources.usedPipelines
 #define m_boundPipeline m_nonReusedRessources.boundPipeline
@@ -90,6 +89,8 @@ VulkanCommandBuffer::VulkanCommandBuffer(const VulkanDevice* device, const vk::C
 
 void VulkanCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor)
 {
+    assert(m_boundPipeline == nullptr);
+
     auto* vulkanDescriptor = dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor);
     assert(vulkanDescriptor);
     vulkanDescriptor->invokeBeginCallback(m_vkCommandBuffer);
@@ -202,19 +203,23 @@ void VulkanCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor)
     m_vkCommandBuffer.beginRendering(renderingInfo);
 }
 
-void VulkanCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipeline>& _graphicsPipeline)
+void VulkanCommandBuffer::usePipeline(const std::shared_ptr<const Pipeline>& pipeline)
 {
-    auto graphicsPipeline = std::dynamic_pointer_cast<const VulkanGraphicsPipeline>(_graphicsPipeline);
+    if (auto graphicsPipeline = std::dynamic_pointer_cast<const VulkanGraphicsPipeline>(pipeline))
+        m_vkCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline->vkPipeline());
+    else if (auto computePipeline = std::dynamic_pointer_cast<const VulkanComputePipeline>(pipeline))
+        m_vkCommandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, computePipeline->vkPipeline());
+    else
+        std::unreachable();
 
-    m_vkCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphicsPipeline->vkPipeline());
-
-    m_usedPipelines.insert(graphicsPipeline);
-    m_boundPipeline = graphicsPipeline.get();
+    m_usedPipelines.insert(pipeline);
+    m_boundPipeline = pipeline.get();
 }
 
 void VulkanCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer)
 {
     auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
+    assert(buffer);
 
     BufferSyncRequest syncReq{};
     syncReq.stageMask = vk::PipelineStageFlagBits2::eVertexInput;
@@ -242,6 +247,10 @@ void VulkanCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer
 void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const ParameterBlock>& aPblock, uint32_t index)
 {
     const auto& pBlock = std::dynamic_pointer_cast<const VulkanParameterBlock>(aPblock);
+    assert(pBlock);
+
+    assert(m_boundPipeline);
+
     std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
     std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
 
@@ -253,8 +262,10 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
             syncReq.stageMask |= vk::PipelineStageFlagBits2::eVertexShader;
         if ((binding.usages & BindingUsage::fragmentRead) || (binding.usages & BindingUsage::fragmentWrite))
             syncReq.stageMask |= vk::PipelineStageFlagBits2::eFragmentShader;
+        if ((binding.usages & BindingUsage::computeRead) || (binding.usages & BindingUsage::computeWrite))
+            syncReq.stageMask |= vk::PipelineStageFlagBits2::eComputeShader;
 
-        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead)))
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead | BindingUsage::computeRead)))
         {
             switch (binding.type)
             {
@@ -268,9 +279,13 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
                     std::unreachable();
             }
         }
-        if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite))) {
-            throw std::runtime_error("not implemented");
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite | BindingUsage::computeWrite))) {
+            assert(binding.type == BindingType::structuredBuffer);
+            syncReq.accessMask |= vk::AccessFlagBits2::eShaderStorageWrite;
         }
+
+        assert(syncReq.stageMask != vk::PipelineStageFlags2{});
+        assert(syncReq.accessMask != vk::AccessFlags2{});
 
         auto it = m_bufferFinalSyncStates.find(buffer);
         if (it != m_bufferFinalSyncStates.end()) {
@@ -295,19 +310,33 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
             syncReq.stageMask |= vk::PipelineStageFlagBits2::eVertexShader;
         if ((binding.usages & BindingUsage::fragmentRead) || (binding.usages & BindingUsage::fragmentWrite))
             syncReq.stageMask |= vk::PipelineStageFlagBits2::eFragmentShader;
+        if ((binding.usages & BindingUsage::computeRead) || (binding.usages & BindingUsage::computeWrite))
+            syncReq.stageMask |= vk::PipelineStageFlagBits2::eComputeShader;
 
-        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead))) {
-            assert(binding.type == BindingType::sampledTexture);
-            syncReq.accessMask |= vk::AccessFlagBits2::eShaderRead;
-            syncReq.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexRead | BindingUsage::fragmentRead | BindingUsage::computeRead))) {
+            assert(binding.type == BindingType::sampledTexture || binding.type == BindingType::storageTexture);
+            if (binding.type == BindingType::sampledTexture) {
+                syncReq.accessMask |= vk::AccessFlagBits2::eShaderRead;
+                syncReq.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+            }
+            else if (binding.type == BindingType::storageTexture) {
+                syncReq.accessMask |= vk::AccessFlagBits2::eShaderStorageRead;
+                syncReq.layout = vk::ImageLayout::eGeneral;
+            }
+            else {
+                std::unreachable();
+            }
             syncReq.preserveContent = true;
         }
-        if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite))) {
-            syncReq.accessMask |= vk::AccessFlagBits2::eShaderWrite;
-            syncReq.layout = vk::ImageLayout::eGeneral; // allow read and write;
+        if (static_cast<bool>(binding.usages & (BindingUsage::vertexWrite | BindingUsage::fragmentWrite | BindingUsage::computeWrite))) {
+            assert(binding.type == BindingType::storageTexture);
+            syncReq.accessMask |= vk::AccessFlagBits2::eShaderStorageWrite;
+            syncReq.layout = vk::ImageLayout::eGeneral;
             syncReq.preserveContent = true;
-            throw std::runtime_error("not implemented"); // never tested, because never had use case
         }
+
+        assert(syncReq.stageMask != vk::PipelineStageFlags2{});
+        assert(syncReq.accessMask != vk::AccessFlags2{});
 
         auto it = m_imageFinalSyncStates.find(texture);
         if (it != m_imageFinalSyncStates.end()) {
@@ -336,26 +365,40 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
         m_vkCommandBuffer.pipelineBarrier2(dependencyInfo);
     }
 
-    assert(m_boundPipeline != nullptr);
-    m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, m_boundPipeline->pipelineLayout(), index, pBlock->descriptorSet(), {});
+    if (auto* graphicPipeline = dynamic_cast<const VulkanGraphicsPipeline*>(m_boundPipeline))
+        m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphicPipeline->pipelineLayout(), index, pBlock->descriptorSet(), {});
+    else if (auto* computePipeline = dynamic_cast<const VulkanComputePipeline*>(m_boundPipeline))
+        m_vkCommandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, computePipeline->pipelineLayout(), index, pBlock->descriptorSet(), {});
+    else
+        std::unreachable();
 
     m_usedPBlock.insert(pBlock);
 }
 
 void VulkanCommandBuffer::setPushConstants(const void* data, size_t size)
 {
-    assert(m_boundPipeline != nullptr);
-    m_vkCommandBuffer.pushConstants(m_boundPipeline->pipelineLayout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, (uint32_t)size, data);
+    assert(size <= 128);
+    assert(m_boundPipeline);
+    if (auto* graphicPipeline = dynamic_cast<const VulkanGraphicsPipeline*>(m_boundPipeline))
+        m_vkCommandBuffer.pushConstants(graphicPipeline->pipelineLayout(), vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, static_cast<uint32_t>(size), data);
+    else if (auto* computePipeline = dynamic_cast<const VulkanComputePipeline*>(m_boundPipeline))
+        m_vkCommandBuffer.pushConstants(computePipeline->pipelineLayout(), vk::ShaderStageFlagBits::eCompute, 0, static_cast<uint32_t>(size), data);
+    else
+        std::unreachable();
 }
 
 void VulkanCommandBuffer::drawVertices(uint32_t start, uint32_t count)
 {
+    assert(dynamic_cast<const VulkanGraphicsPipeline*>(m_boundPipeline));
     m_vkCommandBuffer.draw(count, 1, start, 0);
 }
 
 void VulkanCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& aBuffer)
 {
     auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
+    assert(buffer);
+
+    assert(dynamic_cast<const VulkanGraphicsPipeline*>(m_boundPipeline));
 
     BufferSyncRequest syncReq{};
     syncReq.stageMask = vk::PipelineStageFlagBits2::eVertexInput;
@@ -384,12 +427,42 @@ void VulkanCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& aBu
 void VulkanCommandBuffer::endRenderPass()
 {
     m_vkCommandBuffer.endRendering();
+    m_boundPipeline = nullptr;
+}
+
+void VulkanCommandBuffer::beginComputePass(ComputePassDescriptor& descriptor)
+{
+    assert(m_boundPipeline == nullptr);
+
+    auto* vulkanDescriptor = dynamic_cast<VulkanComputePassDescriptor*>(&descriptor);
+    assert(vulkanDescriptor);
+
+    vulkanDescriptor->invokeBeginCallback(m_vkCommandBuffer);
+}
+
+void VulkanCommandBuffer::dispatchThreadgroups(uint32_t x, uint32_t y, uint32_t z)
+{
+    assert(x > 0 && y > 0 && z > 0);
+    assert(dynamic_cast<const VulkanComputePipeline*>(m_boundPipeline));
+    assert(x <= m_device->physicalDevice().getProperties().limits.maxComputeWorkGroupCount[0]);
+    assert(y <= m_device->physicalDevice().getProperties().limits.maxComputeWorkGroupCount[1]);
+    assert(z <= m_device->physicalDevice().getProperties().limits.maxComputeWorkGroupCount[2]);
+
+    m_vkCommandBuffer.dispatch(x, y, z);
+}
+
+void VulkanCommandBuffer::endComputePass()
+{
+    m_boundPipeline = nullptr;
 }
 
 void VulkanCommandBuffer::beginBlitPass(BlitPassDescriptor& descriptor)
 {
     auto* vulkanDescriptor = dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor);
     assert(vulkanDescriptor);
+
+    assert(m_boundPipeline == nullptr);
+
     vulkanDescriptor->invokeBeginCallback(m_vkCommandBuffer);
 }
 
@@ -625,12 +698,16 @@ void VulkanCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aT
 
 void VulkanCommandBuffer::endBlitPass()
 {
-    // nothing
+    assert(m_boundPipeline == nullptr);
 }
 
 void VulkanCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawable)
 {
     auto drawable = std::dynamic_pointer_cast<VulkanDrawable>(aDrawable);
+    assert(drawable);
+
+    assert(m_boundPipeline == nullptr);
+
     m_presentedDrawables.insert(drawable);
 }
 

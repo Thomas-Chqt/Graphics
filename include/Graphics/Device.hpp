@@ -14,6 +14,7 @@
 #include "Graphics/Swapchain.hpp"
 #include "Graphics/ShaderLib.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/ComputePipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/Texture.hpp"
 #include "Graphics/CommandBufferPool.hpp"
@@ -49,10 +50,12 @@ public:
     virtual std::unique_ptr<ShaderLib> newShaderLib(const std::filesystem::path&) const = 0;
     virtual std::unique_ptr<ParameterBlockLayout> newParameterBlockLayout(const ParameterBlockLayout::Descriptor&) const = 0;
     virtual std::unique_ptr<GraphicsPipeline> newGraphicsPipeline(const GraphicsPipeline::Descriptor&) const = 0;
+    virtual std::unique_ptr<ComputePipeline> newComputePipeline(const ComputePipeline::Descriptor&) const = 0;
     virtual std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
     virtual std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
     virtual std::unique_ptr<RenderPassDescriptor> newRenderPassDescriptor() const = 0;
     virtual std::unique_ptr<BlitPassDescriptor> newBlitPassDescriptor() const = 0;
+    virtual std::unique_ptr<ComputePassDescriptor> newComputePassDescriptor() const = 0;
     virtual std::unique_ptr<CommandBufferPool> newCommandBufferPool() const = 0;
     virtual std::unique_ptr<ParameterBlockPool> newParameterBlockPool(const ParameterBlockPool::Descriptor&) const = 0;
     virtual std::unique_ptr<Sampler> newSampler(const Sampler::Descriptor&) const = 0;

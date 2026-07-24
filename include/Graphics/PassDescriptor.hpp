@@ -110,4 +110,20 @@ public:
     BlitPassDescriptor& operator=(BlitPassDescriptor&&) = delete;
 };
 
+class ComputePassDescriptor : public PassDescriptor
+{
+public:
+    ComputePassDescriptor(const ComputePassDescriptor&) = delete;
+    ComputePassDescriptor(ComputePassDescriptor&&) = delete;
+
+    virtual ~ComputePassDescriptor() = default;
+
+protected:
+    ComputePassDescriptor() = default;
+
+public:
+    ComputePassDescriptor& operator=(const ComputePassDescriptor&) = delete;
+    ComputePassDescriptor& operator=(ComputePassDescriptor&&) = delete;
+};
+
 }

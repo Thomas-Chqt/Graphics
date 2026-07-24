@@ -15,6 +15,7 @@ namespace gfx
 std::optional<vk::MemoryBarrier2> syncResource(const ResourceSyncState& state, const ResourceSyncRequest& request)
 {
     constexpr vk::AccessFlags2 writeMask = vk::AccessFlagBits2::eShaderWrite
+        | vk::AccessFlagBits2::eShaderStorageWrite
         | vk::AccessFlagBits2::eTransferWrite
         | vk::AccessFlagBits2::eColorAttachmentWrite
         | vk::AccessFlagBits2::eDepthStencilAttachmentWrite

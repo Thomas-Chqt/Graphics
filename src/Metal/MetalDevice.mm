@@ -18,6 +18,7 @@
 #include "Metal/MetalBuffer.hpp"
 #include "Metal/MetalCommandBufferPool.hpp"
 #include "Metal/MetalGraphicsPipeline.hpp"
+#include "Metal/MetalComputePipeline.hpp"
 #include "Metal/MetalParameterBlockPool.hpp"
 #include "Metal/MetalSwapchain.hpp"
 #include "Metal/MetalCommandBuffer.hpp"
@@ -60,6 +61,11 @@ std::unique_ptr<GraphicsPipeline> MetalDevice::newGraphicsPipeline(const Graphic
     return std::make_unique<MetalGraphicsPipeline>(*this, desc);
 }
 
+std::unique_ptr<ComputePipeline> MetalDevice::newComputePipeline(const ComputePipeline::Descriptor& desc) const
+{
+    return std::make_unique<MetalComputePipeline>(*this, desc);
+}
+
 std::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) const
 {
     return std::make_unique<MetalBuffer>(*this, desc);
@@ -78,6 +84,11 @@ std::unique_ptr<RenderPassDescriptor> MetalDevice::newRenderPassDescriptor() con
 std::unique_ptr<BlitPassDescriptor> MetalDevice::newBlitPassDescriptor() const
 {
     return std::make_unique<MetalBlitPassDescriptor>();
+}
+
+std::unique_ptr<ComputePassDescriptor> MetalDevice::newComputePassDescriptor() const
+{
+    return std::make_unique<MetalComputePassDescriptor>();
 }
 
 std::unique_ptr<CommandBufferPool> MetalDevice::newCommandBufferPool() const

@@ -30,7 +30,7 @@ option(GFX_BUILD_GLFW_INTEGRATION  "Build the glfw integration static library"  
 option(GFX_BUILD_TRACY_INTEGRATION "Build the tracy integration static library" ON)
 
 if(GFX_BUILD_EXAMPLES)
-    set(GFX_EXAMPLES_TO_BUILD "triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
+    set(GFX_EXAMPLES_TO_BUILD "compute;triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
 endif()
 
 enable_language(CXX)

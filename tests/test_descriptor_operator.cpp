@@ -10,6 +10,7 @@
 #include "Graphics/Device.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
+#include "Graphics/ComputePipeline.hpp"
 #include "Graphics/Instance.hpp"
 #include "Graphics/ParameterBlockLayout.hpp"
 #include "Graphics/ParameterBlockPool.hpp"
@@ -228,6 +229,42 @@ TEST(descriptor_operator, graphics_pipeline_descriptor)
     rhs.cullMode = gfx::CullMode::back;
 
     expectDescriptorComparableInMap(lhs, rhs);
+}
+
+TEST(descriptor_operator, compute_pipeline_descriptor)
+{
+    gfx::ComputePipeline::Descriptor lhs {};
+    lhs.computeShader = nullptr;
+    lhs.threadsPerThreadgroupX = 8;
+    lhs.threadsPerThreadgroupY = 8;
+
+    gfx::ComputePipeline::Descriptor rhs = lhs;
+    rhs.threadsPerThreadgroupX = 16;
+
+    expectDescriptorComparableInMap(lhs, rhs);
+}
+
+TEST(compute_resource_enums, combine_read_and_write_usages)
+{
+    const gfx::BindingUsages usages = gfx::BindingUsage::computeRead | gfx::BindingUsage::computeWrite;
+
+    EXPECT_TRUE(static_cast<bool>(usages & gfx::BindingUsage::computeRead));
+    EXPECT_TRUE(static_cast<bool>(usages & gfx::BindingUsage::computeWrite));
+    EXPECT_FALSE(static_cast<bool>(usages & gfx::BindingUsage::fragmentRead));
+}
+
+TEST(compute_resource_enums, combine_storage_texture_usages)
+{
+    const gfx::TextureUsages usages = gfx::TextureUsage::shaderRead | gfx::TextureUsage::shaderWrite;
+
+    EXPECT_TRUE(static_cast<bool>(usages & gfx::TextureUsage::shaderRead));
+    EXPECT_TRUE(static_cast<bool>(usages & gfx::TextureUsage::shaderWrite));
+    EXPECT_FALSE(static_cast<bool>(usages & gfx::TextureUsage::colorAttachment));
+}
+
+TEST(pixel_format, rg32_float_size)
+{
+    EXPECT_EQ(gfx::pixelFormatSize(gfx::PixelFormat::RG32Float), sizeof(float) * 2);
 }
 
 }

@@ -58,6 +58,11 @@ void MetalParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Buffer>
     auto buffer = std::dynamic_pointer_cast<MetalBuffer>(aBuffer);
     assert(buffer);
 
+    [[maybe_unused]] const BindingType bindingType = m_layout->bindings().at(idx).type;
+    assert(bindingType == BindingType::constantBuffer || bindingType == BindingType::structuredBuffer);
+    assert(bindingType != BindingType::constantBuffer || buffer->usages() & BufferUsage::constantBuffer);
+    assert(bindingType != BindingType::structuredBuffer || buffer->usages() & BufferUsage::structuredBuffer);
+
     auto* content = std::bit_cast<uint64_t*>(m_argumentBuffer->content<std::byte>() + m_offset);
     content[bindingOffset(*m_layout, idx)] = buffer->mtlBuffer().gpuAddress;
     auto& encodedBuffers = m_encodedBuffers.at(idx);
@@ -79,7 +84,8 @@ void MetalParameterBlock::setBinding(uint32_t idx, uint32_t arrayIndex, const st
 
 void MetalParameterBlock::setBinding(uint32_t idx, uint32_t firstArrayIndex, std::span<const std::shared_ptr<Texture>> textures) { @autoreleasepool
 {
-    assert(m_layout->bindings().at(idx).type == BindingType::sampledTexture);
+    [[maybe_unused]] const BindingType bindingType = m_layout->bindings().at(idx).type;
+    assert(bindingType == BindingType::sampledTexture || bindingType == BindingType::storageTexture);
     assert(firstArrayIndex + textures.size() <= m_layout->bindings().at(idx).count);
 
     auto* content = std::bit_cast<MTLResourceID*>(m_argumentBuffer->content<std::byte>() + m_offset);
@@ -87,6 +93,7 @@ void MetalParameterBlock::setBinding(uint32_t idx, uint32_t firstArrayIndex, std
     for (uint32_t i = firstArrayIndex; const auto& texturePtr : textures) {
         auto texture = std::dynamic_pointer_cast<MetalTexture>(texturePtr);
         assert(texture);
+        assert(bindingType != BindingType::sampledTexture || texture->usages() & TextureUsage::shaderRead);
         content[offset + i] = texture->mtltexture().gpuResourceID;
         m_encodedTextures.at(idx).insert_or_assign(i, EncodedResource<MetalTexture>{
             .resource = texture,
@@ -133,6 +140,7 @@ void MetalParameterBlock::clearBinding(uint32_t idx, uint32_t firstArrayIndex, u
         eraseBindingRange(m_encodedBuffers.at(idx));
         break;
     case BindingType::sampledTexture:
+    case BindingType::storageTexture:
         eraseBindingRange(m_encodedTextures.at(idx));
         break;
     case BindingType::sampler:

@@ -53,7 +53,9 @@ void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::Pass
     assert(state.m_active == false);
     assert(state.m_destroy == nullptr);
 
-    if (dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor) || dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor))
+    if (dynamic_cast<VulkanRenderPassDescriptor*>(&descriptor)
+        || dynamic_cast<VulkanBlitPassDescriptor*>(&descriptor)
+        || dynamic_cast<VulkanComputePassDescriptor*>(&descriptor))
     {
         std::construct_at(reinterpret_cast<VulkanZoneImpl*>(state.m_storage.data()), context, descriptor, sourceLocation); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         state.m_destroy = [](void* storage) noexcept {
