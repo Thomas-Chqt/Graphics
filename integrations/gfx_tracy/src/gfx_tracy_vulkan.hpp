@@ -26,6 +26,8 @@ public:
             renderDescriptor->setBeginCallback(passBegin, this);
         else if (auto* blitDescriptor = dynamic_cast<VulkanBlitPassDescriptor*>(&m_descriptor))
             blitDescriptor->setBeginCallback(passBegin, this);
+        else if (auto* computeDescriptor = dynamic_cast<VulkanComputePassDescriptor*>(&m_descriptor))
+            computeDescriptor->setBeginCallback(passBegin, this);
         else
             std::unreachable();
     }
@@ -39,6 +41,8 @@ public:
             renderDescriptor->clearBeginCallback();
         else if (auto* blitDescriptor = dynamic_cast<VulkanBlitPassDescriptor*>(&m_descriptor))
             blitDescriptor->clearBeginCallback();
+        else if (auto* computeDescriptor = dynamic_cast<VulkanComputePassDescriptor*>(&m_descriptor))
+            computeDescriptor->clearBeginCallback();
         else
             std::unreachable();
 

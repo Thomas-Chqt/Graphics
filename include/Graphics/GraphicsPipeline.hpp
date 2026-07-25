@@ -10,6 +10,7 @@
 #ifndef GRAPHICSPIPELINE_HPP
 #define GRAPHICSPIPELINE_HPP
 
+#include "Graphics/Pipeline.hpp"
 #include "Graphics/ShaderFunction.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/VertexLayout.hpp"
@@ -22,7 +23,7 @@
 namespace gfx
 {
 
-class GraphicsPipeline
+class GraphicsPipeline : public Pipeline
 {
 public:
     struct Descriptor

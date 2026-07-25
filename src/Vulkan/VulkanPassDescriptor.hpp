@@ -77,6 +77,36 @@ private:
     void* m_beginCallbackUserData = nullptr;
 };
 
+class VulkanComputePassDescriptor final : public ComputePassDescriptor
+{
+public:
+    using BeginCallback = void (*)(void*, const vk::CommandBuffer&);
+
+    void setBeginCallback(BeginCallback callback, void* userData)
+    {
+        assert(m_beginCallback == nullptr);
+        assert(callback != nullptr);
+        assert(userData != nullptr);
+        m_beginCallback = callback;
+        m_beginCallbackUserData = userData;
+    }
+    void clearBeginCallback()
+    {
+        assert(m_beginCallback != nullptr);
+        m_beginCallback = nullptr;
+        m_beginCallbackUserData = nullptr;
+    }
+    void invokeBeginCallback(const vk::CommandBuffer& commandBuffer)
+    {
+        if (m_beginCallback)
+            m_beginCallback(m_beginCallbackUserData, commandBuffer);
+    }
+
+private:
+    BeginCallback m_beginCallback = nullptr;
+    void* m_beginCallbackUserData = nullptr;
+};
+
 } // namespace gfx
 
 #endif // VULKANPASSDESCRIPTOR_HPP

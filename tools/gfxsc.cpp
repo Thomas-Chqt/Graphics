@@ -66,6 +66,10 @@ static SlangResult compileForTarget(
             .name = slang::CompilerOptionName::EmitSpirvDirectly,
             .value = slang::CompilerOptionValue { .intValue0 = 1, }
         });
+        options.push_back(slang::CompilerOptionEntry{
+            .name = slang::CompilerOptionName::VulkanUseEntryPointName,
+            .value = slang::CompilerOptionValue { .intValue0 = 1, }
+        });
     }
 
     // Automatically add source file directories to include paths (like slangc does)

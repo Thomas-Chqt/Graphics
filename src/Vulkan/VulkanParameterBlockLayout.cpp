@@ -30,7 +30,7 @@ VulkanParameterBlockLayout::VulkanParameterBlockLayout(const VulkanDevice* devic
 
     for (uint32_t i = 0; const auto& binding : desc.bindings) {
         assert(binding.count > 0);
-        assert(binding.type == BindingType::sampledTexture || binding.count == 1);
+        assert(binding.type == BindingType::sampledTexture || binding.type == BindingType::storageTexture || binding.count == 1);
 
         vkBindings.push_back(vk::DescriptorSetLayoutBinding{}
             .setBinding(i++)

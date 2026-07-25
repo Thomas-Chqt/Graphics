@@ -40,6 +40,17 @@ private:
     MTLBlitPassDescriptor* m_mtlBlitPassDescriptor = nil;
 };
 
+class MetalComputePassDescriptor final : public ComputePassDescriptor
+{
+public:
+    MetalComputePassDescriptor();
+
+    MTLComputePassDescriptor* mtlComputePassDescriptor() const { return m_mtlComputePassDescriptor; }
+
+private:
+    MTLComputePassDescriptor* m_mtlComputePassDescriptor = nil;
+};
+
 } // namespace gfx
 
 #endif // METALPASSDESCRIPTOR_HPP

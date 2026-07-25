@@ -5,6 +5,10 @@
 # Date: 2024/05/15 13:50:09
 # ---------------------------------------------------
 
+if ("compute" IN_LIST GFX_EXAMPLES_TO_BUILD)
+    add_subdirectory(compute)
+endif()
+
 if (TARGET GraphicsGLFW)
     if ("triangle" IN_LIST GFX_EXAMPLES_TO_BUILD)
         add_subdirectory(triangle)

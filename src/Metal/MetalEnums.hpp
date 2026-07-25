@@ -31,6 +31,8 @@ constexpr MTLPixelFormat toMTLPixelFormat(PixelFormat pxf)
         return MTLPixelFormatBGRA8Unorm_sRGB;
     case PixelFormat::RG32Uint:
         return MTLPixelFormatRG32Uint;
+    case PixelFormat::RG32Float:
+        return MTLPixelFormatRG32Float;
     case PixelFormat::Depth32Float:
         return MTLPixelFormatDepth32Float;
     default:
@@ -50,6 +52,8 @@ constexpr PixelFormat toPixelFormat(MTLPixelFormat pxf)
         return PixelFormat::BGRA8Unorm_sRGB;
     case MTLPixelFormatRG32Uint:
         return PixelFormat::RG32Uint;
+    case MTLPixelFormatRG32Float:
+        return PixelFormat::RG32Float;
     default:
         throw std::runtime_error("not implemented");
     }
@@ -97,6 +101,10 @@ constexpr MTLResourceUsage toMTLResourceUsage(BindingUsages usages)
         mtlResourceUsage |= MTLResourceUsageRead;
     if (usages & BindingUsage::fragmentWrite)
         mtlResourceUsage |= MTLResourceUsageWrite;
+    if (usages & BindingUsage::computeRead)
+        mtlResourceUsage |= MTLResourceUsageRead;
+    if (usages & BindingUsage::computeWrite)
+        mtlResourceUsage |= MTLResourceUsageWrite;
 
     return mtlResourceUsage;
 }
@@ -127,6 +135,8 @@ constexpr MTLTextureUsage toMTLTextureUsage(TextureUsages use)
         mtlTextureUsage |= MTLTextureUsageRenderTarget;
     if (use & TextureUsage::depthStencilAttachment)
         mtlTextureUsage |= MTLTextureUsageRenderTarget;
+    if (use & TextureUsage::shaderWrite)
+        mtlTextureUsage |= MTLTextureUsageShaderWrite;
 
     return mtlTextureUsage;
 }

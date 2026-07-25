@@ -19,9 +19,11 @@
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalPassDescriptor.hpp"
+#include <cassert>
 #include <memory>
 #include <utility>
 #include "Metal/MetalGraphicsPipeline.hpp"
+#include "Metal/MetalComputePipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
 #include "Metal/MetalDrawable.hpp"
 #include "Metal/MetalCommandBufferPool.hpp"
@@ -36,6 +38,7 @@ MetalCommandBuffer::MetalCommandBuffer(MetalCommandBuffer&& other) noexcept
       m_mtlCommandBuffer(std::exchange(other.m_mtlCommandBuffer, nil)),
       m_commandEncoder(std::exchange(other.m_commandEncoder, nil)),
       m_usedPipelines(std::move(other.m_usedPipelines)),
+      m_boundPipeline(std::exchange(other.m_boundPipeline, nullptr)),
       m_usedTextures(std::move(other.m_usedTextures)),
       m_usedBuffers(std::move(other.m_usedBuffers)),
       m_usedSamplers(std::move(other.m_usedSamplers)),
@@ -51,6 +54,8 @@ MetalCommandBuffer::MetalCommandBuffer(const id<MTLCommandQueue>& queue) { @auto
 void MetalCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor) { @autoreleasepool
 {
     assert(m_commandEncoder == nil);
+    assert(m_boundPipeline == nullptr);
+
     auto* metalDescriptor = dynamic_cast<MetalRenderPassDescriptor*>(&descriptor);
     assert(metalDescriptor);
 
@@ -71,21 +76,30 @@ void MetalCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor) { @au
     m_commandEncoder = [m_mtlCommandBuffer renderCommandEncoderWithDescriptor:metalDescriptor->mtlRenderPassDescriptor()];
 }}
 
-void MetalCommandBuffer::usePipeline(const std::shared_ptr<const GraphicsPipeline>& _graphicsPipeline) { @autoreleasepool
+void MetalCommandBuffer::usePipeline(const std::shared_ptr<const Pipeline>& pipeline) { @autoreleasepool
 {
-    auto graphicsPipeline = std::dynamic_pointer_cast<const MetalGraphicsPipeline>(_graphicsPipeline);
-    assert(graphicsPipeline);
+    if (auto graphicsPipeline = std::dynamic_pointer_cast<const MetalGraphicsPipeline>(pipeline))
+    {
+        assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
+        auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+        [renderCommandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
+        [renderCommandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
+        [renderCommandEncoder setCullMode:toMTLCullMode(graphicsPipeline->cullMode())];
+        if (graphicsPipeline->depthStencilState() != nil)
+            [renderCommandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
+    }
+    else if (auto computePipeline = std::dynamic_pointer_cast<const MetalComputePipeline>(pipeline))
+    {
+        assert([m_commandEncoder conformsToProtocol:@protocol(MTLComputeCommandEncoder)]);
+        auto computeCommandEncoder = (id<MTLComputeCommandEncoder>)m_commandEncoder;
+        [computeCommandEncoder setComputePipelineState:computePipeline->computePipelineState()];
+    }
+    else {
+        std::unreachable();
+    }
 
-    assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
-
-    [renderCommandEncoder setRenderPipelineState:graphicsPipeline->renderPipelineState()];
-    [renderCommandEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
-    [renderCommandEncoder setCullMode:toMTLCullMode(graphicsPipeline->cullMode())];
-    if (graphicsPipeline->depthStencilState() != nil)
-        [renderCommandEncoder setDepthStencilState:graphicsPipeline->depthStencilState()];
-
-    m_usedPipelines.insert(graphicsPipeline);
+    m_usedPipelines.insert(pipeline);
+    m_boundPipeline = pipeline.get();
 }}
 
 void MetalCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer) { @autoreleasepool
@@ -104,28 +118,55 @@ void MetalCommandBuffer::useVertexBuffer(const std::shared_ptr<Buffer>& aBuffer)
 void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const ParameterBlock>& aPBlock, uint32_t index) { @autoreleasepool
 {
     const auto& pBlock = std::dynamic_pointer_cast<const MetalParameterBlock>(aPBlock);
+    assert(pBlock);
 
-    assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
-
-    for (const auto& encodedBuffer : pBlock->encodedBuffers())
-        [renderCommandEncoder useResource:encodedBuffer.resource->mtlBuffer() usage:toMTLResourceUsage(encodedBuffer.binding.usages) stages:toMTLRenderStages(encodedBuffer.binding.usages)];
-
-    for (const auto& encodedTexture : pBlock->encodedTextures())
-        [renderCommandEncoder useResource:encodedTexture.resource->mtltexture() usage:toMTLResourceUsage(encodedTexture.binding.usages) stages:toMTLRenderStages(encodedTexture.binding.usages)];
-
-    if (std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages  & BindingUsage::vertexRead || encodedBuffer.binding.usages & BindingUsage::vertexWrite;  }) ||
-        std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::vertexRead || encodedTexture.binding.usages & BindingUsage::vertexWrite; }) ||
-        std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::vertexRead || encodedSampler.binding.usages & BindingUsage::vertexWrite; }))
+    if ([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)])
     {
-        [renderCommandEncoder setVertexBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
+        auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+        for (const auto& encodedBuffer : pBlock->encodedBuffers())
+            [renderCommandEncoder useResource:encodedBuffer.resource->mtlBuffer() usage:toMTLResourceUsage(encodedBuffer.binding.usages) stages:toMTLRenderStages(encodedBuffer.binding.usages)];
+
+        for (const auto& encodedTexture : pBlock->encodedTextures())
+            [renderCommandEncoder useResource:encodedTexture.resource->mtltexture() usage:toMTLResourceUsage(encodedTexture.binding.usages) stages:toMTLRenderStages(encodedTexture.binding.usages)];
+
+        const bool hasVertexBindings =
+            std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages  & BindingUsage::vertexRead || encodedBuffer.binding.usages & BindingUsage::vertexWrite;  }) ||
+            std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::vertexRead || encodedTexture.binding.usages & BindingUsage::vertexWrite; }) ||
+            std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::vertexRead || encodedSampler.binding.usages & BindingUsage::vertexWrite; });
+
+        const bool hasFragmentBindings =
+            std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages & BindingUsage::fragmentRead  || encodedBuffer.binding.usages & BindingUsage::fragmentWrite;  }) ||
+            std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::fragmentRead || encodedTexture.binding.usages & BindingUsage::fragmentWrite; }) ||
+            std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::fragmentRead || encodedSampler.binding.usages & BindingUsage::fragmentWrite; });
+
+        assert(hasVertexBindings || hasFragmentBindings);
+
+        if (hasVertexBindings)
+            [renderCommandEncoder setVertexBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
+
+        if (hasFragmentBindings)
+            [renderCommandEncoder setFragmentBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
     }
-
-    if (std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages & BindingUsage::fragmentRead  || encodedBuffer.binding.usages & BindingUsage::fragmentWrite;  }) ||
-        std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::fragmentRead || encodedTexture.binding.usages & BindingUsage::fragmentWrite; }) ||
-        std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::fragmentRead || encodedSampler.binding.usages & BindingUsage::fragmentWrite; }))
+    else if ([m_commandEncoder conformsToProtocol:@protocol(MTLComputeCommandEncoder)])
     {
-        [renderCommandEncoder setFragmentBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
+        auto computeCommandEncoder = (id<MTLComputeCommandEncoder>)m_commandEncoder;
+
+        for (const auto& encodedBuffer : pBlock->encodedBuffers())
+            [computeCommandEncoder useResource:encodedBuffer.resource->mtlBuffer() usage:toMTLResourceUsage(encodedBuffer.binding.usages)];
+
+        for (const auto& encodedTexture : pBlock->encodedTextures())
+            [computeCommandEncoder useResource:encodedTexture.resource->mtltexture() usage:toMTLResourceUsage(encodedTexture.binding.usages)];
+
+        const bool hasComputeBindings =
+            std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages & BindingUsage::computeRead  || encodedBuffer.binding.usages & BindingUsage::computeWrite;  }) ||
+            std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::computeRead || encodedTexture.binding.usages & BindingUsage::computeWrite; }) ||
+            std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::computeRead || encodedSampler.binding.usages & BindingUsage::computeWrite; });
+        assert(hasComputeBindings);
+        [computeCommandEncoder setBuffer:pBlock->argumentBuffer().mtlBuffer() offset:pBlock->offset() atIndex:index];
+    }
+    else {
+        std::unreachable();
     }
 
     m_usedBuffers.insert_range(pBlock->encodedBuffers()   | std::views::transform([](const auto& encodedBuffer)  -> std::shared_ptr<MetalBuffer>  { return encodedBuffer.resource;  }));
@@ -136,18 +177,29 @@ void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const Parameter
 
 void MetalCommandBuffer::setPushConstants(const void* data, size_t size) { @autoreleasepool
 {
-    assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
-    auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
-
-    // TODO : take stage from used
-    [renderCommandEncoder setVertexBytes:data length:size atIndex:6];
-    [renderCommandEncoder setFragmentBytes:data length:size atIndex:6];
+    assert(size <= 128);
+    if ([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)])
+    {
+        auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+        [renderCommandEncoder setVertexBytes:data length:size atIndex:6];
+        [renderCommandEncoder setFragmentBytes:data length:size atIndex:6];
+    }
+    else if ([m_commandEncoder conformsToProtocol:@protocol(MTLComputeCommandEncoder)])
+    {
+        auto computeCommandEncoder = (id<MTLComputeCommandEncoder>)m_commandEncoder;
+        [computeCommandEncoder setBytes:data length:size atIndex:6];
+    }
+    else {
+        std::unreachable();
+    }
 }}
 
 void MetalCommandBuffer::drawVertices(uint32_t start, uint32_t count) { @autoreleasepool
 {
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+    assert(dynamic_cast<const MetalGraphicsPipeline*>(m_boundPipeline));
 
     [renderCommandEncoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:start vertexCount:count];
 }}
@@ -159,6 +211,8 @@ void MetalCommandBuffer::drawIndexedVertices(const std::shared_ptr<Buffer>& buff
 
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLRenderCommandEncoder)]);
     auto renderCommandEncoder = (id<MTLRenderCommandEncoder>)m_commandEncoder;
+
+    assert(dynamic_cast<const MetalGraphicsPipeline*>(m_boundPipeline));
 
     [renderCommandEncoder drawIndexedPrimitives:MTLPrimitiveTypeTriangle
                                      indexCount:idxBuffer->size() / sizeof(uint32_t)
@@ -173,12 +227,46 @@ void MetalCommandBuffer::endRenderPass() { @autoreleasepool
 {
     assert(m_commandEncoder);
     [m_commandEncoder endEncoding];
+    m_boundPipeline = nullptr;
     m_commandEncoder = nil;
+}}
+
+void MetalCommandBuffer::beginComputePass(ComputePassDescriptor& descriptor) { @autoreleasepool
+{
+    assert(m_commandEncoder == nil);
+    assert(m_boundPipeline == nullptr);
+
+    auto* metalDescriptor = dynamic_cast<MetalComputePassDescriptor*>(&descriptor);
+    assert(metalDescriptor);
+
+    m_commandEncoder = [m_mtlCommandBuffer computeCommandEncoderWithDescriptor:metalDescriptor->mtlComputePassDescriptor()];
+    assert(m_commandEncoder);
+}}
+
+void MetalCommandBuffer::dispatchThreadgroups(uint32_t x, uint32_t y, uint32_t z) { @autoreleasepool
+{
+    assert(x > 0 && y > 0 && z > 0);
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLComputeCommandEncoder)]);
+    assert(m_boundPipeline);
+    const auto* computePipeline = dynamic_cast<const MetalComputePipeline*>(m_boundPipeline);
+    assert(computePipeline);
+    [(id<MTLComputeCommandEncoder>)m_commandEncoder dispatchThreadgroups:MTLSizeMake(x, y, z)
+                                                   threadsPerThreadgroup:computePipeline->threadsPerThreadgroup()];
+}}
+
+void MetalCommandBuffer::endComputePass() { @autoreleasepool
+{
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLComputeCommandEncoder)]);
+    [m_commandEncoder endEncoding];
+    m_commandEncoder = nil;
+    m_boundPipeline = nullptr;
 }}
 
 void MetalCommandBuffer::beginBlitPass(BlitPassDescriptor& descriptor) { @autoreleasepool
 {
     assert(m_commandEncoder == nil);
+    assert(m_boundPipeline == nullptr);
+
     auto* metalDescriptor = dynamic_cast<MetalBlitPassDescriptor*>(&descriptor);
     assert(metalDescriptor);
     m_commandEncoder = [m_mtlCommandBuffer blitCommandEncoderWithDescriptor:metalDescriptor->mtlBlitPassDescriptor()];
@@ -274,12 +362,15 @@ void MetalCommandBuffer::endBlitPass() { @autoreleasepool
     assert(m_commandEncoder);
     [m_commandEncoder endEncoding];
     m_commandEncoder = nil;
+    m_boundPipeline = nullptr;
 }}
 
 void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawable) { @autoreleasepool
 {
     auto drawable = std::dynamic_pointer_cast<MetalDrawable>(aDrawable);
     assert(drawable);
+
+    assert(m_boundPipeline == nullptr);
 
     [m_mtlCommandBuffer presentDrawable:drawable->mtlDrawable()];
 }}
@@ -297,6 +388,7 @@ MetalCommandBuffer& MetalCommandBuffer::operator = (MetalCommandBuffer&& other) 
         m_mtlCommandBuffer = std::exchange(other.m_mtlCommandBuffer, nil);
         m_commandEncoder = std::exchange(other.m_commandEncoder, nil);
         m_usedPipelines = std::move(other.m_usedPipelines);
+        m_boundPipeline = std::exchange(other.m_boundPipeline, nullptr);
         m_usedTextures = std::move(other.m_usedTextures);
         m_usedBuffers = std::move(other.m_usedBuffers);
         m_usedSamplers = std::move(other.m_usedSamplers);

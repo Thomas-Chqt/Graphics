@@ -80,4 +80,9 @@ MetalBlitPassDescriptor::MetalBlitPassDescriptor()
 {
 }
 
+MetalComputePassDescriptor::MetalComputePassDescriptor()
+    : m_mtlComputePassDescriptor([[MTLComputePassDescriptor alloc] init])
+{
+}
+
 } // namespace gfx

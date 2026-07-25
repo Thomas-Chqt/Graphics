@@ -48,6 +48,12 @@ VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const std
 void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Buffer>& aBuffer)
 {
     auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
+    assert(buffer);
+
+    const BindingType bindingType = m_layout->bindings().at(idx).type;
+    assert(bindingType == BindingType::constantBuffer || bindingType == BindingType::structuredBuffer);
+    assert(bindingType != BindingType::constantBuffer || buffer->usages() & BufferUsage::constantBuffer);
+    assert(bindingType != BindingType::structuredBuffer || buffer->usages() & BufferUsage::structuredBuffer);
 
     auto bufferDescriptorInfo = vk::DescriptorBufferInfo{}
         .setBuffer(buffer->vkBuffer())
@@ -59,7 +65,7 @@ void VulkanParameterBlock::setBinding(uint32_t idx, const std::shared_ptr<Buffer
         .setDstBinding(idx)
         .setDstArrayElement(0)
         .setDescriptorCount(1)
-        .setDescriptorType(toVkDescriptorType(m_layout->bindings()[idx].type))
+        .setDescriptorType(toVkDescriptorType(bindingType))
         .setBufferInfo(bufferDescriptorInfo);
 
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
@@ -82,7 +88,8 @@ void VulkanParameterBlock::setBinding(uint32_t idx, uint32_t arrayIndex, const s
 
 void VulkanParameterBlock::setBinding(uint32_t idx, uint32_t firstArrayIndex, std::span<const std::shared_ptr<Texture>> textures)
 {
-    assert(m_layout->bindings().at(idx).type == BindingType::sampledTexture);
+    const BindingType bindingType = m_layout->bindings().at(idx).type;
+    assert(bindingType == BindingType::sampledTexture || bindingType == BindingType::storageTexture);
     assert(firstArrayIndex + textures.size() <= m_layout->bindings().at(idx).count);
 
     std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
@@ -92,10 +99,11 @@ void VulkanParameterBlock::setBinding(uint32_t idx, uint32_t firstArrayIndex, st
     for (uint32_t i = 0; const auto& texturePtr : textures) {
         auto texture = std::dynamic_pointer_cast<VulkanTexture>(texturePtr);
         assert(texture);
+        assert(bindingType != BindingType::sampledTexture || texture->usages() & TextureUsage::shaderRead);
 
         descriptorImageInfos.push_back(vk::DescriptorImageInfo{}
             .setImageView(texture->vkImageView())
-            .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal));
+            .setImageLayout(bindingType == BindingType::sampledTexture ? vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eGeneral));
         usedTextures.insert_or_assign(firstArrayIndex + i, UsedResource<VulkanTexture>{
             .resource = texture,
             .binding = m_layout->bindings().at(idx)
@@ -108,7 +116,7 @@ void VulkanParameterBlock::setBinding(uint32_t idx, uint32_t firstArrayIndex, st
         .setDstBinding(idx)
         .setDstArrayElement(firstArrayIndex)
         .setDescriptorCount(static_cast<uint32_t>(descriptorImageInfos.size()))
-        .setDescriptorType(vk::DescriptorType::eSampledImage)
+        .setDescriptorType(toVkDescriptorType(bindingType))
         .setImageInfo(descriptorImageInfos);
 
     m_device->vkDevice().updateDescriptorSets(writeDescriptorSet, {});
@@ -161,6 +169,7 @@ void VulkanParameterBlock::clearBinding(uint32_t idx, uint32_t firstArrayIndex, 
         eraseBindingRange(m_usedBuffers.at(idx));
         break;
     case BindingType::sampledTexture:
+    case BindingType::storageTexture:
         eraseBindingRange(m_usedTextures.at(idx));
         break;
     case BindingType::sampler:

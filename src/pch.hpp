@@ -10,28 +10,29 @@
 #ifndef GRAPHICS_PCH_HPP
 #define GRAPHICS_PCH_HPP
 
-#include <cstdint>    // IWYU pragma: keep
-#include <stdexcept>  // IWYU pragma: keep
-#include <cstring>    // IWYU pragma: keep
-#include <utility>    // IWYU pragma: keep
-#include <cassert>    // IWYU pragma: keep
-#include <cstddef>    // IWYU pragma: keep
-#include <memory>     // IWYU pragma: keep
-#include <set>        // IWYU pragma: keep
-#include <algorithm>  // IWYU pragma: keep
-#include <ranges>     // IWYU pragma: keep
-#include <deque>      // IWYU pragma: keep
-#include <array>      // IWYU pragma: keep
-#include <vector>     // IWYU pragma: keep
-#include <iterator>   // IWYU pragma: keep
-#include <map>        // IWYU pragma: keep
-#include <string>     // IWYU pragma: keep
-#include <filesystem> // IWYU pragma: keep
-#include <fstream>    // IWYU pragma: keep
-#include <print>      // IWYU pragma: keep
-#include <ctime>      // IWYU pragma: keep
-#include <mutex>      // IWYU pragma: keep
-#include <numeric>    // IWYU pragma: keep
+#include <cstdint>     // IWYU pragma: keep
+#include <stdexcept>   // IWYU pragma: keep
+#include <cstring>     // IWYU pragma: keep
+#include <utility>     // IWYU pragma: keep
+#include <cassert>     // IWYU pragma: keep
+#include <cstddef>     // IWYU pragma: keep
+#include <memory>      // IWYU pragma: keep
+#include <set>         // IWYU pragma: keep
+#include <algorithm>   // IWYU pragma: keep
+#include <ranges>      // IWYU pragma: keep
+#include <deque>       // IWYU pragma: keep
+#include <array>       // IWYU pragma: keep
+#include <vector>      // IWYU pragma: keep
+#include <iterator>    // IWYU pragma: keep
+#include <map>         // IWYU pragma: keep
+#include <string>      // IWYU pragma: keep
+#include <filesystem>  // IWYU pragma: keep
+#include <fstream>     // IWYU pragma: keep
+#include <print>       // IWYU pragma: keep
+#include <ctime>       // IWYU pragma: keep
+#include <mutex>       // IWYU pragma: keep
+#include <numeric>     // IWYU pragma: keep
+#include <type_traits> // IWYU pragma: keep
 
 #if defined(GFX_BUILD_METAL)
 #if defined(__OBJC__)
