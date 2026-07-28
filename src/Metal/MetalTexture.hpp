@@ -27,36 +27,44 @@ class MetalDevice;
 class MetalTexture : public Texture
 {
 public:
-    MetalTexture() = delete;
     MetalTexture(const MetalTexture&) = delete;
-    MetalTexture(MetalTexture&&)      = delete;
+    MetalTexture(MetalTexture&&) = delete;
 
     MetalTexture(const Texture::Descriptor&);
     MetalTexture(const MetalDevice&, const Texture::Descriptor&);
 
     TextureType type() const override;
+
     uint32_t width() const override;
     uint32_t height() const override;
-    PixelFormat pixelFormat() const override;
-    inline TextureUsages usages() const override { return m_usages; };
-    inline ResourceStorageMode storageMode() const override { return m_storageMode; };
 
-    inline uint64_t imTextureId() const { return std::bit_cast<uint64_t>((__bridge void*)m_mtlTexture); }
+    uint32_t baseMipLevel() const override;
+    uint32_t mipLevelCount() const override;
+
+    uint32_t baseArrayLayer() const override;
+    uint32_t arrayLayerCount() const override;
+
+    PixelFormat pixelFormat() const override;
+
+    TextureUsages usages() const override;
+    ResourceStorageMode storageMode() const override;
 
     inline id<MTLTexture> mtltexture() const { return m_mtlTexture; }
     inline void setMtlTexture(const id<MTLTexture>& t) { m_mtlTexture = t; }
 
     ~MetalTexture() override = default;
 
-private:
-    TextureUsages m_usages;
-    ResourceStorageMode m_storageMode;
+protected:
+    MetalTexture() = default;
+
+    TextureUsages m_usages = TextureUsage::shaderRead;
+    ResourceStorageMode m_storageMode = ResourceStorageMode::deviceLocal;
 
     id<MTLTexture> m_mtlTexture = nullptr;
 
 public:
     MetalTexture& operator = (const MetalTexture&) = delete;
-    MetalTexture& operator = (MetalTexture&&)      = delete;
+    MetalTexture& operator = (MetalTexture&&) = delete;
 };
 
 }

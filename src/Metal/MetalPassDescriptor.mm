@@ -48,6 +48,8 @@ void MetalRenderPassDescriptor::setColorAttachments(std::vector<Attachment> atta
         const auto& attachment = m_colorAttachments[i];
         auto texture = std::dynamic_pointer_cast<MetalTexture>(attachment.texture);
         assert(texture);
+        assert(texture->type() == TextureType::texture2d);
+        assert(texture->mipLevelCount() == 1);
 
         auto* mtlAttachment = m_mtlRenderPassDescriptor.colorAttachments[i];
         mtlAttachment.loadAction = toMTLLoadAction(attachment.loadAction);
@@ -68,6 +70,8 @@ void MetalRenderPassDescriptor::setDepthAttachment(std::optional<Attachment> att
 
     auto texture = std::dynamic_pointer_cast<MetalTexture>(m_depthAttachment->texture);
     assert(texture);
+    assert(texture->type() == TextureType::texture2d);
+    assert(texture->mipLevelCount() == 1);
 
     m_mtlRenderPassDescriptor.depthAttachment.loadAction = toMTLLoadAction(m_depthAttachment->loadAction);
     m_mtlRenderPassDescriptor.depthAttachment.storeAction = MTLStoreActionStore;

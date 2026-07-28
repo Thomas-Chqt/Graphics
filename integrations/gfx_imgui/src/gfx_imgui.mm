@@ -192,7 +192,7 @@ void shutdown(Device& device)
 uint64_t initTextureId(Texture& texture)
 {
     if (auto* metalTexture = dynamic_cast<MetalTexture*>(&texture))
-        return metalTexture->imTextureId();
+        return std::bit_cast<uint64_t>((__bridge void*)metalTexture->mtltexture());
 
     #if defined(GFX_BUILD_VULKAN)
     if (auto* vulkanTexture = dynamic_cast<VulkanTexture*>(&texture))
@@ -213,7 +213,7 @@ uint64_t initTextureId(Texture& texture)
 std::optional<uint64_t> textureId(const Texture& texture)
 {
     if (const auto* metalTexture = dynamic_cast<const MetalTexture*>(&texture))
-        return metalTexture->imTextureId();
+        return std::bit_cast<uint64_t>((__bridge void*)metalTexture->mtltexture());
 
     #if defined(GFX_BUILD_VULKAN)
     if (const auto* vulkanTexture = dynamic_cast<const VulkanTexture*>(&texture))
@@ -226,7 +226,7 @@ std::optional<uint64_t> textureId(const Texture& texture)
 void removeTextureId(Texture& texture)
 {
     #if defined(GFX_BUILD_VULKAN)
-    if (auto* vulkanTexture = dynamic_cast<VulkanTexture*>(&texture))
+    if (auto* vulkanTexture = dynamic_cast<VulkanTextureBase*>(&texture))
     {
         vulkanTexture->removeImTextureId();
         return;

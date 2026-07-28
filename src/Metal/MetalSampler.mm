@@ -31,6 +31,9 @@ MetalSampler::MetalSampler(const MetalDevice& device, const Sampler::Descriptor&
     mtlSamplerDescriptor.rAddressMode = toMTLSamplerAddressMode(descriptor.rAddressMode);
     mtlSamplerDescriptor.minFilter = toMTLSamplerMinMagFilter(descriptor.minFilter);
     mtlSamplerDescriptor.magFilter = toMTLSamplerMinMagFilter(descriptor.magFilter);
+    mtlSamplerDescriptor.mipFilter = toMTLSamplerMipFilter(descriptor.mipFilter);
+    mtlSamplerDescriptor.lodMinClamp = descriptor.mipFilter == SamplerMipFilter::NotMipmapped ? 0.0f : descriptor.lodMinClamp;
+    mtlSamplerDescriptor.lodMaxClamp = descriptor.mipFilter == SamplerMipFilter::NotMipmapped ? 0.0f : descriptor.lodMaxClamp;
     mtlSamplerDescriptor.supportArgumentBuffers = YES;
 
     m_mtlSamplerState = [device.mtlDevice() newSamplerStateWithDescriptor:mtlSamplerDescriptor];
