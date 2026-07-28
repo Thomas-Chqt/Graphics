@@ -45,4 +45,9 @@ ResourceStorageMode MetalTextureView::storageMode() const
     return m_rootTexture->storageMode();
 }
 
+std::shared_ptr<MetalTexture> MetalTextureView::rootTexture()
+{
+    return m_rootTexture;
+}
+
 } // namespace gfx
