@@ -15,6 +15,21 @@
 namespace gfx
 {
 
+constexpr vk::ImageViewType toVkImageViewType(TextureType type)
+{
+    switch (type)
+    {
+    case TextureType::texture2d:
+        return vk::ImageViewType::e2D;
+    case TextureType::texture2dArray:
+        return vk::ImageViewType::e2DArray;
+    case TextureType::textureCube:
+        return vk::ImageViewType::eCube;
+    default:
+        throw std::runtime_error("not implemented");
+    }
+}
+
 constexpr vk::Format toVkFormat(PixelFormat pxf)
 {
     switch (pxf)
@@ -236,6 +251,20 @@ constexpr vk::Filter toVkFilter(SamplerMinMagFilter mode)
         return vk::Filter::eNearest;
     case SamplerMinMagFilter::Linear:
         return vk::Filter::eLinear;
+    default:
+        throw std::runtime_error("not implemented");
+    }
+}
+
+constexpr vk::SamplerMipmapMode toVkSamplerMipmapMode(SamplerMipFilter filter)
+{
+    switch (filter)
+    {
+    case SamplerMipFilter::NotMipmapped:
+    case SamplerMipFilter::Nearest:
+        return vk::SamplerMipmapMode::eNearest;
+    case SamplerMipFilter::Linear:
+        return vk::SamplerMipmapMode::eLinear;
     default:
         throw std::runtime_error("not implemented");
     }

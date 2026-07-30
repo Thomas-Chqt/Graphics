@@ -3,15 +3,12 @@
 #include "Metal/MetalEnums.hpp"
 #include "Metal/MetalTexture.hpp"
 
-#include <cassert>
-#include <type_traits>
-#include <utility>
-
 namespace gfx
 {
 
 namespace
 {
+
 MTLClearColor toMTLClearColor(const ClearValue& clearValue)
 {
     return std::visit([]<typename T>(const T& clear) -> MTLClearColor {
@@ -28,6 +25,7 @@ double toMTLClearDepth(const ClearValue& clearValue)
     assert(clearDepth);
     return clearDepth->value;
 }
+
 } // namespace
 
 MetalRenderPassDescriptor::MetalRenderPassDescriptor()

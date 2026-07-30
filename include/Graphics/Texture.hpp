@@ -13,8 +13,6 @@
 #include "Graphics/Enums.hpp"
 
 #include <cstdint>
-#include <limits>
-#include <optional>
 
 namespace gfx
 {
@@ -40,9 +38,9 @@ public:
     {
         TextureType type = TextureType::texture2d;
         uint32_t baseMipLevel = 0;
-        uint32_t mipLevelCount = std::numeric_limits<uint32_t>::max();
+        uint32_t mipLevelCount = 1;
         uint32_t baseArrayLayer = 0;
-        uint32_t arrayLayerCount = std::numeric_limits<uint32_t>::max();
+        uint32_t arrayLayerCount = 1;
 
         auto operator<=>(const ViewDescriptor&) const = default;
     };

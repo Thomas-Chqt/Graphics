@@ -14,13 +14,9 @@
 #include "Graphics/ParameterBlock.hpp"
 
 #include "Vulkan/VulkanBuffer.hpp"
-#include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanTextureView.hpp"
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanParameterBlockLayout.hpp"
-
-#include <ranges>
-#include <unordered_map>
-#include <vector>
 
 namespace gfx
 {
@@ -60,7 +56,7 @@ public:
     inline const vk::DescriptorSet& descriptorSet() const { return m_descriptorSet; }
 
     inline auto usedBuffers()  const { return m_usedBuffers  | std::views::transform([](const auto& resources) { return resources | std::views::values; }) | std::views::join; }
-    inline auto usedTextures() const { return m_usedTextures | std::views::transform([](const auto& resources) { return resources | std::views::values; }) | std::views::join; }
+    inline auto usedTextureViews() const { return m_usedTextureViews | std::views::transform([](const auto& resources) { return resources | std::views::values; }) | std::views::join; }
     inline auto usedSamplers() const { return m_usedSamplers | std::views::transform([](const auto& resources) { return resources | std::views::values; }) | std::views::join; }
 
     ~VulkanParameterBlock() override = default;
@@ -73,7 +69,7 @@ private:
     vk::DescriptorSet m_descriptorSet;
 
     std::vector<std::unordered_map<uint32_t, UsedResource<VulkanBuffer>>> m_usedBuffers;
-    std::vector<std::unordered_map<uint32_t, UsedResource<VulkanTexture>>> m_usedTextures;
+    std::vector<std::unordered_map<uint32_t, UsedResource<VulkanTextureView>>> m_usedTextureViews;
     std::vector<std::unordered_map<uint32_t, UsedResource<VulkanSampler>>> m_usedSamplers;
 
 public:

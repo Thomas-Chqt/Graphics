@@ -25,13 +25,13 @@
 #include "Vulkan/VulkanCommandBufferPool.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
-#include <cassert>
+#include "Vulkan/VulkanTextureView.hpp"
 
 #define m_usedPipelines m_nonReusedRessources.usedPipelines
 #define m_boundPipeline m_nonReusedRessources.boundPipeline
 #define m_usedPBlock m_nonReusedRessources.usedPBlock
 #define m_imageSyncRequests m_nonReusedRessources.imageSyncRequests
-#define m_imageFinalSyncStates m_nonReusedRessources.imageFinalSyncStates
+#define m_imageSyncStates m_nonReusedRessources.imageSyncStates
 #define m_bufferSyncRequests m_nonReusedRessources.bufferSyncRequests
 #define m_bufferFinalSyncStates m_nonReusedRessources.bufferFinalSyncStates
 #define m_presentedDrawables m_nonReusedRessources.presentedDrawables
@@ -105,13 +105,15 @@ void VulkanCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor)
 
     for (size_t i = 0; const auto& colorAttachment : colorAttachments)
     {
-        std::shared_ptr<VulkanTexture> texture = dynamic_pointer_cast<VulkanTexture>(colorAttachment.texture);
-        assert(texture);
+        std::shared_ptr<VulkanTextureView> textureView = dynamic_pointer_cast<VulkanTextureView>(colorAttachment.texture);
+        assert(textureView);
+        assert(textureView->mipLevelCount() == 1);
+        assert(textureView->subresourceRange().layerCount == 1);
 
         colorAttachmentInfos[i] = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(colorAttachment.loadAction))
             .setClearValue(toVkColorClearValue(colorAttachment.clearValue))
-            .setImageView(texture->vkImageView())
+            .setImageView(textureView->vkImageView())
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
         ImageSyncRequest syncReq{};
@@ -120,17 +122,17 @@ void VulkanCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor)
         syncReq.layout = vk::ImageLayout::eColorAttachmentOptimal;
         syncReq.preserveContent = colorAttachment.loadAction == LoadAction::load;
 
-        auto it = m_imageFinalSyncStates.find(texture);
-        if (it != m_imageFinalSyncStates.end()) {
+        auto it = m_imageSyncStates.find(textureView->rootTexture());
+        if (it != m_imageSyncStates.end()) {
             auto barrier = syncImage(it->second, syncReq);
             if (barrier.has_value()) {
-                barrier->setImage(texture->vkImage());
-                barrier->setSubresourceRange(texture->subresourceRange());
+                barrier->setImage(textureView->rootTexture()->vkImage());
+                barrier->setSubresourceRange(textureView->subresourceRange());
                 imageMemoryBarriers.push_back(barrier.value());
             }
         } else {
-            m_imageSyncRequests[texture] = syncReq;
-            m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
+            m_imageSyncRequests[textureView->rootTexture()] = syncReq;
+            m_imageSyncStates[textureView->rootTexture()] = imageStateAfterSync(syncReq);
         }
 
         i++;
@@ -138,8 +140,10 @@ void VulkanCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor)
 
     if (depthAttachment)
     {
-        std::shared_ptr<VulkanTexture> texture = dynamic_pointer_cast<VulkanTexture>(depthAttachment->texture);
+        std::shared_ptr<VulkanTextureView> texture = dynamic_pointer_cast<VulkanTextureView>(depthAttachment->texture);
         assert(texture);
+        assert(texture->mipLevelCount() == 1);
+        assert(texture->subresourceRange().layerCount == 1);
 
         depthAttachmentInfo = vk::RenderingAttachmentInfo{}
             .setLoadOp(toVkAttachmentLoadOp(depthAttachment->loadAction))
@@ -153,17 +157,17 @@ void VulkanCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor)
         syncReq.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
         syncReq.preserveContent = depthAttachment->loadAction == LoadAction::load;
 
-        auto it = m_imageFinalSyncStates.find(texture);
-        if (it != m_imageFinalSyncStates.end()) {
+        auto it = m_imageSyncStates.find(texture->rootTexture());
+        if (it != m_imageSyncStates.end()) {
             auto barrier = syncImage(it->second, syncReq);
             if (barrier.has_value()) {
-                barrier->setImage(texture->vkImage());
+                barrier->setImage(texture->rootTexture()->vkImage());
                 barrier->setSubresourceRange(texture->subresourceRange());
                 imageMemoryBarriers.push_back(barrier.value());
             }
         } else {
-            m_imageSyncRequests[texture] = syncReq;
-            m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
+            m_imageSyncRequests[texture->rootTexture()] = syncReq;
+            m_imageSyncStates[texture->rootTexture()] = imageStateAfterSync(syncReq);
         }
     }
 
@@ -302,7 +306,7 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
         }
     }
 
-    for (auto& [texture, binding] : pBlock->usedTextures())
+    for (auto& [textureView, binding] : pBlock->usedTextureViews())
     {
         ImageSyncRequest syncReq{};
 
@@ -338,17 +342,17 @@ void VulkanCommandBuffer::setParameterBlock(const std::shared_ptr<const Paramete
         assert(syncReq.stageMask != vk::PipelineStageFlags2{});
         assert(syncReq.accessMask != vk::AccessFlags2{});
 
-        auto it = m_imageFinalSyncStates.find(texture);
-        if (it != m_imageFinalSyncStates.end()) {
+        auto it = m_imageSyncStates.find(textureView->rootTexture());
+        if (it != m_imageSyncStates.end()) {
             auto barrier = syncImage(it->second, syncReq); // will update the final sync state
             if (barrier.has_value()) {
-                barrier->setImage(texture->vkImage());
-                barrier->setSubresourceRange(texture->subresourceRange());
+                barrier->setImage(textureView->rootTexture()->vkImage());
+                barrier->setSubresourceRange(textureView->subresourceRange());
                 imageMemoryBarriers.push_back(*barrier);
             }
         } else {
-            m_imageSyncRequests[texture] = syncReq;
-            m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
+            m_imageSyncRequests[textureView->rootTexture()] = syncReq;
+            m_imageSyncStates[textureView->rootTexture()] = imageStateAfterSync(syncReq);
         }
     }
 
@@ -535,12 +539,13 @@ void VulkanCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBu
 {
     auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
     assert(buffer);
-    auto texture = std::dynamic_pointer_cast<VulkanTexture>(aTexture);
-    assert(texture);
+    auto textureView = std::dynamic_pointer_cast<VulkanTextureView>(aTexture);
+    assert(textureView);
 
     assert(buffer->usages() & BufferUsage::copySource);
-    assert(texture->usages() & TextureUsage::copyDestination);
-    assert(bufferOffset + pixelFormatSize(texture->pixelFormat()) * texture->width() * texture->height() <= buffer->size());
+    assert(textureView->usages() & TextureUsage::copyDestination);
+    assert(layerIndex < (textureView->type() == TextureType::textureCube ? 6u : textureView->arrayLayerCount()));
+    assert(bufferOffset + pixelFormatSize(textureView->pixelFormat()) * textureView->width() * textureView->height() <= buffer->size());
 
     std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
     std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
@@ -569,17 +574,17 @@ void VulkanCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBu
     imageSyncReq.layout = vk::ImageLayout::eTransferDstOptimal;
     imageSyncReq.preserveContent = false;
 
-    auto it2 = m_imageFinalSyncStates.find(texture);
-    if (it2 != m_imageFinalSyncStates.end()) {
+    auto it2 = m_imageSyncStates.find(textureView->rootTexture());
+    if (it2 != m_imageSyncStates.end()) {
         auto barrier = syncImage(it2->second, imageSyncReq); // will update the final sync state
         if (barrier.has_value()) {
-            barrier->setImage(texture->vkImage());
-            barrier->setSubresourceRange(texture->subresourceRange());
+            barrier->setImage(textureView->rootTexture()->vkImage());
+            barrier->setSubresourceRange(textureView->subresourceRange());
             imageMemoryBarriers.push_back(*barrier);
         }
     } else {
-        m_imageSyncRequests[texture] = imageSyncReq;
-        m_imageFinalSyncStates[texture] = imageStateAfterSync(imageSyncReq);
+        m_imageSyncRequests[textureView->rootTexture()] = imageSyncReq;
+        m_imageSyncStates[textureView->rootTexture()] = imageStateAfterSync(imageSyncReq);
     }
 
     if (bufferMemoryBarriers.empty() == false || imageMemoryBarriers.empty() == false)
@@ -598,32 +603,33 @@ void VulkanCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBu
     auto bufferImageCopy = vk::BufferImageCopy{}
         .setBufferOffset(bufferOffset)
         .setImageSubresource(vk::ImageSubresourceLayers{}
-            .setAspectMask(texture->subresourceRange().aspectMask)
-            .setMipLevel(0)
+            .setAspectMask(textureView->subresourceRange().aspectMask)
+            .setMipLevel(textureView->baseMipLevel())
             .setBaseArrayLayer(layerIndex)
             .setLayerCount(1))
         .setImageExtent(vk::Extent3D{}
-            .setWidth(texture->width())
-            .setHeight(texture->height())
+            .setWidth(textureView->width())
+            .setHeight(textureView->height())
             .setDepth(1));
 
     m_vkCommandBuffer.copyBufferToImage(
         buffer->vkBuffer(),
-        texture->vkImage(),
+        textureView->rootTexture()->vkImage(),
         vk::ImageLayout::eTransferDstOptimal,
         bufferImageCopy);
 }
 
 void VulkanCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aTexture, uint32_t layerIndex, const std::shared_ptr<Buffer>& aBuffer, size_t bufferOffset)
 {
-    auto texture = std::dynamic_pointer_cast<VulkanTexture>(aTexture);
-    assert(texture);
+    auto textureView = std::dynamic_pointer_cast<VulkanTextureView>(aTexture);
+    assert(textureView);
     auto buffer = std::dynamic_pointer_cast<VulkanBuffer>(aBuffer);
     assert(buffer);
 
-    assert(texture->usages() & TextureUsage::copySource);
+    assert(textureView->usages() & TextureUsage::copySource);
+    assert(layerIndex < textureView->arrayLayerCount());
     assert(buffer->usages() & BufferUsage::copyDestination);
-    assert(bufferOffset + pixelFormatSize(texture->pixelFormat()) * texture->width() * texture->height() <= buffer->size());
+    assert(bufferOffset + pixelFormatSize(textureView->pixelFormat()) * textureView->width() * textureView->height() <= buffer->size());
 
     std::vector<vk::ImageMemoryBarrier2> imageMemoryBarriers;
     std::vector<vk::BufferMemoryBarrier2> bufferMemoryBarriers;
@@ -633,17 +639,17 @@ void VulkanCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aT
     imageSyncReq.accessMask = vk::AccessFlagBits2::eTransferRead;
     imageSyncReq.layout = vk::ImageLayout::eTransferSrcOptimal;
 
-    auto imageIt = m_imageFinalSyncStates.find(texture);
-    if (imageIt != m_imageFinalSyncStates.end()) {
+    auto imageIt = m_imageSyncStates.find(textureView->rootTexture());
+    if (imageIt != m_imageSyncStates.end()) {
         auto barrier = syncImage(imageIt->second, imageSyncReq); // will update the final sync state
         if (barrier.has_value()) {
-            barrier->setImage(texture->vkImage());
-            barrier->setSubresourceRange(texture->subresourceRange());
+            barrier->setImage(textureView->rootTexture()->vkImage());
+            barrier->setSubresourceRange(textureView->subresourceRange());
             imageMemoryBarriers.push_back(*barrier);
         }
     } else {
-        m_imageSyncRequests[texture] = imageSyncReq;
-        m_imageFinalSyncStates[texture] = imageStateAfterSync(imageSyncReq);
+        m_imageSyncRequests[textureView->rootTexture()] = imageSyncReq;
+        m_imageSyncStates[textureView->rootTexture()] = imageStateAfterSync(imageSyncReq);
     }
 
     BufferSyncRequest bufferSyncReq{};
@@ -680,20 +686,26 @@ void VulkanCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aT
     auto bufferImageCopy = vk::BufferImageCopy{}
         .setBufferOffset(bufferOffset)
         .setImageSubresource(vk::ImageSubresourceLayers{}
-            .setAspectMask(texture->subresourceRange().aspectMask)
-            .setMipLevel(0)
+            .setAspectMask(textureView->subresourceRange().aspectMask)
+            .setMipLevel(textureView->baseMipLevel())
             .setBaseArrayLayer(layerIndex)
             .setLayerCount(1))
         .setImageExtent(vk::Extent3D{}
-            .setWidth(texture->width())
-            .setHeight(texture->height())
+            .setWidth(textureView->width())
+            .setHeight(textureView->height())
             .setDepth(1));
 
     m_vkCommandBuffer.copyImageToBuffer(
-        texture->vkImage(),
+        textureView->rootTexture()->vkImage(),
         vk::ImageLayout::eTransferSrcOptimal,
         buffer->vkBuffer(),
         bufferImageCopy);
+}
+
+void VulkanCommandBuffer::generateMipmaps(const std::shared_ptr<Texture>& aTexture)
+{
+    auto textureView = std::dynamic_pointer_cast<VulkanTextureView>(aTexture);
+    assert(textureView);
 }
 
 void VulkanCommandBuffer::endBlitPass()
@@ -713,7 +725,8 @@ void VulkanCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDraw
 
 void VulkanCommandBuffer::addSampledTexture(const std::shared_ptr<Texture>& aTexture)
 {
-    auto texture = std::dynamic_pointer_cast<VulkanTexture>(aTexture);
+    auto textureView = std::dynamic_pointer_cast<VulkanTextureView>(aTexture);
+    assert(textureView);
 
     ImageSyncRequest syncReq{};
     syncReq.stageMask = vk::PipelineStageFlagBits2::eFragmentShader;
@@ -721,19 +734,19 @@ void VulkanCommandBuffer::addSampledTexture(const std::shared_ptr<Texture>& aTex
     syncReq.layout = vk::ImageLayout::eShaderReadOnlyOptimal;
     syncReq.preserveContent = true;
 
-    auto it = m_imageFinalSyncStates.find(texture);
-    if (it != m_imageFinalSyncStates.end()) {
+    auto it = m_imageSyncStates.find(textureView->rootTexture());
+    if (it != m_imageSyncStates.end()) {
         auto barrier = syncImage(it->second, syncReq); // will update the final sync state
         if (barrier.has_value()) {
-            barrier->setImage(texture->vkImage());
-            barrier->setSubresourceRange(texture->subresourceRange());
+            barrier->setImage(textureView->rootTexture()->vkImage());
+            barrier->setSubresourceRange(textureView->subresourceRange());
             m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
                .setDependencyFlags(vk::DependencyFlags{})
                .setImageMemoryBarriers(*barrier));
         }
     } else {
-        m_imageSyncRequests[texture] = syncReq;
-        m_imageFinalSyncStates[texture] = imageStateAfterSync(syncReq);
+        m_imageSyncRequests[textureView->rootTexture()] = syncReq;
+        m_imageSyncStates[textureView->rootTexture()] = imageStateAfterSync(syncReq);
     }
 }
 

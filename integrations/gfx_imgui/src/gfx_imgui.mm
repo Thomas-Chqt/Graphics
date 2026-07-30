@@ -25,6 +25,7 @@
     #include "Vulkan/VulkanInstance.hpp"
     #include "Vulkan/VulkanSampler.hpp"
     #include "Vulkan/VulkanTexture.hpp"
+    #include "Vulkan/VulkanTextureView.hpp"
 #endif
 
 #include "imgui_impl_metal.h"
@@ -189,19 +190,19 @@ void shutdown(Device& device)
     std::unreachable();
 }
 
-uint64_t initTextureId(Texture& texture)
+uint64_t initTextureId(Device& device, Texture& texture)
 {
     if (auto* metalTexture = dynamic_cast<MetalTexture*>(&texture))
         return std::bit_cast<uint64_t>((__bridge void*)metalTexture->mtltexture());
 
     #if defined(GFX_BUILD_VULKAN)
-    if (auto* vulkanTexture = dynamic_cast<VulkanTexture*>(&texture))
+    if (auto* vulkanTexture = dynamic_cast<VulkanTextureView*>(&texture))
     {
-        std::shared_ptr<Sampler> sampler = vulkanTexture->device().newSampler(Sampler::Descriptor{});
+        std::shared_ptr<Sampler> sampler = device.newSampler(Sampler::Descriptor{});
         auto vulkanSampler = std::dynamic_pointer_cast<VulkanSampler>(sampler);
         assert(vulkanSampler);
 
-        const uint64_t textureId = std::bit_cast<uint64_t>(ImGui_ImplVulkan_AddTexture(vulkanSampler->vkSampler(), vulkanTexture->vkImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        const auto textureId = std::bit_cast<uint64_t>(ImGui_ImplVulkan_AddTexture(vulkanSampler->vkSampler(), vulkanTexture->vkImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
         vulkanTexture->setImTextureId(textureId, vulkanSampler, removeVulkanTextureId);
         return textureId;
     }
@@ -216,7 +217,7 @@ std::optional<uint64_t> textureId(const Texture& texture)
         return std::bit_cast<uint64_t>((__bridge void*)metalTexture->mtltexture());
 
     #if defined(GFX_BUILD_VULKAN)
-    if (const auto* vulkanTexture = dynamic_cast<const VulkanTexture*>(&texture))
+    if (const auto* vulkanTexture = dynamic_cast<const VulkanTextureView*>(&texture))
         return vulkanTexture->imTextureId();
     #endif
 
@@ -226,12 +227,14 @@ std::optional<uint64_t> textureId(const Texture& texture)
 void removeTextureId(Texture& texture)
 {
     #if defined(GFX_BUILD_VULKAN)
-    if (auto* vulkanTexture = dynamic_cast<VulkanTextureBase*>(&texture))
+    if (auto* vulkanTexture = dynamic_cast<VulkanTextureView*>(&texture))
     {
         vulkanTexture->removeImTextureId();
         return;
     }
     #endif
+
+    std::unreachable();
 }
 
 } // namespace gfx::imgui

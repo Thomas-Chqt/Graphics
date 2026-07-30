@@ -15,17 +15,18 @@ namespace gfx
 {
 
 SwapchainImage::SwapchainImage(const VulkanDevice* device, vk::Image&& image, const std::shared_ptr<vk::SwapchainKHR>& swapchain, const Texture::Descriptor& desc)
-    : VulkanTexture(device, std::move(image), desc), m_swapchain(swapchain)
+    : VulkanTexture(device, std::move(image), desc)
+    , m_swapchain(swapchain)
 {
     m_imagePresentableSemaphore = m_device->vkDevice().createSemaphore(vk::SemaphoreCreateInfo{});
 
-#if !defined(NDEBUG)
+    #if !defined(NDEBUG)
     auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
         .setObjectHandle(std::bit_cast<uint64_t>(static_cast<VkSemaphore>(m_imagePresentableSemaphore)))
         .setObjectType(vk::ObjectType::eSemaphore)
         .setPObjectName("imagePresentableSemaphore");
     m_device->vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
-#endif
+    #endif
 }
 
 SwapchainImage::~SwapchainImage()

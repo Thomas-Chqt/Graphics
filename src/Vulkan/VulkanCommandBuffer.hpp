@@ -11,11 +11,10 @@
 #define VULKANCOMMANDBUFFER_HPP
 
 #include "Graphics/CommandBuffer.hpp"
-#include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/Buffer.hpp"
 #include "Graphics/ParameterBlock.hpp"
-
 #include "Graphics/Texture.hpp"
+
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanGraphicsPipeline.hpp"
 #include "Vulkan/VulkanComputePipeline.hpp"
@@ -23,7 +22,6 @@
 #include "Vulkan/VulkanTexture.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
 #include "Vulkan/VulkanParameterBlock.hpp"
-#include <memory>
 
 namespace gfx
 {
@@ -51,11 +49,12 @@ public:
     void drawVertices(uint32_t start, uint32_t count) override;
     void drawIndexedVertices(const std::shared_ptr<Buffer>& idxBuffer) override;
 
-
     void endRenderPass() override;
 
     void beginComputePass(ComputePassDescriptor&) override;
+
     void dispatchThreadgroups(uint32_t x, uint32_t y = 1, uint32_t z = 1) override;
+
     void endComputePass() override;
 
     void beginBlitPass(BlitPassDescriptor&) override;
@@ -63,8 +62,10 @@ public:
     void copyBufferToBuffer(const std::shared_ptr<Buffer>& src, const std::shared_ptr<Buffer>& dst, size_t size) override;
     void copyBufferToTexture(const std::shared_ptr<Buffer>& buffer, size_t bufferOffset, const std::shared_ptr<Texture>& texture, uint32_t layerIndex = 0) override;
     void copyTextureToBuffer(const std::shared_ptr<Texture>& texture, uint32_t layerIndex, const std::shared_ptr<Buffer>& buffer, size_t bufferOffset) override;
+    void generateMipmaps(const std::shared_ptr<Texture>& texture) override;
 
     void endBlitPass() override;
+
 
     void presentDrawable(const std::shared_ptr<Drawable>&) override;
 
@@ -77,7 +78,7 @@ public:
     inline void end() { m_vkCommandBuffer.end(); }
 
     inline const std::map<std::shared_ptr<VulkanTexture>, ImageSyncRequest>& imageSyncRequests() const { return m_nonReusedRessources.imageSyncRequests; }
-    inline const std::map<std::shared_ptr<VulkanTexture>, ImageSyncState>& imageFinalSyncStates() const { return m_nonReusedRessources.imageFinalSyncStates; }
+    inline const std::map<std::shared_ptr<VulkanTexture>, ImageSyncState>& imageSyncStates() const { return m_nonReusedRessources.imageSyncStates; }
     inline const std::map<std::shared_ptr<VulkanBuffer>, BufferSyncRequest>& bufferSyncRequests() const { return m_nonReusedRessources.bufferSyncRequests; }
     inline const std::map<std::shared_ptr<VulkanBuffer>, BufferSyncState>& bufferFinalSyncStates() const { return m_nonReusedRessources.bufferFinalSyncStates; }
 
@@ -104,7 +105,7 @@ private:
         std::set<std::shared_ptr<const VulkanParameterBlock>> usedPBlock;
 
         std::map<std::shared_ptr<VulkanTexture>, ImageSyncRequest> imageSyncRequests;
-        std::map<std::shared_ptr<VulkanTexture>, ImageSyncState> imageFinalSyncStates;
+        std::map<std::shared_ptr<VulkanTexture>, ImageSyncState> imageSyncStates;
 
         std::map<std::shared_ptr<VulkanBuffer>, BufferSyncRequest> bufferSyncRequests;
         std::map<std::shared_ptr<VulkanBuffer>, BufferSyncState> bufferFinalSyncStates;

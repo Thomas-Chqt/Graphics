@@ -29,7 +29,7 @@ VulkanParameterBlock::VulkanParameterBlock(const VulkanDevice* device, const std
     assert(m_descriptorPool);
 
     m_usedBuffers.resize(m_layout->bindings().size());
-    m_usedTextures.resize(m_layout->bindings().size());
+    m_usedTextureViews.resize(m_layout->bindings().size());
     m_usedSamplers.resize(m_layout->bindings().size());
 
     auto descriptorSetAllocateInfo = vk::DescriptorSetAllocateInfo{}
@@ -94,18 +94,18 @@ void VulkanParameterBlock::setBinding(uint32_t idx, uint32_t firstArrayIndex, st
 
     std::vector<vk::DescriptorImageInfo> descriptorImageInfos;
     descriptorImageInfos.reserve(textures.size());
-    auto& usedTextures = m_usedTextures.at(idx);
+    auto& usedTextures = m_usedTextureViews.at(idx);
 
     for (uint32_t i = 0; const auto& texturePtr : textures) {
-        auto texture = std::dynamic_pointer_cast<VulkanTexture>(texturePtr);
-        assert(texture);
-        assert(bindingType != BindingType::sampledTexture || texture->usages() & TextureUsage::shaderRead);
+        auto textureView = std::dynamic_pointer_cast<VulkanTextureView>(texturePtr);
+        assert(textureView);
+        assert(bindingType != BindingType::sampledTexture || textureView->usages() & TextureUsage::shaderRead);
 
         descriptorImageInfos.push_back(vk::DescriptorImageInfo{}
-            .setImageView(texture->vkImageView())
+            .setImageView(textureView->vkImageView())
             .setImageLayout(bindingType == BindingType::sampledTexture ? vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eGeneral));
-        usedTextures.insert_or_assign(firstArrayIndex + i, UsedResource<VulkanTexture>{
-            .resource = texture,
+        usedTextures.insert_or_assign(firstArrayIndex + i, UsedResource<VulkanTextureView>{
+            .resource = textureView,
             .binding = m_layout->bindings().at(idx)
         });
         ++i;
@@ -170,7 +170,7 @@ void VulkanParameterBlock::clearBinding(uint32_t idx, uint32_t firstArrayIndex, 
         break;
     case BindingType::sampledTexture:
     case BindingType::storageTexture:
-        eraseBindingRange(m_usedTextures.at(idx));
+        eraseBindingRange(m_usedTextureViews.at(idx));
         break;
     case BindingType::sampler:
         eraseBindingRange(m_usedSamplers.at(idx));

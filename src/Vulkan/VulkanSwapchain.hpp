@@ -15,7 +15,7 @@
 
 #include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
-#include <vector>
+#include "Vulkan/VulkanTextureView.hpp"
 
 namespace gfx
 {
@@ -43,6 +43,7 @@ private:
 
     vk::SwapchainKHR* m_vkSwapchain;
     std::vector<std::shared_ptr<SwapchainImage>> m_swapchainImages;
+    std::vector<std::shared_ptr<VulkanTextureView>> m_swapchainImageViews;
     std::vector<std::shared_ptr<VulkanDrawable>> m_drawables;
     uint32_t m_nextDrawableIndex = 0;
 
