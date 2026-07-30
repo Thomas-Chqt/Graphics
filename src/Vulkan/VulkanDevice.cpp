@@ -254,7 +254,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
                     .setBaseMipLevel(0)
                     .setLevelCount(image->mipLevelCount())
                     .setBaseArrayLayer(0)
-                    .setLayerCount(image->arrayLayerCount());
+                    .setLayerCount(image->type() == TextureType::textureCube ? 6u : image->arrayLayerCount());
                 memoryBarrier->setSubresourceRange(subresourceRange);
                 imageMemoryBarriers.push_back(memoryBarrier.value());
             }

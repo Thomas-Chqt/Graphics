@@ -706,6 +706,120 @@ void VulkanCommandBuffer::generateMipmaps(const std::shared_ptr<Texture>& aTextu
 {
     auto textureView = std::dynamic_pointer_cast<VulkanTextureView>(aTexture);
     assert(textureView);
+    assert(textureView->mipLevelCount() > 1);
+    assert(textureView->usages() & TextureUsage::copySource);
+    assert(textureView->usages() & TextureUsage::copyDestination);
+    assert(textureView->pixelFormat() != PixelFormat::RG32Uint);
+    assert(textureView->pixelFormat() != PixelFormat::Depth32Float);
+
+    const auto rootTexture = textureView->rootTexture();
+    const auto& viewRange = textureView->subresourceRange();
+    const auto rootRange = vk::ImageSubresourceRange{}
+        .setAspectMask(viewRange.aspectMask)
+        .setBaseMipLevel(0)
+        .setLevelCount(rootTexture->mipLevelCount())
+        .setBaseArrayLayer(0)
+        .setLayerCount(rootTexture->type() == TextureType::textureCube ? 6u : rootTexture->arrayLayerCount());
+
+    ImageSyncRequest sourceRequest{};
+    sourceRequest.stageMask = vk::PipelineStageFlagBits2::eTransfer;
+    sourceRequest.accessMask = vk::AccessFlagBits2::eTransferRead;
+    sourceRequest.layout = vk::ImageLayout::eTransferSrcOptimal;
+    sourceRequest.preserveContent = true;
+
+    auto imageIt = m_imageSyncStates.find(rootTexture);
+    if (imageIt != m_imageSyncStates.end()) {
+        auto barrier = syncImage(imageIt->second, sourceRequest);
+        if (barrier.has_value()) {
+            barrier->setImage(rootTexture->vkImage());
+            barrier->setSubresourceRange(rootRange);
+            m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
+                .setDependencyFlags(vk::DependencyFlags{})
+                .setImageMemoryBarriers(*barrier));
+        }
+    } else {
+        m_imageSyncRequests[rootTexture] = sourceRequest;
+        m_imageSyncStates[rootTexture] = imageStateAfterSync(sourceRequest);
+    }
+
+    const auto transitionMip = [&](uint32_t mipLevel,
+                                   vk::ImageLayout oldLayout,
+                                   vk::ImageLayout newLayout,
+                                   vk::AccessFlags2 srcAccessMask,
+                                   vk::AccessFlags2 dstAccessMask)
+    {
+        const auto barrier = vk::ImageMemoryBarrier2{}
+            .setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
+            .setSrcAccessMask(srcAccessMask)
+            .setDstStageMask(vk::PipelineStageFlagBits2::eTransfer)
+            .setDstAccessMask(dstAccessMask)
+            .setOldLayout(oldLayout)
+            .setNewLayout(newLayout)
+            .setSrcQueueFamilyIndex(vk::QueueFamilyIgnored)
+            .setDstQueueFamilyIndex(vk::QueueFamilyIgnored)
+            .setImage(rootTexture->vkImage())
+            .setSubresourceRange(vk::ImageSubresourceRange{}
+                .setAspectMask(viewRange.aspectMask)
+                .setBaseMipLevel(mipLevel)
+                .setLevelCount(1)
+                .setBaseArrayLayer(viewRange.baseArrayLayer)
+                .setLayerCount(viewRange.layerCount));
+
+        m_vkCommandBuffer.pipelineBarrier2(vk::DependencyInfo{}
+            .setDependencyFlags(vk::DependencyFlags{})
+            .setImageMemoryBarriers(barrier));
+    };
+
+    for (uint32_t relativeMipLevel = 1; relativeMipLevel < viewRange.levelCount; relativeMipLevel++)
+    {
+        const uint32_t sourceMipLevel = viewRange.baseMipLevel + relativeMipLevel - 1;
+        const uint32_t destinationMipLevel = viewRange.baseMipLevel + relativeMipLevel;
+
+        transitionMip(
+            destinationMipLevel,
+            vk::ImageLayout::eTransferSrcOptimal,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::AccessFlagBits2::eTransferRead,
+            vk::AccessFlagBits2::eTransferWrite);
+
+        const auto sourceWidth = static_cast<int32_t>(std::max(rootTexture->width() >> sourceMipLevel, 1u));
+        const auto sourceHeight = static_cast<int32_t>(std::max(rootTexture->height() >> sourceMipLevel, 1u));
+        const auto destinationWidth = static_cast<int32_t>(std::max(rootTexture->width() >> destinationMipLevel, 1u));
+        const auto destinationHeight = static_cast<int32_t>(std::max(rootTexture->height() >> destinationMipLevel, 1u));
+
+        const auto blit = vk::ImageBlit{}
+            .setSrcSubresource(vk::ImageSubresourceLayers{}
+                .setAspectMask(viewRange.aspectMask)
+                .setMipLevel(sourceMipLevel)
+                .setBaseArrayLayer(viewRange.baseArrayLayer)
+                .setLayerCount(viewRange.layerCount))
+            .setSrcOffsets({
+                vk::Offset3D{.x = 0, .y = 0, .z = 0},
+                vk::Offset3D{.x = sourceWidth, .y = sourceHeight, .z = 1}})
+            .setDstSubresource(vk::ImageSubresourceLayers{}
+                .setAspectMask(viewRange.aspectMask)
+                .setMipLevel(destinationMipLevel)
+                .setBaseArrayLayer(viewRange.baseArrayLayer)
+                .setLayerCount(viewRange.layerCount))
+            .setDstOffsets({
+                vk::Offset3D{.x = 0, .y = 0, .z = 0},
+                vk::Offset3D{.x = destinationWidth, .y = destinationHeight, .z = 1}});
+
+        m_vkCommandBuffer.blitImage(
+            rootTexture->vkImage(),
+            vk::ImageLayout::eTransferSrcOptimal,
+            rootTexture->vkImage(),
+            vk::ImageLayout::eTransferDstOptimal,
+            blit,
+            vk::Filter::eLinear);
+
+        transitionMip(
+            destinationMipLevel,
+            vk::ImageLayout::eTransferDstOptimal,
+            vk::ImageLayout::eTransferSrcOptimal,
+            vk::AccessFlagBits2::eTransferWrite,
+            vk::AccessFlagBits2::eTransferRead);
+    }
 }
 
 void VulkanCommandBuffer::endBlitPass()
