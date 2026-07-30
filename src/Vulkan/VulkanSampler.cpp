@@ -22,6 +22,7 @@ VulkanSampler::VulkanSampler(const VulkanDevice* device, const Sampler::Descript
     auto samplerCreateInfo = vk::SamplerCreateInfo{}
         .setMagFilter(toVkFilter(desc.magFilter))
         .setMinFilter(toVkFilter(desc.minFilter))
+        .setMipmapMode(toVkSamplerMipmapMode(desc.mipFilter))
         .setAddressModeU(toVkSamplerAddressMode(desc.sAddressMode))
         .setAddressModeV(toVkSamplerAddressMode(desc.tAddressMode))
         .setAddressModeW(toVkSamplerAddressMode(desc.rAddressMode))
@@ -30,8 +31,8 @@ VulkanSampler::VulkanSampler(const VulkanDevice* device, const Sampler::Descript
         .setMaxAnisotropy(1)
         .setCompareEnable(vk::False)
         .setCompareOp(vk::CompareOp::eNever)
-        .setMinLod(0.0f)
-        .setMaxLod(0.0f)
+        .setMinLod(desc.mipFilter == SamplerMipFilter::NotMipmapped ? 0.0f : desc.lodMinClamp)
+        .setMaxLod(desc.mipFilter == SamplerMipFilter::NotMipmapped ? 0.0f : desc.lodMaxClamp)
         .setBorderColor(vk::BorderColor::eIntOpaqueBlack)
         .setUnnormalizedCoordinates(vk::False);
 

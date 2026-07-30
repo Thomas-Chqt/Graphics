@@ -12,6 +12,7 @@
 #include "Graphics/ShaderLib.hpp"
 #include "Graphics/GraphicsPipeline.hpp"
 #include "Graphics/CommandBuffer.hpp"
+#include "Graphics/Texture.hpp"
 
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/QueueFamily.hpp"
@@ -28,6 +29,7 @@
 #include "Vulkan/VulkanComputePipeline.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanTextureView.hpp"
 #include "Vulkan/VulkanPassDescriptor.hpp"
 #include "VulkanParameterBlockLayout.hpp"
 #include "Vulkan/VulkanEnums.hpp"
@@ -152,7 +154,23 @@ std::unique_ptr<Buffer> VulkanDevice::newBuffer(const Buffer::Descriptor& desc) 
 
 std::unique_ptr<Texture> VulkanDevice::newTexture(const Texture::Descriptor& desc) const
 {
-    return std::make_unique<VulkanTexture>(this, desc);
+    auto texture = std::make_shared<VulkanTexture>(this, desc);
+    assert(texture);
+
+    return std::make_unique<VulkanTextureView>(this, texture, Texture::ViewDescriptor{
+        .type = desc.type,
+        .baseMipLevel = 0,
+        .mipLevelCount = desc.mipLevelCount,
+        .baseArrayLayer = 0,
+        .arrayLayerCount = desc.arrayLayerCount
+    });
+}
+
+std::unique_ptr<Texture> VulkanDevice::newTextureView(const std::shared_ptr<Texture>& texture, const Texture::ViewDescriptor& desc) const
+{
+    auto vulkanTextureView = std::dynamic_pointer_cast<VulkanTextureView>(texture);
+    assert(vulkanTextureView);
+    return std::make_unique<VulkanTextureView>(this, vulkanTextureView, desc);
 }
 
 std::unique_ptr<RenderPassDescriptor> VulkanDevice::newRenderPassDescriptor() const
@@ -216,6 +234,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
 
         for (auto& [image, syncReq] : commandBuffer->imageSyncRequests())
         {
+            assert(image);
             // if the buffer use a swapchain image, add its imageAvailableSemaphore to the list of wait semaphores
             if (auto swapchainImg = dynamic_pointer_cast<SwapchainImage>(image)) {
                 // no ideal to do a linear seach but we need to keep the order for the association with the value
@@ -230,7 +249,13 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
             auto memoryBarrier = syncImage(image->syncState(), syncReq);
             if (memoryBarrier.has_value()) {
                 memoryBarrier->setImage(image->vkImage());
-                memoryBarrier->setSubresourceRange(image->subresourceRange());
+                const auto subresourceRange = vk::ImageSubresourceRange{}
+                    .setAspectMask(toVkImageAspectFlags(image->pixelFormat()))
+                    .setBaseMipLevel(0)
+                    .setLevelCount(image->mipLevelCount())
+                    .setBaseArrayLayer(0)
+                    .setLayerCount(image->type() == TextureType::textureCube ? 6u : image->arrayLayerCount());
+                memoryBarrier->setSubresourceRange(subresourceRange);
                 imageMemoryBarriers.push_back(memoryBarrier.value());
             }
 
@@ -238,7 +263,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
             // (image->syncState().queueIdx != syncReq.queueIdx)
 
             // the new sync state is the state a the end of the command buffer
-            image->syncState() = commandBuffer->imageFinalSyncStates().at(image);
+            image->syncState() = commandBuffer->imageSyncStates().at(image);
         }
 
         for (auto& [buffer, syncReq] : commandBuffer->bufferSyncRequests())
@@ -267,7 +292,7 @@ void VulkanDevice::submitCommandBuffers(const std::vector<std::shared_ptr<Comman
             if (auto memoryBarrier = syncImage(drawable->swapchainImage()->syncState(), syncReq))
             {
                 memoryBarrier->setImage(drawable->swapchainImage()->vkImage());
-                memoryBarrier->setSubresourceRange(drawable->swapchainImage()->subresourceRange());
+                memoryBarrier->setSubresourceRange(drawable->vulkanTextureView()->subresourceRange());
 
                 // barrier need to be added at the en of the command buffer, before presenting
                 commandBuffer->vkCommandBuffer().pipelineBarrier2(vk::DependencyInfo{}

@@ -25,6 +25,9 @@ public:
         SamplerAddressMode rAddressMode = SamplerAddressMode::ClampToEdge;
         SamplerMinMagFilter minFilter = SamplerMinMagFilter::Nearest;
         SamplerMinMagFilter magFilter = SamplerMinMagFilter::Nearest;
+        SamplerMipFilter mipFilter = SamplerMipFilter::NotMipmapped;
+        float lodMinClamp = 0.0f;
+        float lodMaxClamp = std::numeric_limits<float>::max();
         auto operator<=>(const Descriptor&) const = default;
     };
 

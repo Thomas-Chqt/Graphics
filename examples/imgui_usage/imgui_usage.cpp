@@ -179,7 +179,7 @@ public:
 
                 ImGui::Begin("texture");
                 if (gfx::imgui::textureId(*m_texture).has_value() == false)
-                    gfx::imgui::initTextureId(*m_texture);
+                    gfx::imgui::initTextureId(*m_device, *m_texture);
                 ImGui::Image(*gfx::imgui::textureId(*m_texture), ImVec2((float)m_texture->width(), (float)m_texture->height()));
                 ImGui::End();
             }

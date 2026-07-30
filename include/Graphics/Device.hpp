@@ -53,6 +53,7 @@ public:
     virtual std::unique_ptr<ComputePipeline> newComputePipeline(const ComputePipeline::Descriptor&) const = 0;
     virtual std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const = 0;
     virtual std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const = 0;
+    virtual std::unique_ptr<Texture> newTextureView(const std::shared_ptr<Texture>&, const Texture::ViewDescriptor&) const = 0;
     virtual std::unique_ptr<RenderPassDescriptor> newRenderPassDescriptor() const = 0;
     virtual std::unique_ptr<BlitPassDescriptor> newBlitPassDescriptor() const = 0;
     virtual std::unique_ptr<ComputePassDescriptor> newComputePassDescriptor() const = 0;

@@ -8,6 +8,7 @@
  */
 
 #include "AssetLoader.hpp"
+#include "Graphics/Enums.hpp"
 #include "Mesh.hpp"
 #include "Material.hpp"
 
@@ -53,6 +54,7 @@
 #include <utility>
 #include <vector>
 #include <mutex>
+#include <cmath>
 
 #if !defined (SCOP_MANDATORY)
 template<>
@@ -653,8 +655,9 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
         .type = gfx::TextureType::texture2d,
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
+        .mipLevelCount = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
         .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
-        .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
+        .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead | gfx::TextureUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::deviceLocal
     });
     assert(texture);
@@ -669,6 +672,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
     std::memcpy(stagingBuffer->content<stbi_uc>(), bytes.get(), stagingBuffer->size());
 
     commandBuffer.copyBufferToTexture(stagingBuffer, texture);
+    commandBuffer.generateMipmaps(texture);
 
     return texture;
 }
@@ -688,8 +692,9 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
         .type = gfx::TextureType::texture2d,
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
+        .mipLevelCount = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
         .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
-        .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
+        .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead | gfx::TextureUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::deviceLocal
     });
     assert(texture);
@@ -704,6 +709,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
     std::memcpy(stagingBuffer->content<stbi_uc>(), bytes.get(), stagingBuffer->size());
 
     commandBuffer.copyBufferToTexture(stagingBuffer, texture);
+    commandBuffer.generateMipmaps(texture);
 
     return texture;
 }

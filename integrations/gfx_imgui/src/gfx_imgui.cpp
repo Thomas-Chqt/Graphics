@@ -19,6 +19,7 @@
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanSampler.hpp"
 #include "Vulkan/VulkanTexture.hpp"
+#include "Vulkan/VulkanTextureView.hpp"
 
 #include "imgui_impl_vulkan.h"
 
@@ -121,15 +122,15 @@ void shutdown(Device& device)
     std::unreachable();
 }
 
-uint64_t initTextureId(Texture& texture)
+uint64_t initTextureId(Device& device, Texture& texture)
 {
-    if (auto* vulkanTexture = dynamic_cast<VulkanTexture*>(&texture))
+    if (auto* vulkanTexture = dynamic_cast<VulkanTextureView*>(&texture))
     {
-        std::shared_ptr<Sampler> sampler = vulkanTexture->device().newSampler(Sampler::Descriptor{});
+        std::shared_ptr<Sampler> sampler = device.newSampler(Sampler::Descriptor{});
         auto vulkanSampler = std::dynamic_pointer_cast<VulkanSampler>(sampler);
         assert(vulkanSampler);
 
-        const uint64_t textureId = std::bit_cast<uint64_t>(ImGui_ImplVulkan_AddTexture(vulkanSampler->vkSampler(), vulkanTexture->vkImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
+        const auto textureId = std::bit_cast<uint64_t>(ImGui_ImplVulkan_AddTexture(vulkanSampler->vkSampler(), vulkanTexture->vkImageView(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
         vulkanTexture->setImTextureId(textureId, vulkanSampler, removeVulkanTextureId);
         return textureId;
     }
@@ -139,21 +140,21 @@ uint64_t initTextureId(Texture& texture)
 
 std::optional<uint64_t> textureId(const Texture& texture)
 {
-    if (const auto* vulkanTexture = dynamic_cast<const VulkanTexture*>(&texture))
+    if (const auto* vulkanTexture = dynamic_cast<const VulkanTextureView*>(&texture))
         return vulkanTexture->imTextureId();
-
-    return std::nullopt;
 
     std::unreachable();
 }
 
 void removeTextureId(Texture& texture)
 {
-    if (auto* vulkanTexture = dynamic_cast<VulkanTexture*>(&texture))
+    if (auto* vulkanTexture = dynamic_cast<VulkanTextureView*>(&texture))
     {
         vulkanTexture->removeImTextureId();
         return;
     }
+
+    std::unreachable();
 }
 
 } // namespace gfx::imgui

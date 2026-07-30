@@ -8,54 +8,50 @@
  */
 
 #include "Vulkan/VulkanTexture.hpp"
-#include "Graphics/Enums.hpp"
-#include "Graphics/Sampler.hpp"
+
 #include "Graphics/Texture.hpp"
+#include "Graphics/Enums.hpp"
+
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
-#include "Vulkan/VulkanSampler.hpp"
 
 namespace gfx
 {
 
 VulkanTexture::VulkanTexture(const VulkanDevice* device, vk::Image&& vkImage, const Texture::Descriptor& desc)
-    : m_device(device),
-      m_width(desc.width), m_height(desc.height),
-      m_type(desc.type),
-      m_pixelFormat(desc.pixelFormat),
-      m_usages(desc.usages),
-      m_storageMode(desc.storageMode),
-      m_vkImage(std::move(vkImage))
+    : m_device(device)
+    , m_type(desc.type)
+    , m_width(desc.width)
+    , m_height(desc.height)
+    , m_mipLevelCount(desc.mipLevelCount)
+    , m_arrayLayerCount(desc.arrayLayerCount)
+    , m_pixelFormat(desc.pixelFormat)
+    , m_usages(desc.usages)
+    , m_storageMode(desc.storageMode)
+    , m_vkImage(std::move(vkImage))
 {
-    m_subresourceRange = vk::ImageSubresourceRange{}
-          .setAspectMask(toVkImageAspectFlags(desc.pixelFormat))
-          .setBaseMipLevel(0)
-          .setLevelCount(1)
-          .setBaseArrayLayer(0)
-          .setLayerCount(desc.type == TextureType::textureCube ? 6 : 1);
-
-    auto imageViewCreateInfo = vk::ImageViewCreateInfo{}
-        .setImage(m_vkImage)
-        .setViewType(desc.type == TextureType::textureCube ? vk::ImageViewType::eCube : vk::ImageViewType::e2D)
-        .setFormat(toVkFormat(desc.pixelFormat))
-        .setComponents(vk::ComponentMapping{}
-            .setR(vk::ComponentSwizzle::eIdentity)
-            .setG(vk::ComponentSwizzle::eIdentity)
-            .setB(vk::ComponentSwizzle::eIdentity)
-            .setA(vk::ComponentSwizzle::eIdentity))
-        .setSubresourceRange(m_subresourceRange);
-
-    m_vkImageView = m_device->vkDevice().createImageView(imageViewCreateInfo);
+    assert(desc.width > 0 && desc.height > 0);
+    assert(desc.mipLevelCount > 0);
+    assert(desc.arrayLayerCount > 0);
+    assert(desc.type == TextureType::texture2dArray || desc.arrayLayerCount == 1);
 }
 
 VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descriptor& desc)
-    : m_device(device),
-      m_width(desc.width), m_height(desc.height),
-      m_type(desc.type),
-      m_pixelFormat(desc.pixelFormat),
-      m_usages(desc.usages),
-      m_storageMode(desc.storageMode)
+    : m_device(device)
+    , m_type(desc.type)
+    , m_width(desc.width)
+    , m_height(desc.height)
+    , m_mipLevelCount(desc.mipLevelCount)
+    , m_arrayLayerCount(desc.arrayLayerCount)
+    , m_pixelFormat(desc.pixelFormat)
+    , m_usages(desc.usages)
+    , m_storageMode(desc.storageMode)
 {
+    assert(desc.width > 0 && desc.height > 0);
+    assert(desc.mipLevelCount > 0);
+    assert(desc.arrayLayerCount > 0);
+    assert(desc.type == TextureType::texture2dArray || desc.arrayLayerCount == 1);
+
     VmaAllocationCreateInfo allocationCreateInfo = { .usage = VMA_MEMORY_USAGE_AUTO, };
     if (desc.storageMode == ResourceStorageMode::hostVisible)
         allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
@@ -68,8 +64,8 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descript
             .setWidth(desc.width)
             .setHeight(desc.height)
             .setDepth(1))
-        .setMipLevels(1)
-        .setArrayLayers(desc.type == TextureType::textureCube ? 6 : 1)
+        .setMipLevels(desc.mipLevelCount)
+        .setArrayLayers(desc.type == TextureType::textureCube ? 6u : desc.arrayLayerCount)
         .setSamples(vk::SampleCountFlagBits::e1)
         .setTiling(vk::ImageTiling::eOptimal)
         .setUsage(toVkImageUsageFlags(desc.usages))
@@ -77,52 +73,63 @@ VulkanTexture::VulkanTexture(const VulkanDevice* device, const Texture::Descript
         .setInitialLayout(vk::ImageLayout::eUndefined);
 
     VkImage image = VK_NULL_HANDLE;
-    vmaCreateImage(m_device->allocator(), &imageCreateInfo, &allocationCreateInfo, &image, &m_allocation, &m_allocInfo);
+    VmaAllocationInfo allocInfo;
+    vmaCreateImage(m_device->allocator(), &imageCreateInfo, &allocationCreateInfo, &image, &m_allocation, &allocInfo);
     m_vkImage = std::exchange(image, VK_NULL_HANDLE);
-
-    m_subresourceRange = vk::ImageSubresourceRange{}
-        .setAspectMask(toVkImageAspectFlags(desc.pixelFormat))
-        .setBaseMipLevel(0)
-        .setLevelCount(1)
-        .setBaseArrayLayer(0)
-        .setLayerCount(desc.type == TextureType::textureCube ? 6 : 1);
-
-    auto imageViewCreateInfo = vk::ImageViewCreateInfo{}
-        .setImage(m_vkImage)
-        .setViewType(desc.type == TextureType::textureCube ? vk::ImageViewType::eCube : vk::ImageViewType::e2D)
-        .setFormat(toVkFormat(desc.pixelFormat))
-        .setComponents(vk::ComponentMapping{}
-            .setR(vk::ComponentSwizzle::eIdentity)
-            .setG(vk::ComponentSwizzle::eIdentity)
-            .setB(vk::ComponentSwizzle::eIdentity)
-            .setA(vk::ComponentSwizzle::eIdentity))
-        .setSubresourceRange(m_subresourceRange);
-
-    m_vkImageView = m_device->vkDevice().createImageView(imageViewCreateInfo);
 }
 
-void VulkanTexture::setImTextureId(uint64_t textureId, const std::shared_ptr<VulkanSampler>& sampler, ImTextureIdCleanup cleanup)
+TextureType VulkanTexture::type() const
 {
-    removeImTextureId();
-    m_imTextureId = textureId;
-    m_imTextureIdSampler = sampler;
-    m_imTextureIdCleanup = cleanup;
+    return m_type;
 }
 
-void VulkanTexture::removeImTextureId()
+uint32_t VulkanTexture::width() const
 {
-    if (m_imTextureId.has_value() && m_imTextureIdCleanup != nullptr)
-        m_imTextureIdCleanup(*m_imTextureId);
-    m_imTextureId.reset();
-    m_imTextureIdSampler = nullptr;
-    m_imTextureIdCleanup = nullptr;
+    return m_width;
 }
 
+uint32_t VulkanTexture::height() const
+{
+    return m_height;
+}
+
+uint32_t VulkanTexture::mipLevelCount() const
+{
+    return m_mipLevelCount;
+}
+
+uint32_t VulkanTexture::arrayLayerCount() const
+{
+    return m_arrayLayerCount;
+}
+
+PixelFormat VulkanTexture::pixelFormat() const
+{
+    return m_pixelFormat;
+}
+
+TextureUsages VulkanTexture::usages() const
+{
+    return m_usages;
+}
+
+ResourceStorageMode VulkanTexture::storageMode() const
+{
+    return m_storageMode;
+}
+
+const vk::Image& VulkanTexture::vkImage() const
+{
+    return m_vkImage;
+}
+
+ImageSyncState& VulkanTexture::syncState()
+{
+    return m_syncState;
+}
 
 VulkanTexture::~VulkanTexture()
 {
-    removeImTextureId();
-    m_device->vkDevice().destroyImageView(m_vkImageView);
     if (m_allocation != VK_NULL_HANDLE)
         vmaDestroyImage(m_device->allocator(), m_vkImage, m_allocation);
 }

@@ -162,7 +162,8 @@ TexturedMaterial::TexturedMaterial(const gfx::Device& device)
         .tAddressMode=gfx::SamplerAddressMode::Repeat,
         .rAddressMode=gfx::SamplerAddressMode::Repeat,
         .minFilter = gfx::SamplerMinMagFilter::Linear,
-        .magFilter = gfx::SamplerMinMagFilter::Linear
+        .magFilter = gfx::SamplerMinMagFilter::Linear,
+        .mipFilter = gfx::SamplerMipFilter::Linear
     }));
 
     setDiffuseColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
@@ -240,7 +241,8 @@ ScopMaterial::ScopMaterial(const gfx::Device& device)
         .tAddressMode = gfx::SamplerAddressMode::Repeat,
         .rAddressMode = gfx::SamplerAddressMode::Repeat,
         .minFilter = gfx::SamplerMinMagFilter::Linear,
-        .magFilter = gfx::SamplerMinMagFilter::Linear
+        .magFilter = gfx::SamplerMinMagFilter::Linear,
+        .mipFilter = gfx::SamplerMipFilter::Linear
     }));
 
     setTextureStrength(0.0f);

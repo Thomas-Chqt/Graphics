@@ -8,6 +8,7 @@
  */
 
 #include "Vulkan/VulkanDrawable.hpp"
+
 #include "Vulkan/VulkanDevice.hpp"
 
 namespace gfx
@@ -18,18 +19,19 @@ VulkanDrawable::VulkanDrawable(const VulkanDevice* device)
 {
     m_imageAvailableSemaphore = m_device->vkDevice().createSemaphore(vk::SemaphoreCreateInfo{});
 
-#if !defined(NDEBUG)
+    #if !defined(NDEBUG)
     auto debugUtilsObjectNameInfo = vk::DebugUtilsObjectNameInfoEXT{}
         .setObjectHandle(std::bit_cast<uint64_t>(static_cast<VkSemaphore>(m_imageAvailableSemaphore)))
         .setObjectType(vk::ObjectType::eSemaphore)
         .setPObjectName("imageAvailableSemaphore");
     m_device->vkDevice().setDebugUtilsObjectNameEXT(debugUtilsObjectNameInfo);
-#endif
+    #endif
 }
 
-void VulkanDrawable::setSwapchainImage(const std::shared_ptr<SwapchainImage>& swapchainImage, uint32_t imageIndex)
+void VulkanDrawable::setSwapchainImage(std::shared_ptr<SwapchainImage> swapchainImage, std::shared_ptr<VulkanTextureView> swapchainImageView, uint32_t imageIndex)
 {
-    m_swapchainImage = swapchainImage;
+    m_swapchainImage = std::move(swapchainImage);
+    m_swapchainImageView = std::move(swapchainImageView);
     m_imageIndex = imageIndex;
     m_swapchainImage->setImageAvailableSemaphoreRef(&m_imageAvailableSemaphore);
 }

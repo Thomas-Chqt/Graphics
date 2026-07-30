@@ -19,9 +19,6 @@
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalTexture.hpp"
 #include "Metal/MetalPassDescriptor.hpp"
-#include <cassert>
-#include <memory>
-#include <utility>
 #include "Metal/MetalGraphicsPipeline.hpp"
 #include "Metal/MetalComputePipeline.hpp"
 #include "Metal/MetalParameterBlock.hpp"
@@ -63,6 +60,8 @@ void MetalCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor) { @au
     {
         auto texture = std::dynamic_pointer_cast<MetalTexture>(colorAttachment.texture);
         assert(texture);
+        assert(texture->type() == TextureType::texture2d);
+        assert(texture->mipLevelCount() == 1);
         m_usedTextures.insert(texture);
     }
 
@@ -70,6 +69,8 @@ void MetalCommandBuffer::beginRenderPass(RenderPassDescriptor& descriptor) { @au
     {
         auto texture = std::dynamic_pointer_cast<MetalTexture>(depthAttachment->texture);
         assert(texture);
+        assert(texture->type() == TextureType::texture2d);
+        assert(texture->mipLevelCount() == 1);
         m_usedTextures.insert(texture);
     }
 
@@ -303,6 +304,7 @@ void MetalCommandBuffer::copyBufferToTexture(const std::shared_ptr<Buffer>& aBuf
 
     assert(buffer->usages() & BufferUsage::copySource);
     assert(texture->usages() & TextureUsage::copyDestination);
+    assert(layerIndex < (texture->type() == TextureType::textureCube ? 6u : texture->arrayLayerCount()));
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
 
     size_t bytesPerPixel = pixelFormatSize(texture->pixelFormat());
@@ -335,6 +337,7 @@ void MetalCommandBuffer::copyTextureToBuffer(const std::shared_ptr<Texture>& aTe
 
     assert(texture->usages() & TextureUsage::copySource);
     assert(buffer->usages() & BufferUsage::copyDestination);
+    assert(layerIndex < (texture->type() == TextureType::textureCube ? 6u : texture->arrayLayerCount()));
     assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
 
     size_t bytesPerPixel = pixelFormatSize(texture->pixelFormat());
@@ -365,6 +368,21 @@ void MetalCommandBuffer::endBlitPass() { @autoreleasepool
     m_boundPipeline = nullptr;
 }}
 
+void MetalCommandBuffer::generateMipmaps(const std::shared_ptr<Texture>& aTexture) { @autoreleasepool
+{
+    auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
+    assert(texture);
+    assert(texture->mipLevelCount() > 1);
+    assert(texture->usages() & TextureUsage::copySource);
+    assert(texture->usages() & TextureUsage::copyDestination);
+    assert(texture->pixelFormat() != PixelFormat::RG32Uint);
+    assert(texture->pixelFormat() != PixelFormat::Depth32Float);
+    assert([m_commandEncoder conformsToProtocol:@protocol(MTLBlitCommandEncoder)]);
+
+    [(id<MTLBlitCommandEncoder>)m_commandEncoder generateMipmapsForTexture:texture->mtltexture()];
+    m_usedTextures.insert(texture);
+}}
+
 void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawable) { @autoreleasepool
 {
     auto drawable = std::dynamic_pointer_cast<MetalDrawable>(aDrawable);
@@ -378,6 +396,7 @@ void MetalCommandBuffer::presentDrawable(const std::shared_ptr<Drawable>& aDrawa
 void MetalCommandBuffer::addSampledTexture(const std::shared_ptr<Texture>& aTexture)
 {
     auto texture = std::dynamic_pointer_cast<MetalTexture>(aTexture);
+    assert(texture);
     m_usedTextures.insert(texture);
 }
 

@@ -55,6 +55,7 @@ public:
     std::unique_ptr<ComputePipeline> newComputePipeline(const ComputePipeline::Descriptor&) const override;
     std::unique_ptr<Buffer> newBuffer(const Buffer::Descriptor&) const override;
     std::unique_ptr<Texture> newTexture(const Texture::Descriptor&) const override;
+    std::unique_ptr<Texture> newTextureView(const std::shared_ptr<Texture>&, const Texture::ViewDescriptor&) const override;
     std::unique_ptr<RenderPassDescriptor> newRenderPassDescriptor() const override;
     std::unique_ptr<BlitPassDescriptor> newBlitPassDescriptor() const override;
     std::unique_ptr<ComputePassDescriptor> newComputePassDescriptor() const override;

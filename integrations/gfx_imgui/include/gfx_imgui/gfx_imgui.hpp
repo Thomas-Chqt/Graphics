@@ -41,7 +41,7 @@ void newFrame(const Device&);
 void renderDrawData(CommandBuffer&, ImDrawData*);
 void shutdown(Device&);
 
-uint64_t initTextureId(Texture&);
+uint64_t initTextureId(Device& device, Texture&);
 std::optional<uint64_t> textureId(const Texture&);
 void removeTextureId(Texture&);
 

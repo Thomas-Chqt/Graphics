@@ -190,6 +190,7 @@ using TextureUsages = Flags<TextureUsage>;
 enum class TextureType : uint8_t
 {
     texture2d,
+    texture2dArray,
     textureCube
 };
 
@@ -202,6 +203,13 @@ enum class SamplerAddressMode : uint8_t
 
 enum class SamplerMinMagFilter : uint8_t
 {
+    Nearest,
+    Linear
+};
+
+enum class SamplerMipFilter : uint8_t
+{
+    NotMipmapped,
     Nearest,
     Linear
 };

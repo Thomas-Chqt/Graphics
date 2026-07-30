@@ -12,18 +12,15 @@
 
 #include "Graphics/Texture.hpp"
 #include "Graphics/Enums.hpp"
-#include "Graphics/Sampler.hpp"
 
 #include "Vulkan/Sync.hpp"
-#include "Vulkan/VulkanSampler.hpp"
-
 
 namespace gfx
 {
 
 class VulkanDevice;
 
-class VulkanTexture : public Texture
+class VulkanTexture
 {
 public:
     VulkanTexture() = delete;
@@ -33,49 +30,42 @@ public:
     VulkanTexture(const VulkanDevice*, vk::Image&&, const Texture::Descriptor&);
     VulkanTexture(const VulkanDevice*, const Texture::Descriptor&);
 
-    inline TextureType type() const override { return m_type; };
-    inline uint32_t width() const override { return m_width; }
-    inline uint32_t height() const override { return m_height; }
-    inline PixelFormat pixelFormat() const override { return m_pixelFormat; };
-    inline TextureUsages usages() const override { return m_usages; };
-    inline ResourceStorageMode storageMode() const override { return m_storageMode; };
+    TextureType type() const;
 
-    using ImTextureIdCleanup = void(*)(uint64_t);
+    uint32_t width() const;
+    uint32_t height() const;
 
-    void setImTextureId(uint64_t, const std::shared_ptr<VulkanSampler>&, ImTextureIdCleanup);
-    void removeImTextureId();
-    inline std::optional<uint64_t> imTextureId() const { return m_imTextureId; }
+    uint32_t mipLevelCount() const;
+    uint32_t arrayLayerCount() const;
 
-    inline const VulkanDevice& device() const { return *m_device; }
-    inline const vk::Image& vkImage() const { return m_vkImage; }
+    PixelFormat pixelFormat() const;
 
-    inline const vk::ImageSubresourceRange& subresourceRange() const { return m_subresourceRange; }
-    inline const vk::ImageView& vkImageView() const { return m_vkImageView; }
+    TextureUsages usages() const;
+    ResourceStorageMode storageMode() const;
 
-    inline ImageSyncState& syncState() { return m_syncState; }
+    const vk::Image& vkImage() const;
 
-    ~VulkanTexture() override;
+    ImageSyncState& syncState();
+
+    virtual ~VulkanTexture();
 
 protected:
     const VulkanDevice* m_device = nullptr;
-    uint32_t m_width, m_height;
+
+private:
     TextureType m_type;
+    uint32_t m_width;
+    uint32_t m_height;
+    uint32_t m_mipLevelCount;
+    uint32_t m_arrayLayerCount;
     PixelFormat m_pixelFormat;
     TextureUsages m_usages;
     ResourceStorageMode m_storageMode;
 
     VmaAllocation m_allocation = VK_NULL_HANDLE;
-    VmaAllocationInfo m_allocInfo = {};
     vk::Image m_vkImage;
 
-    vk::ImageSubresourceRange m_subresourceRange;
-    vk::ImageView m_vkImageView;
-
     ImageSyncState m_syncState;
-
-    std::optional<uint64_t> m_imTextureId;
-    ImTextureIdCleanup m_imTextureIdCleanup = nullptr;
-    std::shared_ptr<VulkanSampler> m_imTextureIdSampler;
 
 public:
     VulkanTexture& operator=(const VulkanTexture&) = delete;

@@ -12,12 +12,16 @@
 #include "Vulkan/VulkanSwapchain.hpp"
 #include "Graphics/Enums.hpp"
 #include "Graphics/Texture.hpp"
+#include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanSurface.hpp"
 #include "Vulkan/VulkanEnums.hpp"
 #include "Vulkan/VulkanDrawable.hpp"
+#include "Vulkan/VulkanTextureView.hpp"
 #include "vulkan/vulkan.hpp"
+#include <memory>
+#include <ranges>
 
 namespace gfx
 {
@@ -87,6 +91,18 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         | std::views::transform([&](vk::Image& vkImage) { return std::make_shared<SwapchainImage>(m_device, std::move(vkImage), vkSwapchainPtr, m_swapchainImagesDescriptor); })
         | std::ranges::to<std::vector>();
 
+    m_swapchainImageViews = m_swapchainImages
+        | std::views::transform([&](const std::shared_ptr<SwapchainImage>& swcImg) {
+            return std::make_shared<VulkanTextureView>(m_device, swcImg, Texture::ViewDescriptor{
+                .type = m_swapchainImagesDescriptor.type,
+                .baseMipLevel = 0,
+                .mipLevelCount = m_swapchainImagesDescriptor.mipLevelCount,
+                .baseArrayLayer = 0,
+                .arrayLayerCount = m_swapchainImagesDescriptor.arrayLayerCount
+            });
+        })
+        | std::ranges::to<std::vector>();
+
     m_drawables.resize(desc.drawableCount);
     for (auto& drawable : m_drawables)
         drawable = std::make_shared<VulkanDrawable>(m_device);
@@ -99,13 +115,13 @@ std::shared_ptr<Drawable> VulkanSwapchain::nextDrawable()
     uint64_t timeout = std::numeric_limits<uint64_t>::max();
     auto& semaphore = drawable->imageAvailableSemaphore();
 
-    uint32_t value;
+    uint32_t value = 0;
     auto result = m_device->vkDevice().acquireNextImageKHR(*m_vkSwapchain, timeout, semaphore, nullptr, &value);
 
     switch (result)
     {
     case vk::Result::eSuccess:
-        drawable->setSwapchainImage(m_swapchainImages[value], value);
+        drawable->setSwapchainImage(m_swapchainImages[value], m_swapchainImageViews[value],value);
         m_nextDrawableIndex = (m_nextDrawableIndex + 1) % m_drawables.size();
         return drawable;
     case vk::Result::eSuboptimalKHR:

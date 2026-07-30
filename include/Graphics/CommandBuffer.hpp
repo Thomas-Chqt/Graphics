@@ -44,6 +44,7 @@ public:
 
     virtual void endRenderPass() = 0;
 
+
     virtual void beginComputePass(ComputePassDescriptor&) = 0;
 
     virtual void dispatchThreadgroups(uint32_t x, uint32_t y = 1, uint32_t z = 1) = 0;
@@ -62,7 +63,10 @@ public:
     inline void copyTextureToBuffer(const std::shared_ptr<Texture>& texture, const std::shared_ptr<Buffer>& buffer) { copyTextureToBuffer(texture, 0, buffer, 0); }
     inline void copyTextureToBuffer(const std::shared_ptr<Texture>& texture, const std::shared_ptr<Buffer>& buffer, size_t bufferOffset) { copyTextureToBuffer(texture, 0, buffer, bufferOffset); }
 
+    virtual void generateMipmaps(const std::shared_ptr<Texture>& texture) = 0;
+
     virtual void endBlitPass() = 0;
+
 
     virtual void presentDrawable(const std::shared_ptr<Drawable>&) = 0;
 

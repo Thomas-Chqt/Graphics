@@ -26,6 +26,7 @@
 #include "Metal/MetalShaderLib.hpp"
 #include "MetalParameterBlockLayout.hpp"
 #include "Metal/MetalTexture.hpp"
+#include "Metal/MetalTextureView.hpp"
 #include "Metal/MetalSampler.hpp"
 #include "Metal/MetalPassDescriptor.hpp"
 
@@ -74,6 +75,13 @@ std::unique_ptr<Buffer> MetalDevice::newBuffer(const Buffer::Descriptor& desc) c
 std::unique_ptr<Texture> MetalDevice::newTexture(const Texture::Descriptor& desc) const
 {
     return std::make_unique<MetalTexture>(*this, desc);
+}
+
+std::unique_ptr<Texture> MetalDevice::newTextureView(const std::shared_ptr<Texture>& texture, const Texture::ViewDescriptor& desc) const
+{
+    auto metalTexture = std::dynamic_pointer_cast<MetalTexture>(texture);
+    assert(metalTexture);
+    return std::make_unique<MetalTextureView>(metalTexture, desc);
 }
 
 std::unique_ptr<RenderPassDescriptor> MetalDevice::newRenderPassDescriptor() const

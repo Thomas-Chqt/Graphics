@@ -147,6 +147,8 @@ constexpr MTLTextureType toMTLTextureType(TextureType type)
     {
     case TextureType::texture2d:
         return MTLTextureType2D;
+    case TextureType::texture2dArray:
+        return MTLTextureType2DArray;
     case TextureType::textureCube:
         return MTLTextureTypeCube;
     default:
@@ -160,6 +162,8 @@ constexpr TextureType toTextureType(MTLTextureType type)
     {
     case MTLTextureType2D:
         return TextureType::texture2d;
+    case MTLTextureType2DArray:
+        return TextureType::texture2dArray;
     case MTLTextureTypeCube:
         return TextureType::textureCube;
     default:
@@ -190,6 +194,21 @@ constexpr MTLSamplerMinMagFilter toMTLSamplerMinMagFilter(SamplerMinMagFilter fi
         return MTLSamplerMinMagFilterNearest;
     case SamplerMinMagFilter::Linear:
         return MTLSamplerMinMagFilterLinear;
+    default:
+        throw std::runtime_error("not implemented");
+    }
+}
+
+constexpr MTLSamplerMipFilter toMTLSamplerMipFilter(SamplerMipFilter filter)
+{
+    switch (filter)
+    {
+    case SamplerMipFilter::NotMipmapped:
+        return MTLSamplerMipFilterNotMipmapped;
+    case SamplerMipFilter::Nearest:
+        return MTLSamplerMipFilterNearest;
+    case SamplerMipFilter::Linear:
+        return MTLSamplerMipFilterLinear;
     default:
         throw std::runtime_error("not implemented");
     }
