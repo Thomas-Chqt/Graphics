@@ -8,6 +8,8 @@
  */
 
 #include "Graphics/Enums.hpp"
+#include "Graphics/Surface.hpp"
+#include <array>
 
 #include "Metal/MetalSurface.hpp"
 
@@ -19,15 +21,21 @@ MetalSurface::MetalSurface(CAMetalLayer* layer)
 {
 }
 
-const std::set<PixelFormat> MetalSurface::supportedPixelFormats(const Device&) const
+std::set<SurfaceFormat> MetalSurface::supportedSurfaceFormat(const Device&) const
 {
-    return {
-        PixelFormat::BGRA8Unorm,
-        PixelFormat::BGRA8Unorm_sRGB,
-    };
+    std::set<SurfaceFormat> surfaceFormats;
+    for (PixelFormat pixelFormat : std::to_array({PixelFormat::BGRA8_unorm, PixelFormat::BGRA8_sRGB, PixelFormat::RGBA16_float})) {
+        for (ColorSpace colorSpace : std::to_array({ColorSpace::sRGB_nonLinear, ColorSpace::displayP3_nonlinear})) {
+            surfaceFormats.insert(SurfaceFormat{
+                .pixelFormat = pixelFormat,
+                .colorSpace = colorSpace
+            });
+        }
+    }
+    return surfaceFormats;
 }
 
-const std::set<PresentMode> MetalSurface::supportedPresentModes(const Device&) const
+std::set<PresentMode> MetalSurface::supportedPresentModes(const Device&) const
 {
     return {
         PresentMode::fifo

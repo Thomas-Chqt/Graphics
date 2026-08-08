@@ -30,7 +30,8 @@ public:
         uint32_t width = 0, height = 0;
         uint32_t imageCount = 3;
         uint32_t drawableCount = 3;
-        PixelFormat pixelFormat = PixelFormat::BGRA8Unorm;
+        PixelFormat pixelFormat = PixelFormat::BGRA8_sRGB;
+        ColorSpace colorSpace = ColorSpace::sRGB_nonLinear;
         PresentMode presentMode = PresentMode::fifo;
         auto operator<=>(const Descriptor&) const = default;
     };

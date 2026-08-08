@@ -108,7 +108,7 @@ target_link_libraries(descriptor_indexing PRIVATE Graphics GraphicsGLFW glfw glm
 add_dependencies(descriptor_indexing descriptor_indexing_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for descriptor_indexing")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
 
     set(DESCRIPTOR_INDEXING_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/descriptor_indexing.entitlements")
     if(EXISTS "${DESCRIPTOR_INDEXING_ENTITLEMENTS_FILE}")

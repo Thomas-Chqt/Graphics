@@ -231,6 +231,19 @@ TEST(descriptor_operator, graphics_pipeline_descriptor)
     expectDescriptorComparableInMap(lhs, rhs);
 }
 
+TEST(descriptor_operator, graphics_pipeline_depth_compare_operation)
+{
+    gfx::GraphicsPipeline::Descriptor lhs {};
+    lhs.vertexShader = nullptr;
+    lhs.fragmentShader = nullptr;
+    lhs.depthCompareOperation = gfx::DepthCompareOperation::less;
+
+    gfx::GraphicsPipeline::Descriptor rhs = lhs;
+    rhs.depthCompareOperation = gfx::DepthCompareOperation::lessEqual;
+
+    expectDescriptorComparableInMap(lhs, rhs);
+}
+
 TEST(descriptor_operator, compute_pipeline_descriptor)
 {
     gfx::ComputePipeline::Descriptor lhs {};
@@ -265,6 +278,11 @@ TEST(compute_resource_enums, combine_storage_texture_usages)
 TEST(pixel_format, rg32_float_size)
 {
     EXPECT_EQ(gfx::pixelFormatSize(gfx::PixelFormat::RG32Float), sizeof(float) * 2);
+}
+
+TEST(pixel_format, rgba32_float_size)
+{
+    EXPECT_EQ(gfx::pixelFormatSize(gfx::PixelFormat::RGBA32_float), sizeof(float) * 4);
 }
 
 }

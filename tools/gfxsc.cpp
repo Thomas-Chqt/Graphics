@@ -31,6 +31,7 @@ static SlangResult compileForTarget(
     SlangCompileTarget targetFormat,
     const std::vector<std::filesystem::path>& sources,
     const std::vector<std::filesystem::path>& includePaths,
+    const std::string& selectedEntryPoint,
     slang::ISession** outSession,
     slang::IComponentType** outLinkedProgram)
 {
@@ -112,6 +113,7 @@ static SlangResult compileForTarget(
 
     std::vector<Slang::ComPtr<slang::IModule>> modules;
     std::vector<Slang::ComPtr<slang::IEntryPoint>> entryPoints;
+    uint32_t selectedEntryPointCount = 0;
 
     for (const auto& inputFilePath : sources)
     {
@@ -151,8 +153,19 @@ static SlangResult compileForTarget(
                 std::println(stderr, "getDefinedEntryPoint ({}): error", targetName);
                 return entryPointResult;
             }
+
+            if (selectedEntryPoint.empty() == false && entryPoint->getFunctionReflection()->getName() != selectedEntryPoint)
+                continue;
+
             entryPoints.push_back(entryPoint);
+            selectedEntryPointCount++;
         }
+    }
+
+    if (selectedEntryPoint.empty() == false && selectedEntryPointCount != 1)
+    {
+        std::println(stderr, "entry point '{}': expected exactly one definition, found {}", selectedEntryPoint, selectedEntryPointCount);
+        return SLANG_FAIL;
     }
 
     std::vector<slang::IComponentType*> components;
@@ -231,6 +244,10 @@ int main(int argc, char* argv[])
         })
         .required();
 
+    program.add_argument("-e", "--entry")
+        .help("compile only the selected entry point")
+        .default_value(std::string{});
+
     program.add_argument("-I")
         .action([&](const std::string& s) -> std::filesystem::path {
             auto path = std::filesystem::path(s);
@@ -296,6 +313,7 @@ int main(int argc, char* argv[])
             SLANG_METAL_LIB,
             program.get<std::vector<std::filesystem::path>>("sources"),
             includePaths,
+            program.get<std::string>("--entry"),
             metalSession.writeRef(),
             metalProgram.writeRef()
         );
@@ -342,6 +360,7 @@ int main(int argc, char* argv[])
             SLANG_SPIRV,
             program.get<std::vector<std::filesystem::path>>("sources"),
             includePaths,
+            program.get<std::string>("--entry"),
             spirvSession.writeRef(),
             spirvProgram.writeRef()
         );

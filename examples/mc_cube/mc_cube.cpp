@@ -145,7 +145,7 @@ public:
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
 
-        assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
+        assert(std::ranges::contains(m_surface->supportedSurfaceFormat(*m_device), gfx::PixelFormat::BGRA8_unorm, &gfx::SurfaceFormat::pixelFormat));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
 
         std::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
@@ -185,7 +185,7 @@ public:
             },
             .vertexShader = &shaderLib->getFunction("vertexMain"),
             .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8_unorm },
             .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
             .parameterBlockLayouts = { m_vpMatrixBpLayout, m_modelMatrixBpLayout, m_materialBpLayout }
         };
@@ -264,12 +264,12 @@ public:
                 .type = gfx::TextureType::textureCube,
                 .width = static_cast<uint32_t>(width),
                 .height = static_cast<uint32_t>(height),
-                .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+                .pixelFormat = gfx::PixelFormat::RGBA8_unorm,
                 .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
                 .storageMode = gfx::ResourceStorageMode::deviceLocal
             });
 
-            size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm);
+            size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8_unorm);
             std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size = faceSize * 6, // 6 faces
                 .usages = gfx::BufferUsage::copySource,
@@ -335,7 +335,7 @@ public:
             break;
         }
 
-        gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8Unorm}, .depthAttachmentPixelFormat = gfx::PixelFormat::Depth32Float});
+        gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8_unorm}, .depthAttachmentPixelFormat = gfx::PixelFormat::Depth32Float});
     }
 
     void loop()
@@ -355,7 +355,7 @@ public:
                     .height = (uint32_t)height,
                     .imageCount = 3,
                     .drawableCount = maxFrameInFlight,
-                    .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
+                    .pixelFormat = gfx::PixelFormat::BGRA8_unorm,
                     .presentMode = gfx::PresentMode::fifo,
                 };
                 m_swapchain = m_device->newSwapchain(swapchainDescriptor);

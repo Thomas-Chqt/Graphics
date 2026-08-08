@@ -24,6 +24,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <stb_image/stb_image.h>
 
+#include <algorithm>
 #include <memory>
 #include <cassert>
 #include <cstdint>
@@ -78,7 +79,7 @@ public:
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
 
-        assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
+        assert(std::ranges::contains(m_surface->supportedSurfaceFormat(*m_device), gfx::PixelFormat::BGRA8_unorm, &gfx::SurfaceFormat::pixelFormat));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
 
         for (uint8_t i = 0; i < maxFrameInFlight; i++) {
@@ -94,14 +95,14 @@ public:
             .type = gfx::TextureType::texture2d,
             .width = static_cast<uint32_t>(width),
             .height = static_cast<uint32_t>(height),
-            .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+            .pixelFormat = gfx::PixelFormat::RGBA8_sRGB,
             .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
             .storageMode = gfx::ResourceStorageMode::deviceLocal
         });
         assert(m_texture);
 
         std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-            .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm),
+            .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8_unorm),
             .usages = gfx::BufferUsage::copySource,
             .storageMode = gfx::ResourceStorageMode::hostVisible
         });
@@ -137,7 +138,7 @@ public:
             break;
         }
 
-        gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8Unorm}});
+        gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8_unorm}});
 
     }
 
@@ -157,7 +158,7 @@ public:
                     .width = (uint32_t)width,
                     .height = (uint32_t)height,
                     .imageCount = 3,
-                    .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
+                    .pixelFormat = gfx::PixelFormat::BGRA8_unorm,
                     .presentMode = gfx::PresentMode::fifo,
                 };
                 m_swapchain = m_device->newSwapchain(swapchainDescriptor);

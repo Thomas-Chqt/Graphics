@@ -31,6 +31,11 @@ public:
     inline const glm::vec3& color() const { return m_color; }
     inline void setColor(const glm::vec3& c) { m_color = c; }
 
+    inline float intensity() const { return m_intensity; }
+    inline void setIntensity(float i) { m_intensity = i; }
+
+    inline glm::vec3 radiance() const { return m_color * m_intensity; }
+
     ~Light() override = default;
 
 protected:
@@ -39,6 +44,7 @@ protected:
     Light(Light&&) = default;
 
     glm::vec3 m_color = { 1.0f, 1.0f, 1.0f };
+    float m_intensity = 1.0f;
 
 protected:
     Light& operator=(const Light&) = default;

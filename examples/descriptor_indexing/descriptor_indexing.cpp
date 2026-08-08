@@ -127,7 +127,7 @@ public:
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
 
-        assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
+        assert(std::ranges::contains(m_surface->supportedSurfaceFormat(*m_device), gfx::PixelFormat::BGRA8_unorm, &gfx::SurfaceFormat::pixelFormat));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
 
         std::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
@@ -149,7 +149,7 @@ public:
             },
             .vertexShader = &shaderLib->getFunction("vertexMain"),
             .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8_unorm },
             .parameterBlockLayouts = { m_textureArrayPBLayout },
         };
         m_graphicsPipeline = m_device->newGraphicsPipeline(pipelineDesc);
@@ -210,7 +210,7 @@ public:
                     .type = gfx::TextureType::texture2d,
                     .width = 2,
                     .height = 2,
-                    .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+                    .pixelFormat = gfx::PixelFormat::RGBA8_unorm,
                     .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
                     .storageMode = gfx::ResourceStorageMode::deviceLocal
                 });
@@ -272,7 +272,7 @@ public:
                     .width = static_cast<uint32_t>(width),
                     .height = static_cast<uint32_t>(height),
                     .imageCount = 3,
-                    .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
+                    .pixelFormat = gfx::PixelFormat::BGRA8_unorm,
                     .presentMode = gfx::PresentMode::fifo,
                 });
                 assert(m_swapchain);

@@ -9,9 +9,11 @@
 
 #include "Graphics/Drawable.hpp"
 
-#include "Vulkan/VulkanSwapchain.hpp"
 #include "Graphics/Enums.hpp"
+#include "Graphics/Surface.hpp"
 #include "Graphics/Texture.hpp"
+
+#include "Vulkan/VulkanSwapchain.hpp"
 #include "Vulkan/SwapchainImage.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
@@ -28,20 +30,16 @@ namespace gfx
 
 VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& desc) : m_device(device)
 {
+    assert(m_device);
     assert(desc.surface);
+    assert(desc.surface->supportedSurfaceFormat(*device).contains(SurfaceFormat{ .pixelFormat = desc.pixelFormat, .colorSpace = desc.colorSpace }));
+    assert(desc.surface->supportedPresentModes(*device).contains(desc.presentMode));
+
     const vk::SurfaceKHR& vkSurface = dynamic_cast<const VulkanSurface&>(*desc.surface).vkSurface();
 
     const VulkanPhysicalDevice& vkPhysicalDevice = m_device->physicalDevice();
     vk::SurfaceCapabilitiesKHR surfaceCapabilities = vkPhysicalDevice.getSurfaceCapabilitiesKHR(vkSurface);
     // TODO : chech image count
-
-    std::vector<vk::SurfaceFormatKHR> surfaceFormats = vkPhysicalDevice.getSurfaceFormatsKHR(vkSurface);
-    assert(std::ranges::any_of(surfaceFormats, [&desc](auto& f){
-        return f.format == toVkFormat(desc.pixelFormat) && f.colorSpace == toVkColorSpaceKHR(desc.pixelFormat);
-    }));
-
-    std::vector<vk::PresentModeKHR> surfacePresentModes = vkPhysicalDevice.getSurfacePresentModesKHR(vkSurface);
-    assert(std::ranges::any_of(surfacePresentModes, [&desc](auto& m){return m == toVkPresentModeKHR(desc.presentMode);}));
 
     vk::Extent2D extent;
     if (surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
@@ -52,12 +50,11 @@ VulkanSwapchain::VulkanSwapchain(const VulkanDevice* device, const Descriptor& d
         extent.height = std::clamp(desc.height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height);
     }
 
-
     auto swapchainCreateInfo = vk::SwapchainCreateInfoKHR{}
         .setSurface(vkSurface)
         .setMinImageCount(desc.imageCount)
         .setImageFormat(toVkFormat(desc.pixelFormat))
-        .setImageColorSpace(toVkColorSpaceKHR(desc.pixelFormat))
+        .setImageColorSpace(toVkColorSpaceKHR(desc.colorSpace))
         .setImageExtent(extent)
         .setImageArrayLayers(1)
         .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)

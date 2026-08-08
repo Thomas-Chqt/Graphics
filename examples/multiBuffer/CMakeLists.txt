@@ -109,7 +109,7 @@ target_link_libraries(multiBuffer PRIVATE Graphics GraphicsGLFW glfw glm::glm)
 add_dependencies(multiBuffer multiBuffer_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for multiBuffer")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
 
     set(multiBuffer_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/multiBuffer.entitlements")
     if(EXISTS "${MULTIBUFFER_ENTITLEMENTS_FILE}")

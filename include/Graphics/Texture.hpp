@@ -27,7 +27,7 @@ public:
         uint32_t height = 1;
         uint32_t mipLevelCount = 1;
         uint32_t arrayLayerCount = 1;
-        PixelFormat pixelFormat = PixelFormat::RGBA8Unorm;
+        PixelFormat pixelFormat = PixelFormat::RGBA8_unorm;
         TextureUsages usages = TextureUsage::shaderRead;
         ResourceStorageMode storageMode = ResourceStorageMode::deviceLocal;
 

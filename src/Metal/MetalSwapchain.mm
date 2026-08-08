@@ -16,6 +16,7 @@
 #include "Metal/MetalSurface.hpp"
 
 #import "Metal/MetalEnums.hpp"
+#include <cassert>
 #include <memory>
 
 namespace gfx
@@ -40,6 +41,18 @@ MetalSwapchain::MetalSwapchain(const MetalDevice& device, const Swapchain::Descr
         m_mtlLayer.device = device.mtlDevice();
         m_mtlLayer.drawableSize = CGSize{CGFloat(desc.width), CGFloat(desc.height)};
         m_mtlLayer.pixelFormat = toMTLPixelFormat(desc.pixelFormat);
+        switch (desc.colorSpace)
+        {
+        case ColorSpace::sRGB_nonLinear:
+            m_mtlLayer.colorspace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+            break;
+        case ColorSpace::displayP3_nonlinear:
+            assert(false);
+            break;
+        case ColorSpace::displayP3_linear:
+            m_mtlLayer.colorspace = CGColorSpaceCreateWithName(kCGColorSpaceDisplayP3);
+            break;
+        }
 
         m_drawables.resize(desc.drawableCount);
         for (auto& drawable : m_drawables)

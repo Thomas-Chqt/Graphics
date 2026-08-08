@@ -13,60 +13,63 @@
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanDevice.hpp"
+#include <vulkan/vulkan.hpp>
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace
 {
 #if !defined(NDEBUG)
-    constexpr auto kValidationLayers = std::to_array({"VK_LAYER_KHRONOS_validation"});
+constexpr auto kValidationLayers = std::to_array({"VK_LAYER_KHRONOS_validation"});
 #endif
 
-    std::vector<const char*> getRequiredExtensions()
-    {
-        std::vector<const char*> extensions;
+std::vector<const char*> getRequiredExtensions()
+{
+    std::vector<const char*> extensions;
+    extensions.push_back(vk::EXTSwapchainColorSpaceExtensionName);
 
-#if !defined(NDEBUG)
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    #if !defined(NDEBUG)
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-        // Check if VK_EXT_layer_settings is available before adding it
-        std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
-        bool layerSettingsAvailable = false;
-        for (const auto& ext : availableExtensions) {
-            if (strcmp(ext.extensionName, "VK_EXT_layer_settings") == 0) {
-                layerSettingsAvailable = true;
+    // Check if VK_EXT_layer_settings is available before adding it
+    const std::vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
+    bool layerSettingsAvailable = false;
+    for (const auto& ext : availableExtensions) {
+        if (strcmp(ext.extensionName, "VK_EXT_layer_settings") == 0) {
+            layerSettingsAvailable = true;
+            break;
+        }
+    }
+    if (layerSettingsAvailable) {
+        extensions.push_back("VK_EXT_layer_settings");
+    }
+    #endif
+
+    #if defined(__APPLE__)
+    extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+    #endif
+
+    return extensions;
+}
+
+template<size_t S>
+std::vector<const char*> getAvailableLayers(const std::array<const char*, S>& wantedLayers)
+{
+    std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
+    std::vector<const char*> result;
+
+    for (const char* wantedLayer : wantedLayers) {
+        for (const vk::LayerProperties& availableLayer : availableLayers) {
+            if (strcmp(wantedLayer, availableLayer.layerName) == 0) {
+                result.push_back(wantedLayer);
                 break;
             }
         }
-        if (layerSettingsAvailable) {
-            extensions.push_back("VK_EXT_layer_settings");
-        }
-#endif
-
-#if defined(__APPLE__)
-        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-#endif
-
-        return extensions;
     }
-
-    template<size_t S>
-    std::vector<const char*> getAvailableLayers(const std::array<const char*, S>& wantedLayers)
-    {
-        std::vector<vk::LayerProperties> availableLayers = vk::enumerateInstanceLayerProperties();
-        std::vector<const char*> result;
-
-        for (const char* wantedLayer : wantedLayers) {
-            for (const vk::LayerProperties& availableLayer : availableLayers) {
-                if (strcmp(wantedLayer, availableLayer.layerName) == 0) {
-                    result.push_back(wantedLayer);
-                    break;
-                }
-            }
-        }
-        return result;
-    }
+    return result;
 }
+
+} // namespace
 
 namespace gfx
 {
@@ -95,16 +98,16 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
     }
 
     vk::InstanceCreateFlags flags = {};
-#if defined(__APPLE__)
+    #if defined(__APPLE__)
     flags |= vk::InstanceCreateFlags::BitsType::eEnumeratePortabilityKHR;
-#endif
+    #endif
 
     auto instanceCreateInfo = vk::InstanceCreateInfo{}
         .setPApplicationInfo(&applicationInfo)
         .setPEnabledExtensionNames(extensions)
         .setFlags(flags);
 
-#if !defined(NDEBUG)
+    #if !defined(NDEBUG)
     std::vector<const char*> enabledLayers = getAvailableLayers(kValidationLayers);
     instanceCreateInfo.setPEnabledLayerNames(enabledLayers);
 
@@ -151,15 +154,15 @@ VulkanInstance::VulkanInstance(const Instance::Descriptor& desc)
     }
 
     instanceCreateInfo.setPNext(&debugCreateInfo);
-#endif
+    #endif
 
     m_vkInstance = vk::createInstance(instanceCreateInfo);
 
     VULKAN_HPP_DEFAULT_DISPATCHER.init(m_vkInstance);
 
-#if !defined(NDEBUG)
+    #if !defined(NDEBUG)
     m_debugMessenger = m_vkInstance.createDebugUtilsMessengerEXT(debugCreateInfo);
-#endif
+    #endif
 
     m_physicalDevices = m_vkInstance.enumeratePhysicalDevices()
         | std::views::transform([](auto& d){ return VulkanPhysicalDevice(d); })
@@ -171,18 +174,19 @@ std::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc
     VulkanDevice::Descriptor vulkandeviceDescriptor = {
         .deviceDescriptor = &desc,
         .deviceExtensions = {
-            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+            vk::KHRDynamicRenderingExtensionName,
             vk::KHRSynchronization2ExtensionName,
             vk::EXTCalibratedTimestampsExtensionName
         }
     };
 
-#if defined(__APPLE__)
+    #if defined(__APPLE__)
     vulkandeviceDescriptor.deviceExtensions.push_back("VK_KHR_portability_subset");
-#endif
+    #endif
 
-    if (desc.queueCaps.present.empty() == false)
+    if (desc.queueCaps.present.empty() == false) {
         vulkandeviceDescriptor.deviceExtensions.push_back(vk::KHRSwapchainExtensionName);
+    }
 
     auto suitableDevices = m_physicalDevices | std::views::filter([&](auto d) { return d.isSuitable(vulkandeviceDescriptor); });
     if (suitableDevices.empty())
@@ -193,9 +197,9 @@ std::unique_ptr<Device> VulkanInstance::newDevice(const Device::Descriptor& desc
 
 VulkanInstance::~VulkanInstance()
 {
-#if !defined(NDEBUG)
+    #if !defined(NDEBUG)
     m_vkInstance.destroyDebugUtilsMessengerEXT(m_debugMessenger);
-#endif
+    #endif
     m_vkInstance.destroy();
 }
 

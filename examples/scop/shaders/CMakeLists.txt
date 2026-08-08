@@ -50,4 +50,62 @@ add_custom_command(
 add_custom_target(scop_shader ALL DEPENDS ${scop_SLIB})
 set_target_properties(scop_shader PROPERTIES FOLDER "examples/scop/shader")
 
+set(PBR_MATERIAL_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/pbr_material.slang")
+set(PBR_MATERIAL_SLIB "${CMAKE_CURRENT_BINARY_DIR}/pbr_material.slib")
+add_custom_command(
+    OUTPUT ${PBR_MATERIAL_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${PBR_MATERIAL_SLIB} ${PBR_MATERIAL_SSRC}
+    DEPENDS
+        gfxsc
+        ${PBR_MATERIAL_SSRC}
+        "${CMAKE_CURRENT_SOURCE_DIR}/pbr.slang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/SceneData.slang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/Light.slang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/brdf.slang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/ibl.slang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils.slang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shader.h"
+    COMMENT "Building PBR material shaders"
+    VERBATIM
+)
+add_custom_target(pbr_material_shader ALL DEPENDS ${PBR_MATERIAL_SLIB})
+set_target_properties(pbr_material_shader PROPERTIES FOLDER "examples/scop/shader")
+
+set(PBR_PRECOMPUTE_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/pbr_precompute.slang")
+set(PBR_PRECOMPUTE_SLIBS)
+foreach(ENTRY_POINT equirectangularToCubemap convolveDiffuseIrradiance prefilterEnvironment integrateBrdf)
+    set(ENTRY_POINT_SLIB "${CMAKE_CURRENT_BINARY_DIR}/${ENTRY_POINT}.slib")
+    add_custom_command(
+        OUTPUT ${ENTRY_POINT_SLIB}
+        COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -e ${ENTRY_POINT} -o ${ENTRY_POINT_SLIB} ${PBR_PRECOMPUTE_SSRC}
+        DEPENDS
+            gfxsc
+            ${PBR_PRECOMPUTE_SSRC}
+            "${CMAKE_CURRENT_SOURCE_DIR}/brdf.slang"
+            "${CMAKE_CURRENT_SOURCE_DIR}/utils.slang"
+            "${CMAKE_CURRENT_SOURCE_DIR}/shader.h"
+        COMMENT "Building ${ENTRY_POINT} shader lib for scop"
+        VERBATIM
+    )
+    list(APPEND PBR_PRECOMPUTE_SLIBS ${ENTRY_POINT_SLIB})
+endforeach()
+add_custom_target(scop_pbr_precompute_shaders ALL DEPENDS ${PBR_PRECOMPUTE_SLIBS})
+set_target_properties(scop_pbr_precompute_shaders PROPERTIES FOLDER "examples/scop/shader")
+
+set(SKYBOX_SSRC "${CMAKE_CURRENT_SOURCE_DIR}/skybox.slang")
+set(SKYBOX_SLIB "${CMAKE_CURRENT_BINARY_DIR}/skybox.slib")
+add_custom_command(
+    OUTPUT ${SKYBOX_SLIB}
+    COMMAND $<TARGET_FILE:gfxsc> -t ${SHADER_TARGETS} -o ${SKYBOX_SLIB} ${SKYBOX_SSRC}
+    DEPENDS
+        gfxsc
+        ${SKYBOX_SSRC}
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils.slang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/shader.h"
+    COMMENT "Building skybox shaders"
+    VERBATIM
+)
+add_custom_target(skybox_shader ALL DEPENDS ${SKYBOX_SLIB})
+set_target_properties(skybox_shader PROPERTIES FOLDER "examples/scop/shader")
+
 set(SHADER_DIR ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)

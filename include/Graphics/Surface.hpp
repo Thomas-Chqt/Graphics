@@ -13,11 +13,21 @@
 #include "Graphics/Enums.hpp"
 
 #include <set>
+#include <ranges>
 
 namespace gfx
 {
 
 class Device;
+
+struct SurfaceFormat
+{
+    PixelFormat pixelFormat;
+    ColorSpace colorSpace;
+
+    bool operator == (const SurfaceFormat&) const = default;
+    auto operator <=>(const SurfaceFormat&) const = default;
+};
 
 class Surface
 {
@@ -25,8 +35,10 @@ public:
     Surface(const Surface&) = delete;
     Surface(Surface&&) = delete;
 
-    virtual const std::set<PixelFormat> supportedPixelFormats(const Device&) const = 0;
-    virtual const std::set<PresentMode> supportedPresentModes(const Device&) const = 0;
+    [[deprecated("use supportedSurfaceFormat")]] inline std::set<PixelFormat> supportedPixelFormats(const Device&) const;
+
+    virtual std::set<SurfaceFormat> supportedSurfaceFormat(const Device&) const = 0;
+    virtual std::set<PresentMode> supportedPresentModes(const Device&) const = 0;
 
     virtual ~Surface() = default;
 
@@ -37,6 +49,11 @@ public:
     Surface& operator=(const Surface&) = delete;
     Surface& operator=(Surface&&) = delete;
 };
+
+inline std::set<PixelFormat> Surface::supportedPixelFormats(const Device& device) const
+{
+    return supportedSurfaceFormat(device) | std::views::transform(&SurfaceFormat::pixelFormat) | std::ranges::to<std::set>();
+}
 
 } // namespace gfx
 

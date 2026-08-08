@@ -14,11 +14,13 @@
 #include "Mesh.hpp"
 
 #include "shaders/SceneData.slang"
+#include "shaders/skybox.slang"
 
 #include <Graphics/Surface.hpp>
 #include <Graphics/Device.hpp>
 #include <Graphics/GraphicsPipeline.hpp>
 #include <Graphics/ParameterBlockLayout.hpp>
+#include <Graphics/Texture.hpp>
 
 #include <GLFW/glfw3.h>
 #if !defined (SCOP_MANDATORY)
@@ -58,13 +60,18 @@ public:
 
     static inline std::shared_ptr<gfx::ParameterBlockLayout> vpMatrixBpLayout() { return s_vpMatrixBpLayout.lock(); }
     static inline std::shared_ptr<gfx::ParameterBlockLayout> sceneDataBpLayout() { return s_sceneDataBpLayout.lock(); }
+    static inline std::shared_ptr<gfx::Texture> irradianceCubemap() { return s_irradianceCubemap.lock(); }
+    static inline std::shared_ptr<gfx::Texture> prefilteredEnvironmentCubemap() { return s_prefilteredEnvironmentCubemap.lock(); }
+    static inline std::shared_ptr<gfx::Texture> brdfLut() { return s_brdfLut.lock(); }
 
-    void beginFrame(const glm::mat4x4& viewMatrix, float fov, float near, float far);
+    void beginFrame(const glm::mat4x4& viewMatrix, const glm::vec3& cameraPosition, float fov, float near, float far);
 
     inline void setAmbientLightColor(glm::vec3 c) { cfsd.ambientLightColor = c; }
+    inline void setExposure(float e) { cfsd.exposure = e; }
 
     void addMesh(const Mesh&, const glm::mat4x4& transform);
     void addPointLight(const glm::vec3& position, const glm::vec3& color);
+    void addDirectionalLight(const glm::vec3& direction, const glm::vec3& color);
 
     void endFrame();
 
@@ -77,6 +84,7 @@ private:
         std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool;
 
         std::shared_ptr<gfx::Buffer> vpMatrix;
+        shader::skybox::PushConstants skyboxPushConstants;
 
         std::shared_ptr<gfx::Texture> depthTexture;
 
@@ -110,6 +118,20 @@ private:
 
     inline static std::weak_ptr<gfx::ParameterBlockLayout> s_sceneDataBpLayout;
     std::shared_ptr<gfx::ParameterBlockLayout> m_sceneDataBpLayout;
+
+    std::shared_ptr<gfx::Texture> m_environmentCubemap;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_skyboxPbLayout;
+    std::shared_ptr<gfx::GraphicsPipeline> m_skyboxPipeline;
+    std::shared_ptr<gfx::Sampler> m_skyboxSampler;
+
+    inline static std::weak_ptr<gfx::Texture> s_irradianceCubemap;
+    std::shared_ptr<gfx::Texture> m_irradianceCubemap;
+
+    inline static std::weak_ptr<gfx::Texture> s_prefilteredEnvironmentCubemap;
+    std::shared_ptr<gfx::Texture> m_prefilteredEnvironmentCubemap;
+
+    inline static std::weak_ptr<gfx::Texture> s_brdfLut;
+    std::shared_ptr<gfx::Texture> m_brdfLut;
 
 public:
     Renderer& operator=(const Renderer&) = delete;

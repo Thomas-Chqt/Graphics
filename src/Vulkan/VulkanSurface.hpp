@@ -26,12 +26,12 @@ public:
 
     VulkanSurface(const vk::Instance&, VkSurfaceKHR);
 
-    const std::set<PixelFormat> supportedPixelFormats(const Device&) const override;
-    const std::set<PresentMode> supportedPresentModes(const Device&) const override;
+    std::set<SurfaceFormat> supportedSurfaceFormat(const Device&) const override;
+    std::set<PresentMode> supportedPresentModes(const Device&) const override;
 
     const vk::SurfaceKHR& vkSurface() const { return m_vkSurface; }
 
-    ~VulkanSurface();
+    ~VulkanSurface() override;
 
 private:
     const vk::Instance* m_vkInstance;

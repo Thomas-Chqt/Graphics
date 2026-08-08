@@ -31,6 +31,7 @@ MetalParameterBlockPool::MetalParameterBlockPool(const MetalDevice* device, cons
     m_argumentBuffer = std::dynamic_pointer_cast<MetalBuffer>(static_cast<std::shared_ptr<Buffer>>(m_device->newBuffer(buffDesc)));
 }
 
+// TODO : fix bug where reused pblock are not the right layout
 std::shared_ptr<ParameterBlock> MetalParameterBlockPool::get(const std::shared_ptr<ParameterBlockLayout>& aPbLayout)
 {
     auto pbLayout = std::dynamic_pointer_cast<MetalParameterBlockLayout>(aPbLayout);

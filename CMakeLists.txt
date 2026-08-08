@@ -30,7 +30,7 @@ option(GFX_BUILD_GLFW_INTEGRATION  "Build the glfw integration static library"  
 option(GFX_BUILD_TRACY_INTEGRATION "Build the tracy integration static library" ON)
 
 if(GFX_BUILD_EXAMPLES)
-    set(GFX_EXAMPLES_TO_BUILD "compute;triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop" CACHE STRING "Semicolon separated list of example names to build")
+    set(GFX_EXAMPLES_TO_BUILD "compute;triangle;multiBuffer;descriptor_indexing;imgui_usage;mc_cube;scop;pbr" CACHE STRING "Semicolon separated list of example names to build")
 endif()
 
 enable_language(CXX)
@@ -61,6 +61,13 @@ if (APPLE AND GFX_BUILD_METAL)
     else()
         message(STATUS "Foundation framework found")
     endif()
+    find_library(CORE_GRAPHICS_FRAMEWORK CoreGraphics)
+    if (CORE_GRAPHICS_FRAMEWORK-NOTFOUND)
+        message(WARNING "CoreGraphics not found, disabling metal backend")
+        set(GFX_BUILD_METAL OFF CACHE BOOL "Build the metal backend" FORCE)
+    else()
+        message(STATUS "CoreGraphics framework found")
+    endif()
 endif()
 
 if (GFX_BUILD_VULKAN)
@@ -89,7 +96,7 @@ if (GFX_BUILD_VULKAN)
     FetchContent_Declare(VulkanMemoryAllocator
         GIT_REPOSITORY    https://github.com/Thomas-Chqt/VulkanMemoryAllocator.git
         GIT_TAG           210b7512cba580da650b6eebcea1e01d0e34dbbf
-        GIT_SHALLOW       1
+        GIT_SHALLOW       0
         GIT_PROGRESS      TRUE
         FIND_PACKAGE_ARGS
     )
@@ -143,7 +150,7 @@ if (GFX_BUILD_VULKAN)
 endif()
 
 if (GFX_BUILD_METAL)
-    target_link_libraries(Graphics PRIVATE ${METAL_FRAMEWORK} ${QUARTZ_CORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK})
+    target_link_libraries(Graphics PRIVATE ${METAL_FRAMEWORK} ${QUARTZ_CORE_FRAMEWORK} ${FOUNDATION_FRAMEWORK} ${CORE_GRAPHICS_FRAMEWORK})
 endif()
 
 if (GFX_BUILD_VULKAN)

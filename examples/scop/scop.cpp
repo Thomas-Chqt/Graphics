@@ -111,8 +111,8 @@ int main(int argc, char** argv)
         std::unique_ptr<gfx::Device> device = instance->newDevice(deviceDescriptor);
         assert(device);
 
-        if (surface->supportedPixelFormats(*device).contains(gfx::PixelFormat::BGRA8Unorm) == false)
-            throw std::runtime_error("surface does not support the BGRA8Unorm pixel format");
+        if (std::ranges::contains(surface->supportedSurfaceFormat(*device), gfx::PixelFormat::BGRA8_sRGB, &gfx::SurfaceFormat::pixelFormat) == false)
+            throw std::runtime_error("surface does not support the BGRA8_sRGB pixel format");
 
         if (surface->supportedPresentModes(*device).contains(gfx::PresentMode::fifo) == false)
             throw std::runtime_error("surface does not support the fifo present mode");
@@ -141,9 +141,11 @@ int main(int argc, char** argv)
 
         std::vector<std::shared_ptr<scop::Entity>> entities;
 
-        auto light = std::make_shared<scop::PointLight>();
-        light->setName("Point Light");
-        light->setColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.8f);
+        auto light = std::make_shared<scop::DirectionalLight>();
+        light->setName("Directional Light");
+        light->setPosition(glm::vec3(0.5f, 1.0f, 0.3f));
+        light->setColor(glm::vec3(1.0f, 0.96f, 0.89f));
+        light->setIntensity(4.0f);
         entities.push_back(light);
 
         fs::path meshPath;
@@ -173,14 +175,6 @@ int main(int argc, char** argv)
 #endif
         object->setName("mesh");
         object->setPosition(glm::vec3{0, 0, -3});
-        if (meshPath.filename() == "bistro.glb")
-            object->setRotation({std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        if (meshPath.filename() == "after_the_rain.glb")
-            object->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        if (meshPath.filename() == "neighbourhood_city.glb")
-            object->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
-        if (meshPath.filename() == "sponza.glb")
-            object->setRotation({-std::numbers::pi_v<float> / 2, 0.0f, 0.0f});
         entities.push_back(object);
 
         while (true)
@@ -242,15 +236,17 @@ int main(int argc, char** argv)
             {
                 scopMaterial->setTextureStrength(textureStrengthTarget);
             }
-#else
-            static scop::Light* lightAttachedToCamera = light.get();
-            if (lightAttachedToCamera != nullptr)
-                lightAttachedToCamera->setPosition(camera->position());
 #endif
             TracyCZoneEnd(logicCtx);
 
             TracyCZoneN(renderCtx, "rendering", true);
-            renderer.beginFrame(camera->viewMatrix(), camera->fov(), camera->nearPlane(), camera->farPlane());
+            renderer.beginFrame(
+                camera->viewMatrix(),
+                camera->position(),
+                camera->fov(),
+                camera->nearPlane(),
+                camera->farPlane()
+            );
 
 #if !defined (SCOP_MANDATORY)
             static scop::Entity* selectedEntity = nullptr;
@@ -312,12 +308,9 @@ int main(int argc, char** argv)
                         glm::vec3 lightColor = light->color();
                         ImGui::ColorEdit3("light color", std::bit_cast<float*>(&lightColor));
                         light->setColor(lightColor);
-                        bool attachedToCamera = lightAttachedToCamera == light;
-                        ImGui::Checkbox("attach to camera", &attachedToCamera);
-                        if(attachedToCamera)
-                            lightAttachedToCamera = light;
-                        else
-                            lightAttachedToCamera = nullptr;
+                        float lightIntensity = light->intensity();
+                        ImGui::DragFloat("intensity", &lightIntensity, 0.05f, 0.0f, 100.0f);
+                        light->setIntensity(lightIntensity);
                     }
                 }
                 else
@@ -326,6 +319,14 @@ int main(int argc, char** argv)
                 }
             }
             ImGui::End();
+
+            static float exposure = 0.5f;
+            ImGui::Begin("rendering");
+            {
+                ImGui::DragFloat("exposure", &exposure, 0.01f, 0.05f, 16.0f);
+            }
+            ImGui::End();
+            renderer.setExposure(exposure);
 #endif
 
             renderer.setAmbientLightColor(glm::vec3(1.0f, 1.0f, 1.0f) * 0.1f);
@@ -339,6 +340,9 @@ int main(int argc, char** argv)
 
                 if (auto* pointLight = dynamic_cast<scop::PointLight*>(entity.get()))
                     renderer.addPointLight(pointLight->position(), pointLight->color());
+
+                if (auto* directionalLight = dynamic_cast<scop::DirectionalLight*>(entity.get()))
+                    renderer.addDirectionalLight(directionalLight->position(), directionalLight->radiance());
             }
 
             renderer.endFrame();

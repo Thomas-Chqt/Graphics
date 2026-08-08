@@ -38,6 +38,7 @@
 
 #include <algorithm>
 #include <bit> // IWYU pragma: keep
+#include <cstdlib>
 #include <format> // IWYU pragma: keep
 #include <functional> // IWYU pragma: keep
 #include <span> // IWYU pragma: keep
@@ -232,24 +233,24 @@ struct std::formatter<aiMaterial*> {
             {aiTextureType_SHEEN, "sheen"},
             {aiTextureType_CLEARCOAT, "clearcoat"},
             {aiTextureType_TRANSMISSION, "transmission"},
-#ifdef aiTextureType_MAYA_BASE
+            #ifdef aiTextureType_MAYA_BASE
             {aiTextureType_MAYA_BASE, "maya_base"},
-#endif
-#ifdef aiTextureType_MAYA_SPECULAR
+            #endif
+            #ifdef aiTextureType_MAYA_SPECULAR
             {aiTextureType_MAYA_SPECULAR, "maya_specular"},
-#endif
-#ifdef aiTextureType_MAYA_SPECULAR_COLOR
+            #endif
+            #ifdef aiTextureType_MAYA_SPECULAR_COLOR
             {aiTextureType_MAYA_SPECULAR_COLOR, "maya_specular_color"},
-#endif
-#ifdef aiTextureType_MAYA_SPECULAR_ROUGHNESS
+            #endif
+            #ifdef aiTextureType_MAYA_SPECULAR_ROUGHNESS
             {aiTextureType_MAYA_SPECULAR_ROUGHNESS, "maya_specular_roughness"},
-#endif
-#ifdef aiTextureType_ANISOTROPY
+            #endif
+            #ifdef aiTextureType_ANISOTROPY
             {aiTextureType_ANISOTROPY, "anisotropy"},
-#endif
-#ifdef aiTextureType_GLTF_METALLIC_ROUGHNESS
+            #endif
+            #ifdef aiTextureType_GLTF_METALLIC_ROUGHNESS
             {aiTextureType_GLTF_METALLIC_ROUGHNESS, "gltf_metallic_roughness"},
-#endif
+            #endif
             {aiTextureType_UNKNOWN, "unknown"}
         };
 
@@ -401,16 +402,17 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
         std::unique_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({
             .maxBindingCount = {
                 {gfx::BindingType::constantBuffer, 500},
-                {gfx::BindingType::sampledTexture, 500},
-                {gfx::BindingType::sampler, 500}
+                {gfx::BindingType::sampledTexture, 3500},
+                {gfx::BindingType::sampler, 1000}
             }
         });
         assert(parameterBlockPool);
 
-        std::map<std::string, std::shared_ptr<gfx::Texture>> textureCache;
+        std::map<std::pair<std::string, gfx::PixelFormat>, std::shared_ptr<gfx::Texture>> textureCache;
 
-        auto loadTextureFromPath = [&](const aiString& texPath) -> std::shared_ptr<gfx::Texture> {
-            auto it = textureCache.find(std::string(texPath.C_Str()));
+        auto loadTextureFromPath = [&](const aiString& texPath, gfx::PixelFormat pixelFormat) -> std::shared_ptr<gfx::Texture> {
+            const auto cacheKey = std::make_pair(std::string(texPath.C_Str()), pixelFormat);
+            auto it = textureCache.find(cacheKey);
             if (it != textureCache.end())
                 return it->second;
             std::shared_ptr<gfx::Texture> texture;
@@ -418,53 +420,86 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
                 int texIndex = std::atoi(&texPath.data[1]);
                 assert(texIndex >= 0 && texIndex < static_cast<int>(scene->mNumTextures));
                 const aiTexture* aiTex = scene->mTextures[texIndex];
-                texture = loadEmbeddedTexture(aiTex, *commandBuffer);
+                texture = loadEmbeddedTexture(aiTex, *commandBuffer, pixelFormat);
             } else {
                 std::filesystem::path texFilePath = path.parent_path() / texPath.C_Str();
-                texture = loadTexture(texFilePath, *commandBuffer);
+                texture = loadTexture(texFilePath, *commandBuffer, pixelFormat);
             }
-            textureCache[std::string(texPath.C_Str())] = texture;
+            textureCache[cacheKey] = texture;
             return texture;
         };
 
         materials = std::span(scene->mMaterials, scene->mNumMaterials) | std::views::transform([&](aiMaterial* aiMaterial) -> std::shared_ptr<Material> {
             ZoneScopedN("makeMaterial");
 
-            auto material = std::make_shared<scop::TexturedMaterial>(*m_device);
+            auto material = std::make_shared<scop::PbrMaterial>(*m_device);
 
-            aiColor4D diffuseColor{};
-            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuseColor) == AI_SUCCESS)
-                material->setDiffuseColor(glm::vec4(diffuseColor.r, diffuseColor.g, diffuseColor.b, 1.0f));
+            aiColor4D baseColor{};
+            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_BASE_COLOR, &baseColor) == AI_SUCCESS || aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &baseColor) == AI_SUCCESS)
+                material->setBaseColor(glm::vec4(baseColor.r, baseColor.g, baseColor.b, baseColor.a));
 
-            aiString diffuseTexturePath;
-            if (aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE, 0, &diffuseTexturePath) == AI_SUCCESS)
-                material->setDiffuseTexture(loadTextureFromPath(diffuseTexturePath));
+            aiString baseColorTexturePath;
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType_BASE_COLOR, 0, &baseColorTexturePath) == AI_SUCCESS || aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE, 0, &baseColorTexturePath) == AI_SUCCESS)
+                material->setBaseColorTexture(loadTextureFromPath(baseColorTexturePath, gfx::PixelFormat::RGBA8_sRGB));
             else
-                material->setDiffuseTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+                material->setBaseColorTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
 
-            aiColor4D specularColor{};
-            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_SPECULAR, &specularColor) == AI_SUCCESS)
-                material->setSpecularColor(glm::vec3(specularColor.r, specularColor.g, specularColor.b));
+            float metallic = 0.0f;
+            if (aiGetMaterialFloat(aiMaterial, AI_MATKEY_METALLIC_FACTOR, &metallic) == AI_SUCCESS)
+                material->setMetallic(std::clamp(metallic, 0.0f, 1.0f));
 
-            float shininess{};
-            if (aiGetMaterialFloat(aiMaterial, AI_MATKEY_SHININESS, &shininess) == AI_SUCCESS)
-                material->setShininess(std::clamp(shininess, 1.0f, 1024.0f));
+            float roughness = 1.0f;
+            if (aiGetMaterialFloat(aiMaterial, AI_MATKEY_ROUGHNESS_FACTOR, &roughness) == AI_SUCCESS)
+                material->setRoughness(std::clamp(roughness, 0.01f, 1.0f));
 
-            aiColor4D emissiveColor{};
-            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_EMISSIVE, &emissiveColor) == AI_SUCCESS)
-                material->setEmissiveColor(glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b));
-
-            aiString emissiveTexturePath;
-            if (aiGetMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, 0, &emissiveTexturePath) == AI_SUCCESS)
-                material->setEmissiveTexture(loadTextureFromPath(emissiveTexturePath));
+            aiString metallicRoughnessTexturePath;
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType_GLTF_METALLIC_ROUGHNESS, 0, &metallicRoughnessTexturePath) == AI_SUCCESS)
+            {
+                const std::shared_ptr<gfx::Texture> metallicRoughnessTexture = loadTextureFromPath(
+                    metallicRoughnessTexturePath,
+                    gfx::PixelFormat::RGBA8_unorm
+                );
+                material->setMetallicTexture(metallicRoughnessTexture);
+                material->setRoughnessTexture(metallicRoughnessTexture);
+                material->setMetallicTextureChannel(2);
+                material->setRoughnessTextureChannel(1);
+            }
             else
-                material->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+            {
+                aiString metallicTexturePath;
+                if (aiGetMaterialTexture(aiMaterial, aiTextureType_METALNESS, 0, &metallicTexturePath) == AI_SUCCESS)
+                    material->setMetallicTexture(loadTextureFromPath(metallicTexturePath, gfx::PixelFormat::RGBA8_unorm));
+                else
+                    material->setMetallicTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+
+                aiString roughnessTexturePath;
+                if (aiGetMaterialTexture(aiMaterial, aiTextureType_DIFFUSE_ROUGHNESS, 0, &roughnessTexturePath) == AI_SUCCESS)
+                    material->setRoughnessTexture(loadTextureFromPath(roughnessTexturePath, gfx::PixelFormat::RGBA8_unorm));
+                else
+                    material->setRoughnessTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+            }
 
             aiString normalTexturePath;
-            if (aiGetMaterialTexture(aiMaterial, aiTextureType_NORMALS, 0, &normalTexturePath) == AI_SUCCESS)
-                material->setNormalTexture(loadTextureFromPath(normalTexturePath));
-            else
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType_NORMALS, 0, &normalTexturePath) == AI_SUCCESS) {
+                material->setNormalTexture(loadTextureFromPath(normalTexturePath, gfx::PixelFormat::RGBA8_unorm));
+            } else {
                 material->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f), *commandBuffer)); // Neutral normal: (128, 128, 255) = (0, 0, 1) in tangent space
+            }
+
+            glm::vec3 emissiveFactor(0.0f);
+            aiColor4D emissiveColor{};
+            if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_EMISSIVE, &emissiveColor) == AI_SUCCESS)
+                emissiveFactor = glm::vec3(emissiveColor.r, emissiveColor.g, emissiveColor.b);
+            float emissiveIntensity = 1.0f;
+            if (aiGetMaterialFloat(aiMaterial, AI_MATKEY_EMISSIVE_INTENSITY, &emissiveIntensity) == AI_SUCCESS)
+                emissiveFactor *= emissiveIntensity;
+            material->setEmissiveFactor(emissiveFactor);
+
+            aiString emissiveTexturePath;
+            if (aiGetMaterialTexture(aiMaterial, aiTextureType_EMISSION_COLOR, 0, &emissiveTexturePath) == AI_SUCCESS || aiGetMaterialTexture(aiMaterial, aiTextureType_EMISSIVE, 0, &emissiveTexturePath) == AI_SUCCESS)
+                material->setEmissiveTexture(loadTextureFromPath(emissiveTexturePath, gfx::PixelFormat::RGBA8_sRGB));
+            else
+                material->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
 
             material->makeParameterBlock(*parameterBlockPool);
 
@@ -477,11 +512,21 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
             .name = aiMesh->mName.C_Str(),
             .transform = glm::mat4x4(1.0f),
             .vertexBuffer = newVertexBuffer(std::views::iota(0u, aiMesh->mNumVertices) | std::views::transform([aiMesh](uint32_t i) -> Vertex{
+                glm::vec4 tangent(0.0f, 0.0f, 0.0f, 1.0f);
+                if (aiMesh->mNormals != nullptr && aiMesh->mTangents != nullptr && aiMesh->mBitangents != nullptr)
+                {
+                    const aiVector3D& normal = aiMesh->mNormals[i];
+                    const aiVector3D& aiTangent = aiMesh->mTangents[i];
+                    const aiVector3D& bitangent = aiMesh->mBitangents[i];
+                    const float handedness = ((normal ^ aiTangent) * bitangent) < 0.0f ? -1.0f : 1.0f;
+                    tangent = glm::vec4(aiTangent.x, aiTangent.y, aiTangent.z, handedness);
+                }
+
                 return Vertex{
                     .pos = glm::vec3(aiMesh->mVertices[i].x, aiMesh->mVertices[i].y, aiMesh->mVertices[i].z),
                     .uv = aiMesh->mTextureCoords[0] != nullptr ? glm::vec2(aiMesh->mTextureCoords[0][i].x, aiMesh->mTextureCoords[0][i].y) : glm::vec2(0.0f),
                     .normal = aiMesh->mNormals != nullptr ? glm::vec3(aiMesh->mNormals[i].x, aiMesh->mNormals[i].y, aiMesh->mNormals[i].z) : glm::vec3(0.0f),
-                    .tangent = aiMesh->mTangents != nullptr ? glm::vec3(aiMesh->mTangents[i].x, aiMesh->mTangents[i].y, aiMesh->mTangents[i].z) : glm::vec3(0.0f)
+                    .tangent = tangent
                 };
             }), *commandBuffer),
             .indexBuffer = newIndexBuffer(std::views::iota(0u, aiMesh->mNumFaces * 3) | std::views::transform([aiMesh](uint32_t i) -> uint32_t{
@@ -498,44 +543,28 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
     std::function<void(std::vector<SubMesh>&, aiNode*, glm::mat4x4)> addNode = [&](std::vector<SubMesh>& dest, aiNode* aiNode, glm::mat4x4 additionalTransform) {
         glm::mat4x4 transform = additionalTransform * toGlmMat4(aiNode->mTransformation);
 
-        auto subMeshes = std::span(aiNode->mMeshes, aiNode->mNumMeshes) | std::views::transform([&](uint32_t i) -> SubMesh {
+        std::vector<SubMesh> subMeshes = std::span(aiNode->mMeshes, aiNode->mNumMeshes) | std::views::transform([&](uint32_t i) -> SubMesh {
             SubMesh submesh = flatSubMeshes[i];
             submesh.transform = transform;
             return submesh;
-        });
+        }) | std::ranges::to<std::vector>();
 
         for (auto* node : std::span(aiNode->mChildren, aiNode->mNumChildren)) {
-             if (subMeshes.empty())
+            if (subMeshes.empty())
                 addNode(dest, node, transform);
-             else {
-                std::vector<SubMesh> subDest;
-                addNode(subDest, node, glm::mat4x4(1.0F));
-#ifdef __cpp_lib_containers_ranges
-                subMeshes.front().subMeshes.append_range(subDest);
-#else
-                subMeshes.front().subMeshes.insert(subMeshes.front().subMeshes.end(), subDest.cbegin(), subDest.cend());
-#endif
-            }
+            else
+                addNode(subMeshes.front().subMeshes, node, glm::mat4x4(1.0F));
         }
 
-#ifdef __cpp_lib_containers_ranges
-        dest.append_range(subMeshes);
-#else
+        #ifdef __cpp_lib_containers_ranges
+        dest.append_range(std::move(subMeshes));
+        #else
         dest.insert(dest.end(), subMeshes.cbegin(), subMeshes.cend());
-#endif
+        #endif
     };
 
-    Mesh mesh = {
-        .name = scene->mRootNode->mName.C_Str(),
-        .subMeshes = std::span(scene->mRootNode->mMeshes, scene->mRootNode->mNumMeshes) | std::views::transform([&](uint32_t i) -> SubMesh {
-            SubMesh submesh = flatSubMeshes[i];
-            submesh.transform = glm::mat4x4(1.0F);
-            return submesh;
-        }) | std::ranges::to<std::vector>()
-    };
-
-    for (auto* node : std::span(scene->mRootNode->mChildren, scene->mRootNode->mNumChildren))
-        addNode(mesh.subMeshes, node, glm::mat4x4(1.0F));
+    Mesh mesh = { .name = scene->mRootNode->mName.C_Str() };
+    addNode(mesh.subMeshes, scene->mRootNode, glm::mat4x4(1.0F));
 
     return mesh;
 }
@@ -587,10 +616,22 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
     if (overrideMaterial.has_value()) {
         material = *overrideMaterial;
     } else {
-        std::shared_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({ .maxUniformBuffers = 1, .maxTextures = 0, .maxSamplers = 0 });
+        std::shared_ptr<gfx::ParameterBlockPool> parameterBlockPool = m_device->newParameterBlockPool({
+            .maxBindingCount = {
+                { gfx::BindingType::constantBuffer, 1 },
+                { gfx::BindingType::sampledTexture, 8 },
+                { gfx::BindingType::sampler, 2 }
+            }
+        });
         assert(parameterBlockPool);
-        material = std::make_shared<FlatColorMaterial>(*m_device);
-        material->makeParameterBlock(*parameterBlockPool);
+        auto pbrMaterial = std::make_shared<PbrMaterial>(*m_device);
+        pbrMaterial->setBaseColorTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+        pbrMaterial->setNormalTexture(getSolidColorTexture(glm::vec4(0.5f, 0.5f, 1.0f, 1.0f), *commandBuffer));
+        pbrMaterial->setMetallicTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+        pbrMaterial->setRoughnessTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+        pbrMaterial->setEmissiveTexture(getSolidColorTexture(glm::vec4(1.0f), *commandBuffer));
+        pbrMaterial->makeParameterBlock(*parameterBlockPool);
+        material = std::move(pbrMaterial);
     }
 
     Mesh mesh = {
@@ -625,9 +666,10 @@ Mesh AssetLoader::loadMesh(const std::filesystem::path& path, std::optional<std:
 using UniqueStbiUc = std::unique_ptr<stbi_uc, decltype(&stbi_image_free)>;
 
 #if !defined (SCOP_MANDATORY)
-std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* aiTex, gfx::CommandBuffer& commandBuffer)
+std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* aiTex, gfx::CommandBuffer& commandBuffer, gfx::PixelFormat pixelFormat )
 {
     ZoneScoped;
+    assert(pixelFormat == gfx::PixelFormat::RGBA8_unorm || pixelFormat == gfx::PixelFormat::RGBA8_sRGB);
 
     int width = 0;
     int height = 0;
@@ -638,7 +680,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
     } else {
         width = static_cast<int>(aiTex->mWidth);
         height = static_cast<int>(aiTex->mHeight);
-        bytes.reset(static_cast<stbi_uc*>(operator new(sizeof(stbi_uc) * width * height))); // NOLINT(cppcoreguidelines-owning-memory)
+        bytes.reset(static_cast<stbi_uc*>(std::malloc(sizeof(stbi_uc) * width * height * 4))); // NOLINT(cppcoreguidelines-owning-memory,cppcoreguidelines-no-malloc)
         assert(bytes);
         for (int i = 0; i < width * height; ++i) {
             bytes.get()[i * 4 + 0] = aiTex->pcData[i].r;
@@ -656,14 +698,14 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
         .mipLevelCount = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
-        .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+        .pixelFormat = pixelFormat,
         .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead | gfx::TextureUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::deviceLocal
     });
     assert(texture);
 
     std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-        .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm),
+        .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(pixelFormat),
         .usages = gfx::BufferUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::hostVisible
     });
@@ -672,15 +714,17 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadEmbeddedTexture(const aiTexture* 
     std::memcpy(stagingBuffer->content<stbi_uc>(), bytes.get(), stagingBuffer->size());
 
     commandBuffer.copyBufferToTexture(stagingBuffer, texture);
-    commandBuffer.generateMipmaps(texture);
+    if (texture->mipLevelCount() > 1)
+        commandBuffer.generateMipmaps(texture);
 
     return texture;
 }
 #endif
 
-std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::path& path, gfx::CommandBuffer& commandBuffer)
+std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::path& path, gfx::CommandBuffer& commandBuffer, gfx::PixelFormat pixelFormat)
 {
     ZoneScoped;
+    assert(pixelFormat == gfx::PixelFormat::RGBA8_unorm || pixelFormat == gfx::PixelFormat::RGBA8_sRGB);
 
     int width = 0;
     int height = 0;
@@ -693,14 +737,14 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
         .mipLevelCount = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1,
-        .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+        .pixelFormat = pixelFormat,
         .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead | gfx::TextureUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::deviceLocal
     });
     assert(texture);
 
     std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
-        .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm),
+        .size = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(pixelFormat),
         .usages = gfx::BufferUsage::copySource,
         .storageMode = gfx::ResourceStorageMode::hostVisible
     });
@@ -709,7 +753,8 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadTexture(const std::filesystem::pa
     std::memcpy(stagingBuffer->content<stbi_uc>(), bytes.get(), stagingBuffer->size());
 
     commandBuffer.copyBufferToTexture(stagingBuffer, texture);
-    commandBuffer.generateMipmaps(texture);
+    if (texture->mipLevelCount() > 1)
+        commandBuffer.generateMipmaps(texture);
 
     return texture;
 }
@@ -743,13 +788,13 @@ std::shared_ptr<gfx::Texture> AssetLoader::loadCubeTexture(const std::filesystem
         .type = gfx::TextureType::textureCube,
         .width = static_cast<uint32_t>(width),
         .height = static_cast<uint32_t>(height),
-        .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+        .pixelFormat = gfx::PixelFormat::RGBA8_unorm,
         .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
         .storageMode = gfx::ResourceStorageMode::deviceLocal
     });
     assert(texture);
 
-    size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm);
+    size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8_unorm);
     std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
         .size = faceSize * 6, // 6 faces
         .usages = gfx::BufferUsage::copySource,
@@ -784,7 +829,7 @@ std::shared_ptr<gfx::Texture> AssetLoader::getSolidColorTexture(const glm::vec4&
     std::shared_ptr<gfx::Texture> texture = m_device->newTexture(gfx::Texture::Descriptor{
         .type = gfx::TextureType::texture2d,
         .width = 1, .height = 1,
-        .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+        .pixelFormat = gfx::PixelFormat::RGBA8_unorm,
         .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
         .storageMode = gfx::ResourceStorageMode::deviceLocal
     });

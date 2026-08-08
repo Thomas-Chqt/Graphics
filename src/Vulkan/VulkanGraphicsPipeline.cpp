@@ -103,7 +103,7 @@ VulkanGraphicsPipeline::VulkanGraphicsPipeline(const VulkanDevice* device, const
     auto depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo{}
         .setDepthTestEnable(vk::True)
         .setDepthWriteEnable(vk::True)
-        .setDepthCompareOp(vk::CompareOp::eLess)
+        .setDepthCompareOp(toVkCompareOp(desc.depthCompareOperation))
         .setDepthBoundsTestEnable(vk::False)
         .setStencilTestEnable(vk::False);
 

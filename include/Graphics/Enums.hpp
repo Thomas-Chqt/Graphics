@@ -92,12 +92,29 @@ template<typename E>
 
 enum class PixelFormat : uint8_t
 {
-    RGBA8Unorm,
-    BGRA8Unorm,
-    BGRA8Unorm_sRGB,
+    RGBA8_unorm,
+    RGBA8_sRGB,
+
+    BGRA8_unorm,
+    BGRA8_sRGB,
+
+    RGBA16_float,
+    RGBA32_float,
+    RG16_float,
     RG32Uint,
     RG32Float,
-    Depth32Float
+    Depth32Float,
+
+    RGBA8Unorm      [[deprecated("use RGBA8_unorm")]] = RGBA8_unorm,
+    BGRA8Unorm      [[deprecated("use BGRA8_unorm")]] = BGRA8_unorm,
+    BGRA8Unorm_sRGB [[deprecated("use BGRA8_sRGB")]]  = BGRA8_sRGB
+};
+
+enum class ColorSpace : uint8_t
+{
+    sRGB_nonLinear,
+    displayP3_nonlinear,
+    displayP3_linear,
 };
 
 enum class PresentMode : uint8_t
@@ -123,6 +140,7 @@ enum class VertexAttributeFormat : uint8_t
 {
     float2,
     float3,
+    float4,
     uchar4,
     uint
 };
@@ -221,18 +239,29 @@ enum class CullMode : uint8_t
     back
 };
 
+enum class DepthCompareOperation : uint8_t
+{
+    less,
+    lessEqual
+};
+
 constexpr inline size_t pixelFormatSize(PixelFormat format)
 {
     switch (format)
     {
-    case PixelFormat::RGBA8Unorm:
-    case PixelFormat::BGRA8Unorm:
-    case PixelFormat::BGRA8Unorm_sRGB:
+    case PixelFormat::RGBA8_unorm:
+    case PixelFormat::RGBA8_sRGB:
+    case PixelFormat::BGRA8_unorm:
+    case PixelFormat::BGRA8_sRGB:
+    case PixelFormat::RG16_float:
     case PixelFormat::Depth32Float:
         return 4;
+    case PixelFormat::RGBA16_float:
     case PixelFormat::RG32Uint:
     case PixelFormat::RG32Float:
         return 8;
+    case PixelFormat::RGBA32_float:
+        return 16;
     default:
         throw std::runtime_error("not implemented");
     }

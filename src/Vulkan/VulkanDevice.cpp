@@ -65,6 +65,16 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setDescriptorBindingUpdateUnusedWhilePending(vk::True)
         .setDescriptorBindingPartiallyBound(vk::True);
 
+    auto supportedVulkan11Features = vk::PhysicalDeviceVulkan11Features{};
+    auto supportedFeatures = vk::PhysicalDeviceFeatures2{}
+        .setPNext(&supportedVulkan11Features);
+    m_physicalDevice->getFeatures2(&supportedFeatures);
+    assert(supportedVulkan11Features.shaderDrawParameters);
+
+    auto vulkan11Features = vk::PhysicalDeviceVulkan11Features{}
+        .setPNext(&descriptorIndexingFeatures)
+        .setShaderDrawParameters(vk::True);
+
     m_queueFamily = (m_physicalDevice->getQueueFamilies() | std::views::filter([&desc](auto f){ return f.hasCapabilities(desc.deviceDescriptor->queueCaps); })).front();
     float queuePriority = 1.0f;
     auto queueCreateInfo = vk::DeviceQueueCreateInfo{}
@@ -73,9 +83,9 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
         .setPQueuePriorities(&queuePriority);
 
     std::vector<const char*> enabledExtensions = desc.deviceExtensions | std::views::filter([&](const char* ext) {
-        if (strcmp(ext, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0 && m_physicalDevice->getProperties().apiVersion >= vk::ApiVersion13)
+        if (strcmp(ext, vk::KHRDynamicRenderingExtensionName) == 0 && m_physicalDevice->getProperties().apiVersion >= vk::ApiVersion13)
             return false;
-        if (strcmp(ext, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0 && m_physicalDevice->getProperties().apiVersion >= vk::ApiVersion13)
+        if (strcmp(ext, vk::KHRSynchronization2ExtensionName) == 0 && m_physicalDevice->getProperties().apiVersion >= vk::ApiVersion13)
             return false;
         return true;
     }) | std::ranges::to<std::vector>();
@@ -83,7 +93,7 @@ VulkanDevice::VulkanDevice(const VulkanInstance* instance, const VulkanPhysicalD
     vk::PhysicalDeviceFeatures deviceFeatures{};
 
     auto deviceCreateInfo = vk::DeviceCreateInfo{}
-        .setPNext(&descriptorIndexingFeatures)
+        .setPNext(&vulkan11Features)
         .setQueueCreateInfos(queueCreateInfo)
         .setEnabledExtensionCount(static_cast<uint32_t>(enabledExtensions.size()))
         .setPpEnabledExtensionNames(enabledExtensions.data())
