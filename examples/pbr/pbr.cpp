@@ -660,7 +660,7 @@ public:
                 .maxBindingCount = {
                     { gfx::BindingType::constantBuffer, 1 },
                     { gfx::BindingType::sampledTexture, 4 },
-                    { gfx::BindingType::sampler, 1 }
+                    { gfx::BindingType::sampler, 2 }
                 }
             });
         }
