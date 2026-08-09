@@ -34,6 +34,7 @@
 #include <stb_image/stb_image.h>
 
 #include <memory>
+#include <functional>
 #include <cassert>
 #include <cstdint>
 #include <cstddef>
@@ -117,12 +118,14 @@ public:
         assert(res == GLFW_TRUE);
         (void)res;
 
+        m_glfwGuard = { (void*)1, [](void*){glfwTerminate();} };
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
+        m_window = { glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr), [](GLFWwindow* ptr){glfwDestroyWindow(ptr);} };
         assert(m_window);
 
-        glfwSetWindowUserPointer(m_window, this);
-        glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){
+        glfwSetWindowUserPointer(m_window.get(), this);
+        glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int, int){
             static_cast<Application*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
         });
 
@@ -131,7 +134,7 @@ public:
         });
         assert(m_instance);
 
-        m_surface = gfx::glfw::createSurface(*m_instance, m_window);
+        m_surface = gfx::glfw::createSurface(*m_instance, m_window.get());
         assert(m_surface);
 
         gfx::Device::Descriptor deviceDescriptor = {
@@ -145,7 +148,7 @@ public:
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
 
-        assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
+        assert(std::ranges::contains(m_surface->supportedSurfaceFormat(*m_device), gfx::PixelFormat::BGRA8_unorm, &gfx::SurfaceFormat::pixelFormat));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
 
         std::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
@@ -185,7 +188,7 @@ public:
             },
             .vertexShader = &shaderLib->getFunction("vertexMain"),
             .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8_unorm },
             .depthAttachmentPxFormat = gfx::PixelFormat::Depth32Float,
             .parameterBlockLayouts = { m_vpMatrixBpLayout, m_modelMatrixBpLayout, m_materialBpLayout }
         };
@@ -264,12 +267,12 @@ public:
                 .type = gfx::TextureType::textureCube,
                 .width = static_cast<uint32_t>(width),
                 .height = static_cast<uint32_t>(height),
-                .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+                .pixelFormat = gfx::PixelFormat::RGBA8_unorm,
                 .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
                 .storageMode = gfx::ResourceStorageMode::deviceLocal
             });
 
-            size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8Unorm);
+            size_t faceSize = static_cast<size_t>(width) * static_cast<size_t>(height) * pixelFormatSize(gfx::PixelFormat::RGBA8_unorm);
             std::shared_ptr<gfx::Buffer> stagingBuffer = m_device->newBuffer(gfx::Buffer::Descriptor{
                 .size = faceSize * 6, // 6 faces
                 .usages = gfx::BufferUsage::copySource,
@@ -328,14 +331,14 @@ public:
         switch (m_device->backend())
         {
         case gfx::Backend::vulkan:
-            ImGui_ImplGlfw_InitForVulkan(m_window, true);
+            ImGui_ImplGlfw_InitForVulkan(m_window.get(), true);
             break;
         default:
-            ImGui_ImplGlfw_InitForOther(m_window, true);
+            ImGui_ImplGlfw_InitForOther(m_window.get(), true);
             break;
         }
 
-        gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8Unorm}, .depthAttachmentPixelFormat = gfx::PixelFormat::Depth32Float});
+        gfx::imgui::init(*m_device, {.colorAttachmentPixelFormats = {gfx::PixelFormat::BGRA8_unorm}, .depthAttachmentPixelFormat = gfx::PixelFormat::Depth32Float});
     }
 
     void loop()
@@ -343,19 +346,19 @@ public:
         while (true)
         {
             glfwPollEvents();
-            if (glfwWindowShouldClose(m_window))
+            if (glfwWindowShouldClose(m_window.get()))
                 break;
 
             if (m_swapchain == nullptr) {
                 int width = 0, height = 0;
-                ::glfwGetFramebufferSize(m_window, &width, &height);
+                ::glfwGetFramebufferSize(m_window.get(), &width, &height);
                 gfx::Swapchain::Descriptor swapchainDescriptor = {
                     .surface = m_surface.get(),
                     .width = (uint32_t)width,
                     .height = (uint32_t)height,
                     .imageCount = 3,
                     .drawableCount = maxFrameInFlight,
-                    .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
+                    .pixelFormat = gfx::PixelFormat::BGRA8_unorm,
                     .presentMode = gfx::PresentMode::fifo,
                 };
                 m_swapchain = m_device->newSwapchain(swapchainDescriptor);
@@ -380,7 +383,7 @@ public:
             }
 
             int width = 0, height = 0;
-            ::glfwGetFramebufferSize(m_window, &width, &height);
+            ::glfwGetFramebufferSize(m_window.get(), &width, &height);
             constexpr glm::vec3 camPos = glm::vec3(0.0f, 0.0f,  3.0f);
             constexpr glm::vec3 camDir = glm::vec3(0.0f, 0.0f, -1.0f);
             constexpr glm::vec3 camUp  = glm::vec3(0.0f, 1.0f,  0.0f);
@@ -474,12 +477,11 @@ public:
         gfx::imgui::shutdown(*m_device);
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
-        glfwDestroyWindow(m_window);
-        glfwTerminate();
     }
 
 private:
-    GLFWwindow* m_window = nullptr;
+    std::unique_ptr<void, std::function<void(void*)>> m_glfwGuard;
+    std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>> m_window;
     std::unique_ptr<gfx::Instance> m_instance;
     std::unique_ptr<gfx::Surface> m_surface;
     std::unique_ptr<gfx::Device> m_device;

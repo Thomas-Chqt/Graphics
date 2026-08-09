@@ -18,9 +18,9 @@ bool VulkanPhysicalDevice::isSuitable(const VulkanDevice::Descriptor& desc) cons
         return false;
 
     auto requiredExtension = desc.deviceExtensions | std::views::filter([&](const char* ext) {
-        if (strcmp(ext, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) == 0 && vk::PhysicalDevice::getProperties().apiVersion >= vk::ApiVersion13)
+        if (strcmp(ext, vk::KHRDynamicRenderingExtensionName) == 0 && vk::PhysicalDevice::getProperties().apiVersion >= vk::ApiVersion13)
             return false;
-        if (strcmp(ext, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME) == 0 && vk::PhysicalDevice::getProperties().apiVersion >= VK_API_VERSION_1_3)
+        if (strcmp(ext, vk::KHRSynchronization2ExtensionName) == 0 && vk::PhysicalDevice::getProperties().apiVersion >= vk::ApiVersion13)
             return false;
         return true;
     });

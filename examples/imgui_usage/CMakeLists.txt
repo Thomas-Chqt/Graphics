@@ -103,7 +103,7 @@ target_compile_definitions(imgui_usage PRIVATE "GLFW_INCLUDE_NONE")
 target_link_libraries(imgui_usage PRIVATE Graphics GraphicsGLFW GraphicsImGui imgui stb_image)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for imgui_usage")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
 
     set(IMGUI_USAGE_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/imgui_usage.entitlements")
     if(EXISTS "${IMGUI_USAGE_ENTITLEMENTS_FILE}")

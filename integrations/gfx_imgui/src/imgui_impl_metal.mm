@@ -770,12 +770,27 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
     "    float4 color;\n"
     "};\n"
     "\n"
+    "constant bool outputNeedsSRGBEncoding [[function_constant(0)]];\n"
+    "\n"
+    "float3 srgbToLinear(float3 color) {\n"
+    "    float3 lower = color / 12.92;\n"
+    "    float3 higher = pow((color + 0.055) / 1.055, float3(2.4));\n"
+    "    return select(lower, higher, color > 0.04045);\n"
+    "}\n"
+    "\n"
+    "float3 linearToSRGB(float3 color) {\n"
+    "    float3 lower = color * 12.92;\n"
+    "    float3 higher = 1.055 * pow(max(color, float3(0.0)), float3(1.0 / 2.4)) - 0.055;\n"
+    "    return select(lower, higher, color > 0.0031308);\n"
+    "}\n"
+    "\n"
     "vertex VertexOut vertex_main(VertexIn in                 [[stage_in]],\n"
     "                             constant Uniforms &uniforms [[buffer(1)]]) {\n"
     "    VertexOut out;\n"
     "    out.position = uniforms.projectionMatrix * float4(in.position, 0, 1);\n"
     "    out.texCoords = in.texCoords;\n"
-    "    out.color = float4(in.color) / float4(255.0);\n"
+    "    float4 color = float4(in.color) / 255.0;\n"
+    "    out.color = float4(srgbToLinear(color.rgb), color.a);\n"
     "    return out;\n"
     "}\n"
     "\n"
@@ -783,7 +798,10 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
     "                             texture2d<half, access::sample> texture [[texture(0)]]) {\n"
     "    constexpr sampler linearSampler(coord::normalized, min_filter::linear, mag_filter::linear, mip_filter::linear);\n"
     "    half4 texColor = texture.sample(linearSampler, in.texCoords);\n"
-    "    return half4(in.color) * texColor;\n"
+    "    float4 color = in.color * float4(texColor);\n"
+    "    if (outputNeedsSRGBEncoding)\n"
+    "        color.rgb = linearToSRGB(color.rgb);\n"
+    "    return half4(color);\n"
     "}\n";
 
     id<MTLLibrary> library = [device newLibraryWithSource:shaderSource options:nil error:&error];
@@ -794,7 +812,11 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows()
     }
 
     id<MTLFunction> vertexFunction = [library newFunctionWithName:@"vertex_main"];
-    id<MTLFunction> fragmentFunction = [library newFunctionWithName:@"fragment_main"];
+
+    bool outputNeedsSRGBEncoding = descriptor.colorPixelFormat != MTLPixelFormatBGRA8Unorm_sRGB;
+    MTLFunctionConstantValues* functionConstants = [[MTLFunctionConstantValues alloc] init];
+    [functionConstants setConstantValue:&outputNeedsSRGBEncoding type:MTLDataTypeBool atIndex:0];
+    id<MTLFunction> fragmentFunction = [library newFunctionWithName:@"fragment_main" constantValues:functionConstants error:&error];
 
     if (vertexFunction == nil || fragmentFunction == nil)
     {

@@ -195,7 +195,7 @@ if (SCOP_MANDATORY)
 else()
     target_link_libraries(scop PRIVATE Graphics GraphicsGLFW glm::glm GraphicsImGui imgui stb_image assimp::assimp GraphicsTracy TracyClient)
 endif()
-add_dependencies(scop flat_color_shader textured_shader scop_shader)
+add_dependencies(scop flat_color_shader textured_shader scop_shader pbr_material_shader scop_pbr_precompute_shaders skybox_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
     set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")

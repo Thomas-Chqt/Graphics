@@ -36,7 +36,7 @@ struct Vertex
     glm::vec3 pos;
     glm::vec2 uv;
     glm::vec3 normal;
-    glm::vec3 tangent;
+    glm::vec4 tangent = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 };
 
 struct SubMesh

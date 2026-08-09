@@ -38,6 +38,7 @@ public:
 
         BlendOperation blendOperation = BlendOperation::blendingOff;
         CullMode cullMode = CullMode::none;
+        DepthCompareOperation depthCompareOperation = DepthCompareOperation::less;
 
         std::vector<std::shared_ptr<ParameterBlockLayout>> parameterBlockLayouts;
 

@@ -10,9 +10,13 @@
 #include "Graphics/Device.hpp"
 
 #include "Vulkan/VulkanSurface.hpp"
+#include "Graphics/Enums.hpp"
+#include "Graphics/Surface.hpp"
 #include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanEnums.hpp"
+#include <optional>
+#include <ranges>
 
 namespace gfx
 {
@@ -22,26 +26,28 @@ VulkanSurface::VulkanSurface(const vk::Instance& instance, VkSurfaceKHR surface)
 {
 }
 
-const std::set<PixelFormat> VulkanSurface::supportedPixelFormats(const Device& _device) const
+std::set<SurfaceFormat> VulkanSurface::supportedSurfaceFormat(const Device& aDevice) const
 {
-    const auto& device = dynamic_cast<const VulkanDevice&>(_device);
+    const auto& device = dynamic_cast<const VulkanDevice&>(aDevice);
 
-    std::set<PixelFormat> pixelFormats;
+    std::set<SurfaceFormat> surfaceFormats;
     for (const vk::SurfaceFormatKHR& format : device.physicalDevice().getSurfaceFormatsKHR(m_vkSurface))
     {
-        switch (format.format)
-        {
-        case vk::Format::eB8G8R8A8Unorm:
-        case vk::Format::eB8G8R8A8Srgb:
-            pixelFormats.insert(toPixelFormat(format.format));
-        default:
-            break;
-        }
+        SurfaceFormat surfaceFormat{};
+        if (std::optional<PixelFormat> pixelFormat = toOptPixelFormat(format.format))
+            surfaceFormat.pixelFormat = *pixelFormat;
+        else
+            continue;
+        if (std::optional<ColorSpace> colorSpace = toOptColorSpace(format.colorSpace))
+            surfaceFormat.colorSpace = *colorSpace;
+        else
+            continue;
+        surfaceFormats.insert(surfaceFormat);
     }
-    return pixelFormats;
+    return surfaceFormats;
 }
 
-const std::set<PresentMode> VulkanSurface::supportedPresentModes(const Device& _device) const
+std::set<PresentMode> VulkanSurface::supportedPresentModes(const Device& _device) const
 {
     const auto& device = dynamic_cast<const VulkanDevice&>(_device);
 

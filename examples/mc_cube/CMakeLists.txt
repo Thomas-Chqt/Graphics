@@ -141,7 +141,7 @@ target_link_libraries(mc_cube PRIVATE Graphics GraphicsGLFW GraphicsImGui glm::g
 add_dependencies(mc_cube mc_cube_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for mc_cube")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
 
     set(MC_CUBE_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/mc_cube.entitlements")
     if(EXISTS "${MC_CUBE_ENTITLEMENTS_FILE}")

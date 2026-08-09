@@ -109,7 +109,7 @@ target_link_libraries(triangle PRIVATE Graphics GraphicsGLFW glfw glm::glm)
 add_dependencies(triangle triangle_shader)
 
 if(APPLE AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
-    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity for triangle")
+    set(CODESIGN_IDENTITY "-" CACHE STRING "Codesigning identity")
 
     set(triangle_ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/triangle.entitlements")
     if(EXISTS "${TRIANGLE_ENTITLEMENTS_FILE}")

@@ -10,7 +10,7 @@
 #ifndef TEXTURED_SLANG
 #define TEXTURED_SLANG
 
-#include "shared_types.h"
+#include "shader.h"
 
 #ifndef __cplusplus
 
@@ -35,7 +35,7 @@ struct Vertex
     float3 pos;
     float2 uv;
     float3 normal;
-    float3 tangent;
+    float4 tangent;
 };
 
 struct VSOutput
@@ -52,13 +52,12 @@ struct VSOutput
 VSOutput vertexMain(Vertex input)
 {
     float4 worldPos  = mul(float4(input.pos, 1.0), modelMatrix);
-    float3 bitangent = cross(input.normal, input.tangent);
-
+    float3 bitangent = cross(input.normal, input.tangent.xyz) * input.tangent.w;
     VSOutput output;
     output.pos       = worldPos.xyz;
     output.clipPos   = mul(worldPos, vpMatrix);
     output.uv        = input.uv;
-    output.tangent   = mul(input.tangent, (float3x3)modelMatrix);
+    output.tangent   = mul(input.tangent.xyz, (float3x3)modelMatrix);
     output.bitangent = mul(bitangent, (float3x3)modelMatrix);
     output.normal    = mul(input.normal, (float3x3)modelMatrix);
     return output;

@@ -10,7 +10,7 @@
 #ifndef LIGHT_SLANG
 #define LIGHT_SLANG
 
-#include "shared_types.h"
+#include "shader.h"
 
 #ifdef __cplusplus
 namespace shader
@@ -21,21 +21,21 @@ module Light;
 
 #endif
 
-SLAND_PUBLIC struct CPP_ALIGNAS(16) DirectionalLight
+SLANG_PUBLIC struct CPP_ALIGNAS(16) DirectionalLight
 {
-    SLAND_PUBLIC float3 position;
+    SLANG_PUBLIC float3 position;
     FLOAT3_PADDING(0);
-    SLAND_PUBLIC float3 color;
+    SLANG_PUBLIC float3 color;
     FLOAT3_PADDING(1);
 };
 
-SLAND_PUBLIC struct CPP_ALIGNAS(16) PointLight
+SLANG_PUBLIC struct CPP_ALIGNAS(16) PointLight
 {
-    SLAND_PUBLIC float3 position;
+    SLANG_PUBLIC float3 position;
     FLOAT3_PADDING(0);
-    SLAND_PUBLIC float3 color;
+    SLANG_PUBLIC float3 color;
     FLOAT3_PADDING(1);
-    SLAND_PUBLIC float attenuation;
+    SLANG_PUBLIC float attenuation;
 };
 
 #ifdef __cplusplus

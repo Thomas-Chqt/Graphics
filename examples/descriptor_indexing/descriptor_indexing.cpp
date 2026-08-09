@@ -34,6 +34,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <numbers>
@@ -99,12 +100,14 @@ public:
         assert(res == GLFW_TRUE);
         (void)res;
 
+        m_glfwGuard = { (void*)1, [](void*){glfwTerminate();} };
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Descriptor indexing", nullptr, nullptr);
+        m_window = { glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Descriptor indexing", nullptr, nullptr), [](GLFWwindow* ptr){glfwDestroyWindow(ptr);} };
         assert(m_window);
 
-        glfwSetWindowUserPointer(m_window, this);
-        glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){
+        glfwSetWindowUserPointer(m_window.get(), this);
+        glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int, int){
             static_cast<Application*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
         });
 
@@ -113,7 +116,7 @@ public:
         });
         assert(m_instance);
 
-        m_surface = gfx::glfw::createSurface(*m_instance, m_window);
+        m_surface = gfx::glfw::createSurface(*m_instance, m_window.get());
         assert(m_surface);
 
         gfx::Device::Descriptor deviceDescriptor = {
@@ -127,7 +130,7 @@ public:
         m_device = m_instance->newDevice(deviceDescriptor);
         assert(m_device);
 
-        assert(m_surface->supportedPixelFormats(*m_device).contains(gfx::PixelFormat::BGRA8Unorm));
+        assert(std::ranges::contains(m_surface->supportedSurfaceFormat(*m_device), gfx::PixelFormat::BGRA8_unorm, &gfx::SurfaceFormat::pixelFormat));
         assert(m_surface->supportedPresentModes(*m_device).contains(gfx::PresentMode::fifo));
 
         std::unique_ptr<gfx::ShaderLib> shaderLib = m_device->newShaderLib(SHADER_SLIB);
@@ -149,7 +152,7 @@ public:
             },
             .vertexShader = &shaderLib->getFunction("vertexMain"),
             .fragmentShader = &shaderLib->getFunction("fragmentMain"),
-            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8Unorm },
+            .colorAttachmentPxFormats = { gfx::PixelFormat::BGRA8_unorm },
             .parameterBlockLayouts = { m_textureArrayPBLayout },
         };
         m_graphicsPipeline = m_device->newGraphicsPipeline(pipelineDesc);
@@ -210,7 +213,7 @@ public:
                     .type = gfx::TextureType::texture2d,
                     .width = 2,
                     .height = 2,
-                    .pixelFormat = gfx::PixelFormat::RGBA8Unorm,
+                    .pixelFormat = gfx::PixelFormat::RGBA8_unorm,
                     .usages = gfx::TextureUsage::copyDestination | gfx::TextureUsage::shaderRead,
                     .storageMode = gfx::ResourceStorageMode::deviceLocal
                 });
@@ -260,19 +263,19 @@ public:
         while (true)
         {
             glfwPollEvents();
-            if (glfwWindowShouldClose(m_window))
+            if (glfwWindowShouldClose(m_window.get()))
                 break;
 
             if (m_swapchain == nullptr) {
                 int width = 0;
                 int height = 0;
-                glfwGetFramebufferSize(m_window, &width, &height);
+                glfwGetFramebufferSize(m_window.get(), &width, &height);
                 m_swapchain = m_device->newSwapchain(gfx::Swapchain::Descriptor{
                     .surface = m_surface.get(),
                     .width = static_cast<uint32_t>(width),
                     .height = static_cast<uint32_t>(height),
                     .imageCount = 3,
-                    .pixelFormat = gfx::PixelFormat::BGRA8Unorm,
+                    .pixelFormat = gfx::PixelFormat::BGRA8_unorm,
                     .presentMode = gfx::PresentMode::fifo,
                 });
                 assert(m_swapchain);
@@ -294,11 +297,11 @@ public:
                 if (m_availableTextureIndices.empty() == false) {
                     int width = 0;
                     int height = 0;
-                    glfwGetWindowSize(m_window, &width, &height);
+                    glfwGetWindowSize(m_window.get(), &width, &height);
                     if (width > 0 && height > 0) {
                         double mouseX = 0.0;
                         double mouseY = 0.0;
-                        glfwGetCursorPos(m_window, &mouseX, &mouseY);
+                        glfwGetCursorPos(m_window.get(), &mouseX, &mouseY);
 
                         std::uniform_int_distribution<size_t> textureIndexDistribution(0, m_availableTextureIndices.size() - 1);
                         auto textureIndexIt = m_availableTextureIndices.begin();
@@ -372,12 +375,11 @@ public:
     {
         if (m_textureStreamerThread.joinable())
             m_textureStreamerThread.join();
-        glfwDestroyWindow(m_window);
-        glfwTerminate();
     }
 
 private:
-    GLFWwindow* m_window = nullptr;
+    std::unique_ptr<void, std::function<void(void*)>> m_glfwGuard;
+    std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>> m_window;
 
     std::unique_ptr<gfx::Instance> m_instance;
     std::unique_ptr<gfx::Surface> m_surface;

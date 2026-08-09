@@ -29,8 +29,8 @@ public:
 
     MetalSurface(CAMetalLayer*);
 
-    const std::set<PixelFormat> supportedPixelFormats(const Device&) const override;
-    const std::set<PresentMode> supportedPresentModes(const Device&) const override;
+    std::set<SurfaceFormat> supportedSurfaceFormat(const Device&) const override;
+    std::set<PresentMode> supportedPresentModes(const Device&) const override;
 
     CAMetalLayer* mtlLayer() const { return m_mtlLayer; }
 

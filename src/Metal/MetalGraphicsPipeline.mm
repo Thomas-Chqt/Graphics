@@ -26,7 +26,8 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(MetalGraphicsPipeline&& other) noex
 {
 }
 
-MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const GraphicsPipeline::Descriptor& desc) { @autoreleasepool
+MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const GraphicsPipeline::Descriptor& desc)
+    : m_cullMode(desc.cullMode) { @autoreleasepool
 {
     assert(desc.vertexShader != nullptr);
     assert(desc.fragmentShader != nullptr);
@@ -96,7 +97,7 @@ MetalGraphicsPipeline::MetalGraphicsPipeline(const MetalDevice& device, const Gr
     {
         renderPipelineDescriptor.depthAttachmentPixelFormat = (MTLPixelFormat)toMTLPixelFormat(*depthPxFmt);
         depthStencilDescriptor = [[MTLDepthStencilDescriptor alloc] init];
-        depthStencilDescriptor.depthCompareFunction = MTLCompareFunctionLessEqual;
+        depthStencilDescriptor.depthCompareFunction = toMTLCompareFunction(desc.depthCompareOperation);
         depthStencilDescriptor.depthWriteEnabled = YES;
     }
 

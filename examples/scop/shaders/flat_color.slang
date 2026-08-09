@@ -10,7 +10,7 @@
 #ifndef FLAT_COLOR_SLANG
 #define FLAT_COLOR_SLANG
 
-#include "shared_types.h"
+#include "shader.h"
 
 #ifndef __cplusplus
 

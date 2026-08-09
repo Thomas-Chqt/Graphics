@@ -11,6 +11,7 @@
 #define MATERIAL_HPP
 
 #include "shaders/flat_color.slang"
+#include "shaders/pbr_material.slang"
 #include "shaders/textured.slang"
 #include "shaders/scop.slang"
 
@@ -157,6 +158,80 @@ private:
 public:
     TexturedMaterial& operator=(const TexturedMaterial&) = delete;
     TexturedMaterial& operator=(TexturedMaterial&&) = delete;
+};
+
+class PbrMaterial : public Material
+{
+public:
+    PbrMaterial() = delete;
+    PbrMaterial(const PbrMaterial&) = delete;
+    PbrMaterial(PbrMaterial&&) = delete;
+
+    PbrMaterial(const gfx::Device&);
+
+    inline const std::shared_ptr<gfx::GraphicsPipeline>& graphicsPipleine() const override { return m_graphicsPipeline; }
+
+    void makeParameterBlock(gfx::ParameterBlockPool& pool) override;
+    inline std::shared_ptr<const gfx::ParameterBlock> getParameterBlock() const override { return m_parameterBlock; }
+
+    inline const std::shared_ptr<gfx::Sampler>& sampler() const { return m_sampler; }
+    inline void setSampler(const std::shared_ptr<gfx::Sampler>& sampler) { m_sampler = sampler; }
+
+    inline glm::vec4 baseColor() const { return m_materialData->content<shader::pbr_material::MaterialData>()->baseColor; }
+    inline void setBaseColor(const glm::vec4& color) { m_materialData->content<shader::pbr_material::MaterialData>()->baseColor = color; }
+
+    inline const std::shared_ptr<gfx::Texture>& baseColorTexture() const { return m_baseColorTexture; }
+    inline void setBaseColorTexture(const std::shared_ptr<gfx::Texture>& texture) { m_baseColorTexture = texture; }
+
+    inline const std::shared_ptr<gfx::Texture>& normalTexture() const { return m_normalTexture; }
+    inline void setNormalTexture(const std::shared_ptr<gfx::Texture>& texture) { m_normalTexture = texture; }
+
+    inline const std::shared_ptr<gfx::Texture>& metallicTexture() const { return m_metallicTexture; }
+    inline void setMetallicTexture(const std::shared_ptr<gfx::Texture>& texture) { m_metallicTexture = texture; }
+    inline void setMetallicTextureChannel(int channel) { m_materialData->content<shader::pbr_material::MaterialData>()->metallicTextureChannel = channel; }
+
+    inline const std::shared_ptr<gfx::Texture>& roughnessTexture() const { return m_roughnessTexture; }
+    inline void setRoughnessTexture(const std::shared_ptr<gfx::Texture>& texture) { m_roughnessTexture = texture; }
+    inline void setRoughnessTextureChannel(int channel) { m_materialData->content<shader::pbr_material::MaterialData>()->roughnessTextureChannel = channel; }
+
+    inline const std::shared_ptr<gfx::Texture>& emissiveTexture() const { return m_emissiveTexture; }
+    inline void setEmissiveTexture(const std::shared_ptr<gfx::Texture>& texture) { m_emissiveTexture = texture; }
+
+    inline glm::vec3 emissiveFactor() const { return m_materialData->content<shader::pbr_material::MaterialData>()->emissiveFactor; }
+    inline void setEmissiveFactor(const glm::vec3& factor) { m_materialData->content<shader::pbr_material::MaterialData>()->emissiveFactor = factor; }
+
+    inline float metallic() const { return m_materialData->content<shader::pbr_material::MaterialData>()->metallic; }
+    inline void setMetallic(float metallic) { m_materialData->content<shader::pbr_material::MaterialData>()->metallic = metallic; }
+
+    inline float roughness() const { return m_materialData->content<shader::pbr_material::MaterialData>()->roughness; }
+    inline void setRoughness(float roughness) { m_materialData->content<shader::pbr_material::MaterialData>()->roughness = roughness; }
+
+    ~PbrMaterial() override = default;
+
+private:
+    inline static std::weak_ptr<gfx::ParameterBlockLayout> s_parameterBlockLayout;
+    std::shared_ptr<gfx::ParameterBlockLayout> m_parameterBlockLayout;
+
+    inline static std::weak_ptr<gfx::GraphicsPipeline> s_graphicsPipeline;
+    std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
+
+    std::shared_ptr<gfx::ParameterBlock> m_parameterBlock;
+
+    std::shared_ptr<gfx::Sampler> m_sampler;
+    std::shared_ptr<gfx::Sampler> m_environmentSampler;
+    std::shared_ptr<gfx::Texture> m_baseColorTexture;
+    std::shared_ptr<gfx::Texture> m_normalTexture;
+    std::shared_ptr<gfx::Texture> m_metallicTexture;
+    std::shared_ptr<gfx::Texture> m_roughnessTexture;
+    std::shared_ptr<gfx::Texture> m_emissiveTexture;
+    std::shared_ptr<gfx::Texture> m_irradianceCubemap;
+    std::shared_ptr<gfx::Texture> m_prefilteredEnvironmentCubemap;
+    std::shared_ptr<gfx::Texture> m_brdfLut;
+    std::shared_ptr<gfx::Buffer> m_materialData;
+
+public:
+    PbrMaterial& operator=(const PbrMaterial&) = delete;
+    PbrMaterial& operator=(PbrMaterial&&) = delete;
 };
 
 class ScopMaterial : public Material

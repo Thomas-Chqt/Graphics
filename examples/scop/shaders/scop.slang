@@ -10,7 +10,7 @@
 #ifndef SCOP_SLANG
 #define SCOP_SLANG
 
-#include "shared_types.h"
+#include "shader.h"
 
 #ifndef __cplusplus
 
