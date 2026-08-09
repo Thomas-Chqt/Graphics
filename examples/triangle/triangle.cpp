@@ -26,6 +26,7 @@
 #include <glm/glm.hpp>
 
 #include <memory>
+#include <functional>
 #include <cassert>
 #include <cstdint>
 #include <cstddef>
@@ -63,12 +64,14 @@ public:
         assert(res == GLFW_TRUE);
         (void)res;
 
+        m_glfwGuard = { (void*)1, [](void*){glfwTerminate();} };
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        m_window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr);
+        m_window = { glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Window", nullptr, nullptr), [](GLFWwindow* ptr){glfwDestroyWindow(ptr);} };
         assert(m_window);
 
-        glfwSetWindowUserPointer(m_window, this);
-        glfwSetWindowSizeCallback(m_window, [](GLFWwindow* window, int, int){
+        glfwSetWindowUserPointer(m_window.get(), this);
+        glfwSetWindowSizeCallback(m_window.get(), [](GLFWwindow* window, int, int){
             static_cast<Application*>(glfwGetWindowUserPointer(window))->m_swapchain = nullptr;
         });
 
@@ -77,7 +80,7 @@ public:
         });
         assert(m_instance);
 
-        m_surface = gfx::glfw::createSurface(*m_instance, m_window);
+        m_surface = gfx::glfw::createSurface(*m_instance, m_window.get());
         assert(m_surface);
 
         gfx::Device::Descriptor deviceDescriptor = {
@@ -151,12 +154,12 @@ public:
         while (true)
         {
             glfwPollEvents();
-            if (glfwWindowShouldClose(m_window))
+            if (glfwWindowShouldClose(m_window.get()))
                 break;
 
             if (m_swapchain == nullptr) {
                 int width = 0, height = 0;
-                ::glfwGetFramebufferSize(m_window, &width, &height);
+                ::glfwGetFramebufferSize(m_window.get(), &width, &height);
                 gfx::Swapchain::Descriptor swapchainDescriptor = {
                     .surface = m_surface.get(),
                     .width = (uint32_t)width,
@@ -210,12 +213,11 @@ public:
 
     void clean()
     {
-        glfwDestroyWindow(m_window);
-        glfwTerminate();
     }
 
 private:
-    GLFWwindow* m_window = nullptr;
+    std::unique_ptr<void, std::function<void(void*)>> m_glfwGuard;
+    std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>> m_window;
     std::unique_ptr<gfx::Instance> m_instance;
     std::unique_ptr<gfx::Surface> m_surface;
     std::unique_ptr<gfx::Device> m_device;

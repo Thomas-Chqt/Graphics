@@ -82,12 +82,14 @@ int main(int argc, char** argv)
         assert(res == GLFW_TRUE);
         (void)res;
 
+        std::unique_ptr<void, std::function<void(void*)>> glfwGuard = { (void*)1, [](void*){glfwTerminate();} };
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        GLFWwindow* window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "scop", nullptr, nullptr);
+        std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>> window = { glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "scop", nullptr, nullptr), [](GLFWwindow* ptr){glfwDestroyWindow(ptr);} };
         assert(window);
 
         static std::set<int> pressedKeys;
-        glfwSetKeyCallback(window, [](GLFWwindow*, int key, int, int action, int) {
+        glfwSetKeyCallback(window.get(), [](GLFWwindow*, int key, int, int action, int) {
             if (action == GLFW_PRESS)
                 pressedKeys.insert(key);
             if (action == GLFW_RELEASE && pressedKeys.contains(key))
@@ -99,7 +101,7 @@ int main(int argc, char** argv)
         });
         assert(instance);
 
-        std::unique_ptr<gfx::Surface> surface = gfx::glfw::createSurface(*instance, window);
+        std::unique_ptr<gfx::Surface> surface = gfx::glfw::createSurface(*instance, window.get());
         assert(surface);
 
         gfx::Device::Descriptor deviceDescriptor = {
@@ -117,7 +119,7 @@ int main(int argc, char** argv)
         if (surface->supportedPresentModes(*device).contains(gfx::PresentMode::fifo) == false)
             throw std::runtime_error("surface does not support the fifo present mode");
 
-        scop::Renderer renderer(device.get(), window, surface.get());
+        scop::Renderer renderer(device.get(), window.get(), surface.get());
         scop::AssetLoader assetLoader(device.get());
 
 #if defined (SCOP_MANDATORY)
@@ -183,7 +185,7 @@ int main(int argc, char** argv)
             glfwPollEvents();
             TracyCZoneEnd(glfwPollEventsCtx);
             TracyCZoneN(logicCtx, "logic", true);
-            if (glfwWindowShouldClose(window))
+            if (glfwWindowShouldClose(window.get()))
                 break;
 
             static double lastFrameTime = glfwGetTime();
@@ -350,8 +352,6 @@ int main(int argc, char** argv)
             FrameMark;
         }
 
-        glfwDestroyWindow(window);
-        glfwTerminate();
     }
     catch (const std::exception& e)
     {
