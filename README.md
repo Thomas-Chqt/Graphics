@@ -67,6 +67,8 @@ Examples
 
 - **pbr**: Demonstrates metallic/roughness physically based rendering with HDR environment lighting and compute-generated irradiance cubemaps, prefiltered environment maps, and a BRDF lookup texture
 
+![screenshot of the pbr example executable](pbr.png)
+
 Dependencies
 ------------
 
