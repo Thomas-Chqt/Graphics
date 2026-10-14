@@ -23,7 +23,7 @@ MetalComputePipeline::MetalComputePipeline(const MetalDevice& device, const Comp
     if (m_computePipelineState == nil)
         throw std::runtime_error(error == nil ? "failed to create the ComputePipelineState" : [error.localizedDescription cStringUsingEncoding:NSUTF8StringEncoding]);
 
-    const NSUInteger threadCount = static_cast<NSUInteger>(desc.threadsPerThreadgroupX)
+    [[maybe_unused]] const NSUInteger threadCount = static_cast<NSUInteger>(desc.threadsPerThreadgroupX)
         * static_cast<NSUInteger>(desc.threadsPerThreadgroupY)
         * static_cast<NSUInteger>(desc.threadsPerThreadgroupZ);
     assert(threadCount <= m_computePipelineState.maxTotalThreadsPerThreadgroup);

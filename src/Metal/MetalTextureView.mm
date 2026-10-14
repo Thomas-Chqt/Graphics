@@ -12,7 +12,7 @@ MetalTextureView::MetalTextureView(const std::shared_ptr<MetalTexture>& parent, 
     assert(desc.mipLevelCount > 0);
     assert(desc.arrayLayerCount > 0);
 
-    const uint32_t parentSliceCount = parent->type() == TextureType::textureCube ? 6u : parent->arrayLayerCount();
+    [[maybe_unused]] const uint32_t parentSliceCount = parent->type() == TextureType::textureCube ? 6u : parent->arrayLayerCount();
     const uint32_t viewSliceCount = desc.type == TextureType::textureCube ? 6u : desc.arrayLayerCount;
 
     assert(desc.baseMipLevel + desc.mipLevelCount <= parent->mipLevelCount());

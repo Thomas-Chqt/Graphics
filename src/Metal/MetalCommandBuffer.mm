@@ -159,7 +159,7 @@ void MetalCommandBuffer::setParameterBlock(const std::shared_ptr<const Parameter
         for (const auto& encodedTexture : pBlock->encodedTextures())
             [computeCommandEncoder useResource:encodedTexture.resource->mtltexture() usage:toMTLResourceUsage(encodedTexture.binding.usages)];
 
-        const bool hasComputeBindings =
+        [[maybe_unused]] const bool hasComputeBindings =
             std::ranges::any_of(pBlock->encodedBuffers(),  [](const auto& encodedBuffer)  { return encodedBuffer.binding.usages & BindingUsage::computeRead  || encodedBuffer.binding.usages & BindingUsage::computeWrite;  }) ||
             std::ranges::any_of(pBlock->encodedTextures(), [](const auto& encodedTexture) { return encodedTexture.binding.usages & BindingUsage::computeRead || encodedTexture.binding.usages & BindingUsage::computeWrite; }) ||
             std::ranges::any_of(pBlock->encodedSamplers(), [](const auto& encodedSampler) { return encodedSampler.binding.usages & BindingUsage::computeRead || encodedSampler.binding.usages & BindingUsage::computeWrite; });
