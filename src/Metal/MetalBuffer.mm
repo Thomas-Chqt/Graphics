@@ -28,7 +28,7 @@ MetalBuffer::MetalBuffer(const MetalDevice& device, const Buffer::Descriptor& de
     : m_usages(desc.usages),
       m_storageMode(desc.storageMode) { @autoreleasepool
 {
-    MTLResourceOptions ressourceOptions = desc.storageMode == ResourceStorageMode::deviceLocal ? MTLResourceStorageModePrivate : 0;
+    MTLResourceOptions ressourceOptions = desc.storageMode == ResourceStorageMode::deviceLocal ? MTLResourceStorageModePrivate : MTLResourceStorageModeShared;
 
     m_mtlBuffer = [device.mtlDevice() newBufferWithLength:desc.size options:ressourceOptions];
 
@@ -43,10 +43,9 @@ size_t MetalBuffer::size() const { @autoreleasepool
 
 void MetalBuffer::setContent(const void* data, size_t size) { @autoreleasepool
 {
+    assert(mtlBuffer().storageMode == MTLStorageModeShared);
     void* content = m_mtlBuffer.contents;
     std::memcpy(content, data, size);
-    if (m_mtlBuffer.storageMode == MTLStorageModeManaged)
-        [m_mtlBuffer didModifyRange:NSMakeRange(0, size)];
 }}
 
 void* MetalBuffer::contentVoid() { @autoreleasepool
