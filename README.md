@@ -1,7 +1,7 @@
 Graphics
 ========
 
-**Graphics** is an abstraction layer on top of Metal and Vulkan that I use in all my graphics-related projects. It is also a place to experiment with and learn new rendering techniques.
+**Graphics** is a C++23 abstraction layer over Metal and Vulkan for rendering and GPU compute. I use it in my graphics-related projects and as a place to experiment with new rendering techniques.
 
 Platform Support
 ----------------
@@ -15,64 +15,83 @@ Platform Support
 Features
 --------
 
-- **Dynamic backend switching**: Switch between backends without rebuilding or restarting the application, simply recreate the instance
+- **Runtime backend selection**: Choose Metal or Vulkan from the same application when both backends are built. Switching requires recreating the instance and its associated device and resources
 - **Automatic synchronization**: All resources are tracked inside and across command buffers, with barriers and semaphores inserted automatically when necessary
-- **Resource lifetime management**: All resources use RAII and are shared using smart pointers, so there's no need to keep staging buffers alive until commands execute, buffers can go out of scope as soon as they're no longer needed
+- **Resource lifetime management**: RAII and shared ownership keep resources referenced by recorded commands alive, including staging buffers used for uploads
 - **Optional integrations**: GLFW, ImGui, and Tracy support live in separate integration libraries. Build and link only the integrations you use, and provide the corresponding external libraries from your own project
+- **Compute shaders**: Compute pipelines and passes with GPU threadgroup dispatch, structured buffers, and writable storage textures
+- **Mipmaps and texture views**: Generate mipmaps, use mipmapped sampling, and create views selecting mip levels and array layers, including cubemap views
 
 Build
 -----
 
-CMake is used as the build system. The recommended way to use the library is to clone the repository inside your project and use `add_subdirectory`.
+CMake is used as the build system. The recommended way to use the library is to include it in your project with CMake's FetchContent. It can also be built separately.
 
-Alternatively, the library can be built separately using CMake.
+To build the library and all examples in Release mode:
 
-Here is an example to build the library as well as all the examples in release mode for best performance:
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DGFX_BUILD_EXAMPLES=ON
 cmake --build build --config Release
 ```
 
-All dependencies are embedded in the project using CMake's FetchContent, except for the Vulkan loader, MoltenVK, and the Metal framework.
-On Windows and Linux with up-to-date GPU drivers, it should work out of the box.
-On macOS, Vulkan requires the `vulkan-loader` and `molten-vk` Homebrew packages, and Metal requires the MetalToolchain.
+CMake uses FetchContent for build dependencies. The Vulkan loader, MoltenVK, and Metal framework are system dependencies; see [Dependencies](#dependencies). Applications using the optional integrations must also provide and link the corresponding external libraries.
 
 ### CMake Options
 
-| Option                | Default Value | Description                          |
-|-----------------------|---------------|--------------------------------------|
-| `GFX_BUILD_METAL`     | `ON`          | Build the Metal backend (macOS only) |
-| `GFX_BUILD_VULKAN`    | `ON`          | Build the Vulkan backend             |
-| `GFX_BUILD_IMGUI_INTEGRATION` | `ON`  | Build the `GraphicsImGui` integration library |
-| `GFX_BUILD_GLFW_INTEGRATION`  | `ON`  | Build the `GraphicsGLFW` integration library  |
-| `GFX_BUILD_TRACY_INTEGRATION` | `ON`  | Build the `GraphicsTracy` integration library |
-| `GFX_BUILD_EXAMPLES`  | `OFF`         | Build the example executables        |
-| `GFX_INSTALL`         | `ON`          | Enable the CMake install command     |
+| Option | Default | Description |
+|--------|---------|-------------|
+| `GFX_BUILD_METAL` | `ON` | Build the Metal backend (macOS only) |
+| `GFX_BUILD_VULKAN` | `ON` | Build the Vulkan backend |
+| `GFX_BUILD_IMGUI_INTEGRATION` | `ON` | Build the `GraphicsImGui` integration library |
+| `GFX_BUILD_GLFW_INTEGRATION` | `ON` | Build the `GraphicsGLFW` integration library |
+| `GFX_BUILD_TRACY_INTEGRATION` | `ON` | Build the `GraphicsTracy` integration library |
+| `GFX_BUILD_EXAMPLES` | `OFF` | Build the example executables |
+| `GFX_INSTALL` | `ON` | Enable the CMake install command |
 
-> **Note**: Example targets are only added when the required integration targets are enabled. GLFW, ImGui, and Tracy themselves are still external dependencies that users are expected to provide and link.
+Example targets are only added when their required integration targets are enabled.
 
 Examples
 --------
+
 - **triangle**: Demonstrates the most basic code required to render a triangle
+
 ![screenshot of the triangle example executable](triangle.png)
-- **mc_cube**: Demonstrates more advanced usage such as uniform buffers and textures
+
+- **mc_cube**: Demonstrates more advanced usage such as constant buffers and textures
+
 ![screenshot of the mc_cube example executable](mc_cube.png)
-- **scop**: The most advanced example, showcasing the latest features of the library with a 3D renderer that supports loading models and materials using Assimp
+
+- **scop**: The most advanced example, showcasing the latest library features, including PBR, with a 3D renderer that supports loading models and materials using Assimp
+
 ![screenshot of the scop example executable](scop.png)
 
-Libraries
----------
+- **pbr**: Demonstrates metallic/roughness physically based rendering with HDR environment lighting and compute-generated irradiance cubemaps, prefiltered environment maps, and a BRDF lookup texture
 
-**Graphics** depends on a few libraries:
-- **Vulkan Loader**: Should be installed with your GPU drivers on Windows and Linux. On macOS, it requires installing the `vulkan-loader` and `molten-vk` Homebrew packages. The Vulkan functions are dynamically loaded at runtime, so the library can still build even if the Vulkan loader is not installed. Vulkan can also be disabled completely on macOS using `-DGFX_BUILD_VULKAN=OFF` during CMake configuration.
-- **MetalToolchain**: Recent versions of Xcode do not include the Metal toolchain. It can be installed in the Components settings or with the command `xcodebuild -downloadComponent MetalToolchain`
-- **[Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers)**: Especially the Vulkan HPP header included in the repository
-- **[slang](https://github.com/shader-slang/slang)**: Used as a common shader language. The Slang compilation API is used in the `gfxsc` tool to build shaders.
+Dependencies
+------------
 
-Additionally, some example applications also use:
+### System dependencies
 
-- **[GLFW](https://github.com/glfw/glfw)**: Required by projects that use the `GraphicsGLFW` integration library
-- **[ImGui](https://github.com/Thomas-Chqt/imgui)**: Required by projects that use the `GraphicsImGui` integration library. **Graphics** provides the rendering/backend integration, but the Dear ImGui library itself must still be linked by the user
-- **[Tracy](https://github.com/wolfpld/tracy)**: Required by projects that use the `GraphicsTracy` integration library. Users must provide and link Tracy themselves, and include `<tracy/Tracy.hpp>` before `<gfx_tracy/gfx_tracy.hpp>`
-- **[stb_image](https://github.com/Thomas-Chqt/stb_image)**: A lightweight image loading library for loading textures
-- **[Assimp](https://github.com/assimp/assimp)**: A library for importing 3D models and meshes, commonly used for asset loading
+- **Vulkan loader**: Required at runtime. On Windows and Linux, it is normally installed with GPU drivers. On macOS, the `vulkan-loader` and `molten-vk` Homebrew packages provide the Vulkan runtime. Vulkan functions are loaded dynamically, so the library can build without the loader installed. For a Metal-only build on macOS, use `-DGFX_BUILD_VULKAN=OFF`
+- **Metal framework and toolchain**: Required for the Metal backend and shader compilation. Install a missing Metal toolchain from Xcode's Components settings or with `xcodebuild -downloadComponent MetalToolchain`
+
+### Build dependencies
+
+These dependencies do not need to be installed manually; CMake automatically fetches them if they are not already available.
+
+- **[Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers)**: Vulkan API headers, including Vulkan-Hpp, for the Vulkan backend
+- **[Slang](https://github.com/shader-slang/slang)**: Common shader language and compilation API used by `gfxsc` to build shaders
+
+### Integrations and examples
+
+Build and link the integration targets you use, and provide the corresponding external libraries from your application:
+
+| Integration target | External library |
+|--------------------|------------------|
+| `GraphicsGLFW` | [GLFW](https://github.com/glfw/glfw) |
+| `GraphicsImGui` | [Dear ImGui](https://github.com/Thomas-Chqt/imgui) |
+| `GraphicsTracy` | [Tracy](https://github.com/wolfpld/tracy) |
+
+For Tracy, include `<tracy/Tracy.hpp>` before `<gfx_tracy/gfx_tracy.hpp>`.
+
+Some examples also use **[stb_image](https://github.com/Thomas-Chqt/stb_image)** for loading textures and **[Assimp](https://github.com/assimp/assimp)** for importing models and meshes.
