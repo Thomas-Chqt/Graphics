@@ -55,19 +55,19 @@ Examples
 
 - **triangle**: Demonstrates the most basic code required to render a triangle
 
-![screenshot of the triangle example executable](triangle.png)
+![screenshot of the triangle example executable](triangle.webp)
 
 - **mc_cube**: Demonstrates more advanced usage such as constant buffers and textures
 
-![screenshot of the mc_cube example executable](mc_cube.png)
+![screenshot of the mc_cube example executable](mc_cube.webp)
 
 - **scop**: The most advanced example, showcasing the latest library features, including PBR, with a 3D renderer that supports loading models and materials using Assimp
 
-![screenshot of the scop example executable](scop.png)
+![screenshot of the scop example executable](scop.webp)
 
 - **pbr**: Demonstrates metallic/roughness physically based rendering with HDR environment lighting and compute-generated irradiance cubemaps, prefiltered environment maps, and a BRDF lookup texture
 
-![screenshot of the pbr example executable](pbr.png)
+![screenshot of the pbr example executable](pbr.webp)
 
 Dependencies
 ------------
