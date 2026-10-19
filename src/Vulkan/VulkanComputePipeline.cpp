@@ -20,11 +20,11 @@ VulkanComputePipeline::VulkanComputePipeline(const VulkanDevice* device, const C
     assert(desc.threadsPerThreadgroupY > 0);
     assert(desc.threadsPerThreadgroupZ > 0);
 
-    const auto limits = m_device->physicalDevice().getProperties().limits;
+    [[maybe_unused]] const auto limits = m_device->physicalDevice().getProperties().limits;
     assert(desc.threadsPerThreadgroupX <= limits.maxComputeWorkGroupSize[0]);
     assert(desc.threadsPerThreadgroupY <= limits.maxComputeWorkGroupSize[1]);
     assert(desc.threadsPerThreadgroupZ <= limits.maxComputeWorkGroupSize[2]);
-    const uint64_t threadCount = static_cast<uint64_t>(desc.threadsPerThreadgroupX)
+    [[maybe_unused]] const uint64_t threadCount = static_cast<uint64_t>(desc.threadsPerThreadgroupX)
         * desc.threadsPerThreadgroupY
         * desc.threadsPerThreadgroupZ;
     assert(threadCount <= limits.maxComputeWorkGroupInvocations);

@@ -24,7 +24,7 @@ VulkanTextureView::VulkanTextureView(const VulkanDevice* device, const std::shar
     assert(m_mipLevelCount > 0);
     assert(m_arrayLayerCount > 0);
 
-    const uint32_t rootLayerCount = m_rootTexture->type() == TextureType::textureCube ? 6u : m_rootTexture->arrayLayerCount();
+    [[maybe_unused]] const uint32_t rootLayerCount = m_rootTexture->type() == TextureType::textureCube ? 6u : m_rootTexture->arrayLayerCount();
     const uint32_t viewLayerCount = m_type == TextureType::textureCube ? 6u : m_arrayLayerCount;
 
     assert(m_baseMipLevel + m_mipLevelCount <= m_rootTexture->mipLevelCount());

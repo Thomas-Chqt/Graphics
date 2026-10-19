@@ -400,8 +400,12 @@ void ImGui_ImplMetal_UpdateTexture(ImTextureData* tex)
                                                                                                     height:(NSUInteger)tex->Height
                                                                                                  mipmapped:NO];
         textureDescriptor.usage = MTLTextureUsageShaderRead;
-    #if TARGET_OS_OSX || TARGET_OS_MACCATALYST
+    #if (TARGET_OS_OSX || TARGET_OS_MACCATALYST) && defined(__x86_64__)
+        // Intel textures require managed storage for CPU uploads.
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
         textureDescriptor.storageMode = MTLStorageModeManaged;
+    #pragma clang diagnostic pop
     #else
         textureDescriptor.storageMode = MTLStorageModeShared;
     #endif
