@@ -26,6 +26,10 @@ import Light;
 
 #endif
 
+#if defined(__cplusplus) && defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable:4324)
+#endif
 SLANG_PUBLIC struct SceneData
 {
     SLANG_PUBLIC float3 cameraPosition;
@@ -42,6 +46,9 @@ SLANG_PUBLIC struct SceneData
     SLANG_PUBLIC int pointLightCount = 0;
     SLANG_PUBLIC PointLight pointLights[8]; // NOLINT(cppcoreguidelines-avoid-c-arrays)
 };
+#if defined(__cplusplus) && defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #ifdef __cplusplus
 }

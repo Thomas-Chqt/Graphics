@@ -22,7 +22,15 @@ namespace gfx
 
 std::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
 {
-    if (const char* val = std::getenv("GFX_USED_API")) // NOLINT(concurrency-mt-unsafe)
+#if defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
+    const char* val = std::getenv("GFX_USED_API"); // NOLINT(concurrency-mt-unsafe)
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+    if (val != nullptr)
     {
 #if defined(GFX_BUILD_METAL)
         if (std::strcmp(val, "METAL") == 0)
@@ -44,12 +52,11 @@ std::unique_ptr<Instance> Instance::newInstance(const Descriptor& desc)
     {
 #if defined(GFX_BUILD_METAL)
         return newMetalInstance(desc);
-#endif
-
-#if defined(GFX_BUILD_VULKAN)
+#elif defined(GFX_BUILD_VULKAN)
         return newVulkanInstance(desc);
-#endif
+#else
         throw std::runtime_error("unable to define default api");
+#endif
     }
 }
 

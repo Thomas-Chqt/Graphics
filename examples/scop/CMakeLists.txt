@@ -135,6 +135,9 @@ if (NOT SCOP_MANDATORY)
     set(TRACY_ENABLE OFF)
     set(TRACY_LTO     ON)
     FetchContent_MakeAvailable(tracy)
+    if(MSVC)
+        set_target_properties(TracyClient PROPERTIES INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
+    endif()
     if(SCOP_TRACY_ENABLE)
         target_compile_definitions(TracyClient PUBLIC "$<$<NOT:$<CONFIG:Release>>:TRACY_ENABLE>")
     endif()
@@ -160,6 +163,16 @@ set_target_properties(scop PROPERTIES
 )
 
 target_compile_features(scop PRIVATE cxx_std_23)
+
+if(MSVC AND TARGET TracyClient)
+    get_target_property(SCOP_TRACY_IPO TracyClient INTERPROCEDURAL_OPTIMIZATION)
+    if(SCOP_TRACY_IPO)
+        set_target_properties(scop PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION TRUE
+            INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF
+        )
+    endif()
+endif()
 
 if(MSVC)
     target_compile_options(scop PRIVATE /W4)

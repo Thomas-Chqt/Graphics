@@ -29,6 +29,10 @@ SLANG_PUBLIC struct CPP_ALIGNAS(16) DirectionalLight
     FLOAT3_PADDING(1);
 };
 
+#if defined(__cplusplus) && defined(_MSC_VER)
+#pragma warning(push)
+#pragma warning(disable:4324)
+#endif
 SLANG_PUBLIC struct CPP_ALIGNAS(16) PointLight
 {
     SLANG_PUBLIC float3 position;
@@ -37,6 +41,9 @@ SLANG_PUBLIC struct CPP_ALIGNAS(16) PointLight
     FLOAT3_PADDING(1);
     SLANG_PUBLIC float attenuation;
 };
+#if defined(__cplusplus) && defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #ifdef __cplusplus
 }

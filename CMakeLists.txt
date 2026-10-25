@@ -145,7 +145,7 @@ endif()
 if (GFX_BUILD_VULKAN)
     target_compile_definitions(Graphics PUBLIC "GFX_BUILD_VULKAN")
     target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1")
-    target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_NO_CONSTRUCTORS")
+    target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_NO_CONSTRUCTORS=1")
     target_compile_definitions(Graphics PRIVATE "VULKAN_HPP_HANDLES_MOVE_EXCHANGE=1")
 endif()
 

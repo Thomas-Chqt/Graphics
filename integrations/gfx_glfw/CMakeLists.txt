@@ -21,6 +21,9 @@ target_include_directories(GraphicsGLFW
         "include"
 )
 target_precompile_headers(GraphicsGLFW REUSE_FROM Graphics)
+if(MSVC)
+    target_compile_options(GraphicsGLFW PRIVATE /W4)
+endif()
 
 if (GFX_BUILD_METAL)
     target_compile_definitions(GraphicsGLFW PRIVATE "GFX_BUILD_METAL")

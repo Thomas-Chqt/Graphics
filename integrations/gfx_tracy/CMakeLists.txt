@@ -37,6 +37,9 @@ if(GFX_TRACY_SRC)
     target_include_directories(GraphicsTracy SYSTEM PRIVATE "${gfx_tracy_headers_SOURCE_DIR}/public")
 
     target_precompile_headers(GraphicsTracy REUSE_FROM Graphics)
+    if(MSVC)
+        target_compile_options(GraphicsTracy PRIVATE /W4)
+    endif()
 
     target_compile_definitions(GraphicsTracy PRIVATE "TRACY_ENABLE")
     if (GFX_BUILD_METAL)

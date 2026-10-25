@@ -36,6 +36,9 @@ target_include_directories(GraphicsImGui
 target_include_directories(GraphicsImGui SYSTEM PRIVATE "${gfx_imgui_headers_SOURCE_DIR}")
 
 target_precompile_headers(GraphicsImGui REUSE_FROM Graphics)
+if(MSVC)
+    target_compile_options(GraphicsImGui PRIVATE /W4)
+endif()
 
 if (GFX_BUILD_METAL)
     target_compile_definitions(GraphicsImGui PRIVATE "GFX_BUILD_METAL")

@@ -85,7 +85,6 @@ constexpr std::optional<PixelFormat> toOptPixelFormat(vk::Format fmt)
     default:
         return std::nullopt;
     }
-    std::unreachable();
 }
 
 constexpr PixelFormat toPixelFormat(vk::Format fmt)
@@ -123,7 +122,6 @@ constexpr std::optional<ColorSpace> toOptColorSpace(vk::ColorSpaceKHR csp)
     default:
         return std::nullopt;
     }
-    std::unreachable();
 }
 
 constexpr ColorSpace toColorSpace(vk::ColorSpaceKHR csp)
@@ -145,7 +143,6 @@ constexpr vk::PresentModeKHR toVkPresentModeKHR(PresentMode pmd)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr PresentMode toPresentMode(vk::PresentModeKHR pmd)
@@ -159,7 +156,6 @@ constexpr PresentMode toPresentMode(vk::PresentModeKHR pmd)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr vk::AttachmentLoadOp toVkAttachmentLoadOp(LoadAction loa)
@@ -173,7 +169,6 @@ constexpr vk::AttachmentLoadOp toVkAttachmentLoadOp(LoadAction loa)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr vk::Format toVkFormat(VertexAttributeFormat fmt)
@@ -189,7 +184,6 @@ constexpr vk::Format toVkFormat(VertexAttributeFormat fmt)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr vk::BufferUsageFlags toVkBufferUsageFlags(BufferUsages use)
@@ -229,7 +223,6 @@ constexpr vk::DescriptorType toVkDescriptorType(BindingType tpe)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr vk::ShaderStageFlags toVkShaderStageFlags(BindingUsages use)
@@ -306,7 +299,6 @@ constexpr vk::SamplerAddressMode toVkSamplerAddressMode(SamplerAddressMode mode)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr vk::Filter toVkFilter(SamplerMinMagFilter mode)
@@ -320,7 +312,6 @@ constexpr vk::Filter toVkFilter(SamplerMinMagFilter mode)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr vk::SamplerMipmapMode toVkSamplerMipmapMode(SamplerMipFilter filter)
@@ -350,7 +341,6 @@ constexpr vk::CullModeFlags toVkCullModeFlags(CullMode cullMode)
     default:
         throw std::runtime_error("not implemented");
     }
-    std::unreachable();
 }
 
 constexpr vk::CompareOp toVkCompareOp(DepthCompareOperation operation)

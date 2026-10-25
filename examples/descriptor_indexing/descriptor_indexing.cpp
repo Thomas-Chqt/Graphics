@@ -199,7 +199,7 @@ public:
             })->get(m_textureArrayPBLayout);
             parameterBlock->setBinding(0, std::shared_ptr<gfx::Sampler>(m_device->newSampler(gfx::Sampler::Descriptor{})));
 
-            std::atomic_store(&m_textureArrayPBlock, parameterBlock);
+            m_textureArrayPBlock.store(parameterBlock);
 
             std::unique_ptr<gfx::CommandBufferPool> cmdBufferPool = m_device->newCommandBufferPool();
             uint32_t textureIndex = 0;
@@ -342,7 +342,7 @@ public:
             {
                 commandBuffer->usePipeline(m_graphicsPipeline);
                 commandBuffer->useVertexBuffer(m_vertexBuffer);
-                const auto textureArrayPBlock = std::atomic_load(&m_textureArrayPBlock);
+                const auto textureArrayPBlock = m_textureArrayPBlock.load();
                 if (textureArrayPBlock != nullptr) {
                     commandBuffer->setParameterBlock(textureArrayPBlock, 0);
 
@@ -388,7 +388,7 @@ private:
 
     std::shared_ptr<gfx::ParameterBlockLayout> m_textureArrayPBLayout;
     std::shared_ptr<gfx::GraphicsPipeline> m_graphicsPipeline;
-    std::shared_ptr<gfx::ParameterBlock> m_textureArrayPBlock;
+    std::atomic<std::shared_ptr<gfx::ParameterBlock>> m_textureArrayPBlock;
 
     std::shared_ptr<gfx::Buffer> m_vertexBuffer;
 

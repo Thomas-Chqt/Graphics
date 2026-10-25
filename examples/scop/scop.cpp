@@ -305,14 +305,14 @@ int main(int argc, char** argv)
                         }
                     }
 
-                    if (auto* light = dynamic_cast<scop::Light*>(selectedEntity))
+                    if (auto* selectedLight = dynamic_cast<scop::Light*>(selectedEntity))
                     {
-                        glm::vec3 lightColor = light->color();
+                        glm::vec3 lightColor = selectedLight->color();
                         ImGui::ColorEdit3("light color", std::bit_cast<float*>(&lightColor));
-                        light->setColor(lightColor);
-                        float lightIntensity = light->intensity();
+                        selectedLight->setColor(lightColor);
+                        float lightIntensity = selectedLight->intensity();
                         ImGui::DragFloat("intensity", &lightIntensity, 0.05f, 0.0f, 100.0f);
-                        light->setIntensity(lightIntensity);
+                        selectedLight->setIntensity(lightIntensity);
                     }
                 }
                 else
