@@ -83,9 +83,9 @@ set_target_properties(imgui_usage PROPERTIES
 target_compile_features(imgui_usage PRIVATE cxx_std_23)
 
 if(MSVC)
-    target_compile_options(imgui_usage PRIVATE /W4)
+    target_compile_options(imgui_usage PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(imgui_usage PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(imgui_usage PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
     target_compile_options(imgui_usage PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 

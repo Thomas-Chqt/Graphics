@@ -38,7 +38,9 @@ if(GFX_TRACY_SRC)
 
     target_precompile_headers(GraphicsTracy REUSE_FROM Graphics)
     if(MSVC)
-        target_compile_options(GraphicsTracy PRIVATE /W4)
+        target_compile_options(GraphicsTracy PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
+    else()
+        target_compile_options(GraphicsTracy PRIVATE "$<$<CONFIG:Release>:-Werror>")
     endif()
 
     target_compile_definitions(GraphicsTracy PRIVATE "TRACY_ENABLE")

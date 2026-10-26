@@ -88,9 +88,9 @@ set_target_properties(multiBuffer PROPERTIES
 target_compile_features(multiBuffer PRIVATE cxx_std_23)
 
 if(MSVC)
-    target_compile_options(multiBuffer PRIVATE /W4)
+    target_compile_options(multiBuffer PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(multiBuffer PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(multiBuffer PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
     target_compile_options(multiBuffer PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 

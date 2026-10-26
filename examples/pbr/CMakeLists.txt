@@ -89,9 +89,9 @@ set_target_properties(pbr PROPERTIES FOLDER "examples/pbr")
 target_compile_features(pbr PRIVATE cxx_std_23)
 
 if(MSVC)
-    target_compile_options(pbr PRIVATE /W4)
+    target_compile_options(pbr PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(pbr PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(pbr PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
     target_compile_options(pbr PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 

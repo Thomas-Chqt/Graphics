@@ -119,9 +119,9 @@ set_target_properties(mc_cube PROPERTIES
 target_compile_features(mc_cube PRIVATE cxx_std_23)
 
 if(MSVC)
-    target_compile_options(mc_cube PRIVATE /W4)
+    target_compile_options(mc_cube PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(mc_cube PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(mc_cube PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
     target_compile_options(mc_cube PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 

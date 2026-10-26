@@ -45,9 +45,9 @@ endif()
 target_compile_features(compute PRIVATE cxx_std_23)
 
 if(MSVC)
-    target_compile_options(compute PRIVATE /W4)
+    target_compile_options(compute PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(compute PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(compute PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
     target_compile_options(compute PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 

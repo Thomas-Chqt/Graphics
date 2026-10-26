@@ -37,7 +37,9 @@ target_include_directories(GraphicsImGui SYSTEM PRIVATE "${gfx_imgui_headers_SOU
 
 target_precompile_headers(GraphicsImGui REUSE_FROM Graphics)
 if(MSVC)
-    target_compile_options(GraphicsImGui PRIVATE /W4)
+    target_compile_options(GraphicsImGui PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
+else()
+    target_compile_options(GraphicsImGui PRIVATE "$<$<CONFIG:Release>:-Werror>")
 endif()
 
 if (GFX_BUILD_METAL)

@@ -112,9 +112,9 @@ add_library(Graphics ${GFX_LIB_TYPE}) # Use GFX_LIB_TYPE to override BUILD_SHARE
 target_compile_features(Graphics PUBLIC cxx_std_23)
 
 if(MSVC)
-    target_compile_options(Graphics PRIVATE /W4)
+    target_compile_options(Graphics PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(Graphics PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(Graphics PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
     target_compile_options(Graphics PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 

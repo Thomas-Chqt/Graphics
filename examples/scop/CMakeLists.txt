@@ -175,9 +175,9 @@ if(MSVC AND TARGET TracyClient)
 endif()
 
 if(MSVC)
-    target_compile_options(scop PRIVATE /W4)
+    target_compile_options(scop PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(scop PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(scop PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
     target_compile_options(scop PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Wno-missing-field-initializers>)
 endif()
 

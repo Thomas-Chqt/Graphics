@@ -11,6 +11,11 @@ include(GoogleTest)
 add_executable(gfx_test)
 
 target_compile_features(gfx_test PUBLIC cxx_std_23)
+if(MSVC)
+    target_compile_options(gfx_test PRIVATE "$<$<CONFIG:Release>:/WX>")
+else()
+    target_compile_options(gfx_test PRIVATE "$<$<CONFIG:Release>:-Werror>")
+endif()
 set_target_properties(gfx_test PROPERTIES FOLDER "tests")
 
 file(GLOB_RECURSE SRC "*.cpp")

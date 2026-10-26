@@ -22,7 +22,9 @@ target_include_directories(GraphicsGLFW
 )
 target_precompile_headers(GraphicsGLFW REUSE_FROM Graphics)
 if(MSVC)
-    target_compile_options(GraphicsGLFW PRIVATE /W4)
+    target_compile_options(GraphicsGLFW PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
+else()
+    target_compile_options(GraphicsGLFW PRIVATE "$<$<CONFIG:Release>:-Werror>")
 endif()
 
 if (GFX_BUILD_METAL)

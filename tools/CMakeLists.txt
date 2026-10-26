@@ -55,9 +55,9 @@ set_target_properties(gfxsc PROPERTIES FOLDER "tools")
 target_compile_features(gfxsc PUBLIC cxx_std_23)
 
 if(MSVC)
-    target_compile_options(gfxsc PRIVATE /W4)
+    target_compile_options(gfxsc PRIVATE /W4 "$<$<CONFIG:Release>:/WX>")
 else()
-    target_compile_options(gfxsc PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(gfxsc PRIVATE -Wall -Wextra -Wpedantic "$<$<CONFIG:Release>:-Werror>")
 endif()
 
 target_sources(gfxsc PRIVATE "gfxsc.cpp")
