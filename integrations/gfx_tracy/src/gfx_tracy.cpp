@@ -25,31 +25,38 @@ TracyGfxCtx* TracyGFXContext(const gfx::Device& device)
             vulkanDevice->vkGetInstanceProcAddr(),
             vulkanDevice->vkGetDeviceProcAddr());
     }
-    std::unreachable();
+    return nullptr;
 }
 
 void TracyGFXDestroy(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
+    if (tracyCtx == nullptr)
+        return;
+
     if ([[maybe_unused]] const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
     {
         ::tracy::DestroyVkContext(reinterpret_cast<::tracy::VkCtx*>(tracyCtx)); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         return;
     }
-    std::unreachable();
 }
 
 void TracyGFXCollect(const gfx::Device& device, TracyGfxCtx* tracyCtx)
 {
+    if (tracyCtx == nullptr)
+        return;
+
     if ([[maybe_unused]] const auto* vulkanDevice = dynamic_cast<const gfx::VulkanDevice*>(&device))
     {
         reinterpret_cast<::tracy::VkCtx*>(tracyCtx)->Collect(VK_NULL_HANDLE); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
         return;
     }
-    std::unreachable();
 }
 
 void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::PassDescriptor& descriptor, const ::tracy::SourceLocationData* sourceLocation)
 {
+    if (context == nullptr)
+        return;
+
     assert(state.m_active == false);
     assert(state.m_destroy == nullptr);
 
@@ -64,12 +71,13 @@ void TracyGFXZoneBegin(TracyGFXZoneState& state, TracyGfxCtx* context, gfx::Pass
         state.m_active = true;
         return;
     }
-
-    std::unreachable();
 }
 
 void TracyGFXZoneEnd(TracyGFXZoneState& state) noexcept
 {
+    if (state.m_destroy == nullptr)
+        return;
+
     assert(state.m_active);
     assert(state.m_destroy);
 
